@@ -1,0 +1,21 @@
+.info-icon {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+    z-index: 2;
+}
+
+.info-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.info-icon:hover {
+    color: #2196f3;
+    background-color: rgba(33, 150, 243, 0.1);
+}
