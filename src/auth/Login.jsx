@@ -134,8 +134,9 @@ function Login({
   }
 
   return (
-    <div className="login-box">
-      <h1>{title}</h1>
+    <>
+      <div className="login-box">
+        <h1>{title}</h1>
         
         {/* Mode Switcher */}
         {useAuthToken && showTokenAtLogin && token && (
@@ -210,7 +211,8 @@ function Login({
         )}
 
         {message && <div className={`message ${message.startsWith('✓') ? 'success' : 'error'}`}>{message}</div>}
-    </div>
+      </div>
+    </>
   )
 }
 

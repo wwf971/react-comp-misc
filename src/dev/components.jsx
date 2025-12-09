@@ -10,9 +10,11 @@ import {
   UploadIcon,
   BackIcon,
   ForwardIcon
-} from '../Icon.jsx';
+} from '../icon/Icon.jsx';
 import MasterDetail, { Tab, SubTab, Panel } from '../layout/MasterDetail.tsx';
 import Login from '../auth/Login.jsx';
+import Config from '../config/Config.tsx';
+import { useState, useRef } from 'react';
 
 export const components = {
   'Login': {
@@ -168,6 +170,97 @@ export const components = {
         <ForwardIcon width={48} height={48} />
       </div>
     )
+  },
+  'Config': {
+    component: Config,
+    description: 'General-purpose configuration UI component with separated struct and values',
+    example: () => {
+      const ConfigTest = () => {
+        const [message, setMessage] = useState('');
+        
+        const configStruct = {
+          items: [
+            {
+              id: 'basic_group',
+              label: 'Basic Settings',
+              type: 'group',
+              items: [
+                {
+                  id: 'enable_feature',
+                  label: 'Enable Feature',
+                  description: 'Turn this feature on or off',
+                  type: 'boolean',
+                  defaultValue: true
+                },
+                {
+                  id: 'username',
+                  label: 'Username',
+                  description: 'Enter your username',
+                  type: 'string',
+                  defaultValue: ''
+                }
+              ]
+            },
+            {
+              id: 'appearance_group',
+              label: 'Appearance',
+              type: 'group',
+              items: [
+                {
+                  id: 'theme',
+                  label: 'Theme',
+                  description: 'Select your preferred theme',
+                  type: 'select',
+                  defaultValue: 'light',
+                  options: ['light', 'dark', 'auto']
+                }
+              ]
+            }
+          ]
+        };
+
+        const [configValue, setConfigValue] = useState({
+          enable_feature: true,
+          username: 'john_doe',
+          theme: 'light'
+        });
+
+        const handleChange = (id, newValue) => {
+          console.log('Config changed:', id, '=', newValue);
+          setConfigValue(prev => ({ ...prev, [id]: newValue }));
+          setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
+        };
+
+        const handleExternalUpdate = () => {
+          setConfigValue(prev => ({ ...prev, enable_feature: false }));
+          setMessage('External update applied: enable_feature = false');
+        };
+
+        return (
+          <div style={{ padding: '20px', maxWidth: '500px' }}>
+            <Config
+              configStruct={configStruct}
+              configValue={configValue}
+              onInternalChange={handleChange}
+            />
+            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+              <button onClick={handleExternalUpdate} style={{ padding: '8px 12px', cursor: 'pointer' }}>
+                External Update
+              </button>
+            </div>
+            {message && (
+              <div style={{ marginTop: '10px', padding: '8px', background: '#e0f2fe', border: '1px solid #0ea5e9', borderRadius: '4px', fontSize: '13px' }}>
+                {message}
+              </div>
+            )}
+            <div style={{ marginTop: '10px', fontSize: '12px', background: '#f0f0f0', padding: '8px', borderRadius: '4px' }}>
+              <strong>Values:</strong> {JSON.stringify(configValue)}
+            </div>
+          </div>
+        );
+      };
+      return <ConfigTest />;
+    }
   },
 };
 

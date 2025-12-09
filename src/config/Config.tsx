@@ -1,0 +1,179 @@
+import React, { useEffect } from 'react';
+import './Config.css';
+
+// Define config item types
+export type ConfigItemType = 'boolean' | 'string' | 'number' | 'select' | 'group';
+
+export interface ConfigItemStruct {
+  id: string;
+  label: string;
+  description?: string;
+  type: ConfigItemType;
+  defaultValue?: any;
+  options?: string[]; // For 'select' type
+  items?: ConfigItemStruct[]; // For 'group' type (one level only)
+}
+
+export interface ConfigStruct {
+  items: ConfigItemStruct[];
+}
+
+export type MissingItemStrategy = 'setDefault' | 'reportError';
+
+export interface ConfigProps {
+  configStruct: ConfigStruct;
+  configValue: Record<string, any>;
+  onInternalChange?: (id: string, newValue: any) => void;
+  missingItemStrategy?: MissingItemStrategy;
+}
+
+const Config: React.FC<ConfigProps> = ({ 
+  configStruct, 
+  configValue,
+  onInternalChange,
+  missingItemStrategy = 'setDefault'
+}) => {
+  
+  // Check for missing items and handle according to strategy
+  useEffect(() => {
+    if (missingItemStrategy === 'setDefault') {
+      const checkItems = (items: ConfigItemStruct[]) => {
+        items.forEach(item => {
+          if (item.type === 'group' && item.items) {
+            // Recursively check group items
+            checkItems(item.items);
+          } else if (!(item.id in configValue) && onInternalChange && item.defaultValue !== undefined) {
+            // Set default value and notify parent
+            onInternalChange(item.id, item.defaultValue);
+          }
+        });
+      };
+      checkItems(configStruct.items);
+    }
+  }, [configStruct, configValue, onInternalChange, missingItemStrategy]);
+  
+  const handleChange = (id: string, newValue: any) => {
+    if (onInternalChange) {
+      onInternalChange(id, newValue);
+    }
+  };
+
+  const renderConfigItem = (item: ConfigItemStruct) => {
+    const currentValue = configValue[item.id];
+    
+    // Handle missing value with reportError strategy
+    if (!(item.id in configValue) && missingItemStrategy === 'reportError') {
+      return (
+        <div className="config-error">
+          ⚠️ Value missing in configValue
+        </div>
+      );
+    }
+    
+    const value = currentValue ?? item.defaultValue;
+    
+    switch (item.type) {
+      case 'boolean':
+        return (
+          <label className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={value}
+              onChange={(e) => handleChange(item.id, e.target.checked)}
+            />
+            <span className="toggle-slider"></span>
+          </label>
+        );
+      
+      case 'string':
+        return (
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => handleChange(item.id, e.target.value)}
+            className="config-input"
+          />
+        );
+      
+      case 'number':
+        return (
+          <input
+            type="number"
+            value={value}
+            onChange={(e) => handleChange(item.id, Number(e.target.value))}
+            className="config-input"
+          />
+        );
+      
+      case 'select':
+        return (
+          <select
+            value={value}
+            onChange={(e) => handleChange(item.id, e.target.value)}
+            className="config-select"
+          >
+            {item.options?.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
+  const renderItem = (item: ConfigItemStruct) => {
+    // Handle group type
+    if (item.type === 'group') {
+      return (
+        <div key={item.id} className="config-group">
+          <div className="config-group-title">{item.label}</div>
+          <div className="config-group-divider" />
+          <div className="config-group-items">
+            {item.items?.map(subItem => (
+              <div key={subItem.id} className="config-item">
+                <div className="config-info">
+                  <div className="config-label">{subItem.label}</div>
+                  {subItem.description && (
+                    <div className="config-description">{subItem.description}</div>
+                  )}
+                </div>
+                <div className="config-control">
+                  {renderConfigItem(subItem)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    
+    // Handle regular config item
+    return (
+      <div key={item.id} className="config-item">
+        <div className="config-info">
+          <div className="config-label">{item.label}</div>
+          {item.description && (
+            <div className="config-description">{item.description}</div>
+          )}
+        </div>
+        <div className="config-control">
+          {renderConfigItem(item)}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="config-container">
+      <div className="config-list">
+        {configStruct.items.map(item => renderItem(item))}
+      </div>
+    </div>
+  );
+};
+
+Config.displayName = 'Config';
+
+export default Config;

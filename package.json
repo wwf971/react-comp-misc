@@ -1,10 +1,10 @@
 {
   "name": "@wwf971/react-comp-misc",
   "version": "0.0.1",
-  "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "build": "vite build"
   },
   "devDependencies": {
     "@types/react": "^19.1.9",
