@@ -17,5 +17,5 @@ export { default as MasterDetail, Tab, SubTab, Panel } from "./layout/MasterDeta
 
 export { default as Login } from "./auth/Login";
 
-export { Config, ConfigExample } from "./config";
+export { ConfigPanel, ConfigExample, ConfigPanelWithTabs, ConfigPanelWithTabGroups } from "./config";
 export type { ConfigStruct, ConfigItemStruct, ConfigItemType, ConfigProps, MissingItemStrategy } from "./config";

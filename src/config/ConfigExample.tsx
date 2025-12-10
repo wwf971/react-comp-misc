@@ -12,7 +12,7 @@ const ConfigExample: React.FC = () => {
         id: 'general_group',
         label: 'General Settings',
         type: 'group',
-        items: [
+        children: [
           {
             id: 'enable_feature_a',
             label: 'Enable Feature A',
@@ -33,7 +33,7 @@ const ConfigExample: React.FC = () => {
         id: 'appearance_group',
         label: 'Appearance',
         type: 'group',
-        items: [
+        children: [
           {
             id: 'theme',
             label: 'Theme',

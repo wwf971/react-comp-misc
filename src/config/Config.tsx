@@ -11,7 +11,7 @@ export interface ConfigItemStruct {
   type: ConfigItemType;
   defaultValue?: any;
   options?: string[]; // For 'select' type
-  items?: ConfigItemStruct[]; // For 'group' type (one level only)
+  children?: ConfigItemStruct[]; // For 'group' type (one level only)
 }
 
 export interface ConfigStruct {
@@ -27,21 +27,22 @@ export interface ConfigProps {
   missingItemStrategy?: MissingItemStrategy;
 }
 
-const Config: React.FC<ConfigProps> = ({ 
+const ConfigPanel: React.FC<ConfigProps> = ({ 
   configStruct, 
   configValue,
   onInternalChange,
   missingItemStrategy = 'setDefault'
 }) => {
   
-  // Check for missing items and handle according to strategy
+  // Check for missing items in configValue, based on configStruct.
+  // missing values are handled according to missingItemStrategy.
   useEffect(() => {
     if (missingItemStrategy === 'setDefault') {
       const checkItems = (items: ConfigItemStruct[]) => {
         items.forEach(item => {
-          if (item.type === 'group' && item.items) {
+          if (item.type === 'group' && item.children) {
             // Recursively check group items
-            checkItems(item.items);
+            checkItems(item.children);
           } else if (!(item.id in configValue) && onInternalChange && item.defaultValue !== undefined) {
             // Set default value and notify parent
             onInternalChange(item.id, item.defaultValue);
@@ -131,7 +132,7 @@ const Config: React.FC<ConfigProps> = ({
           <div className="config-group-title">{item.label}</div>
           <div className="config-group-divider" />
           <div className="config-group-items">
-            {item.items?.map(subItem => (
+            {item.children?.map(subItem => (
               <div key={subItem.id} className="config-item">
                 <div className="config-info">
                   <div className="config-label">{subItem.label}</div>
@@ -174,6 +175,6 @@ const Config: React.FC<ConfigProps> = ({
   );
 };
 
-Config.displayName = 'Config';
+ConfigPanel.displayName = 'ConfigPanel';
 
-export default Config;
+export default ConfigPanel;

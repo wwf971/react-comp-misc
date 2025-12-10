@@ -59,7 +59,7 @@ body {
   cursor: not-allowed;
 }
 
-button {
+.login-box button {
   width: 100%;
   padding: 12px;
   background-color: #4CAF50;
@@ -72,11 +72,11 @@ button {
   transition: background-color 0.2s;
 }
 
-button:hover:not(:disabled) {
+.login-box button:hover:not(:disabled) {
   background-color: #45a049;
 }
 
-button:disabled {
+.login-box button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
 }

@@ -1,0 +1,7 @@
+/* ConfigPanelWithTabs - Specific styles */
+@import './Config.css';
+
+/* Wrapper for tab list with top padding to align with right panel content */
+.config-tab-list {
+  padding-top: 20px;
+}

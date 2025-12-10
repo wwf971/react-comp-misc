@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { components } from './components.jsx';
+import { components } from './examples.jsx';
 import './DevPage.css';
 
 function DevPage() {
