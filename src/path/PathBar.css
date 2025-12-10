@@ -1,0 +1,71 @@
+.pathbar-container {
+  padding: 6px 10px;
+  background-color: #ffffff;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  cursor: text;
+  transition: border-color 0.2s;
+}
+
+.pathbar-container:hover {
+  border-color: #a0a0a0;
+}
+
+.pathbar-content {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  flex: 1;
+}
+
+.pathbar-segment {
+  color: #1a1a1a;
+  padding: 2px;
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.pathbar-segment:hover {
+  background-color: #e5f3ff;
+  color: #0066cc;
+}
+
+.pathbar-segment:active {
+  background-color: #cce8ff;
+}
+
+.pathbar-separator {
+  color: #666666;
+  user-select: none;
+  padding: 0px;
+}
+
+.pathbar-empty {
+  color: #999999;
+  font-style: italic;
+  user-select: none;
+}
+
+.pathbar-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+  color: #1a1a1a;
+}
+
+.pathbar-input::selection {
+  background-color: #0078d7;
+  color: #ffffff;
+}
+

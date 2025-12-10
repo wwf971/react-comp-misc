@@ -19,3 +19,5 @@ export { default as Login } from "./auth/Login";
 
 export { ConfigPanel, ConfigExample, ConfigPanelWithTabs, ConfigPanelWithTabGroups } from "./config";
 export type { ConfigStruct, ConfigItemStruct, ConfigItemType, ConfigProps, MissingItemStrategy } from "./config";
+
+export { default as PathBar } from "./path/PathBar.jsx";
