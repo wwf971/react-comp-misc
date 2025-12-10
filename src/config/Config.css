@@ -150,7 +150,7 @@ input:focus + .toggle-slider {
   font-size: 15px;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .config-group-divider {
@@ -176,17 +176,26 @@ input:focus + .toggle-slider {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   overflow: hidden;
-  background: #ffffff;
+
+  background: #f9fafb;
+}
+
+.config-tab-sidebar-container {
+  border-right: 1px solid #e5e7eb;
+  overflow: hidden;
+  width: 200px;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Left Sidebar - Common Styles */
 .config-tab-sidebar {
-  width: 200px;
-  background: #f9fafb;
-  border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  align-items: stretch;
+  margin: 0px 8px;
 }
 
 /* Tab Styles */
@@ -220,6 +229,7 @@ input:focus + .toggle-slider {
 .config-tab-content {
   flex: 1;
   padding: 20px;
+  padding-top: 10px;
   overflow-y: auto;
 }
 

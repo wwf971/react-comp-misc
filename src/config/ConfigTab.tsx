@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import ConfigPanel from './Config';
+import ConfigPanelWithSubtabs from './ConfigSubtab';
 import './ConfigTab.css';
 import type { ConfigItemStruct, MissingItemStrategy } from './Config';
+import type { ConfigSubtabStruct } from './ConfigSubtab';
 
 export type ConfigTabItemType = 'tab';
 
@@ -49,10 +51,26 @@ const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
       );
     }
 
+    // Check if this tab contains subtabs
+    const children = tab.children || [];
+    const hasSubtabs = children.length > 0 && children.every((child: any) => child.type === 'subtab');
+
+    if (hasSubtabs) {
+      // Render with ConfigPanelWithSubtabs
+      return (
+        <ConfigPanelWithSubtabs
+          configStruct={{ items: children as unknown as ConfigSubtabStruct[] }}
+          configValue={configValue}
+          onInternalChange={onInternalChange}
+          missingItemStrategy={missingItemStrategy}
+        />
+      );
+    }
+
     // Render config items for this tab
     return (
       <ConfigPanel
-        configStruct={{ items: tab.children || [] }}
+        configStruct={{ items: children }}
         configValue={configValue}
         onInternalChange={onInternalChange}
         missingItemStrategy={missingItemStrategy}
@@ -64,21 +82,22 @@ const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
 
   return (
     <div className="config-tab-container">
-      {/* Left sidebar with tabs */}
-      <div className="config-tab-sidebar">
-        <div className="config-tab-list">
-          {configStruct.items.map(tab => (
-            <button
-              key={tab.id}
-              className={`config-tab ${activeTabId === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTabId(tab.id)}
-            >
-              {tab.name}
-            </button>
-          ))}
+      <div className="config-tab-sidebar-container">
+        {/* Left sidebar with tabs */}
+        <div className="config-tab-sidebar">
+          <div className="config-tab-list">
+            {configStruct.items.map(tab => (
+              <button
+                key={tab.id}
+                className={`config-tab ${activeTabId === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTabId(tab.id)}
+              >
+                {tab.name}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-
       {/* Right panel with config content */}
       <div className="config-tab-content">
         {activeTab ? renderTabContent(activeTab) : (
@@ -86,6 +105,7 @@ const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
             No tab selected
           </div>
         )}
+
       </div>
     </div>
   );

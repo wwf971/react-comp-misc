@@ -3,5 +3,8 @@
 
 /* Wrapper for tab list with top padding to align with right panel content */
 .config-tab-list {
-  padding-top: 20px;
+  padding-top: 0px;
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
 }
