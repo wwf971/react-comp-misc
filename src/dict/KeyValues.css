@@ -1,0 +1,76 @@
+.keyvalues-container {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #d0d0d0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.keyvalues-list {
+  width: 100%;
+  font-size: 13px;
+}
+
+.keyvalues-row {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.keyvalues-row:last-child {
+  border-bottom: none;
+}
+
+.keyvalues-cell {
+  padding: 6px 8px;
+  position: relative;
+}
+
+.key-cell {
+  border-right: 1px solid #e5e5e5;
+}
+
+.keyvalues-cell.editable {
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.keyvalues-cell.editable:hover {
+  background-color: #f8f8f8;
+}
+
+.key-cell {
+  font-weight: 500;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.value-cell {
+  color: #333333;
+}
+
+.keyvalues-text {
+  display: block;
+  word-break: break-word;
+  outline: none;
+}
+
+.keyvalues-text.editing {
+  background: #ffffff;
+  border: 1px solid #0078d7;
+  border-radius: 1px;
+  margin: -1px;
+  padding: 0px;
+}
+
+.keyvalues-text.editing:focus {
+  outline: none;
+}
+
+.keyvalues-empty {
+  padding: 20px;
+  text-align: center;
+  color: #999999;
+  font-style: italic;
+}
+

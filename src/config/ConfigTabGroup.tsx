@@ -29,14 +29,14 @@ export interface ConfigPanelWithTabGroupsStruct {
 export interface ConfigPanelWithTabGroupsProps {
   configStruct: ConfigPanelWithTabGroupsStruct;
   configValue: Record<string, any>;
-  onInternalChange?: (id: string, newValue: any) => void;
+  onChangeAttempt?: (id: string, newValue: any) => void;
   missingItemStrategy?: MissingItemStrategy;
 }
 
 const ConfigPanelWithTabGroups: React.FC<ConfigPanelWithTabGroupsProps> = ({
   configStruct,
   configValue,
-  onInternalChange,
+  onChangeAttempt,
   missingItemStrategy = 'setDefault'
 }) => {
   // Find the first valid tab across all groups and simple tabs
@@ -79,7 +79,7 @@ const ConfigPanelWithTabGroups: React.FC<ConfigPanelWithTabGroupsProps> = ({
         <ConfigPanelWithSubtabs
           configStruct={{ items: children as unknown as ConfigSubtabStruct[] }}
           configValue={configValue}
-          onInternalChange={onInternalChange}
+          onChangeAttempt={onChangeAttempt}
           missingItemStrategy={missingItemStrategy}
         />
       );
@@ -90,7 +90,7 @@ const ConfigPanelWithTabGroups: React.FC<ConfigPanelWithTabGroupsProps> = ({
       <ConfigPanel
         configStruct={{ items: children }}
         configValue={configValue}
-        onInternalChange={onInternalChange}
+        onChangeAttempt={onChangeAttempt}
         missingItemStrategy={missingItemStrategy}
       />
     );

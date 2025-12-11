@@ -75,7 +75,7 @@ export const configExamples = {
             <ConfigPanel
               configStruct={configStruct}
               configValue={configValue}
-              onInternalChange={handleChange}
+              onChangeAttempt={handleChange}
             />
             <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
               <button onClick={handleExternalUpdate} style={{ padding: '8px 12px', cursor: 'pointer' }}>
@@ -156,7 +156,7 @@ export const configExamples = {
               <ConfigPanelWithTabs
                 configStruct={configStruct}
                 configValue={configValue}
-                onInternalChange={handleChange}
+                onChangeAttempt={handleChange}
               />
             </div>
             {message && (
@@ -259,7 +259,7 @@ export const configExamples = {
               <ConfigPanelWithTabGroups
                 configStruct={configStruct}
                 configValue={configValue}
-                onInternalChange={handleChange}
+                onChangeAttempt={handleChange}
               />
             </div>
             {message && (
@@ -322,13 +322,13 @@ export const configExamples = {
 
         return (
           <div style={{ padding: '20px' }}>
-            <div style={{ height: '500px', maxWidth: '900px', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
-              <ConfigPanelWithSubtabs
-                configStruct={configStruct}
-                configValue={configValue}
-                onInternalChange={handleChange}
-              />
-            </div>
+             <div style={{ height: '500px', maxWidth: '900px', border: '1px solid #e5e7eb', borderRadius: '2px', overflow: 'hidden' }}>
+               <ConfigPanelWithSubtabs
+                 configStruct={configStruct}
+                 configValue={configValue}
+                 onChangeAttempt={handleChange}
+               />
+             </div>
             {message && (
               <div style={{ marginTop: '20px', padding: '8px', background: '#e0f2fe', border: '1px solid #0ea5e9', borderRadius: '4px', fontSize: '13px', maxWidth: '900px' }}>
                 {message}

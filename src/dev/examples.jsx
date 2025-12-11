@@ -4,6 +4,7 @@ import { layoutExamples } from '../layout/example.jsx';
 import { iconExamples } from '../icon/example.jsx';
 import { configExamples } from '../config/example.jsx';
 import { pathExamples } from '../path/example.jsx';
+import { dictExamples } from '../dict/example.jsx';
 
 // Combine all examples into a single object
 export const components = {
@@ -12,4 +13,5 @@ export const components = {
   ...iconExamples,
   ...configExamples,
   ...pathExamples,
+  ...dictExamples,
 };

@@ -21,14 +21,14 @@ export interface ConfigPanelWithTabsStruct {
 export interface ConfigPanelWithTabsProps {
   configStruct: ConfigPanelWithTabsStruct;
   configValue: Record<string, any>;
-  onInternalChange?: (id: string, newValue: any) => void;
+  onChangeAttempt?: (id: string, newValue: any) => void;
   missingItemStrategy?: MissingItemStrategy;
 }
 
 const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
   configStruct,
   configValue,
-  onInternalChange,
+  onChangeAttempt,
   missingItemStrategy = 'setDefault'
 }) => {
   const [activeTabId, setActiveTabId] = useState<string>(
@@ -61,7 +61,7 @@ const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
         <ConfigPanelWithSubtabs
           configStruct={{ items: children as unknown as ConfigSubtabStruct[] }}
           configValue={configValue}
-          onInternalChange={onInternalChange}
+          onChangeAttempt={onChangeAttempt}
           missingItemStrategy={missingItemStrategy}
         />
       );
@@ -72,7 +72,7 @@ const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
       <ConfigPanel
         configStruct={{ items: children }}
         configValue={configValue}
-        onInternalChange={onInternalChange}
+        onChangeAttempt={onChangeAttempt}
         missingItemStrategy={missingItemStrategy}
       />
     );

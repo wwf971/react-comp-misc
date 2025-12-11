@@ -23,14 +23,18 @@ export type MissingItemStrategy = 'setDefault' | 'reportError';
 export interface ConfigProps {
   configStruct: ConfigStruct;
   configValue: Record<string, any>;
-  onInternalChange?: (id: string, newValue: any) => void;
+  onChangeAttempt?: (id: string, newValue: any) => void;
   missingItemStrategy?: MissingItemStrategy;
 }
 
+
+// onChangeAttempt should be used for submitting change request only.
+  // it does not directly change configValue.
+  // the change should be implemented by directly changing configValue.
 const ConfigPanel: React.FC<ConfigProps> = ({ 
   configStruct, 
   configValue,
-  onInternalChange,
+  onChangeAttempt,
   missingItemStrategy = 'setDefault'
 }) => {
   
@@ -43,19 +47,19 @@ const ConfigPanel: React.FC<ConfigProps> = ({
           if (item.type === 'group' && item.children) {
             // Recursively check group items
             checkItems(item.children);
-          } else if (!(item.id in configValue) && onInternalChange && item.defaultValue !== undefined) {
+          } else if (!(item.id in configValue) && onChangeAttempt && item.defaultValue !== undefined) {
             // Set default value and notify parent
-            onInternalChange(item.id, item.defaultValue);
+            onChangeAttempt(item.id, item.defaultValue);
           }
         });
       };
       checkItems(configStruct.items);
     }
-  }, [configStruct, configValue, onInternalChange, missingItemStrategy]);
+  }, [configStruct, configValue, onChangeAttempt, missingItemStrategy]);
   
   const handleChange = (id: string, newValue: any) => {
-    if (onInternalChange) {
-      onInternalChange(id, newValue);
+    if (onChangeAttempt) {
+      onChangeAttempt(id, newValue);
     }
   };
 

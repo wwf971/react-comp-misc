@@ -21,3 +21,5 @@ export { ConfigPanel, ConfigPanelWithTabs, ConfigPanelWithTabGroups, ConfigPanel
 export type { ConfigStruct, ConfigItemStruct, ConfigItemType, ConfigProps, MissingItemStrategy } from "./config";
 
 export { default as PathBar } from "./path/PathBar.jsx";
+
+export { default as KeyValues } from "./dict/KeyValues.jsx";
