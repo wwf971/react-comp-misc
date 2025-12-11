@@ -22,7 +22,7 @@ function DevPage() {
   return (
       <div className="dev-page">
         <div className="dev-header">
-          <div>
+          <div className="dev-header-flex">
             <h1>React Components Assortment</h1>
             <a 
               href="https://github.com/wwf971/react-comp-misc" 

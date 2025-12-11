@@ -15,7 +15,10 @@ export {
 
 export { default as MasterDetail, Tab, SubTab, Panel } from "./layout/MasterDetail.tsx";
 
-export { default as Login } from "./auth/Login";
+export { default as TabsOnTop } from "./layout/TabsOnTop.tsx";
+export type { TabsOnTopRef, TabsOnTopProps } from "./layout/TabsOnTop.tsx";
+
+export { default as Login } from "./auth/Login.jsx";
 
 export { ConfigPanel, ConfigPanelWithTabs, ConfigPanelWithTabGroups, ConfigPanelWithSubtabs } from "./config";
 export type { ConfigStruct, ConfigItemStruct, ConfigItemType, ConfigProps, MissingItemStrategy } from "./config";
