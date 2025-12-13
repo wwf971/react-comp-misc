@@ -204,7 +204,11 @@ const KeyValues = ({
             <div 
               key={index} 
               className="keyvalues-row"
-              style={alignColumn ? { display: 'flex', alignItems: 'flex-start' } : { display: 'flex', alignItems: 'flex-start' }}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                ...(alignColumn && keyColWidthValue ? { '--key-col-width': keyColWidthValue } : {})
+              }}
             >
               <div 
                 className={`keyvalues-cell key-cell ${canEditKey ? 'editable' : ''}`}

@@ -13,19 +13,28 @@
 
 .keyvalues-row {
   border-bottom: 1px solid #e5e5e5;
+  position: relative;
 }
 
 .keyvalues-row:last-child {
   border-bottom: none;
 }
 
+/* Vertical separator between key and value */
+.keyvalues-row::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--key-col-width, 30%);
+  width: 1px;
+  background: #e5e5e5;
+  pointer-events: none;
+}
+
 .keyvalues-cell {
   padding: 6px 8px;
   position: relative;
-}
-
-.key-cell {
-  border-right: 1px solid #e5e5e5;
 }
 
 .keyvalues-cell.editable {
