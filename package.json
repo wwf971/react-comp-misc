@@ -5,7 +5,13 @@
   "main": "./src/index.ts",
   "module": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./src/layout/MasterDetail": "./src/layout/MasterDetail.tsx",
+    "./src/layout/MasterDetail.css": "./src/layout/MasterDetail.css",
+    "./src/layout/TabsOnTop": "./src/layout/TabsOnTop.tsx",
+    "./src/layout/TabsOnTop.css": "./src/layout/TabsOnTop.css",
+    "./src/auth/Login": "./src/auth/Login.jsx",
+    "./src/auth/Login.css": "./src/auth/Login.css"
   },
   "scripts": {
     "dev": "vite",

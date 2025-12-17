@@ -1,11 +1,17 @@
 import React, { useState, useImperativeHandle, forwardRef, useMemo, ReactNode } from 'react';
 import './TabsOnTop.css';
+import CrossIcon from '@/icon/CrossIcon';
+import AddIcon from '@/icon/AddIcon';
 
 // Type definitions
 interface TabsOnTopProps {
   children: ReactNode;
   defaultTab?: string;
   onTabChange?: (tabKey: string) => void;
+  allowCloseTab?: boolean;
+  onTabClose?: (tabKey: string) => void;
+  allowTabCreate?: boolean;
+  onTabCreate?: () => void;
 }
 
 interface TabsOnTopRef {
@@ -32,7 +38,16 @@ interface TabConfig {
  * @param {string} props.defaultTab - Default tab key (optional)
  * @param {Function} props.onTabChange - Callback when tab changes (optional)
  */
-const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(({ children, defaultTab, onTabChange }, ref) => {
+const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(
+  ({ 
+    children, 
+    defaultTab,
+    onTabChange,
+    allowCloseTab = false,
+    onTabClose,
+    allowTabCreate = false,
+    onTabCreate
+  }, ref) => {
   // Use useMemo instead of useState so config updates when children change
   const config = useMemo(() => extractTabConfig(children), [children]);
   const { tabs, panels, tabKeyMap } = config;
@@ -82,6 +97,19 @@ const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(({ children, defaultT
     switchToTab(tabKey);
   };
 
+  const handleCloseTab = (e: React.MouseEvent, tabKey: string) => {
+    e.stopPropagation();
+    if (onTabClose) {
+      onTabClose(tabKey);
+    }
+  };
+
+  const handleCreateTab = () => {
+    if (onTabCreate) {
+      onTabCreate();
+    }
+  };
+
   return (
     <div className="tabs-on-top-container">
       <div className="tabs-on-top-header">
@@ -91,9 +119,25 @@ const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(({ children, defaultT
             className={`tab-on-top-btn ${activeTabKey === tab.key ? 'active' : ''}`}
             onClick={() => handleTabClick(tab.key)}
           >
-            {tab.label}
+            <span className="tab-label">{tab.label}</span>
+            {allowCloseTab && (
+              <span 
+                className="tab-close-btn"
+                onClick={(e) => handleCloseTab(e, tab.key)}
+              >
+                <CrossIcon size={12} />
+              </span>
+            )}
           </button>
         ))}
+        {allowTabCreate && (
+          <button
+            className="tab-create-btn"
+            onClick={handleCreateTab}
+          >
+            <AddIcon size={14} />
+          </button>
+        )}
       </div>
       <div className="tabs-on-top-content">
         {Object.entries(panels).map(([tabKey, panelContent]) => (

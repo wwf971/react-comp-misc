@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import KeyValues from './KeyValues.jsx';
 import KeyValuesComp from './KeyValuesComp.jsx';
+import { InfoIcon } from '../icon/Icon.jsx';
 
 /**
  * Custom Text Component with Info Icon
@@ -70,30 +71,15 @@ const TextWithInfo = ({ data, onChangeAttempt, isEditable, field, index }) => {
       <span 
         style={{ 
           position: 'relative',
-          display: 'inline-block',
-          cursor: 'help'
+          display: 'inline-flex',
+          alignItems: 'center',
+          cursor: 'help',
+          color: '#999'
         }}
         onMouseEnter={() => setShowPopup(true)}
         onMouseLeave={() => setShowPopup(false)}
       >
-        <span 
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '14px',
-            height: '14px',
-            borderRadius: '50%',
-            border: '1.5px solid #999',
-            color: '#999',
-            fontSize: '10px',
-            fontWeight: 'bold',
-            fontFamily: 'monospace',
-            lineHeight: '1'
-          }}
-        >
-          !
-        </span>
+        <InfoIcon width={14} height={14} />
         {showPopup && (
           <div 
             style={{

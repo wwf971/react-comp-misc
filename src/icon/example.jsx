@@ -8,7 +8,9 @@ import {
   ErrorIcon,
   UploadIcon,
   BackIcon,
-  ForwardIcon
+  ForwardIcon,
+  EyeIcon,
+  EyeOffIcon
 } from './Icon.jsx';
 
 export const iconExamples = {
@@ -110,6 +112,26 @@ export const iconExamples = {
       <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
         <ForwardIcon width={24} height={24} />
         <ForwardIcon width={48} height={48} />
+      </div>
+    )
+  },
+  'EyeIcon': {
+    component: EyeIcon,
+    description: 'Eye icon for showing password',
+    example: () => (
+      <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+        <EyeIcon width={24} height={24} />
+        <EyeIcon width={48} height={48} />
+      </div>
+    )
+  },
+  'EyeOffIcon': {
+    component: EyeOffIcon,
+    description: 'Eye-off icon for hiding password',
+    example: () => (
+      <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+        <EyeOffIcon width={24} height={24} />
+        <EyeOffIcon width={48} height={48} />
       </div>
     )
   },
