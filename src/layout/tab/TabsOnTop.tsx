@@ -1,7 +1,7 @@
 import React, { useState, useImperativeHandle, forwardRef, useMemo, ReactNode } from 'react';
 import './TabsOnTop.css';
-import CrossIcon from '@/icon/CrossIcon';
-import AddIcon from '@/icon/AddIcon';
+import CrossIcon from '../../icon/CrossIcon';
+import AddIcon from '../../icon/AddIcon';
 
 // Type definitions
 interface TabsOnTopProps {

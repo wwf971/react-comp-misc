@@ -1,11 +1,13 @@
 .pathbar-container {
-  padding: 6px 10px;
+  padding: 0px 4px;
   background-color: #ffffff;
   border: 1px solid #d0d0d0;
-  border-radius: 4px;
+  border-radius: 0px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 13px;
-  min-height: 28px;
+  line-height: 20px;
+  /* height set via inline style prop (default 32px) */
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   cursor: text;
@@ -21,14 +23,17 @@
   align-items: center;
   gap: 0px;
   flex: 1;
+  line-height: 20px;
 }
 
 .pathbar-segment {
   color: #1a1a1a;
-  padding: 2px;
+  padding: 2px 0px;
   border-radius: 3px;
   cursor: pointer;
   user-select: none;
+  line-height: 16px;
+  display: inline-block;
   transition: background-color 0.15s, color 0.15s;
 }
 
@@ -45,23 +50,29 @@
   color: #666666;
   user-select: none;
   padding: 0px;
+  line-height: 20px;
 }
 
 .pathbar-empty {
   color: #999999;
   font-style: italic;
   user-select: none;
+  line-height: 20px;
 }
 
 .pathbar-input {
   width: 100%;
+  height: 20px;
   border: none;
   outline: none;
   background: transparent;
   font-family: inherit;
   font-size: inherit;
+  line-height: 20px;
   padding: 0;
+  margin: 0;
   color: #1a1a1a;
+  box-sizing: border-box;
 }
 
 .pathbar-input::selection {

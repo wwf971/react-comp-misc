@@ -2,6 +2,8 @@ import React from 'react';
 import './Icon.css';
 import CrossIcon from './CrossIcon';
 import AddIcon from './AddIcon';
+import SpinningCircle from './SpinningCircle';
+import FolderIcon from './FolderIcon';
 
 const FileIconDefault = React.memo(({ width = 24, height = 24, ...props })=>{
 	return (
@@ -291,5 +293,7 @@ export {
 	EyeIcon,
 	EyeOffIcon,
 	CrossIcon,
-	AddIcon
+	AddIcon,
+	SpinningCircle,
+	FolderIcon
 }

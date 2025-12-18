@@ -8,10 +8,13 @@
     ".": "./src/index.ts",
     "./src/layout/MasterDetail": "./src/layout/MasterDetail.tsx",
     "./src/layout/MasterDetail.css": "./src/layout/MasterDetail.css",
-    "./src/layout/TabsOnTop": "./src/layout/TabsOnTop.tsx",
-    "./src/layout/TabsOnTop.css": "./src/layout/TabsOnTop.css",
-    "./src/auth/Login": "./src/auth/Login.jsx",
-    "./src/auth/Login.css": "./src/auth/Login.css"
+    "./src/layout/tab/TabsOnTop": "./src/layout/tab/TabsOnTop.tsx",
+    "./src/layout/tab/TabsOnTop.css": "./src/layout/tab/TabsOnTop.css",
+    "./src/path/PathBar": "./src/path/PathBar.tsx",
+    "./src/path/PathBar.css": "./src/path/PathBar.css",
+    "./src/icon/Icon": "./src/icon/Icon.jsx",
+    "./src/icon/SpinningCircle": "./src/icon/SpinningCircle.jsx",
+    "./src/auth/Login": "./src/auth/Login.jsx"
   },
   "scripts": {
     "dev": "vite",
@@ -19,12 +22,12 @@
     "deploy": "gh-pages -d build"
   },
   "devDependencies": {
-    "@types/react": "^19.1.9",
-    "@types/react-dom": "^19.1.7",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.4",
     "gh-pages": "^6.3.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "typescript": "^5.7.2",
     "vite": "^6.0.5"
   },

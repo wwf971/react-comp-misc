@@ -6,6 +6,7 @@ import { configExamples } from '../config/example.jsx';
 import { pathExamples } from '../path/example.jsx';
 import { dictExamples } from '../dict/example.jsx';
 import { tabExamples } from '../layout/tab/example.jsx';
+import { menuExamples } from '../menu/example.tsx';
 
 // Combine all examples into a single object
 export const components = {
@@ -16,4 +17,5 @@ export const components = {
   ...tabExamples,
   ...pathExamples,
   ...dictExamples,
+  ...menuExamples,
 };

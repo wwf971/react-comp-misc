@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import PathBar from './PathBar.jsx';
+import PathBar from './PathBar.tsx';
 
 export const pathExamples = {
   'PathBar': {
@@ -48,6 +48,7 @@ export const pathExamples = {
               pathData={currentPath}
               onPathSegClicked={handleSegmentClick}
               addSlashBeforeFirstSeg={true}
+              allowEdit={true}
             />
 
             <h4 style={{ marginTop: '30px', marginBottom: '10px' }}>Unix Style (no leading slash)</h4>
@@ -55,6 +56,7 @@ export const pathExamples = {
               pathData={currentPath}
               onPathSegClicked={handleSegmentClick}
               addSlashBeforeFirstSeg={false}
+              allowEdit={true}
             />
 
             <h4 style={{ marginTop: '30px', marginBottom: '10px' }}>Empty Path</h4>
@@ -62,6 +64,15 @@ export const pathExamples = {
               pathData={{ segments: [] }}
               onPathSegClicked={(idx) => console.log('Clicked:', idx)}
               addSlashBeforeFirstSeg={false}
+              allowEdit={true}
+            />
+
+            <h4 style={{ marginTop: '30px', marginBottom: '10px' }}>Read-only Mode (allowEdit={'{'}false{'}'})</h4>
+            <PathBar
+              pathData={currentPath}
+              onPathSegClicked={handleSegmentClick}
+              addSlashBeforeFirstSeg={false}
+              allowEdit={false}
             />
 
             <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -83,9 +94,10 @@ export const pathExamples = {
               <strong>Tips:</strong>
               <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
                 <li>Click on any segment to navigate to that level</li>
-                <li>Click on the empty space in the path bar to show the path as a string</li>
+                <li>Click on the empty space in the path bar (when allowEdit=true) to show the path as a string</li>
                 <li>The string is auto-selected for easy copying (Cmd+C / Ctrl+C)</li>
                 <li>Press Enter or Escape, or click outside to return to segment view</li>
+                <li>Set allowEdit=false to disable text editing (useful for navigation-only scenarios)</li>
               </ul>
             </div>
 
