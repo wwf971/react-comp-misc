@@ -14,7 +14,12 @@
     "./src/path/PathBar.css": "./src/path/PathBar.css",
     "./src/icon/Icon": "./src/icon/Icon.jsx",
     "./src/icon/SpinningCircle": "./src/icon/SpinningCircle.jsx",
-    "./src/auth/Login": "./src/auth/Login.jsx"
+    "./src/icon/PdfIcon": "./src/icon/PdfIcon.jsx",
+    "./src/auth/Login": "./src/auth/Login.jsx",
+    "./src/menu/Menu": "./src/menu/Menu.tsx",
+    "./src/menu/Menu.css": "./src/menu/Menu.css",
+    "./src/database/DatabaseSetup.css": "./src/database/DatabaseSetup.css",
+    "./src/database/TableManage.css": "./src/database/TableManage.css"
   },
   "scripts": {
     "dev": "vite",

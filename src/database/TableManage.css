@@ -1,0 +1,209 @@
+.table-card {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-card-header {
+  padding: 12px;
+  border-bottom: 1px solid #dee2e6;
+  flex-grow: 1;  /* Grow to fill available space */
+}
+
+.table-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.table-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-type-badge {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #e9ecef;
+  color: #495057;
+  letter-spacing: 0.5px;
+}
+
+.table-name-status-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-name {
+  font-family: monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: #212529;
+}
+
+.table-status {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+}
+
+.table-status.exists {
+  color: #155724;
+  background: #d4edda;
+}
+
+.table-status.missing {
+  color: #721c24;
+  background: #f8d7da;
+}
+
+.table-status.loading-status {
+  background: #e7f3ff;
+  color: #004085;
+}
+
+.table-description {
+  margin: 0;
+  font-size: 13px;
+  color: #adb5bd;
+  line-height: 1.4;
+}
+
+.table-card-actions {
+  padding: 8px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-shrink: 0;  /* Don't shrink */
+  flex-grow: 0;    /* Don't grow - stay natural height! */
+}
+
+.table-card-actions button {
+  padding: 6px 12px;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-how-to-create,
+.btn-view-sql {
+  padding: 6px 12px;
+  background: #17a2b8;
+  color: white;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-how-to-create:hover,
+.btn-view-sql:hover {
+  background: #138496;
+}
+
+.btn-how-to-empty {
+  padding: 6px 12px;
+  background: #ffc107;
+  color: #212529;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-how-to-empty:hover {
+  background: #e0a800;
+}
+
+.btn-how-to-delete {
+  padding: 6px 12px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-how-to-delete:hover {
+  background: #c82333;
+}
+
+.table-card-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.card-loading {
+  font-size: 13px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.btn-recheck {
+  padding: 2px 8px;
+  background: #e9ecef;
+  color: #495057;
+  border: 1px solid #ced4da;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-recheck:hover {
+  background: #dee2e6;
+}
+
+/* SQL Display */
+.sql-display {
+  margin: 0 12px 12px 12px;
+  border: 1px solid #dee2e6;
+  background: #f8f9fa;
+}
+
+.sql-header {
+  padding: 8px 12px;
+  background: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.sql-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-copy-small {
+  padding: 4px 8px;
+  background: #007bff;
+  color: white;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-copy-small:hover {
+  background: #0056b3;
+}
+
+.sql-code-small {
+  margin: 0;
+  padding: 8px;
+  background: #ffffff;
+  border: none;
+  font-family: monospace;
+  font-size: 12px;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre;
+}
+

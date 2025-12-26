@@ -1,5 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import './Menu.css'
+
+/**
+ * Multi-level context menu with right-click repositioning support
+ * 
+ * How right-click outside works:
+ * - Backdrop intercepts onContextMenu (right-click) in addition to onClick (left-click)
+ * - Right-click → backdrop onContextMenu → parent handler repositions menu at new coordinates
+ * - Left-click → backdrop onClick → closes menu
+ * - Key: onContextMenu on backdrop prevents browser's default menu and allows repositioning
+ */
 
 export interface MenuItemBase {
   name: string
@@ -31,6 +41,12 @@ interface MenuProps {
 const Menu: React.FC<MenuProps> = ({ items, position, onClose, onItemClick, onContextMenu }) => {
   const [hoveredSubmenu, setHoveredSubmenu] = useState<number | null>(null)
   const [submenuPosition, setSubmenuPosition] = useState<{ x: number; y: number } | null>(null)
+
+  // Reset submenu state when menu position changes (e.g., from right-click reposition)
+  useEffect(() => {
+    setHoveredSubmenu(null)
+    setSubmenuPosition(null)
+  }, [position.x, position.y])
 
   const handleItemClick = (item: MenuItem) => {
     if (item.type === 'item') {

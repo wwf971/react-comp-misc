@@ -77,6 +77,22 @@ const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(
     }
   }, [config]);
 
+  // Switch to last tab when tabs are added
+  React.useEffect(() => {
+    const lastTabKey = tabs[tabs.length - 1]?.key;
+    if (lastTabKey && tabs.length > 0 && lastTabKey !== activeTabKey) {
+      // Check if this is a new tab (not in previous render)
+      const prevTabCount = Object.keys(panels).length;
+      if (prevTabCount === tabs.length) {
+        // New tab was added, switch to it
+        setActiveTabKey(lastTabKey);
+        if (onTabChange) {
+          onTabChange(lastTabKey);
+        }
+      }
+    }
+  }, [tabs.length]);
+
   const switchToTab = (tabIdentifier: string) => {
     // Support both tab key (tab-1) and label (Users, JWT Tokens)
     const targetKey = tabKeyMap[tabIdentifier] || tabIdentifier;

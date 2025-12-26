@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import './Login.css'
+import { EyeIcon, EyeOffIcon } from '../icon/Icon'
 
 /**
  * Login Component - Reusable login form with timeout error handling
@@ -30,6 +31,7 @@ function Login({
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [loginMode, setLoginMode] = useState('credentials') // 'credentials' or 'token'
+  const [showPassword, setShowPassword] = useState(false)
   const hasAttemptedAutoLogin = useRef(false)
 
   // Load existing token from localStorage on mount
@@ -174,14 +176,25 @@ function Login({
             </div>
             <div className="form-group">
               <label htmlFor="password">Password:</label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOffIcon width={20} height={20} /> : <EyeIcon width={20} height={20} />}
+                </button>
+              </div>
             </div>
             <button type="submit" disabled={loading} style={{ marginTop: '8px' }}>
               {loading ? 'Logging in...' : 'Login'}
