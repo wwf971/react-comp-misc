@@ -1,5 +1,6 @@
 import React, { useState, ReactNode } from 'react';
 import './MasterDetail.css';
+import MasterDetailInfiLevel from './MasterDetailInfiLevel';
 
 // Type definitions
 interface Tab {
@@ -92,6 +93,7 @@ const renderPanels = (
 
 /**
  * MasterDetail - Reusable component with tabs on left (master), panels on right (detail)
+ * Automatically delegates to MasterDetailInfiLevel if nesting depth > 2
  */
 const MasterDetail: React.FC<MasterDetailProps> = ({
   title,
@@ -99,6 +101,23 @@ const MasterDetail: React.FC<MasterDetailProps> = ({
   children,
   lazyRender = true
 }) => {
+  // Detect nesting depth first
+  const maxDepth = detectMaxDepth(children);
+  
+  // If depth > 2, delegate to infinite-level component
+  if (maxDepth > 2) {
+    return (
+      <MasterDetailInfiLevel
+        title={title}
+        sidebarWidth={sidebarWidth}
+        lazyRender={lazyRender}
+      >
+        {children}
+      </MasterDetailInfiLevel>
+    );
+  }
+  
+  // Otherwise, use two-level implementation
   // Extract configuration from children - only run once
   const [config] = useState(() => extractTabStructure(children));
   const { tabs: initialTabs, subtabs, panels } = config;
@@ -363,6 +382,35 @@ const genTabKey = () => `tab-${++tabCounter}`;
 // Generate unique subtab keys
 let subTabCounter = 0;
 const genSubTabKey = () => `subtab-${++subTabCounter}`;
+
+/**
+ * Detect maximum nesting depth in children structure
+ * Returns: 1 for Tab only, 2 for Tab+SubTab, 3+ for deeper nesting
+ */
+const detectMaxDepth = (children: ReactNode, currentDepth: number = 1): number => {
+  let maxDepth = currentDepth;
+  
+  React.Children.forEach(children, (child: any) => {
+    if (child && child.type && (child.type.__isTabSlot || child.type.__isSubTabSlot)) {
+      let childMaxDepth = currentDepth;
+      
+      // Check if this node has SubTab children (not Panel)
+      let hasSubTabChildren = false;
+      React.Children.forEach(child.props.children, (subChild: any) => {
+        if (subChild && subChild.type && subChild.type.__isSubTabSlot) {
+          hasSubTabChildren = true;
+          // Recursively check depth of SubTab children
+          const subDepth = detectMaxDepth(child.props.children, currentDepth + 1);
+          childMaxDepth = Math.max(childMaxDepth, subDepth);
+        }
+      });
+      
+      maxDepth = Math.max(maxDepth, childMaxDepth);
+    }
+  });
+  
+  return maxDepth;
+};
 
 /**
  * Helper function to extract tab/subtab/panel configuration from children
