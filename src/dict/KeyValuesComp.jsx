@@ -162,37 +162,74 @@ const KeyValuesComp = ({
 
   // Calculate minimum key column width when keyColWidth is 'min'
   useEffect(() => {
-    if (alignColumn && keyColWidth === 'min' && keyRefs.current.length > 0) {
+    if (!alignColumn) {
+      setKeyColWidthValue(null);
+      return;
+    }
+    
+    if (keyColWidth !== 'min') {
+      setKeyColWidthValue(keyColWidth);
+      return;
+    }
+    
+    if (data.length === 0) {
+      setKeyColWidthValue(null);
+      return;
+    }
+
+    // Measure the natural width of each key cell and find the maximum
+    const measureMaxWidth = () => {
+      // Create canvas for measuring text (doesn't affect DOM or selection)
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
       let maxWidth = 0;
       
       keyRefs.current.forEach(ref => {
         if (ref) {
-          const container = ref.closest('.keyvalues-cell');
-          if (container) {
-            const originalWidth = container.style.width;
-            const originalFlexShrink = container.style.flexShrink;
-            container.style.width = 'auto';
-            container.style.flexShrink = '0';
+          const cell = ref.closest('.keyvalues-cell');
+          if (cell) {
+            const text = ref.textContent || '';
             
-            const rect = container.getBoundingClientRect();
-            const width = Math.ceil(rect.width);
+            // Get the computed font style for accurate measurement
+            const styles = window.getComputedStyle(ref);
+            ctx.font = `${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
             
-            if (width > maxWidth) {
-              maxWidth = width;
+            // Measure text width
+            const textWidth = ctx.measureText(text).width;
+            
+            // Add the cell's padding
+            const cellStyles = window.getComputedStyle(cell);
+            const paddingLeft = parseFloat(cellStyles.paddingLeft) || 0;
+            const paddingRight = parseFloat(cellStyles.paddingRight) || 0;
+            
+            const totalWidth = Math.ceil(textWidth + paddingLeft + paddingRight);
+            
+            if (totalWidth > maxWidth) {
+              maxWidth = totalWidth;
             }
-            
-            container.style.width = originalWidth;
-            container.style.flexShrink = originalFlexShrink;
           }
         }
       });
       
-      setKeyColWidthValue(maxWidth > 0 ? `${maxWidth}px` : null);
-    } else if (alignColumn && keyColWidth !== 'min') {
-      setKeyColWidthValue(keyColWidth);
-    } else {
-      setKeyColWidthValue(null);
-    }
+      if (maxWidth > 0) {
+        setKeyColWidthValue(`${maxWidth}px`);
+      }
+    };
+
+    // Use ResizeObserver to re-measure when content changes
+    const resizeObserver = new ResizeObserver(measureMaxWidth);
+    
+    keyRefs.current.forEach(ref => {
+      if (ref) {
+        resizeObserver.observe(ref);
+      }
+    });
+
+    // Initial measurement
+    measureMaxWidth();
+
+    return () => resizeObserver.disconnect();
   }, [data, alignColumn, keyColWidth]);
 
   return (
@@ -220,7 +257,7 @@ const KeyValuesComp = ({
                   className={`keyvalues-cell key-cell ${canEditKey ? 'editable' : ''}`}
                   style={alignColumn && keyColWidthValue ? { width: keyColWidthValue, flexShrink: 0 } : {}}
                 >
-                  <div ref={(el) => { keyRefs.current[index] = el; }}>
+                  <span ref={(el) => { keyRefs.current[index] = el; }}>
                     <KeyComp 
                       data={item.key}
                       onChangeAttempt={onChangeAttempt}
@@ -228,7 +265,7 @@ const KeyValuesComp = ({
                       field="key"
                       index={index}
                     />
-                  </div>
+                  </span>
                 </div>
                 <div 
                   className={`keyvalues-cell value-cell ${canEditValue ? 'editable' : ''}`}

@@ -80,44 +80,74 @@ const KeyValues = ({
 
   // Calculate minimum key column width when keyColWidth is 'min'
   useEffect(() => {
-    if (alignColumn && keyColWidth === 'min' && keyRefs.current.length > 0) {
-      // First pass: measure natural widths without constraints
-      // We need to temporarily remove width constraints to get accurate measurements
+    if (!alignColumn) {
+      setKeyColWidthValue(null);
+      return;
+    }
+    
+    if (keyColWidth !== 'min') {
+      setKeyColWidthValue(keyColWidth);
+      return;
+    }
+    
+    if (data.length === 0) {
+      setKeyColWidthValue(null);
+      return;
+    }
+
+    // Measure the natural width of each key cell and find the maximum
+    const measureMaxWidth = () => {
+      // Create canvas for measuring text (doesn't affect DOM or selection)
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
       let maxWidth = 0;
       
       keyRefs.current.forEach(ref => {
         if (ref) {
-          // Get the parent container to measure
-          const container = ref.closest('.keyvalues-cell');
-          if (container) {
-            const originalWidth = container.style.width;
-            const originalFlexShrink = container.style.flexShrink;
-            // Temporarily remove width constraint
-            container.style.width = 'auto';
-            container.style.flexShrink = '0';
+          const cell = ref.closest('.keyvalues-cell');
+          if (cell) {
+            const text = ref.textContent || '';
             
-            // Measure the cell's actual width including padding
-            // Use getBoundingClientRect for accurate measurement
-            const rect = container.getBoundingClientRect();
-            const width = Math.ceil(rect.width);
+            // Get the computed font style for accurate measurement
+            const styles = window.getComputedStyle(ref);
+            ctx.font = `${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
             
-            if (width > maxWidth) {
-              maxWidth = width;
+            // Measure text width
+            const textWidth = ctx.measureText(text).width;
+            
+            // Add the cell's padding
+            const cellStyles = window.getComputedStyle(cell);
+            const paddingLeft = parseFloat(cellStyles.paddingLeft) || 0;
+            const paddingRight = parseFloat(cellStyles.paddingRight) || 0;
+            
+            const totalWidth = Math.ceil(textWidth + paddingLeft + paddingRight);
+            
+            if (totalWidth > maxWidth) {
+              maxWidth = totalWidth;
             }
-            
-            // Restore original styles
-            container.style.width = originalWidth;
-            container.style.flexShrink = originalFlexShrink;
           }
         }
       });
       
-      setKeyColWidthValue(maxWidth > 0 ? `${maxWidth}px` : null);
-    } else if (alignColumn && keyColWidth !== 'min') {
-      setKeyColWidthValue(keyColWidth);
-    } else {
-      setKeyColWidthValue(null);
-    }
+      if (maxWidth > 0) {
+        setKeyColWidthValue(`${maxWidth}px`);
+      }
+    };
+
+    // Use ResizeObserver to re-measure when content changes
+    const resizeObserver = new ResizeObserver(measureMaxWidth);
+    
+    keyRefs.current.forEach(ref => {
+      if (ref) {
+        resizeObserver.observe(ref);
+      }
+    });
+
+    // Initial measurement
+    measureMaxWidth();
+
+    return () => resizeObserver.disconnect();
   }, [data, alignColumn, keyColWidth]);
 
   useEffect(() => {

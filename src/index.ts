@@ -48,6 +48,7 @@ export type { ConfigStruct, ConfigItemStruct, ConfigItemType, ConfigProps, Missi
 export { default as PathBar } from "./path/PathBar.tsx";
 
 export { default as KeyValues } from "./dict/KeyValues.jsx";
+export { default as KeyValuesComp } from "./dict/KeyValuesComp.jsx";
 
 export { default as Menu } from "./menu/Menu";
 export type { MenuItem, MenuItemSingle, MenuItemSubmenu } from "./menu/Menu";
