@@ -12,5 +12,14 @@ pnpm run dev
 ## Usage
 
 ```javascript
-import { Login, MasterDetail, Tab, SubTab, Panel } from '@wwf971/react-comp-misc';
+// All components include their CSS automatically
+import { 
+  Login, 
+  MasterDetail, 
+  MasterDetailTab as Tab,
+  MasterDetailSubTab as SubTab,
+  MasterDetailPanel as Panel,
+  TabsOnTop,
+  KeyValues
+} from '@wwf971/react-comp-misc';
 ```

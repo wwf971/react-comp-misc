@@ -1,6 +1,6 @@
 // Import examples from component folders
 import { authExamples } from '../auth/example.jsx';
-import { layoutExamples } from '../layout/example.jsx';
+import { layoutExamples } from '../layout/master-detail/example.jsx';
 import { iconExamples } from '../icon/example.jsx';
 import { configExamples } from '../config/example.jsx';
 import { pathExamples } from '../path/example.jsx';

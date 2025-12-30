@@ -15,7 +15,10 @@ export {
     CrossIcon,
     AddIcon,
     SpinningCircle,
-    FolderIcon
+    FolderIcon,
+    EditIconNotepad,
+    EditIcon,
+    EditIconPen
 } from "./icon/Icon.jsx";
 
 export { default as PdfIcon } from "./icon/PdfIcon.jsx";
@@ -27,7 +30,12 @@ export {
     get_cookie,
 } from "./common.js";
 
-export { default as MasterDetail, Tab, SubTab, Panel } from "./layout/MasterDetail.tsx";
+export { 
+    default as MasterDetail, 
+    Tab as MasterDetailTab, 
+    SubTab as MasterDetailSubTab, 
+    Panel as MasterDetailPanel 
+} from "./layout/master-detail/MasterDetail.tsx";
 
 export { default as TabsOnTop } from "./layout/tab/TabsOnTop.tsx";
 export type { TabsOnTopRef, TabsOnTopProps } from "./layout/tab/TabsOnTop.tsx";

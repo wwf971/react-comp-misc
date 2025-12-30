@@ -15,6 +15,8 @@ import CrossIcon from './CrossIcon';
 import AddIcon from './AddIcon';
 import SpinningCircle from './SpinningCircle';
 import FolderIcon from './FolderIcon';
+import EditIconNotepad from './EditIcon';
+import EditIconPen from './EditIconPen';
 
 export {
 	FileIconDefault,
@@ -32,5 +34,8 @@ export {
 	CrossIcon,
 	AddIcon,
 	SpinningCircle,
-	FolderIcon
+	FolderIcon,
+	EditIconNotepad,
+	EditIconNotepad as EditIcon,
+	EditIconPen
 }
