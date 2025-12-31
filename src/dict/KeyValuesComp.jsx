@@ -132,6 +132,13 @@ const DefaultTextComp = ({
   );
 };
 
+// Memoize to prevent re-renders when data unchanged
+const MemoizedDefaultTextComp = React.memo(DefaultTextComp, (prev, next) => {
+  return prev.data === next.data && 
+         prev.isEditable === next.isEditable &&
+         prev.onChangeAttempt === next.onChangeAttempt;
+});
+
 /**
  * KeyValuesComp component for displaying key-value pairs with custom components
  * 
@@ -239,9 +246,9 @@ const KeyValuesComp = ({
       ) : (
         <div className="keyvalues-list">
           {data.map((item, index) => {
-            // Use custom component or default
-            const KeyComp = item.keyComp || DefaultTextComp;
-            const ValueComp = item.valueComp || DefaultTextComp;
+            // Use custom component or default (use memoized version)
+            const KeyComp = item.keyComp || MemoizedDefaultTextComp;
+            const ValueComp = item.valueComp || MemoizedDefaultTextComp;
 
             return (
               <div 
@@ -288,6 +295,16 @@ const KeyValuesComp = ({
   );
 };
 
-export default KeyValuesComp;
-export { DefaultTextComp };
+export default React.memo(KeyValuesComp, (prev, next) => {
+  // Compare all props that affect rendering
+  return prev.data === next.data && 
+         prev.isEditable === next.isEditable &&
+         prev.isKeyEditable === next.isKeyEditable &&
+         prev.isValueEditable === next.isValueEditable &&
+         prev.alignColumn === next.alignColumn &&
+         prev.keyColWidth === next.keyColWidth &&
+         prev.onChangeAttempt === next.onChangeAttempt;
+});
+
+export { DefaultTextComp, MemoizedDefaultTextComp };
 
