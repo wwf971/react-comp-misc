@@ -1,19 +1,13 @@
 import React from 'react';
 import { useJsonContext } from './JsonContext';
-import { getAvailableConversions } from './typeConvert';
 import './JsonComp.css';
 
 /**
- * JsonNullComp - Display null values
+ * EmptyList - Display empty array []
  * Can be converted to other types via right-click
  */
-const JsonNullComp = ({ path }) => {
+const EmptyList = ({ path }) => {
   const { showConversionMenu } = useJsonContext();
-  
-  // Render tracking
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[Render] JsonNullComp: ${path}`);
-  }
   
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -25,25 +19,22 @@ const JsonNullComp = ({ path }) => {
       
       showConversionMenu({
         position: { x: e.clientX, y: e.clientY },
-        currentValue: null,
-        currentType: 'null',
-        path,
-        menuType: isArrayItem ? 'arrayItem' : 'value',
-        value: null,
-        availableConversions: getAvailableConversions(null, 'null')
+        menuType: isArrayItem ? 'arrayItem' : 'emptyList',
+        path: path,
+        value: []
       });
     }
   };
   
   return (
     <span 
-      className="json-value json-null"
+      className="json-value json-empty-array"
       onContextMenu={handleContextMenu}
     >
-      null
+      {'[ ]'}
     </span>
   );
 };
 
-export default JsonNullComp;
+export default EmptyList;
 

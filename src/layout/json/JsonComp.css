@@ -5,6 +5,48 @@
   line-height: 1.6;
 }
 
+.json-object-in-array {
+  position: relative;
+  padding-left: 11px;
+  margin-left: 0;
+  margin-bottom: 4px;
+}
+
+.json-object-in-array::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background-color: #4a90e2;
+}
+
+.json-object-in-array > .json-object-items {
+  padding-left: 0;
+}
+
+.json-array-in-array {
+  position: relative;
+  padding-left: 11px;
+  margin-left: 0;
+  margin-bottom: 4px;
+}
+
+.json-array-in-array::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background-color: #4aae60;
+}
+
+.json-array-in-array > .json-array-items {
+  padding-left: 0;
+}
+
 .json-bracket {
   display: none;
 }
@@ -12,11 +54,6 @@
 .json-object-items,
 .json-array-items {
   padding-left: var(--json-indent, 40px);
-}
-
-.json-object-item:first-child,
-.json-array-item:first-child {
-  margin-top: 2px;
 }
 
 .json-object,
@@ -140,6 +177,30 @@
 .json-empty-object,
 .json-empty-array {
   color: #999;
+  display: inline;
+}
+
+.json-array-index {
+  color: #888;
+  font-size: 12px;
+  margin-right: 6px;
+  cursor: context-menu;
+  user-select: none;
+}
+
+/* Pseudo items (being created) */
+.json-pseudo {
+  opacity: 0.7;
+  background-color: #fffbf0;
+  padding: 2px 4px;
+  border-radius: 2px;
+  border: 1px dashed #ffa726;
+}
+
+.json-pseudo input {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
 }
 
 .json-comma {
@@ -151,10 +212,8 @@
 .json-key.editable,
 .json-value.editable {
   cursor: pointer;
-  border-radius: 2px;
   padding: 2px 4px;
   margin: -2px -4px;
-  transition: background-color 0.15s;
 }
 
 .json-key.editable:hover,
@@ -192,10 +251,8 @@
 
 .json-list-item-value.editable {
   cursor: pointer;
-  border-radius: 2px;
   padding: 2px 4px;
   margin: -2px -4px;
-  transition: background-color 0.15s;
 }
 
 .json-list-item-value.editable:hover {
@@ -210,6 +267,14 @@
   margin: -3px -5px;
   border-radius: 2px;
   box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+}
+
+/* Highlighted state when right-click menu is open */
+.json-value.highlighted,
+.json-list-item-value.highlighted {
+  border: 2px solid #ff9800;
+  padding: 0px 2px;
+  margin: -2px -4px;
 }
 
 /* Spinner */

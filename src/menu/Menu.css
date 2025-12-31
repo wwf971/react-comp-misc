@@ -29,8 +29,13 @@
   gap: 12px;
 }
 
-.context-menu-item:hover {
+.context-menu-item:hover:not(.disabled) {
   background-color: #e3f2fd;
+}
+
+.context-menu-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .context-menu-item.has-submenu {

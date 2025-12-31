@@ -4,6 +4,8 @@ import JsonTextComp from './JsonTextComp';
 import JsonNumberComp from './JsonNumberComp';
 import JsonBoolComp from './JsonBoolComp';
 import JsonNullComp from './JsonNullComp';
+import EmptyDict from './EmptyDict';
+import { useJsonContext } from './JsonContext';
 import './JsonComp.css';
 
 /**
@@ -22,6 +24,7 @@ const JsonKeyValueComp = ({
 }) => {
   const [isEditingKey, setIsEditingKey] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showConversionMenu } = useJsonContext();
   
   const keyRef = useRef(null);
   const originalValueRef = useRef('');
@@ -69,12 +72,14 @@ const JsonKeyValueComp = ({
     
     try {
       if (onChange) {
-        // For key changes, we need to delete old key and create new key
-        const pathParts = path.split('.');
-        pathParts[pathParts.length - 1] = newKey;
-        const newPath = pathParts.join('.');
+        // For key changes, send structured format with special _keyRename marker
+        const changeData = {
+          old: { type: 'key', value: originalValueRef.current },
+          new: { type: 'key', value: newKey },
+          _keyRename: true
+        };
         
-        const result = await onChange(path, { _renameKey: newKey });
+        const result = await onChange(path, changeData);
         
         if (result.code !== 0) {
           console.error('Failed to update key:', result.message);
@@ -113,14 +118,35 @@ const JsonKeyValueComp = ({
     }
   };
 
+  // Handle context menu on key
+  const handleKeyContextMenu = (e) => {
+    if (!isEditable) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (showConversionMenu) {
+      showConversionMenu({
+        position: { x: e.clientX, y: e.clientY },
+        menuType: 'key',
+        itemKey: itemKey,
+        path: path,
+        value: value
+      });
+    }
+  };
+
   // Render appropriate value component based on type
   const renderValueComponent = () => {
     if (!isPrimitive) {
+      // Check if it's an empty object
+      if (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length === 0) {
+        return <EmptyDict path={path} />;
+      }
       return <span className="json-value-complex">{children}</span>;
     }
 
     if (valueType === 'null') {
-      return <JsonNullComp />;
+      return <JsonNullComp path={path} />;
     } else if (valueType === 'boolean') {
       return (
         <JsonBoolComp
@@ -163,6 +189,7 @@ const JsonKeyValueComp = ({
             onBlur={handleKeyBlur}
             onKeyDown={handleKeyDown}
             onClick={handleKeyClick}
+            onContextMenu={handleKeyContextMenu}
             suppressContentEditableWarning={true}
           >
             {itemKey}

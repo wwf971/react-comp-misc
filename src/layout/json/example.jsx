@@ -78,8 +78,58 @@ const JsonExamplesPanel = () => {
   const [message, setMessage] = useState('');
 
   // Handler for editable data
-  const handleEditableChange = useCallback(async (path, newValue) => {
-    console.log(`Change: ${path} = ${newValue}`);
+  const handleEditableChange = useCallback(async (path, changeData) => {
+    const { old, new: newData, _action, _parentPath, _key } = changeData;
+    console.log(`Change:`, { path, _action, _parentPath, changeData });
+    
+    // For pseudo-related actions, execute immediately without delay/errors (just UI state)
+    switch (_action) {
+      case 'addEntry':
+      case 'addEntryAbove':
+      case 'addEntryBelow':
+      case 'cancelCreate':
+        setEditableData(prevData => {
+          const result = JSON.parse(JSON.stringify(prevData));
+          const keys = path.split('.');
+          
+          switch (_action) {
+            case 'addEntry': {
+              // Add pseudo entry to empty dict
+              const targetObj = keys.length === 0 || keys[0] === '' ? result : keys.reduce((obj, key) => obj[key], result);
+              if (!targetObj.__pseudo__) targetObj.__pseudo__ = [];
+              targetObj.__pseudo__.push({ path });
+              return result;
+            }
+            case 'addEntryAbove':
+            case 'addEntryBelow': {
+              // Add pseudo entry above/below current entry (at root level)
+              if (!result.__pseudo__) result.__pseudo__ = [];
+              result.__pseudo__.push({ 
+                path: '', 
+                position: _action === 'addEntryAbove' ? 'above' : 'below', 
+                referenceKey: keys[0]
+              });
+              return result;
+            }
+            case 'cancelCreate': {
+              // Remove pseudo entry
+              const parentObj = keys.length === 0 || keys[0] === '' ? result : keys.slice(0, -1).reduce((obj, key) => obj[key], result);
+              if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
+                // Remove the first pseudo item (the one being cancelled)
+                parentObj.__pseudo__.shift();
+                // If array is now empty, delete the property
+                if (parentObj.__pseudo__.length === 0) {
+                  delete parentObj.__pseudo__;
+                }
+              }
+              return result;
+            }
+          }
+        });
+        return { code: 0, message: 'Success' };
+    }
+    
+    // For actual data operations, apply delay and error simulation
     setMessage(`Updating ${path}...`);
     
     // Simulate network delay (optional - comment out for instant updates)
@@ -90,22 +140,89 @@ const JsonExamplesPanel = () => {
 
     if (success) {
       setEditableData(prevData => {
-        const newData = { ...prevData };
+        const result = JSON.parse(JSON.stringify(prevData));
         const keys = path.split('.');
-        let current = newData;
         
-        for (let i = 0; i < keys.length - 1; i++) {
-          current = current[keys[i]];
+        switch (_action) {
+          case 'createEntry': {
+            // Convert pseudo to real entry
+            const parentObj = keys.length === 0 || keys[0] === '' ? result : keys.slice(0, -1).reduce((obj, key) => obj[key], result);
+            parentObj[_key] = newData.value;
+            // Remove the pseudo item from __pseudo__ array
+            if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
+              console.log('Removing pseudo item from __pseudo__ array');
+              // Remove the first pseudo item (the one being converted)
+              parentObj.__pseudo__.shift();
+              // If array is now empty, delete the property
+              if (parentObj.__pseudo__.length === 0) {
+                delete parentObj.__pseudo__;
+              }
+            }
+            console.log('After createEntry, result:', result);
+            return result;
+          }
+          case 'deleteEntry': {
+            // Delete this entry
+            let current = result;
+            for (let i = 0; i < keys.length - 1; i++) {
+              current = current[keys[i]];
+            }
+            delete current[keys[keys.length - 1]];
+            break;
+          }
+          case 'deleteParentDict': {
+            // Delete the parent dict
+            if (_parentPath === '') {
+              return {};  // Parent is root
+            }
+            const parentParts = _parentPath.split('.').filter(p => p !== '');
+            let current = result;
+            for (let i = 0; i < parentParts.length - 1; i++) {
+              current = current[parentParts[i]];
+            }
+            const lastKey = parentParts[parentParts.length - 1];
+            current[lastKey] = null;
+            break;
+          }
+          case 'clearParentDict': {
+            // Clear all entries in parent dict
+            if (_parentPath === '') {
+              return {};  // Parent is root
+            }
+            const parentParts = _parentPath.split('.').filter(p => p !== '');
+            let current = result;
+            for (let i = 0; i < parentParts.length - 1; i++) {
+              current = current[parentParts[i]];
+            }
+            current[parentParts[parentParts.length - 1]] = {};
+            break;
+          }
+          default: {
+            // Normal value change
+            let current = result;
+            for (let i = 0; i < keys.length - 1; i++) {
+              current = current[keys[i]];
+            }
+            
+            // Determine final value based on whether types match
+            let finalValue = newData.value;
+            if (old.type === newData.type && newData.type === 'number' && typeof newData.value === 'string') {
+              // User edited a number field - parse string input to number
+              finalValue = !isNaN(newData.value) ? Number(newData.value) : old.value;
+            } else if (old.type !== newData.type) {
+              // Type conversion - use the converted value directly (already correct type)
+              finalValue = newData.value;
+            } else {
+              // Same type - use new value as is
+              finalValue = newData.value;
+            }
+            
+            current[keys[keys.length - 1]] = finalValue;
+          }
         }
         
-        // Parse value to correct type
-        let parsedValue = newValue;
-        if (newValue === 'true') parsedValue = true;
-        else if (newValue === 'false') parsedValue = false;
-        else if (!isNaN(newValue) && newValue.trim() !== '') parsedValue = Number(newValue);
-        
-        current[keys[keys.length - 1]] = parsedValue;
-        return newData;
+        console.log('After update, data:', JSON.stringify(result, null, 2));
+        return result;
       });
 
       setMessage(`✓ Updated ${path} successfully`);
@@ -119,102 +236,640 @@ const JsonExamplesPanel = () => {
   }, []);
 
   // Handler for complex nested data
-  const handleComplexChange = useCallback(async (path, newValue) => {
-    console.log(`Complex change: ${path} = ${newValue}`);
+  const handleComplexChange = useCallback(async (path, changeData) => {
+    const { old, new: newData, _action, _parentPath, _itemPath, _keyRename, _key } = changeData;
+    console.log(`Complex change:`, { path, _action, _parentPath, _itemPath, changeData });
     
+    // For pseudo-related actions, execute immediately without delay (just UI state)
+    switch (_action) {
+      case 'addEntry':
+      case 'addEntryAbove':
+      case 'addEntryBelow':
+      case 'addItem':
+      case 'addItemAbove':
+      case 'addItemBelow':
+      case 'cancelCreate':
+        setComplexData(prevData => {
+          const result = JSON.parse(JSON.stringify(prevData));
+          const pathParts = path.split('.').flatMap(part => 
+            part.startsWith('.') ? [part.slice(1)] : [part]
+          ).filter(part => part !== '');
+          
+          switch (_action) {
+            case 'addEntry': {
+              // Add pseudo entry to empty dict
+              const targetObj = pathParts.length === 0 ? result : pathParts.reduce((obj, key) => obj[key], result);
+              if (!targetObj.__pseudo__) targetObj.__pseudo__ = [];
+              targetObj.__pseudo__.push({ path });
+              return result;
+            }
+            case 'addEntryAbove':
+            case 'addEntryBelow': {
+              // Add pseudo entry above/below current entry
+              const parentObj = pathParts.length === 1 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
+              if (!parentObj.__pseudo__) parentObj.__pseudo__ = [];
+              parentObj.__pseudo__.push({ path: pathParts.slice(0, -1).join('.'), position: _action === 'addEntryAbove' ? 'above' : 'below', referenceKey: pathParts[pathParts.length - 1] });
+              return result;
+            }
+            case 'addItem':
+            case 'addItemAbove':
+            case 'addItemBelow': {
+              // Add pseudo item to array
+              const pathIsArray = path.includes('..');
+              if (pathIsArray) {
+                // Parse path like "tags..0" or "user.roles..2"
+                const parts = path.split('..');
+                let current = result;
+                
+                // First part: navigate through object keys
+                if (parts[0]) {
+                  const objKeys = parts[0].split('.').filter(k => k !== '');
+                  for (const key of objKeys) {
+                    current = current[key];
+                  }
+                }
+                
+                // Remaining parts: navigate through array indices (except last)
+                for (let i = 1; i < parts.length - 1; i++) {
+                  const index = parseInt(parts[i]);
+                  current = current[index];
+                }
+                
+                const targetIndex = parseInt(parts[parts.length - 1]);
+                if (_action === 'addItemAbove') {
+                  current.splice(targetIndex, 0, { isPseudo: true });
+                } else if (_action === 'addItemBelow') {
+                  current.splice(targetIndex + 1, 0, { isPseudo: true });
+                }
+              } else {
+                // Empty array - add to it
+                const targetArray = pathParts.length === 0 ? result : pathParts.reduce((obj, key) => obj[key], result);
+                if (Array.isArray(targetArray)) {
+                  targetArray.push({ isPseudo: true });
+                }
+              }
+              return result;
+            }
+            case 'cancelCreate': {
+              // Remove pseudo entry/item
+              if (path.includes('..')) {
+                // Array item - parse path like "tags..0"
+                const parts = path.split('..');
+                let current = result;
+                
+                // First part: navigate through object keys
+                if (parts[0]) {
+                  const objKeys = parts[0].split('.').filter(k => k !== '');
+                  for (const key of objKeys) {
+                    current = current[key];
+                  }
+                }
+                
+                // Remaining parts: navigate through array indices (except last)
+                for (let i = 1; i < parts.length - 1; i++) {
+                  const index = parseInt(parts[i]);
+                  current = current[index];
+                }
+                
+                const targetIndex = parseInt(parts[parts.length - 1]);
+                current.splice(targetIndex, 1);
+              } else {
+                // Dict entry
+                const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
+                if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
+                  // Remove the first pseudo item (the one being cancelled)
+                  parentObj.__pseudo__.shift();
+                  // If array is now empty, delete the property
+                  if (parentObj.__pseudo__.length === 0) {
+                    delete parentObj.__pseudo__;
+                  }
+                }
+              }
+              return result;
+            }
+          }
+        });
+        return { code: 0 };
+    }
+    
+    // For actual data operations, apply delay
     await new Promise(resolve => setTimeout(resolve, 200));
 
     setComplexData(prevData => {
-      const newData = JSON.parse(JSON.stringify(prevData));
-      const pathRegex = /([^\[\].]+)|\[(\d+)\]/g;
-      const pathParts = [];
-      let match;
+      const result = JSON.parse(JSON.stringify(prevData));
+      const pathParts = path.split('.').flatMap(part => 
+        part.startsWith('.') ? [part.slice(1)] : [part]
+      ).filter(part => part !== '');
       
-      while ((match = pathRegex.exec(path)) !== null) {
-        pathParts.push(match[1] || match[2]);
+      // Handle key rename first (special case)
+      if (_keyRename) {
+        let current = result;
+        for (let i = 0; i < pathParts.length - 1; i++) {
+          current = current[pathParts[i]];
+        }
+        const oldKey = pathParts[pathParts.length - 1];
+        const newKey = newData.value;
+        const value = current[oldKey];
+        delete current[oldKey];
+        current[newKey] = value;
+      } else {
+        switch (_action) {
+          case 'createEntry': {
+            // Convert pseudo to real entry
+            const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
+            parentObj[_key] = newData.value;
+            // Remove the pseudo item from __pseudo__ array
+            if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
+              // Remove the first pseudo item (the one being converted)
+              parentObj.__pseudo__.shift();
+              // If array is now empty, delete the property
+              if (parentObj.__pseudo__.length === 0) {
+                delete parentObj.__pseudo__;
+              }
+            }
+            return result;
+          }
+          case 'createItem': {
+            // Convert pseudo array item to real item - parse path like "tags..0"
+            const parts = path.split('..');
+            let current = result;
+            
+            // First part: navigate through object keys
+            if (parts[0]) {
+              const objKeys = parts[0].split('.').filter(k => k !== '');
+              for (const key of objKeys) {
+                current = current[key];
+              }
+            }
+            
+            // Remaining parts: navigate through array indices (except last)
+            for (let i = 1; i < parts.length - 1; i++) {
+              const index = parseInt(parts[i]);
+              current = current[index];
+            }
+            
+            const targetIndex = parseInt(parts[parts.length - 1]);
+            current[targetIndex] = newData.value;
+            // Remove isPseudo flag
+            delete current[targetIndex].isPseudo;
+            return result;
+          }
+          case 'deleteEntry': {
+            // Delete the entry from dict
+            let current = result;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+              current = current[pathParts[i]];
+            }
+            delete current[pathParts[pathParts.length - 1]];
+            break;
+          }
+          case 'deleteParentDict': {
+            // Delete the parent dict using explicit _parentPath
+            if (_parentPath === '') {
+              return {};  // Parent is root
+            }
+            const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
+            let current = result;
+            for (let i = 0; i < parentParts.length - 1; i++) {
+              current = current[parentParts[i]];
+            }
+            const lastKey = parentParts[parentParts.length - 1];
+            if (Array.isArray(current)) {
+              current.splice(parseInt(lastKey), 1);
+            } else {
+              current[lastKey] = null;
+            }
+            break;
+          }
+          case 'clearParentDict': {
+            // Clear all entries in parent dict using explicit _parentPath
+            if (_parentPath === '') {
+              return {};  // Parent is root
+            }
+            const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
+            let current = result;
+            for (let i = 0; i < parentParts.length - 1; i++) {
+              current = current[parentParts[i]];
+            }
+            current[parentParts[parentParts.length - 1]] = {};
+            break;
+          }
+          case 'deleteArrayItem': {
+            // Delete the item from array
+            let current = result;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+              current = current[pathParts[i]];
+            }
+            const index = parseInt(pathParts[pathParts.length - 1]);
+            current.splice(index, 1);
+            break;
+          }
+          case 'deleteParentArray': {
+            // Delete the parent array using explicit _parentPath
+            if (_parentPath === '') {
+              return [];  // Parent is root
+            }
+            const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
+            let current = result;
+            for (let i = 0; i < parentParts.length - 1; i++) {
+              current = current[parentParts[i]];
+            }
+            const lastKey = parentParts[parentParts.length - 1];
+            if (Array.isArray(current)) {
+              current.splice(parseInt(lastKey), 1);
+            } else {
+              current[lastKey] = null;
+            }
+            break;
+          }
+          case 'clearParentArray': {
+            // Clear all items in parent array using explicit _parentPath
+            if (_parentPath === '') {
+              return [];  // Parent is root
+            }
+            const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
+            let current = result;
+            for (let i = 0; i < parentParts.length - 1; i++) {
+              current = current[parentParts[i]];
+            }
+            current[parentParts[parentParts.length - 1]] = [];
+            break;
+          }
+          default: {
+            // Handle value change
+            let current = result;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+              current = current[pathParts[i]];
+            }
+            
+            // Determine final value
+            let finalValue = newData.value;
+            if (old.type === newData.type && newData.type === 'number' && typeof newData.value === 'string') {
+              finalValue = !isNaN(newData.value) ? Number(newData.value) : old.value;
+            } else if (old.type !== newData.type) {
+              finalValue = newData.value;
+            } else {
+              finalValue = newData.value;
+            }
+            
+            current[pathParts[pathParts.length - 1]] = finalValue;
+          }
+        }
       }
-
-      let current = newData;
-      for (let i = 0; i < pathParts.length - 1; i++) {
-        current = current[pathParts[i]];
-      }
-      
-      // Parse value to correct type
-      let parsedValue = newValue;
-      if (newValue === 'true') parsedValue = true;
-      else if (newValue === 'false') parsedValue = false;
-      else if (!isNaN(newValue) && newValue.trim() !== '') parsedValue = Number(newValue);
-      
-      current[pathParts[pathParts.length - 1]] = parsedValue;
-      return newData;
+      return result;
     });
 
     return { code: 0 };
   }, []);
 
   // Handler for array data
-  const handleArrayChange = useCallback(async (path, newValue) => {
-    console.log(`Array change: ${path} = ${newValue}`);
+  const handleArrayChange = useCallback(async (path, changeData) => {
+    const { old, new: newData, _action, _parentPath, _itemPath } = changeData;
+    console.log(`Array change: ${path}`, { _action, _parentPath, _itemPath, changeData });
     
     await new Promise(resolve => setTimeout(resolve, 200));
 
     setArrayData(prevData => {
-      const newData = [...prevData];
-      const pathRegex = /\[(\d+)\]/g;
-      const indices = [];
-      let match;
+      const result = JSON.parse(JSON.stringify(prevData));
+      // Parse path: ..5..0 -> [5, 0]
+      const pathParts = path.split('..').filter(p => p !== '').map(p => parseInt(p));
       
-      while ((match = pathRegex.exec(path)) !== null) {
-        indices.push(parseInt(match[1]));
+      if (_action === 'deleteArrayItem') {
+        // Delete the item from array - navigate to parent and splice
+        let current = result;
+        for (let i = 0; i < pathParts.length - 1; i++) {
+          current = current[pathParts[i]];
+        }
+        current.splice(pathParts[pathParts.length - 1], 1);
+      } else if (_action === 'deleteParentArray') {
+        // Delete the parent array
+        if (_parentPath === '') {
+          return [];  // Parent is root
+        }
+        const parentParts = _parentPath.split('..').filter(p => p !== '').map(p => parseInt(p));
+        let current = result;
+        for (let i = 0; i < parentParts.length - 1; i++) {
+          current = current[parentParts[i]];
+        }
+        current.splice(parentParts[parentParts.length - 1], 1);
+      } else if (_action === 'clearParentArray') {
+        // Clear all items in parent array
+        if (_parentPath === '') {
+          return [];  // Parent is root
+        }
+        const parentParts = _parentPath.split('..').filter(p => p !== '').map(p => parseInt(p));
+        let current = result;
+        for (let i = 0; i < parentParts.length - 1; i++) {
+          current = current[parentParts[i]];
+        }
+        current[parentParts[parentParts.length - 1]] = [];
+      } else {
+        // Normal value change
+        let finalValue = newData.value;
+        if (old.type === newData.type && newData.type === 'number' && typeof newData.value === 'string') {
+          finalValue = !isNaN(newData.value) ? Number(newData.value) : old.value;
+        } else if (old.type !== newData.type) {
+          finalValue = newData.value;
+        } else {
+          finalValue = newData.value;
+        }
+        
+        // Navigate to item and set value
+        let current = result;
+        for (let i = 0; i < pathParts.length - 1; i++) {
+          current = current[pathParts[i]];
+        }
+        current[pathParts[pathParts.length - 1]] = finalValue;
       }
 
-      // Parse value to correct type
-      let parsedValue = newValue;
-      if (newValue === 'true') parsedValue = true;
-      else if (newValue === 'false') parsedValue = false;
-      else if (!isNaN(newValue) && newValue.trim() !== '') parsedValue = Number(newValue);
-      
-      if (indices.length === 1) {
-        newData[indices[0]] = parsedValue;
-      } else if (indices.length === 2) {
-        newData[indices[0]][indices[1]] = parsedValue;
-      }
-
-      return newData;
+      return result;
     });
 
     return { code: 0 };
   }, []);
 
   // Handler for MongoDB document
-  const handleMongoChange = useCallback(async (path, newValue) => {
-    console.log(`MongoDB update: ${path} = ${newValue}`);
+  const handleMongoChange = useCallback(async (path, changeData) => {
+    const { old, new: newData, _action, _parentPath, _itemPath, _keyRename, _key } = changeData;
+    console.log(`MongoDB update:`, { path, _action, _parentPath, _itemPath, changeData });
     
+    // For pseudo-related actions, execute immediately without delay (just UI state)
+    switch (_action) {
+      case 'addEntry':
+      case 'addEntryAbove':
+      case 'addEntryBelow':
+      case 'addItem':
+      case 'addItemAbove':
+      case 'addItemBelow':
+      case 'cancelCreate':
+        setMongoDoc(prevData => {
+          const result = JSON.parse(JSON.stringify(prevData));
+          const pathParts = path.split('.').flatMap(part => 
+            part.startsWith('.') ? [part.slice(1)] : [part]
+          ).filter(part => part !== '');
+          
+          switch (_action) {
+            case 'addEntry': {
+              // Add pseudo entry to empty dict
+              const targetObj = pathParts.length === 0 ? result : pathParts.reduce((obj, key) => obj[key], result);
+              if (!targetObj.__pseudo__) targetObj.__pseudo__ = [];
+              targetObj.__pseudo__.push({ path });
+              return result;
+            }
+            case 'addEntryAbove':
+            case 'addEntryBelow': {
+              // Add pseudo entry above/below current entry
+              const parentObj = pathParts.length === 1 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
+              if (!parentObj.__pseudo__) parentObj.__pseudo__ = [];
+              parentObj.__pseudo__.push({ path: pathParts.slice(0, -1).join('.'), position: _action === 'addEntryAbove' ? 'above' : 'below', referenceKey: pathParts[pathParts.length - 1] });
+              return result;
+            }
+            case 'addItem':
+            case 'addItemAbove':
+            case 'addItemBelow': {
+              // Add pseudo item to array
+              const pathIsArray = path.includes('..');
+              if (pathIsArray) {
+                // Parse path like "tags..0" or "user.roles..2"
+                const parts = path.split('..');
+                let current = result;
+                
+                // First part: navigate through object keys
+                if (parts[0]) {
+                  const objKeys = parts[0].split('.').filter(k => k !== '');
+                  for (const key of objKeys) {
+                    current = current[key];
+                  }
+                }
+                
+                // Remaining parts: navigate through array indices (except last)
+                for (let i = 1; i < parts.length - 1; i++) {
+                  const index = parseInt(parts[i]);
+                  current = current[index];
+                }
+                
+                const targetIndex = parseInt(parts[parts.length - 1]);
+                if (_action === 'addItemAbove') {
+                  current.splice(targetIndex, 0, { isPseudo: true });
+                } else if (_action === 'addItemBelow') {
+                  current.splice(targetIndex + 1, 0, { isPseudo: true });
+                }
+              } else {
+                // Empty array - add to it
+                const targetArray = pathParts.length === 0 ? result : pathParts.reduce((obj, key) => obj[key], result);
+                if (Array.isArray(targetArray)) {
+                  targetArray.push({ isPseudo: true });
+                }
+              }
+              return result;
+            }
+            case 'cancelCreate': {
+              // Remove pseudo entry/item
+              if (path.includes('..')) {
+                // Array item - parse path like "tags..0"
+                const parts = path.split('..');
+                let current = result;
+                
+                // First part: navigate through object keys
+                if (parts[0]) {
+                  const objKeys = parts[0].split('.').filter(k => k !== '');
+                  for (const key of objKeys) {
+                    current = current[key];
+                  }
+                }
+                
+                // Remaining parts: navigate through array indices (except last)
+                for (let i = 1; i < parts.length - 1; i++) {
+                  const index = parseInt(parts[i]);
+                  current = current[index];
+                }
+                
+                const targetIndex = parseInt(parts[parts.length - 1]);
+                current.splice(targetIndex, 1);
+              } else {
+                // Dict entry
+                const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
+                if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
+                  // Remove the first pseudo item (the one being cancelled)
+                  parentObj.__pseudo__.shift();
+                  // If array is now empty, delete the property
+                  if (parentObj.__pseudo__.length === 0) {
+                    delete parentObj.__pseudo__;
+                  }
+                }
+              }
+              return result;
+            }
+          }
+        });
+        return { code: 0, message: 'Success' };
+    }
+    
+    // For actual data operations, apply delay
     await new Promise(resolve => setTimeout(resolve, 200));
 
     setMongoDoc(prevData => {
-      const newData = JSON.parse(JSON.stringify(prevData));
-      const pathRegex = /([^\[\].]+)|\[(\d+)\]/g;
-      const pathParts = [];
-      let match;
+      const result = JSON.parse(JSON.stringify(prevData));
+      const pathParts = path.split('.').flatMap(part => 
+        part.startsWith('.') ? [part.slice(1)] : [part]
+      ).filter(part => part !== '');
       
-      while ((match = pathRegex.exec(path)) !== null) {
-        pathParts.push(match[1] || match[2]);
+      // Handle key rename first (special case)
+      if (_keyRename) {
+        let current = result;
+        for (let i = 0; i < pathParts.length - 1; i++) {
+          current = current[pathParts[i]];
+        }
+        const oldKey = pathParts[pathParts.length - 1];
+        const newKey = newData.value;
+        const value = current[oldKey];
+        delete current[oldKey];
+        current[newKey] = value;
+      } else {
+        switch (_action) {
+          case 'createEntry': {
+            // Convert pseudo to real entry
+            const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
+            parentObj[_key] = newData.value;
+            // Remove the pseudo item from __pseudo__ array
+            if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
+              // Remove the first pseudo item (the one being converted)
+              parentObj.__pseudo__.shift();
+              // If array is now empty, delete the property
+              if (parentObj.__pseudo__.length === 0) {
+                delete parentObj.__pseudo__;
+              }
+            }
+            return result;
+          }
+          case 'createItem': {
+            // Convert pseudo array item to real item - parse path like "tags..0"
+            const parts = path.split('..');
+            let current = result;
+            
+            // First part: navigate through object keys
+            if (parts[0]) {
+              const objKeys = parts[0].split('.').filter(k => k !== '');
+              for (const key of objKeys) {
+                current = current[key];
+              }
+            }
+            
+            // Remaining parts: navigate through array indices (except last)
+            for (let i = 1; i < parts.length - 1; i++) {
+              const index = parseInt(parts[i]);
+              current = current[index];
+            }
+            
+            const targetIndex = parseInt(parts[parts.length - 1]);
+            current[targetIndex] = newData.value;
+            // Remove isPseudo flag
+            delete current[targetIndex].isPseudo;
+            return result;
+          }
+          case 'deleteEntry': {
+            // Delete the entry from dict
+            let current = result;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+              current = current[pathParts[i]];
+            }
+            delete current[pathParts[pathParts.length - 1]];
+            break;
+          }
+          case 'deleteParentDict': {
+            // Delete the parent dict using explicit _parentPath
+            if (_parentPath === '') {
+              return {};  // Parent is root
+            }
+            const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
+            let current = result;
+            for (let i = 0; i < parentParts.length - 1; i++) {
+              current = current[parentParts[i]];
+            }
+            const lastKey = parentParts[parentParts.length - 1];
+            if (Array.isArray(current)) {
+              current.splice(parseInt(lastKey), 1);
+            } else {
+              current[lastKey] = null;
+            }
+            break;
+          }
+          case 'clearParentDict': {
+            // Clear all entries in parent dict using explicit _parentPath
+            if (_parentPath === '') {
+              return {};  // Parent is root
+            }
+            const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
+            let current = result;
+            for (let i = 0; i < parentParts.length - 1; i++) {
+              current = current[parentParts[i]];
+            }
+            current[parentParts[parentParts.length - 1]] = {};
+            break;
+          }
+          case 'deleteArrayItem': {
+            // Delete the item from array
+            let current = result;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+              current = current[pathParts[i]];
+            }
+            const index = parseInt(pathParts[pathParts.length - 1]);
+            current.splice(index, 1);
+            break;
+          }
+          case 'deleteParentArray': {
+            // Delete the parent array using explicit _parentPath
+            if (_parentPath === '') {
+              return [];  // Parent is root
+            }
+            const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
+            let current = result;
+            for (let i = 0; i < parentParts.length - 1; i++) {
+              current = current[parentParts[i]];
+            }
+            const lastKey = parentParts[parentParts.length - 1];
+            if (Array.isArray(current)) {
+              current.splice(parseInt(lastKey), 1);
+            } else {
+              current[lastKey] = null;
+            }
+            break;
+          }
+          case 'clearParentArray': {
+            // Clear all items in parent array using explicit _parentPath
+            if (_parentPath === '') {
+              return [];  // Parent is root
+            }
+            const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
+            let current = result;
+            for (let i = 0; i < parentParts.length - 1; i++) {
+              current = current[parentParts[i]];
+            }
+            current[parentParts[parentParts.length - 1]] = [];
+            break;
+          }
+          default: {
+            // Handle value change
+            let current = result;
+            for (let i = 0; i < pathParts.length - 1; i++) {
+              current = current[pathParts[i]];
+            }
+            
+            // Determine final value
+            let finalValue = newData.value;
+            if (old.type === newData.type && newData.type === 'number' && typeof newData.value === 'string') {
+              finalValue = !isNaN(newData.value) ? Number(newData.value) : old.value;
+            } else if (old.type !== newData.type) {
+              finalValue = newData.value;
+            } else {
+              finalValue = newData.value;
+            }
+            
+            current[pathParts[pathParts.length - 1]] = finalValue;
+          }
+        }
       }
-
-      let current = newData;
-      for (let i = 0; i < pathParts.length - 1; i++) {
-        current = current[pathParts[i]];
-      }
-      
-      // Parse value to correct type
-      let parsedValue = newValue;
-      if (newValue === 'true') parsedValue = true;
-      else if (newValue === 'false') parsedValue = false;
-      else if (!isNaN(newValue) && newValue.trim() !== '') parsedValue = Number(newValue);
-      
-      current[pathParts[pathParts.length - 1]] = parsedValue;
-      return newData;
+      return result;
     });
 
     return { code: 0, message: 'MongoDB document updated' };
@@ -246,13 +901,13 @@ const JsonExamplesPanel = () => {
 
       <h3 style={{ marginBottom: '8px' }}>3. Complex Nested Structure with Arrays</h3>
       <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '8px' }}>
-        Supports deeply nested objects and arrays. Click on primitive values to edit.
+        Supports deeply nested objects and arrays. Keys and values are editable.
       </p>
       <div style={{ background: '#f9f9f9', padding: '12px', borderRadius: '3px', marginBottom: '20px' }}>
         <JsonComp 
           data={complexData} 
           isEditable={true}
-          isKeyEditable={false}
+          isKeyEditable={true}
           isValueEditable={true}
           onChange={handleComplexChange}
         />
@@ -302,10 +957,12 @@ const JsonExamplesPanel = () => {
         <ul style={{ margin: '4px 0', paddingLeft: '18px' }}>
           <li>Recursively renders deeply nested JSON objects and arrays</li>
           <li>Click on text/number values to edit, booleans toggle on click (distinct monospace font)</li>
+          <li>Right-click values to convert types (string ↔ number ↔ boolean ↔ null)</li>
           <li>Spinning circle shows next to value during async update</li>
           <li>Component locks during submission, doesn't update value until parent updates data</li>
           <li>No request sent if value hasn't changed</li>
-          <li>Path notation: <code>user.name</code>, <code>tags[0]</code>, <code>comments[1].text</code></li>
+          <li>Path notation: <code>user.name</code>, <code>tags..0</code>, <code>items..1.name</code> (.. for array indices)</li>
+          <li>Structured change data: <code>{`{ old: { type, value }, new: { type, value } }`}</code></li>
           <li>Sans-serif font, reduced indentation (12px), no quote marks</li>
           <li>Configurable editability for keys and values separately</li>
         </ul>

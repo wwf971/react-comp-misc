@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SpinningCircle from '../../icon/SpinningCircle';
+import { useJsonContext } from './JsonContext';
+import { getAvailableConversions } from './typeConvert';
 import './JsonComp.css';
 
 /**
@@ -16,6 +18,12 @@ const JsonNumberComp = ({
   
   const valueRef = useRef(null);
   const originalValueRef = useRef('');
+  const { showConversionMenu } = useJsonContext();
+  
+  // Render tracking
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Render] JsonNumberComp: ${path} = ${value}`);
+  }
 
   useEffect(() => {
     if (isEditing && valueRef.current) {
@@ -49,7 +57,16 @@ const JsonNumberComp = ({
     
     try {
       if (onChange) {
-        const result = await onChange(path, newValue);
+        // Check if input is a valid number
+        const isValidNumber = newValue.trim() !== '' && !isNaN(newValue);
+        
+        const changeData = {
+          old: { type: 'number', value: value },
+          new: isValidNumber 
+            ? { type: 'number', value: newValue }
+            : { type: 'string', value: newValue } // Invalid number -> convert to string
+        };
+        const result = await onChange(path, changeData);
         
         if (result.code !== 0) {
           console.error('Failed to update value:', result.message);
@@ -88,6 +105,26 @@ const JsonNumberComp = ({
     }
   };
 
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (showConversionMenu) {
+      // Check if this is an array item by looking for ".." in path
+      const isArrayItem = path.includes('..');
+      
+      showConversionMenu({
+        position: { x: e.clientX, y: e.clientY },
+        currentValue: value,
+        currentType: 'number',
+        path,
+        menuType: isArrayItem ? 'arrayItem' : 'value',
+        value: value,
+        availableConversions: getAvailableConversions(value, 'number')
+      });
+    }
+  };
+
   return (
     <span className="json-value-wrapper">
       <span
@@ -97,6 +134,7 @@ const JsonNumberComp = ({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         onClick={handleClick}
+        onContextMenu={handleContextMenu}
         suppressContentEditableWarning={true}
       >
         {value}

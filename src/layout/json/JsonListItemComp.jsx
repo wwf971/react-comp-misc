@@ -3,6 +3,7 @@ import JsonTextComp from './JsonTextComp';
 import JsonNumberComp from './JsonNumberComp';
 import JsonBoolComp from './JsonBoolComp';
 import JsonNullComp from './JsonNullComp';
+import EmptyDict from './EmptyDict';
 import './JsonComp.css';
 
 /**
@@ -24,11 +25,15 @@ const JsonListItemComp = ({
   // Render appropriate component based on type
   const renderComponent = () => {
     if (!isPrimitive) {
+      // Check if it's an empty object
+      if (typeof data === 'object' && data !== null && !Array.isArray(data) && Object.keys(data).length === 0) {
+        return <EmptyDict path={path} />;
+      }
       return <span className="json-list-item-complex">{children}</span>;
     }
 
     if (dataType === 'null') {
-      return <JsonNullComp />;
+      return <JsonNullComp path={path} />;
     } else if (dataType === 'boolean') {
       return (
         <JsonBoolComp

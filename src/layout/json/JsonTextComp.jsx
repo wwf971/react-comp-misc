@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SpinningCircle from '../../icon/SpinningCircle';
+import { useJsonContext } from './JsonContext';
+import { getAvailableConversions } from './typeConvert';
 import './JsonComp.css';
 
 /**
@@ -16,6 +18,12 @@ const JsonTextComp = ({
   
   const valueRef = useRef(null);
   const originalValueRef = useRef('');
+  const { showConversionMenu } = useJsonContext();
+  
+  // Render tracking
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Render] JsonTextComp: ${path} = "${value}"`);
+  }
 
   useEffect(() => {
     if (isEditing && valueRef.current) {
@@ -49,7 +57,11 @@ const JsonTextComp = ({
     
     try {
       if (onChange) {
-        const result = await onChange(path, newValue);
+        const changeData = {
+          old: { type: 'string', value: originalValueRef.current },
+          new: { type: 'string', value: newValue }
+        };
+        const result = await onChange(path, changeData);
         
         if (result.code !== 0) {
           console.error('Failed to update value:', result.message);
@@ -88,6 +100,26 @@ const JsonTextComp = ({
     }
   };
 
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent bubbling to parent elements
+
+    if (showConversionMenu) {
+      // Check if this is an array item by looking for ".." in path
+      const isArrayItem = path.includes('..');
+      
+      showConversionMenu({
+        position: { x: e.clientX, y: e.clientY },
+        currentValue: value,
+        currentType: 'string',
+        path,
+        menuType: isArrayItem ? 'arrayItem' : 'value',
+        value: value,
+        availableConversions: getAvailableConversions(value, 'string')
+      });
+    }
+  };
+
   return (
     <span className="json-value-wrapper">
       <span
@@ -97,6 +129,7 @@ const JsonTextComp = ({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         onClick={handleClick}
+        onContextMenu={handleContextMenu}
         suppressContentEditableWarning={true}
       >
         {value}

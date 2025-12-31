@@ -58,8 +58,15 @@ export { default as JsonNumberComp } from "./layout/json/JsonNumberComp.jsx";
 export { default as JsonBoolComp } from "./layout/json/JsonBoolComp.jsx";
 export { default as JsonNullComp } from "./layout/json/JsonNullComp.jsx";
 
+export { JsonContextProvider, useJsonContext } from "./layout/json/JsonContext";
+export type { TypeConversionBehavior, ConversionMenuRequest } from "./layout/json/JsonContext";
+export * from "./layout/json/typeConvert";
+
 export { default as Menu } from "./menu/Menu";
 export type { MenuItem, MenuItemSingle, MenuItemSubmenu } from "./menu/Menu";
+
+export { default as MenuComp } from "./menu/MenuComp";
+export type { MenuCompItem, MenuCompItemSingle, MenuCompItemSubmenu } from "./menu/MenuComp";
 
 export { default as DatabaseSetup } from "./database/DatabaseSetup";
 export type { DatabaseSetupProps, TableConfig } from "./database/DatabaseSetup";
