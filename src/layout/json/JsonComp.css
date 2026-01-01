@@ -114,6 +114,17 @@
   color: #1a73e8;
 }
 
+.json-value.json-string.whitespace-only {
+  border: 1px solid #d3d3d3;
+  padding: 1px 2px;
+  border-radius: 2px;
+}
+
+.json-value.json-string.empty-text {
+  color: #999;
+  font-style: italic;
+}
+
 .json-value.json-number {
   color: #ea4335;
 }
@@ -177,7 +188,13 @@
 .json-empty-object,
 .json-empty-array {
   color: #999;
-  display: inline;
+  display: block;
+}
+
+/* Indent empty objects/arrays when they're values in key-value pairs */
+.json-keyvalue.has-complex-value .json-empty-object,
+.json-keyvalue.has-complex-value .json-empty-array {
+  padding-left: var(--json-indent, 40px);
 }
 
 .json-array-index {

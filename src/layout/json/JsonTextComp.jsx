@@ -18,7 +18,7 @@ const JsonTextComp = ({
   
   const valueRef = useRef(null);
   const originalValueRef = useRef('');
-  const { showConversionMenu } = useJsonContext();
+  const { showConversionMenu, queryParentInfo } = useJsonContext();
   
   // Render tracking
   if (process.env.NODE_ENV === 'development') {
@@ -40,6 +40,11 @@ const JsonTextComp = ({
     if (!isEditable || isSubmitting) return;
     originalValueRef.current = String(value);
     setIsEditing(true);
+    
+    // Clear the "EMPTY" placeholder text when starting to edit
+    if ((!value || value.trim() === '') && valueRef.current) {
+      valueRef.current.textContent = value || '';
+    }
   };
 
   const handleSubmit = async () => {
@@ -105,8 +110,11 @@ const JsonTextComp = ({
     e.stopPropagation(); // Prevent bubbling to parent elements
 
     if (showConversionMenu) {
-      // Check if this is an array item by looking for ".." in path
-      const isArrayItem = path.includes('..');
+      // Check if this is a direct array item (not a dict entry inside an array)
+      // Array item path ends with `..{number}`, dict entry path has `.{key}` after the last `..{number}`
+      const pathParts = path.split('..');
+      const isArrayItem = pathParts.length > 1 && !pathParts[pathParts.length - 1].includes('.');
+      const parentInfo = queryParentInfo ? queryParentInfo(path) : { isSingleEntryInParent: false };
       
       showConversionMenu({
         position: { x: e.clientX, y: e.clientY },
@@ -115,24 +123,32 @@ const JsonTextComp = ({
         path,
         menuType: isArrayItem ? 'arrayItem' : 'value',
         value: value,
-        availableConversions: getAvailableConversions(value, 'string')
+        availableConversions: getAvailableConversions(value, 'string', { includeArray: true, includeObject: true }),
+        isSingleEntryInParent: parentInfo.isSingleEntryInParent,
+        isFirstInParent: parentInfo.isFirstInParent,
+        isLastInParent: parentInfo.isLastInParent
       });
     }
   };
 
+  // Check if value is empty or whitespace-only
+  const isEmpty = !value || value.trim() === '';
+  const isWhitespaceOnly = value && value.trim() === '' && value.length > 0;
+  
   return (
     <span className="json-value-wrapper">
       <span
         ref={valueRef}
-        className={`json-value json-string ${isEditable ? 'editable' : ''} ${isEditing ? 'editing' : ''}`}
+        className={`json-value json-string ${isEditable ? 'editable' : ''} ${isEditing ? 'editing' : ''} ${isWhitespaceOnly ? 'whitespace-only' : ''} ${isEmpty ? 'empty-text' : ''}`}
         contentEditable={isEditing}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         suppressContentEditableWarning={true}
+        style={isEditing && isEmpty ? { minWidth: '80px' } : {}}
       >
-        {value}
+        {isEmpty && !isEditing ? 'EMPTY' : value}
       </span>
       {isSubmitting && (
         <span className="json-spinner">

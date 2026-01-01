@@ -10,6 +10,7 @@ const PseudoKeyValueComp = ({ path, onChange, onCancel, depth }) => {
   const [key, setKey] = useState('');
   const [value, setValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const keyRef = useRef(null);
   const valueRef = useRef(null);
 
@@ -27,6 +28,7 @@ const PseudoKeyValueComp = ({ path, onChange, onCancel, depth }) => {
     }
 
     setIsSubmitting(true);
+    setErrorMessage('');
     try {
       const changeData = {
         old: { type: 'pseudo' },
@@ -40,12 +42,25 @@ const PseudoKeyValueComp = ({ path, onChange, onCancel, depth }) => {
       if (result && result.code === 0) {
         // Success - parent will remove __pseudo__ marker and re-render with normal component
       } else {
-        // Failed - keep editing
+        // Failed - show error briefly then remove via onCancel
+        const errMsg = result?.message || 'Failed to create entry';
+        setErrorMessage(errMsg);
         setIsSubmitting(false);
+        
+        // Auto-remove after showing error for 2 seconds
+        setTimeout(() => {
+          onCancel();
+        }, 2000);
       }
     } catch (error) {
       console.error('Failed to create entry:', error);
+      setErrorMessage(error.message || 'Network error');
       setIsSubmitting(false);
+      
+      // Auto-remove after showing error for 2 seconds
+      setTimeout(() => {
+        onCancel();
+      }, 2000);
     }
   };
 
@@ -109,12 +124,17 @@ const PseudoKeyValueComp = ({ path, onChange, onCancel, depth }) => {
           onKeyDown={(e) => handleKeyDown(e, 'value')}
           onBlur={(e) => handleBlur(e, 'value')}
           placeholder="value"
-          disabled={isSubmitting}
+          disabled={isSubmitting || errorMessage}
           style={{ width: '100px', border: 'none', outline: 'none', background: 'transparent' }}
         />
-        {isSubmitting && (
+        {isSubmitting && !errorMessage && (
           <span className="json-spinner">
             <SpinningCircle width={14} height={14} color="#666" />
+          </span>
+        )}
+        {errorMessage && (
+          <span style={{ marginLeft: '8px', fontSize: '12px', color: '#d32f2f' }}>
+            ✗ {errorMessage}
           </span>
         )}
       </span>

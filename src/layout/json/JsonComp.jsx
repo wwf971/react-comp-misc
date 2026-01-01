@@ -142,6 +142,59 @@ const JsonComp = ({
           _targetPath: path
         };
         await onChange(path, changeData);
+      } else if (action === 'convertParentDictToText') {
+        // Convert single-entry dict {key:value} to text "key:value"
+        const parentParts = path.split('.').filter(p => p !== '');
+        const parentPath = parentParts.length > 1 ? parentParts.slice(0, -1).join('.') : '';
+        const key = conversionMenu.itemKey;
+        const value = conversionMenu.value;
+        const textValue = `${key}:${String(value)}`;
+        
+        const changeData = {
+          old: { type: 'object', value: { [key]: value } },
+          new: { type: 'string', value: textValue },
+          _action: 'convertParentToText',
+          _parentPath: parentPath
+        };
+        await onChange(parentPath, changeData);
+      } else if (action === 'convertParentArrayToText') {
+        // Convert single-item array [value] to text "value"
+        const parentParts = path.split('.').filter(p => p !== '' && !p.startsWith('.'));
+        const parentPath = parentParts.length > 0 ? parentParts.slice(0, -1).join('.') : '';
+        const value = conversionMenu.value;
+        const textValue = String(value);
+        
+        const changeData = {
+          old: { type: 'array', value: [value] },
+          new: { type: 'string', value: textValue },
+          _action: 'convertParentToText',
+          _parentPath: parentPath
+        };
+        await onChange(parentPath, changeData);
+      } else if (action === 'moveEntryUp' || action === 'moveEntryDown') {
+        // Move dict entry up or down
+        // Compute parent path for dict entry
+        const pathParts = path.split('.').filter(p => p !== '');
+        const parentPath = pathParts.length > 1 ? pathParts.slice(0, -1).join('.') : '';
+        const changeData = {
+          old: { type: 'entry' },
+          new: { type: 'entry' },
+          _action: action,
+          _parentPath: parentPath
+        };
+        await onChange(path, changeData);
+      } else if (action === 'moveItemUp' || action === 'moveItemDown') {
+        // Move array item up or down
+        // Compute parent path for array item (remove the ..index part)
+        const parts = path.split('..');
+        const arrayPath = parts.length > 1 ? parts[0] + (parts.length > 2 ? '..' + parts.slice(1, -1).join('..') : '') : '';
+        const changeData = {
+          old: { type: 'arrayItem' },
+          new: { type: 'arrayItem' },
+          _action: action,
+          _parentPath: arrayPath
+        };
+        await onChange(path, changeData);
       } else if (item.data?.targetType) {
         // Type conversion
         const { currentValue, currentType } = conversionMenu;
@@ -212,6 +265,42 @@ const JsonComp = ({
           data: { action: 'deleteAllEntries' }
         }
       );
+      
+      // If this is the only entry in parent dict, show option (disabled if value is not primitive)
+      // Show on both key and value menus
+      if (conversionMenu.isSingleEntryInParent && conversionMenu.itemKey) {
+        const valueIsPrimitive = conversionMenu.value === null || 
+                                 conversionMenu.value === undefined || 
+                                 typeof conversionMenu.value !== 'object';
+        items.push({
+          type: 'item',
+          name: 'Convert parent dict to text',
+          disabled: !valueIsPrimitive,
+          data: { action: 'convertParentDictToText' }
+        });
+      }
+      
+      // Add move up/down for dict entries
+      // For values, only allow if value is primitive
+      if (menuType === 'key' || (menuType === 'value' && 
+          (conversionMenu.value === null || 
+           conversionMenu.value === undefined || 
+           typeof conversionMenu.value !== 'object'))) {
+        items.push(
+          {
+            type: 'item',
+            name: 'Move up',
+            disabled: conversionMenu.isFirstInParent,
+            data: { action: 'moveEntryUp' }
+          },
+          {
+            type: 'item',
+            name: 'Move down',
+            disabled: conversionMenu.isLastInParent,
+            data: { action: 'moveEntryDown' }
+          }
+        );
+      }
     } else if (menuType === 'arrayItem') {
       // For array items
       items.push(
@@ -241,6 +330,40 @@ const JsonComp = ({
           data: { action: 'clearArray' }
         }
       );
+      
+      // If this is the only item in parent array, show option (disabled if item is not primitive)
+      if (conversionMenu.isSingleEntryInParent) {
+        const valueIsPrimitive = conversionMenu.value === null || 
+                                 conversionMenu.value === undefined || 
+                                 typeof conversionMenu.value !== 'object';
+        items.push({
+          type: 'item',
+          name: 'Convert parent array to text',
+          disabled: !valueIsPrimitive,
+          data: { action: 'convertParentArrayToText' }
+        });
+      }
+      
+      // Add move up/down for array items (only for primitive values)
+      const itemIsPrimitive = conversionMenu.value === null || 
+                              conversionMenu.value === undefined || 
+                              typeof conversionMenu.value !== 'object';
+      if (itemIsPrimitive) {
+        items.push(
+          {
+            type: 'item',
+            name: 'Move up',
+            disabled: conversionMenu.isFirstInParent,
+            data: { action: 'moveItemUp' }
+          },
+          {
+            type: 'item',
+            name: 'Move down',
+            disabled: conversionMenu.isLastInParent,
+            data: { action: 'moveItemDown' }
+          }
+        );
+      }
     } else if (menuType === 'emptyDict') {
       // For empty dict
       items.push(
@@ -358,46 +481,50 @@ const JsonComp = ({
   }
 
   // Handle objects
-  const keys = Object.keys(data).filter(k => k !== '__pseudo__');
-  const hasPseudo = data.__pseudo__;
+  const allKeys = Object.keys(data);
   
-  if (keys.length === 0 && !hasPseudo) {
+  // Separate regular keys from pseudo keys
+  const pseudoKeys = allKeys.filter(k => k.startsWith('__pseudo__'));
+  const regularKeys = allKeys.filter(k => !k.startsWith('__pseudo__'));
+  
+  if (regularKeys.length === 0 && pseudoKeys.length === 0) {
     return <EmptyDict path={pathPrefix || ''} />;
   }
 
   // Build ordered list of items (keys + pseudo items in correct positions)
   const orderedItems = [];
-  keys.forEach((key, index) => {
-    // Check if there are pseudo items that should appear above this key
-    if (hasPseudo) {
-      hasPseudo.forEach((pseudoItem, pidx) => {
-        if (pseudoItem.position === 'above' && pseudoItem.referenceKey === key) {
-          orderedItems.push({ type: 'pseudo', pseudoItem, pidx });
-        }
-      });
-    }
+  
+  regularKeys.forEach((key, index) => {
+    // Check for pseudo items that should appear above this key
+    pseudoKeys.forEach(pseudoKey => {
+      const pseudoData = data[pseudoKey];
+      if (pseudoData && typeof pseudoData === 'object' && pseudoData.__pseudo__ === true &&
+          pseudoData.position === 'above' && pseudoData.referenceKey === key) {
+        orderedItems.push({ type: 'pseudo', key: pseudoKey, pseudoData });
+      }
+    });
     
     // Add the regular key
     orderedItems.push({ type: 'key', key, index });
     
-    // Check if there are pseudo items that should appear below this key
-    if (hasPseudo) {
-      hasPseudo.forEach((pseudoItem, pidx) => {
-        if (pseudoItem.position === 'below' && pseudoItem.referenceKey === key) {
-          orderedItems.push({ type: 'pseudo', pseudoItem, pidx });
-        }
-      });
-    }
+    // Check for pseudo items that should appear below this key
+    pseudoKeys.forEach(pseudoKey => {
+      const pseudoData = data[pseudoKey];
+      if (pseudoData && typeof pseudoData === 'object' && pseudoData.__pseudo__ === true &&
+          pseudoData.position === 'below' && pseudoData.referenceKey === key) {
+        orderedItems.push({ type: 'pseudo', key: pseudoKey, pseudoData });
+      }
+    });
   });
   
   // Add any pseudo items without position (for empty dicts or at end)
-  if (hasPseudo) {
-    hasPseudo.forEach((pseudoItem, pidx) => {
-      if (!pseudoItem.position && !pseudoItem.referenceKey) {
-        orderedItems.push({ type: 'pseudo', pseudoItem, pidx });
-      }
-    });
-  }
+  pseudoKeys.forEach(pseudoKey => {
+    const pseudoData = data[pseudoKey];
+    if (pseudoData && typeof pseudoData === 'object' && pseudoData.__pseudo__ === true &&
+        !pseudoData.position && !pseudoData.referenceKey) {
+      orderedItems.push({ type: 'pseudo', key: pseudoKey, pseudoData });
+    }
+  });
 
   return (
     <div className={`json-object ${isArrayItem ? 'json-object-in-array' : ''}`} style={{ '--depth': depth, '--json-indent': `${indent}px` }}>
@@ -439,16 +566,17 @@ const JsonComp = ({
             );
           } else {
             // Pseudo item
-            const { pseudoItem, pidx } = item;
+            const { key, pseudoData } = item;
+            const pseudoPath = pathPrefix ? `${pathPrefix}.${key}` : key;
             return (
-              <div key={`pseudo-${pidx}`} className="json-object-item">
+              <div key={key} className="json-object-item">
                 <PseudoKeyValueComp
-                  path={pseudoItem.path}
+                  path={pseudoPath}
                   onChange={onChange}
                   onCancel={() => {
                     // Handle cancel - notify parent to remove pseudo item
                     if (onChange) {
-                      onChange(pseudoItem.path, {
+                      onChange(pseudoPath, {
                         old: { type: 'pseudo' },
                         new: { type: 'deleted' },
                         _action: 'cancelCreate'
@@ -473,6 +601,7 @@ const JsonComp = ({
       <JsonContextProvider 
         typeConversionBehavior={typeConversionBehavior}
         showConversionMenu={showConversionMenu}
+        rootData={data}
       >
         {renderContent()}
         

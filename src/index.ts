@@ -22,7 +22,7 @@ export {
 } from "./icon/Icon.jsx";
 
 export { default as PdfIcon } from "./icon/PdfIcon.jsx";
-export { default as Refresh } from "./icon/Refresh.jsx";
+export { default as RefreshIcon } from "./icon/Refresh.jsx";
 
 export {
     get_local_timezone_int,

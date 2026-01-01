@@ -8,7 +8,7 @@ import './JsonComp.css';
  * Can be converted to other types via right-click
  */
 const JsonNullComp = ({ path }) => {
-  const { showConversionMenu } = useJsonContext();
+  const { showConversionMenu, queryParentInfo } = useJsonContext();
   
   // Render tracking
   if (process.env.NODE_ENV === 'development') {
@@ -20,8 +20,11 @@ const JsonNullComp = ({ path }) => {
     e.stopPropagation();
 
     if (showConversionMenu) {
-      // Check if this is an array item by looking for ".." in path
-      const isArrayItem = path.includes('..');
+      // Check if this is a direct array item (not a dict entry inside an array)
+      const pathParts = path.split('..');
+      const isArrayItem = pathParts.length > 1 && !pathParts[pathParts.length - 1].includes('.');
+      
+      const parentInfo = queryParentInfo ? queryParentInfo(path) : { isSingleEntryInParent: false };
       
       showConversionMenu({
         position: { x: e.clientX, y: e.clientY },
@@ -30,7 +33,10 @@ const JsonNullComp = ({ path }) => {
         path,
         menuType: isArrayItem ? 'arrayItem' : 'value',
         value: null,
-        availableConversions: getAvailableConversions(null, 'null')
+        availableConversions: getAvailableConversions(null, 'null'),
+        isSingleEntryInParent: parentInfo.isSingleEntryInParent,
+        isFirstInParent: parentInfo.isFirstInParent,
+        isLastInParent: parentInfo.isLastInParent
       });
     }
   };

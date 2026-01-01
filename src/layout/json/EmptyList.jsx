@@ -1,5 +1,6 @@
 import React from 'react';
 import { useJsonContext } from './JsonContext';
+import { getAvailableConversions } from './typeConvert';
 import './JsonComp.css';
 
 /**
@@ -7,21 +8,41 @@ import './JsonComp.css';
  * Can be converted to other types via right-click
  */
 const EmptyList = ({ path }) => {
-  const { showConversionMenu } = useJsonContext();
+  const { showConversionMenu, queryParentInfo } = useJsonContext();
   
   const handleContextMenu = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (showConversionMenu) {
-      // Check if this is an array item by looking for ".." in path
-      const isArrayItem = path.includes('..');
+      // Check if this is a direct array item (not a dict entry inside an array)
+      const pathParts = path.split('..');
+      const isArrayItem = pathParts.length > 1 && !pathParts[pathParts.length - 1].includes('.');
+      // Check if this is root (empty path or just "")
+      const isRoot = !path || path === '';
+      
+      // Get parent info for position
+      const parentInfo = queryParentInfo ? queryParentInfo(path) : { isSingleEntryInParent: false };
+      
+      // Get conversion options - string and null conversions disabled if root
+      const conversions = getAvailableConversions([], 'array').map(conv => {
+        if ((conv.targetType === 'string' || conv.targetType === 'null') && isRoot) {
+          return { ...conv, canConvert: false }; // Grey out string/null conversion for root
+        }
+        return conv;
+      });
       
       showConversionMenu({
         position: { x: e.clientX, y: e.clientY },
         menuType: isArrayItem ? 'arrayItem' : 'emptyList',
         path: path,
-        value: []
+        value: [],
+        currentValue: [],
+        currentType: 'array',
+        availableConversions: conversions,
+        isSingleEntryInParent: parentInfo.isSingleEntryInParent,
+        isFirstInParent: parentInfo.isFirstInParent,
+        isLastInParent: parentInfo.isLastInParent
       });
     }
   };

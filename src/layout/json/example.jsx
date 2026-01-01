@@ -96,32 +96,26 @@ const JsonExamplesPanel = () => {
             case 'addEntry': {
               // Add pseudo entry to empty dict
               const targetObj = keys.length === 0 || keys[0] === '' ? result : keys.reduce((obj, key) => obj[key], result);
-              if (!targetObj.__pseudo__) targetObj.__pseudo__ = [];
-              targetObj.__pseudo__.push({ path });
+              const pseudoKey = `__pseudo__${Date.now()}`;
+              targetObj[pseudoKey] = { __pseudo__: true };
               return result;
             }
             case 'addEntryAbove':
             case 'addEntryBelow': {
               // Add pseudo entry above/below current entry (at root level)
-              if (!result.__pseudo__) result.__pseudo__ = [];
-              result.__pseudo__.push({ 
-                path: '', 
+              const pseudoKey = `__pseudo__${Date.now()}`;
+              result[pseudoKey] = { 
+                __pseudo__: true,
                 position: _action === 'addEntryAbove' ? 'above' : 'below', 
                 referenceKey: keys[0]
-              });
+              };
               return result;
             }
             case 'cancelCreate': {
-              // Remove pseudo entry
+              // Remove pseudo entry - the key itself is the pseudo key
               const parentObj = keys.length === 0 || keys[0] === '' ? result : keys.slice(0, -1).reduce((obj, key) => obj[key], result);
-              if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
-                // Remove the first pseudo item (the one being cancelled)
-                parentObj.__pseudo__.shift();
-                // If array is now empty, delete the property
-                if (parentObj.__pseudo__.length === 0) {
-                  delete parentObj.__pseudo__;
-                }
-              }
+              const pseudoKey = keys[keys.length - 1];
+              delete parentObj[pseudoKey];
               return result;
             }
           }
@@ -145,19 +139,40 @@ const JsonExamplesPanel = () => {
         
         switch (_action) {
           case 'createEntry': {
-            // Convert pseudo to real entry
+            // Convert pseudo to real entry: delete the pseudo key, add real key
             const parentObj = keys.length === 0 || keys[0] === '' ? result : keys.slice(0, -1).reduce((obj, key) => obj[key], result);
-            parentObj[_key] = newData.value;
-            // Remove the pseudo item from __pseudo__ array
-            if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
-              console.log('Removing pseudo item from __pseudo__ array');
-              // Remove the first pseudo item (the one being converted)
-              parentObj.__pseudo__.shift();
-              // If array is now empty, delete the property
-              if (parentObj.__pseudo__.length === 0) {
-                delete parentObj.__pseudo__;
+            const pseudoKey = keys[keys.length - 1];
+            const pseudoData = parentObj[pseudoKey];
+            
+            // Check if pseudo has position info
+            if (pseudoData && pseudoData.position && pseudoData.referenceKey) {
+              // Reconstruct parent object with correct order
+              const newParentObj = {};
+              for (const key of Object.keys(parentObj)) {
+                if (key === pseudoKey) continue; // Skip the pseudo key
+                
+                // Insert new key at the right position
+                if (key === pseudoData.referenceKey) {
+                  if (pseudoData.position === 'above') {
+                    newParentObj[_key] = newData.value;
+                    newParentObj[key] = parentObj[key];
+                  } else {
+                    newParentObj[key] = parentObj[key];
+                    newParentObj[_key] = newData.value;
+                  }
+                } else {
+                  newParentObj[key] = parentObj[key];
+                }
               }
+              // Replace parent object keys
+              Object.keys(parentObj).forEach(k => delete parentObj[k]);
+              Object.assign(parentObj, newParentObj);
+            } else {
+              // No position info - just delete pseudo and add at end
+              delete parentObj[pseudoKey];
+              parentObj[_key] = newData.value;
             }
+            
             console.log('After createEntry, result:', result);
             return result;
           }
@@ -259,16 +274,20 @@ const JsonExamplesPanel = () => {
             case 'addEntry': {
               // Add pseudo entry to empty dict
               const targetObj = pathParts.length === 0 ? result : pathParts.reduce((obj, key) => obj[key], result);
-              if (!targetObj.__pseudo__) targetObj.__pseudo__ = [];
-              targetObj.__pseudo__.push({ path });
+              const pseudoKey = `__pseudo__${Date.now()}`;
+              targetObj[pseudoKey] = { __pseudo__: true };
               return result;
             }
             case 'addEntryAbove':
             case 'addEntryBelow': {
               // Add pseudo entry above/below current entry
               const parentObj = pathParts.length === 1 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
-              if (!parentObj.__pseudo__) parentObj.__pseudo__ = [];
-              parentObj.__pseudo__.push({ path: pathParts.slice(0, -1).join('.'), position: _action === 'addEntryAbove' ? 'above' : 'below', referenceKey: pathParts[pathParts.length - 1] });
+              const pseudoKey = `__pseudo__${Date.now()}`;
+              parentObj[pseudoKey] = { 
+                __pseudo__: true,
+                position: _action === 'addEntryAbove' ? 'above' : 'below', 
+                referenceKey: pathParts[pathParts.length - 1]
+              };
               return result;
             }
             case 'addItem':
@@ -334,16 +353,10 @@ const JsonExamplesPanel = () => {
                 const targetIndex = parseInt(parts[parts.length - 1]);
                 current.splice(targetIndex, 1);
               } else {
-                // Dict entry
+                // Dict entry - delete the pseudo key
                 const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
-                if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
-                  // Remove the first pseudo item (the one being cancelled)
-                  parentObj.__pseudo__.shift();
-                  // If array is now empty, delete the property
-                  if (parentObj.__pseudo__.length === 0) {
-                    delete parentObj.__pseudo__;
-                  }
-                }
+                const pseudoKey = pathParts[pathParts.length - 1];
+                delete parentObj[pseudoKey];
               }
               return result;
             }
@@ -372,21 +385,103 @@ const JsonExamplesPanel = () => {
         const value = current[oldKey];
         delete current[oldKey];
         current[newKey] = value;
+      } else if (_action === 'moveEntryUp' || _action === 'moveEntryDown') {
+        // Move dict entry up or down
+        const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
+        const currentKey = pathParts[pathParts.length - 1];
+        const keys = Object.keys(parentObj).filter(k => !k.startsWith('__pseudo__'));
+        const currentIndex = keys.indexOf(currentKey);
+        const newIndex = _action === 'moveEntryUp' ? currentIndex - 1 : currentIndex + 1;
+        
+        if (newIndex >= 0 && newIndex < keys.length) {
+          // Rebuild object with swapped order
+          const newObj = {};
+          keys.forEach((k, idx) => {
+            if (idx === currentIndex) return; // Skip current
+            if (idx === newIndex) {
+              // Insert current before/after this key
+              if (_action === 'moveEntryUp') {
+                newObj[currentKey] = parentObj[currentKey];
+                newObj[k] = parentObj[k];
+              } else {
+                newObj[k] = parentObj[k];
+                newObj[currentKey] = parentObj[currentKey];
+              }
+            } else {
+              newObj[k] = parentObj[k];
+            }
+          });
+          
+          // Copy back to parent
+          keys.forEach(k => delete parentObj[k]);
+          Object.assign(parentObj, newObj);
+        }
+      } else if (_action === 'moveItemUp' || _action === 'moveItemDown') {
+        // Move array item up or down
+        let current = result;
+        for (let i = 0; i < pathParts.length - 1; i++) {
+          current = current[pathParts[i]];
+        }
+        const currentIndex = parseInt(pathParts[pathParts.length - 1]);
+        
+        if (Array.isArray(current)) {
+          // Filter out pseudo items for correct indices
+          const realIndices = [];
+          current.forEach((item, idx) => {
+            if (!(item && typeof item === 'object' && item.isPseudo)) {
+              realIndices.push(idx);
+            }
+          });
+          
+          const posInReal = realIndices.indexOf(currentIndex);
+          if (posInReal >= 0) {
+            const targetPos = _action === 'moveItemUp' ? posInReal - 1 : posInReal + 1;
+            if (targetPos >= 0 && targetPos < realIndices.length) {
+              const targetIndex = realIndices[targetPos];
+              // Swap the two real items
+              const temp = current[currentIndex];
+              current[currentIndex] = current[targetIndex];
+              current[targetIndex] = temp;
+            }
+          }
+        }
       } else {
         switch (_action) {
           case 'createEntry': {
-            // Convert pseudo to real entry
+            // Convert pseudo to real entry: delete the pseudo key, add real key
             const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
-            parentObj[_key] = newData.value;
-            // Remove the pseudo item from __pseudo__ array
-            if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
-              // Remove the first pseudo item (the one being converted)
-              parentObj.__pseudo__.shift();
-              // If array is now empty, delete the property
-              if (parentObj.__pseudo__.length === 0) {
-                delete parentObj.__pseudo__;
+            const pseudoKey = pathParts[pathParts.length - 1];
+            const pseudoData = parentObj[pseudoKey];
+            
+            // Check if pseudo has position info
+            if (pseudoData && pseudoData.position && pseudoData.referenceKey) {
+              // Reconstruct parent object with correct order
+              const newParentObj = {};
+              for (const key of Object.keys(parentObj)) {
+                if (key === pseudoKey) continue; // Skip the pseudo key
+                
+                // Insert new key at the right position
+                if (key === pseudoData.referenceKey) {
+                  if (pseudoData.position === 'above') {
+                    newParentObj[_key] = newData.value;
+                    newParentObj[key] = parentObj[key];
+                  } else {
+                    newParentObj[key] = parentObj[key];
+                    newParentObj[_key] = newData.value;
+                  }
+                } else {
+                  newParentObj[key] = parentObj[key];
+                }
               }
+              // Replace parent object keys
+              Object.keys(parentObj).forEach(k => delete parentObj[k]);
+              Object.assign(parentObj, newParentObj);
+            } else {
+              // No position info - just delete pseudo and add at end
+              delete parentObj[pseudoKey];
+              parentObj[_key] = newData.value;
             }
+            
             return result;
           }
           case 'createItem': {
@@ -612,16 +707,20 @@ const JsonExamplesPanel = () => {
             case 'addEntry': {
               // Add pseudo entry to empty dict
               const targetObj = pathParts.length === 0 ? result : pathParts.reduce((obj, key) => obj[key], result);
-              if (!targetObj.__pseudo__) targetObj.__pseudo__ = [];
-              targetObj.__pseudo__.push({ path });
+              const pseudoKey = `__pseudo__${Date.now()}`;
+              targetObj[pseudoKey] = { __pseudo__: true };
               return result;
             }
             case 'addEntryAbove':
             case 'addEntryBelow': {
               // Add pseudo entry above/below current entry
               const parentObj = pathParts.length === 1 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
-              if (!parentObj.__pseudo__) parentObj.__pseudo__ = [];
-              parentObj.__pseudo__.push({ path: pathParts.slice(0, -1).join('.'), position: _action === 'addEntryAbove' ? 'above' : 'below', referenceKey: pathParts[pathParts.length - 1] });
+              const pseudoKey = `__pseudo__${Date.now()}`;
+              parentObj[pseudoKey] = { 
+                __pseudo__: true,
+                position: _action === 'addEntryAbove' ? 'above' : 'below', 
+                referenceKey: pathParts[pathParts.length - 1]
+              };
               return result;
             }
             case 'addItem':
@@ -687,16 +786,10 @@ const JsonExamplesPanel = () => {
                 const targetIndex = parseInt(parts[parts.length - 1]);
                 current.splice(targetIndex, 1);
               } else {
-                // Dict entry
+                // Dict entry - delete the pseudo key
                 const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
-                if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
-                  // Remove the first pseudo item (the one being cancelled)
-                  parentObj.__pseudo__.shift();
-                  // If array is now empty, delete the property
-                  if (parentObj.__pseudo__.length === 0) {
-                    delete parentObj.__pseudo__;
-                  }
-                }
+                const pseudoKey = pathParts[pathParts.length - 1];
+                delete parentObj[pseudoKey];
               }
               return result;
             }
@@ -725,21 +818,120 @@ const JsonExamplesPanel = () => {
         const value = current[oldKey];
         delete current[oldKey];
         current[newKey] = value;
+      } else if (_action === 'moveEntryUp' || _action === 'moveEntryDown') {
+        // Move dict entry up or down
+        const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
+        const currentKey = pathParts[pathParts.length - 1];
+        const keys = Object.keys(parentObj).filter(k => !k.startsWith('__pseudo__'));
+        const currentIndex = keys.indexOf(currentKey);
+        const newIndex = _action === 'moveEntryUp' ? currentIndex - 1 : currentIndex + 1;
+        
+        if (newIndex >= 0 && newIndex < keys.length) {
+          // Rebuild object with swapped order
+          const newObj = {};
+          keys.forEach((k, idx) => {
+            if (idx === currentIndex) return; // Skip current
+            if (idx === newIndex) {
+              // Insert current before/after this key
+              if (_action === 'moveEntryUp') {
+                newObj[currentKey] = parentObj[currentKey];
+                newObj[k] = parentObj[k];
+              } else {
+                newObj[k] = parentObj[k];
+                newObj[currentKey] = parentObj[currentKey];
+              }
+            } else {
+              newObj[k] = parentObj[k];
+            }
+          });
+          
+          // Copy back to parent
+          keys.forEach(k => delete parentObj[k]);
+          Object.assign(parentObj, newObj);
+        }
+      } else if (_action === 'moveItemUp' || _action === 'moveItemDown') {
+        // Move array item up or down
+        // Parse array path like "tags..1" or "author.roles..2"
+        if (path.includes('..')) {
+          const parts = path.split('..');
+          let current = result;
+          
+          // First part: navigate through object keys
+          if (parts[0]) {
+            const objKeys = parts[0].split('.').filter(k => k !== '');
+            for (const key of objKeys) {
+              current = current[key];
+            }
+          }
+          
+          // Remaining parts: navigate through array indices (except last)
+          for (let i = 1; i < parts.length - 1; i++) {
+            const index = parseInt(parts[i]);
+            current = current[index];
+          }
+          
+          const currentIndex = parseInt(parts[parts.length - 1]);
+          const newIndex = _action === 'moveItemUp' ? currentIndex - 1 : currentIndex + 1;
+          
+          if (Array.isArray(current) && newIndex >= 0 && newIndex < current.length) {
+            // Swap items - filter out pseudo items for correct indices
+            const realIndices = [];
+            current.forEach((item, idx) => {
+              if (!(item && typeof item === 'object' && item.isPseudo)) {
+                realIndices.push(idx);
+              }
+            });
+            
+            const posInReal = realIndices.indexOf(currentIndex);
+            if (posInReal >= 0) {
+              const targetPos = _action === 'moveItemUp' ? posInReal - 1 : posInReal + 1;
+              if (targetPos >= 0 && targetPos < realIndices.length) {
+                const targetIndex = realIndices[targetPos];
+                // Swap the two real items
+                const temp = current[currentIndex];
+                current[currentIndex] = current[targetIndex];
+                current[targetIndex] = temp;
+              }
+            }
+          }
+        }
       } else {
         switch (_action) {
           case 'createEntry': {
-            // Convert pseudo to real entry
+            // Convert pseudo to real entry: delete the pseudo key, add real key
             const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
-            parentObj[_key] = newData.value;
-            // Remove the pseudo item from __pseudo__ array
-            if (parentObj.__pseudo__ && parentObj.__pseudo__.length > 0) {
-              // Remove the first pseudo item (the one being converted)
-              parentObj.__pseudo__.shift();
-              // If array is now empty, delete the property
-              if (parentObj.__pseudo__.length === 0) {
-                delete parentObj.__pseudo__;
+            const pseudoKey = pathParts[pathParts.length - 1];
+            const pseudoData = parentObj[pseudoKey];
+            
+            // Check if pseudo has position info
+            if (pseudoData && pseudoData.position && pseudoData.referenceKey) {
+              // Reconstruct parent object with correct order
+              const newParentObj = {};
+              for (const key of Object.keys(parentObj)) {
+                if (key === pseudoKey) continue; // Skip the pseudo key
+                
+                // Insert new key at the right position
+                if (key === pseudoData.referenceKey) {
+                  if (pseudoData.position === 'above') {
+                    newParentObj[_key] = newData.value;
+                    newParentObj[key] = parentObj[key];
+                  } else {
+                    newParentObj[key] = parentObj[key];
+                    newParentObj[_key] = newData.value;
+                  }
+                } else {
+                  newParentObj[key] = parentObj[key];
+                }
               }
+              // Replace parent object keys
+              Object.keys(parentObj).forEach(k => delete parentObj[k]);
+              Object.assign(parentObj, newParentObj);
+            } else {
+              // No position info - just delete pseudo and add at end
+              delete parentObj[pseudoKey];
+              parentObj[_key] = newData.value;
             }
+            
             return result;
           }
           case 'createItem': {

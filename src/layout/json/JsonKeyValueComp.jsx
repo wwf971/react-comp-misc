@@ -24,7 +24,7 @@ const JsonKeyValueComp = ({
 }) => {
   const [isEditingKey, setIsEditingKey] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showConversionMenu } = useJsonContext();
+  const { showConversionMenu, queryParentInfo } = useJsonContext();
   
   const keyRef = useRef(null);
   const originalValueRef = useRef('');
@@ -125,12 +125,16 @@ const JsonKeyValueComp = ({
     e.stopPropagation();
     
     if (showConversionMenu) {
+      const parentInfo = queryParentInfo ? queryParentInfo(path) : { isSingleEntryInParent: false };
       showConversionMenu({
         position: { x: e.clientX, y: e.clientY },
         menuType: 'key',
         itemKey: itemKey,
         path: path,
-        value: value
+        value: value,
+        isSingleEntryInParent: parentInfo.isSingleEntryInParent,
+        isFirstInParent: parentInfo.isFirstInParent,
+        isLastInParent: parentInfo.isLastInParent
       });
     }
   };
