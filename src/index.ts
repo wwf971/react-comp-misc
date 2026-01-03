@@ -18,7 +18,8 @@ export {
     FolderIcon,
     EditIconNotepad,
     EditIcon,
-    EditIconPen
+    EditIconPen,
+    PlusIcon
 } from "./icon/Icon.jsx";
 
 export { default as PdfIcon } from "./icon/PdfIcon.jsx";

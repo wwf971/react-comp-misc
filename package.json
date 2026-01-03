@@ -13,6 +13,7 @@
     "./src/path/PathBar": "./src/path/PathBar.tsx",
     "./src/path/PathBar.css": "./src/path/PathBar.css",
     "./src/dict/KeyValues": "./src/dict/KeyValues.jsx",
+    "./src/dict/KeyValuesComp": "./src/dict/KeyValuesComp.jsx",
     "./src/dict/KeyValues.css": "./src/dict/KeyValues.css",
     "./src/icon/Icon": "./src/icon/Icon.jsx",
     "./src/icon/SpinningCircle": "./src/icon/SpinningCircle.jsx",

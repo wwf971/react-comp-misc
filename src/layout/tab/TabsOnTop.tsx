@@ -12,6 +12,7 @@ interface TabsOnTopProps {
   onTabClose?: (tabKey: string) => void;
   allowTabCreate?: boolean;
   onTabCreate?: () => void;
+  autoSwitchToNewTab?: boolean; // Whether to auto-switch when new tabs are added (default: true)
 }
 
 interface TabsOnTopRef {
@@ -29,6 +30,13 @@ interface TabConfig {
   tabKeyMap: Record<string, string>;
 }
 
+interface TabState {
+  clickCount: number;
+  isFocused: boolean;
+}
+
+type TabsState = Record<string, TabState>;
+
 /**
  * TabsOnTop - Layout component with horizontal tabs at the top
  * All tab contents are rendered (for lazy render control), but only active one is visible
@@ -37,6 +45,7 @@ interface TabConfig {
  * @param {ReactNode} props.children - Tab components
  * @param {string} props.defaultTab - Default tab key (optional)
  * @param {Function} props.onTabChange - Callback when tab changes (optional)
+ * @param {boolean} props.autoSwitchToNewTab - Auto-switch to new tabs when added (default: true)
  */
 const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(
   ({ 
@@ -46,7 +55,8 @@ const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(
     allowCloseTab = false,
     onTabClose,
     allowTabCreate = false,
-    onTabCreate
+    onTabCreate,
+    autoSwitchToNewTab = true
   }, ref) => {
   // Use useMemo instead of useState so config updates when children change
   const config = useMemo(() => extractTabConfig(children), [children]);
@@ -67,6 +77,32 @@ const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(
   // Initialize with first available tab, then update when config is ready
   const [activeTabKey, setActiveTabKey] = useState<string | null>(() => getInitialTab());
   
+  // Track tab states (click count and focus status)
+  const [tabsState, setTabsState] = useState<TabsState>(() => {
+    const initialState: TabsState = {};
+    tabs.forEach(tab => {
+      initialState[tab.key] = { clickCount: 0, isFocused: tab.key === getInitialTab() };
+    });
+    return initialState;
+  });
+
+  // Initialize tab states when tabs config changes
+  React.useEffect(() => {
+    setTabsState(prevState => {
+      const newState: TabsState = {};
+      tabs.forEach(tab => {
+        if (prevState[tab.key]) {
+          // Preserve existing state
+          newState[tab.key] = { ...prevState[tab.key], isFocused: tab.key === activeTabKey };
+        } else {
+          // Initialize new tab
+          newState[tab.key] = { clickCount: 0, isFocused: tab.key === activeTabKey };
+        }
+      });
+      return newState;
+    });
+  }, [tabs, activeTabKey]);
+  
   // Update active tab if config changes and current tab is invalid
   React.useEffect(() => {
     if (!activeTabKey || !panels[activeTabKey]) {
@@ -77,8 +113,10 @@ const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(
     }
   }, [config]);
 
-  // Switch to last tab when tabs are added
+  // Switch to last tab when tabs are added (controlled by autoSwitchToNewTab prop)
   React.useEffect(() => {
+    if (!autoSwitchToNewTab) return; // Skip if disabled
+    
     const lastTabKey = tabs[tabs.length - 1]?.key;
     if (lastTabKey && tabs.length > 0 && lastTabKey !== activeTabKey) {
       // Check if this is a new tab (not in previous render)
@@ -91,13 +129,33 @@ const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(
         }
       }
     }
-  }, [tabs.length]);
+  }, [tabs.length, autoSwitchToNewTab]);
 
   const switchToTab = (tabIdentifier: string) => {
     // Support both tab key (tab-1) and label (Users, JWT Tokens)
     const targetKey = tabKeyMap[tabIdentifier] || tabIdentifier;
     if (panels[targetKey]) {
       setActiveTabKey(targetKey);
+      
+      // Update tabs state: increment click count and update focus
+      setTabsState(prevState => {
+        const newState: TabsState = {};
+        Object.keys(prevState).forEach(key => {
+          if (key === targetKey) {
+            newState[key] = {
+              clickCount: prevState[key].clickCount + 1,
+              isFocused: true
+            };
+          } else {
+            newState[key] = {
+              ...prevState[key],
+              isFocused: false
+            };
+          }
+        });
+        return newState;
+      });
+      
       if (onTabChange) {
         onTabChange(targetKey);
       }
@@ -156,15 +214,31 @@ const TabsOnTop = forwardRef<TabsOnTopRef, TabsOnTopProps>(
         )}
       </div>
       <div className="tabs-on-top-content">
-        {Object.entries(panels).map(([tabKey, panelContent]) => (
-          <div
-            key={tabKey}
-            className={`tab-panel ${tabKey === activeTabKey ? 'active' : ''}`}
-            style={{ display: tabKey === activeTabKey ? 'block' : 'none' }}
-          >
-            {panelContent}
-          </div>
-        ))}
+        {Object.entries(panels).map(([tabKey, panelContent]) => {
+          // Clone panel content and inject tabsState and tabKey props
+          // Only inject into custom components (function/class), not DOM elements (string type)
+          let enhancedContent = panelContent;
+          if (React.isValidElement(panelContent)) {
+            const element = panelContent as React.ReactElement<any>;
+            // Check if it's a custom component (not a DOM element)
+            if (typeof element.type === 'function' || typeof element.type === 'object') {
+              enhancedContent = React.cloneElement(element, { 
+                tabsState,
+                tabKey
+              });
+            }
+          }
+          
+          return (
+            <div
+              key={tabKey}
+              className={`tab-panel ${tabKey === activeTabKey ? 'active' : ''}`}
+              style={{ display: tabKey === activeTabKey ? 'block' : 'none' }}
+            >
+              {enhancedContent}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

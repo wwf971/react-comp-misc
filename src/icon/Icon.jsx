@@ -18,6 +18,7 @@ import FolderIcon from './FolderIcon';
 import EditIconNotepad from './EditIcon';
 import EditIconPen from './EditIconPen';
 import Refresh from './Refresh';
+import PlusIcon from './PlusIcon';
 
 export {
 	FileIconDefault,
@@ -39,5 +40,6 @@ export {
 	EditIconNotepad,
 	EditIconNotepad as EditIcon,
 	EditIconPen,
-	Refresh
+	Refresh,
+	PlusIcon
 }
