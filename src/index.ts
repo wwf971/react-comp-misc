@@ -66,6 +66,8 @@ export { JsonContextProvider, useJsonContext } from "./layout/json/JsonContext";
 export type { TypeConversionBehavior, ConversionMenuRequest } from "./layout/json/JsonContext";
 export * from "./layout/json/typeConvert";
 
+export { parseYamlToJson, parseJsonString, parseStringToJson, formatJson } from "./utils/parseString";
+
 export { default as Menu } from "./menu/Menu";
 export type { MenuItem, MenuItemSingle, MenuItemSubmenu } from "./menu/Menu";
 

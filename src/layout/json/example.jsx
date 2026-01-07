@@ -416,6 +416,37 @@ const JsonExamplesPanel = () => {
           keys.forEach(k => delete parentObj[k]);
           Object.assign(parentObj, newObj);
         }
+      } else if (_action === 'moveEntryToTop' || _action === 'moveEntryToBottom') {
+        // Move dict entry to top or bottom
+        const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
+        const currentKey = pathParts[pathParts.length - 1];
+        const keys = Object.keys(parentObj).filter(k => !k.startsWith('__pseudo__'));
+        
+        // Rebuild object with entry at new position
+        const newObj = {};
+        if (_action === 'moveEntryToTop') {
+          // Add current key first
+          newObj[currentKey] = parentObj[currentKey];
+          // Add all other keys
+          keys.forEach(k => {
+            if (k !== currentKey) {
+              newObj[k] = parentObj[k];
+            }
+          });
+        } else {
+          // Add all other keys first
+          keys.forEach(k => {
+            if (k !== currentKey) {
+              newObj[k] = parentObj[k];
+            }
+          });
+          // Add current key last
+          newObj[currentKey] = parentObj[currentKey];
+        }
+        
+        // Copy back to parent
+        keys.forEach(k => delete parentObj[k]);
+        Object.assign(parentObj, newObj);
       } else if (_action === 'moveItemUp' || _action === 'moveItemDown') {
         // Move array item up or down
         let current = result;
@@ -442,6 +473,38 @@ const JsonExamplesPanel = () => {
               const temp = current[currentIndex];
               current[currentIndex] = current[targetIndex];
               current[targetIndex] = temp;
+            }
+          }
+        }
+      } else if (_action === 'moveItemToTop' || _action === 'moveItemToBottom') {
+        // Move array item to top or bottom
+        let current = result;
+        for (let i = 0; i < pathParts.length - 1; i++) {
+          current = current[pathParts[i]];
+        }
+        const currentIndex = parseInt(pathParts[pathParts.length - 1]);
+        
+        if (Array.isArray(current)) {
+          // Filter out pseudo items to get real indices
+          const realIndices = [];
+          current.forEach((item, idx) => {
+            if (!(item && typeof item === 'object' && item.isPseudo)) {
+              realIndices.push(idx);
+            }
+          });
+          
+          const posInReal = realIndices.indexOf(currentIndex);
+          if (posInReal >= 0) {
+            const item = current[currentIndex];
+            // Remove item from current position
+            current.splice(currentIndex, 1);
+            
+            if (_action === 'moveItemToTop') {
+              // Insert at beginning
+              current.unshift(item);
+            } else {
+              // Insert at end
+              current.push(item);
             }
           }
         }
@@ -895,6 +958,85 @@ const JsonExamplesPanel = () => {
             }
           }
         }
+      } else if (_action === 'moveItemToTop' || _action === 'moveItemToBottom') {
+        // Move array item to top or bottom
+        // Parse array path like "tags..1" or "author.roles..2"
+        if (path.includes('..')) {
+          const parts = path.split('..');
+          let current = result;
+          
+          // First part: navigate through object keys
+          if (parts[0]) {
+            const objKeys = parts[0].split('.').filter(k => k !== '');
+            for (const key of objKeys) {
+              current = current[key];
+            }
+          }
+          
+          // Remaining parts: navigate through array indices (except last)
+          for (let i = 1; i < parts.length - 1; i++) {
+            const index = parseInt(parts[i]);
+            current = current[index];
+          }
+          
+          const currentIndex = parseInt(parts[parts.length - 1]);
+          
+          if (Array.isArray(current)) {
+            // Filter out pseudo items to get real indices
+            const realIndices = [];
+            current.forEach((item, idx) => {
+              if (!(item && typeof item === 'object' && item.isPseudo)) {
+                realIndices.push(idx);
+              }
+            });
+            
+            const posInReal = realIndices.indexOf(currentIndex);
+            if (posInReal >= 0) {
+              const item = current[currentIndex];
+              // Remove item from current position
+              current.splice(currentIndex, 1);
+              
+              if (_action === 'moveItemToTop') {
+                // Insert at beginning
+                current.unshift(item);
+              } else {
+                // Insert at end
+                current.push(item);
+              }
+            }
+          }
+        }
+      } else if (_action === 'moveEntryToTop' || _action === 'moveEntryToBottom') {
+        // Move dict entry to top or bottom
+        const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
+        const currentKey = pathParts[pathParts.length - 1];
+        const keys = Object.keys(parentObj).filter(k => !k.startsWith('__pseudo__'));
+        
+        // Rebuild object with entry at new position
+        const newObj = {};
+        if (_action === 'moveEntryToTop') {
+          // Add current key first
+          newObj[currentKey] = parentObj[currentKey];
+          // Add all other keys
+          keys.forEach(k => {
+            if (k !== currentKey) {
+              newObj[k] = parentObj[k];
+            }
+          });
+        } else {
+          // Add all other keys first
+          keys.forEach(k => {
+            if (k !== currentKey) {
+              newObj[k] = parentObj[k];
+            }
+          });
+          // Add current key last
+          newObj[currentKey] = parentObj[currentKey];
+        }
+        
+        // Copy back to parent
+        keys.forEach(k => delete parentObj[k]);
+        Object.assign(parentObj, newObj);
       } else {
         switch (_action) {
           case 'createEntry': {

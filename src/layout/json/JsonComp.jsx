@@ -7,6 +7,7 @@ import EmptyDict from './EmptyDict';
 import EmptyList from './EmptyList';
 import { JsonContextProvider } from './JsonContext';
 import MenuComp from '../../menu/MenuComp';
+import StringInput from './StringInput';
 import { convertValue, getValueType } from './typeConvert';
 import './JsonComp.css';
 
@@ -39,6 +40,7 @@ const JsonComp = ({
   isArrayItem = false
 }) => {
   const [conversionMenu, setConversionMenu] = useState(null);
+  const [stringInputState, setStringInputState] = useState(null); // {path, oldValue, oldType}
 
   // Handle conversion menu request from value components
   const showConversionMenu = useCallback((request) => {
@@ -48,6 +50,33 @@ const JsonComp = ({
   // Close menu
   const closeMenu = useCallback(() => {
     setConversionMenu(null);
+  }, []);
+
+  // Handle StringInput confirmation
+  const handleStringInputConfirm = useCallback(async (parsedValue) => {
+    if (!stringInputState || !onChange) return;
+
+    const { path, oldValue, oldType } = stringInputState;
+    const parsedType = Array.isArray(parsedValue) ? 'array' : typeof parsedValue;
+
+    try {
+      const changeData = {
+        old: { type: oldType, value: oldValue },
+        new: { type: parsedType, value: parsedValue }
+      };
+      await onChange(path, changeData);
+      
+      // Close the StringInput dialog
+      setStringInputState(null);
+    } catch (error) {
+      console.error('Failed to apply string input:', error);
+      // Keep dialog open on error
+    }
+  }, [stringInputState, onChange]);
+
+  // Handle StringInput cancellation
+  const handleStringInputCancel = useCallback(() => {
+    setStringInputState(null);
   }, []);
 
   // Handle menu item selection (both conversion and delete actions)
@@ -195,6 +224,41 @@ const JsonComp = ({
           _parentPath: arrayPath
         };
         await onChange(path, changeData);
+      } else if (action === 'moveEntryToTop' || action === 'moveEntryToBottom') {
+        // Move dict entry to top or bottom
+        // Compute parent path for dict entry
+        const pathParts = path.split('.').filter(p => p !== '');
+        const parentPath = pathParts.length > 1 ? pathParts.slice(0, -1).join('.') : '';
+        const changeData = {
+          old: { type: 'entry' },
+          new: { type: 'entry' },
+          _action: action,
+          _parentPath: parentPath
+        };
+        await onChange(path, changeData);
+      } else if (action === 'moveItemToTop' || action === 'moveItemToBottom') {
+        // Move array item to top or bottom
+        // Compute parent path for array item (remove the ..index part)
+        const parts = path.split('..');
+        const arrayPath = parts.length > 1 ? parts[0] + (parts.length > 2 ? '..' + parts.slice(1, -1).join('..') : '') : '';
+        const changeData = {
+          old: { type: 'arrayItem' },
+          new: { type: 'arrayItem' },
+          _action: action,
+          _parentPath: arrayPath
+        };
+        await onChange(path, changeData);
+      } else if (action === 'replaceWithJson') {
+        // Replace current value with JSON/YAML object/array
+        // Open StringInput dialog
+        setStringInputState({
+          path: path,
+          oldValue: conversionMenu.currentValue,
+          oldType: conversionMenu.currentType
+        });
+        // Close the menu
+        closeMenu();
+        return; // Don't close menu at end
       } else if (item.data?.targetType) {
         // Type conversion
         const { currentValue, currentType } = conversionMenu;
@@ -232,6 +296,15 @@ const JsonComp = ({
           disabled: !conv.canConvert,
           data: { targetType: conv.targetType }
         }))
+      });
+    }
+    
+    // Add "Replace with JSON" for values and array items
+    if (menuType === 'value' || menuType === 'arrayItem') {
+      items.push({
+        type: 'item',
+        name: 'Replace with JSON',
+        data: { action: 'replaceWithJson' }
       });
     }
     
@@ -298,6 +371,18 @@ const JsonComp = ({
             name: 'Move down',
             disabled: conversionMenu.isLastInParent,
             data: { action: 'moveEntryDown' }
+          },
+          {
+            type: 'item',
+            name: 'Move to top',
+            disabled: conversionMenu.isFirstInParent,
+            data: { action: 'moveEntryToTop' }
+          },
+          {
+            type: 'item',
+            name: 'Move to bottom',
+            disabled: conversionMenu.isLastInParent,
+            data: { action: 'moveEntryToBottom' }
           }
         );
       }
@@ -361,6 +446,18 @@ const JsonComp = ({
             name: 'Move down',
             disabled: conversionMenu.isLastInParent,
             data: { action: 'moveItemDown' }
+          },
+          {
+            type: 'item',
+            name: 'Move to top',
+            disabled: conversionMenu.isFirstInParent,
+            data: { action: 'moveItemToTop' }
+          },
+          {
+            type: 'item',
+            name: 'Move to bottom',
+            disabled: conversionMenu.isLastInParent,
+            data: { action: 'moveItemToBottom' }
           }
         );
       }
@@ -615,6 +712,14 @@ const JsonComp = ({
               e.preventDefault();
               // Keep menu open on backdrop right-click
             }}
+          />
+        )}
+
+        {stringInputState && (
+          <StringInput
+            onConfirm={handleStringInputConfirm}
+            onCancel={handleStringInputCancel}
+            title="Replace with JSON/YAML"
           />
         )}
       </JsonContextProvider>

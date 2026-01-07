@@ -192,9 +192,16 @@
 }
 
 /* Indent empty objects/arrays when they're values in key-value pairs */
-.json-keyvalue.has-complex-value .json-empty-object,
-.json-keyvalue.has-complex-value .json-empty-array {
+/* But not when they're inside arrays */
+.json-keyvalue.has-complex-value > .json-empty-object,
+.json-keyvalue.has-complex-value > .json-empty-array {
   padding-left: var(--json-indent, 40px);
+}
+
+/* Remove padding when empty dict/array is an array item */
+.json-array-item .json-empty-object,
+.json-array-item .json-empty-array {
+  padding-left: 0;
 }
 
 .json-array-index {
