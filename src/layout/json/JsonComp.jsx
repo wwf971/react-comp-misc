@@ -8,6 +8,7 @@ import EmptyList from './EmptyList';
 import { JsonContextProvider } from './JsonContext';
 import MenuComp from '../../menu/MenuComp';
 import StringInput from './StringInput';
+import RawJsonDisplay from './RawJsonDisplay';
 import { convertValue, getValueType } from './typeConvert';
 import './JsonComp.css';
 
@@ -41,6 +42,7 @@ const JsonComp = ({
 }) => {
   const [conversionMenu, setConversionMenu] = useState(null);
   const [stringInputState, setStringInputState] = useState(null); // {path, oldValue, oldType}
+  const [rawJsonDisplay, setRawJsonDisplay] = useState(null); // {data, title}
 
   // Handle conversion menu request from value components
   const showConversionMenu = useCallback((request) => {
@@ -78,6 +80,95 @@ const JsonComp = ({
   const handleStringInputCancel = useCallback(() => {
     setStringInputState(null);
   }, []);
+
+  // Get parent container data from path
+  const getContainerData = useCallback((path) => {
+    if (!data) return null;
+
+    // Root level
+    if (!path || path === '') {
+      return data;
+    }
+
+    // Parse path to get parent container
+    if (path.includes('..')) {
+      // Array path like "tags..0" or "items..1.name"
+      const parts = path.split('..');
+      let current = data;
+
+      // Navigate through object keys in first part
+      if (parts[0]) {
+        const objKeys = parts[0].split('.').filter(k => k !== '');
+        for (const key of objKeys) {
+          current = current[key];
+          if (!current) return null;
+        }
+      }
+
+      // Navigate through array parts
+      for (let i = 1; i < parts.length; i++) {
+        const segments = parts[i].split('.');
+        const arrayIndex = parseInt(segments[0]);
+        const isLastPart = i === parts.length - 1;
+        const hasObjectKeys = segments.length > 1;
+        
+        if (isLastPart) {
+          // This is the last part - we're at or inside the item we're viewing
+          if (hasObjectKeys) {
+            // Path like "..0.key" - we're viewing a property inside the array item
+            // Navigate to the array item (which is the parent container)
+            current = current[arrayIndex];
+            if (!current) return null;
+            
+            // Navigate through object keys except the last one
+            for (let j = 1; j < segments.length - 1; j++) {
+              const key = segments[j];
+              if (key) {
+                current = current[key];
+                if (!current) return null;
+              }
+            }
+            // Current is now the parent object containing the last key
+          } else {
+            // Path like "..0" - we're viewing the array item itself
+            // Don't navigate through it; current is already the parent array
+          }
+        } else {
+          // Not the last part - navigate through completely
+          current = current[arrayIndex];
+          if (!current) return null;
+          
+          for (let j = 1; j < segments.length; j++) {
+            const key = segments[j];
+            if (key) {
+              current = current[key];
+              if (!current) return null;
+            }
+          }
+        }
+      }
+
+      // Current is now the parent container
+      return current;
+    } else {
+      // Object path like "user.name"
+      const pathParts = path.split('.').filter(p => p !== '');
+      
+      if (pathParts.length === 0) {
+        return data;
+      }
+
+      let current = data;
+      // Navigate to parent object (all parts except the last)
+      for (let i = 0; i < pathParts.length - 1; i++) {
+        current = current[pathParts[i]];
+        if (!current) return null;
+      }
+
+      // Current is now the parent object
+      return current;
+    }
+  }, [data]);
 
   // Handle menu item selection (both conversion and delete actions)
   const handleMenuItemClick = useCallback(async (item) => {
@@ -259,6 +350,19 @@ const JsonComp = ({
         // Close the menu
         closeMenu();
         return; // Don't close menu at end
+      } else if (action === 'viewRawJson') {
+        // View raw JSON of parent container
+        const containerData = getContainerData(path);
+        if (containerData) {
+          const isArray = Array.isArray(containerData);
+          setRawJsonDisplay({
+            data: containerData,
+            title: isArray ? 'Raw JSON (Array)' : 'Raw JSON (Object)'
+          });
+        }
+        // Close the menu
+        closeMenu();
+        return;
       } else if (item.data?.targetType) {
         // Type conversion
         const { currentValue, currentType } = conversionMenu;
@@ -276,7 +380,7 @@ const JsonComp = ({
     } catch (error) {
       console.error('Menu action failed:', error);
     }
-  }, [conversionMenu, onChange, closeMenu]);
+  }, [conversionMenu, onChange, closeMenu, getContainerData]);
 
   // Generate menu items based on menu type
   const getMenuItems = () => {
@@ -305,6 +409,15 @@ const JsonComp = ({
         type: 'item',
         name: 'Replace with JSON',
         data: { action: 'replaceWithJson' }
+      });
+    }
+    
+    // Add "View raw JSON" for all types (shows parent container)
+    if (menuType === 'key' || menuType === 'value' || menuType === 'arrayItem') {
+      items.push({
+        type: 'item',
+        name: 'View raw JSON',
+        data: { action: 'viewRawJson' }
       });
     }
     
@@ -720,6 +833,14 @@ const JsonComp = ({
             onConfirm={handleStringInputConfirm}
             onCancel={handleStringInputCancel}
             title="Replace with JSON/YAML"
+          />
+        )}
+
+        {rawJsonDisplay && (
+          <RawJsonDisplay
+            data={rawJsonDisplay.data}
+            title={rawJsonDisplay.title}
+            onClose={() => setRawJsonDisplay(null)}
           />
         )}
       </JsonContextProvider>
