@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import KeyValues from './KeyValues.jsx';
 import KeyValuesComp from './KeyValuesComp.jsx';
-import EditableValueWithInfo from '../layout/EditableValueWithInfo.jsx';
-import EditableValueComp from '../layout/EditableValueComp.jsx';
+import EditableValueWithInfo from '../layout/value-comp/EditableValueWithInfo.jsx';
+import EditableValueComp from '../layout/value-comp/EditableValueComp.jsx';
 import PlusIcon from '../icon/PlusIcon.jsx';
 
 /**

@@ -24,7 +24,6 @@ export interface MenuItemSubmenu extends MenuItemBase {
   type: 'menu'
   children: MenuItem[]
 }
-
 export type MenuItem = MenuItemSingle | MenuItemSubmenu
 
 interface MenuProps {

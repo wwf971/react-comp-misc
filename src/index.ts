@@ -51,9 +51,10 @@ export { default as PathBar } from "./path/PathBar.tsx";
 export { default as KeyValues } from "./dict/KeyValues.jsx";
 export { default as KeyValuesComp } from "./dict/KeyValuesComp.jsx";
 
-export { default as EditableValueComp } from "./layout/EditableValueComp.jsx";
-export { default as EditableValueWithInfo } from "./layout/EditableValueWithInfo.jsx";
-export { default as SelectableValueComp } from "./layout/SelectableValueComp.jsx";
+export { default as EditableValueComp } from "./layout/value-comp/EditableValueComp.jsx";
+export { default as EditableValueWithInfo } from "./layout/value-comp/EditableValueWithInfo.jsx";
+export { default as SelectableValueComp } from "./layout/value-comp/SelectableValueComp.jsx";
+export { default as SearchableValueComp } from "./layout/value-comp/SearchableValueComp.jsx";
 
 export { default as JsonComp } from "./layout/json/JsonComp.jsx";
 export { default as JsonKeyValueComp } from "./layout/json/JsonKeyValueComp.jsx";

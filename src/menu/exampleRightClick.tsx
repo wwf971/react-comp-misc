@@ -25,16 +25,16 @@ const MenuRightClickExample = () => {
   const [clickedItem, setClickedItem] = useState<string>('')
 
   // Generate menu items that change based on click count to demonstrate content updates
-  const getMenuItems = (clickCount: number): MenuItem[] => [
+  const getMenuItems = (clickCount: number, position: {x: number, y: number}): MenuItem[] => [
     {
       type: 'item',
-      name: `Action 1 (Click #${clickCount})`,
-      data: { action: 'action1', count: clickCount }
+      name: `X: ${position.x}, Y: ${position.y}`,
+      data: { action: 'position', count: clickCount }
     },
     {
       type: 'item',
-      name: `Action 2 (Click #${clickCount})`,
-      data: { action: 'action2', count: clickCount }
+      name: `Click #${clickCount}`,
+      data: { action: 'clickCount', count: clickCount }
     },
     {
       type: 'menu',
@@ -104,7 +104,7 @@ const MenuRightClickExample = () => {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div>
       <div 
         style={{
           padding: '60px 40px',
@@ -161,7 +161,7 @@ const MenuRightClickExample = () => {
 
       {menuState.position && (
         <Menu
-          items={getMenuItems(menuState.clickCount)}
+          items={getMenuItems(menuState.clickCount, menuState.position)}
           position={menuState.position}
           onClose={handleClose}
           onItemClick={handleItemClick}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SpinningCircle, EditIcon } from '@wwf971/react-comp-misc';
-import Menu from '../menu/Menu.tsx';
+import Menu from '../../menu/Menu.tsx';
 import './EditableValue.css';
 
 /**
@@ -299,7 +299,7 @@ const EditableValueComp = ({
                 className="edit-icon-button"
                 title="Click to edit"
               >
-                <EditIcon width={16} height={16} />
+                <EditIcon width={13} height={13} />
               </span>
             )}
           </span>
@@ -357,7 +357,7 @@ const EditableValueComp = ({
               className="edit-icon-button"
               title="Click to edit"
             >
-              <EditIcon width={16} height={16} />
+              <EditIcon width={13} height={13} />
             </span>
           )}
         </span>

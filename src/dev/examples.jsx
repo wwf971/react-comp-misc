@@ -8,6 +8,7 @@ import { dictExamples } from '../dict/example.jsx';
 import { tabExamples } from '../layout/tab/example.jsx';
 import { menuExamples } from '../menu/example.tsx';
 import { jsonExamples } from '../layout/json/example.jsx';
+import { valueCompExamples } from '../layout/value-comp/example.jsx';
 
 // Combine all examples into a single object
 export const components = {
@@ -20,4 +21,5 @@ export const components = {
   ...dictExamples,
   ...menuExamples,
   ...jsonExamples,
+  ...valueCompExamples,
 };

@@ -27,9 +27,28 @@
   cursor: not-allowed;
 }
 
+.selectable-value-fixed-wrapper {
+  display: inline-block;
+  vertical-align: baseline;
+  /* Fixed line-height to prevent jittering */
+  line-height: 1.2;
+  min-height: 1.2em;
+}
+
 .selectable-value-text {
   display: inline-block;
   vertical-align: baseline;
   line-height: inherit;
+  /* Always have the same box model to prevent jittering */
+  padding: 0 2px;
+  margin: 0 -2px;
+  outline: 1px solid transparent;
+  outline-offset: -1px;
+  box-sizing: border-box;
+}
+
+.selectable-editing {
+  /* Only change the outline color, not the dimensions */
+  outline-color: #2196F3;
 }
 
