@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import Menu, { MenuItem } from './Menu'
+import MenuRightClickExample from './exampleRightClick'
 
 // Example: Single-level menu
 const MenuSingleLevel = () => {
@@ -182,16 +183,52 @@ const MenuMultiLevel = () => {
   )
 }
 
+// Combined Menu Examples
+const MenuExamplesAll = () => {
+  return (
+    <div style={{ padding: '20px', maxWidth: '800px' }}>
+      <h4 style={{ marginTop: 0, marginBottom: '8px' }}>
+        Single-Level Menu
+      </h4>
+      <MenuSingleLevel />
+
+      <h4 style={{ marginTop: '24px', marginBottom: '8px' }}>
+        Multi-Level Menu
+        <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
+          Hover over items to see submenus
+        </span>
+      </h4>
+      <MenuMultiLevel />
+
+      <h4 style={{ marginTop: '24px', marginBottom: '8px' }}>
+        Right-Click Repositioning Pattern
+        <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
+          Demonstrates correct implementation
+        </span>
+      </h4>
+      <MenuRightClickExample />
+
+      <div style={{ marginTop: '16px', padding: '8px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '2px', fontSize: '12px' }}>
+        <strong>Features:</strong>
+        <ul style={{ margin: '4px 0', paddingLeft: '18px' }}>
+          <li>Right-click to open context menu</li>
+          <li>Right-click again (anywhere) to reposition menu</li>
+          <li>Left-click outside or on items to close</li>
+          <li>Supports single-level and multi-level (nested) menus</li>
+          <li>Hover over submenu items to reveal nested options</li>
+          <li>Pass <code>onContextMenu</code> to Menu component for repositioning support</li>
+          <li>Use requestAnimationFrame pattern for clean state updates</li>
+        </ul>
+      </div>
+    </div>
+  )
+}
+
 export const menuExamples = {
-  'Menu - Single Level': {
+  'Menu': {
     component: Menu,
-    description: 'Context menu with single-level items',
-    example: MenuSingleLevel
-  },
-  'Menu - Multi Level': {
-    component: Menu,
-    description: 'Context menu with multi-level submenus (hover to see submenus)',
-    example: MenuMultiLevel
+    description: 'Context menu with single-level, multi-level, and right-click repositioning examples',
+    example: MenuExamplesAll
   }
 }
 

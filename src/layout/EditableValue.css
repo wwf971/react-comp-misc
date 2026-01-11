@@ -1,0 +1,97 @@
+.editable-value-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  flex: 1;
+  min-width: 0;
+}
+
+.editable-value-text {
+  word-break: break-word;
+  display: inline-block;
+  outline: none;
+  min-height: 1em;
+}
+
+.editable-value-text.not-set {
+  color: #999;
+  font-style: italic;
+}
+
+.editable-value-text.editing {
+  background: #ffffff;
+  border: 1px solid #2196F3;
+  border-radius: 1px;
+  margin: -1px;
+  padding: 0px;
+  min-width: 100px;
+}
+
+.editable-value-text.editing:focus {
+  outline: none;
+}
+
+.editable-value-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.edit-icon-button {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 2px;
+  transition: background 0.2s;
+  line-height: 1;
+}
+
+.edit-icon-button:hover {
+  background: #f0f0f0;
+}
+
+.edit-icon-button svg {
+  display: block;
+}
+
+.editable-value-boolean {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.editable-value-text.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.radio-label.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.radio-label input[type="radio"] {
+  cursor: pointer;
+  margin: 0;
+}
+
+.radio-label input[type="radio"]:disabled {
+  cursor: not-allowed;
+}
+
+.radio-label span {
+  user-select: none;
+}
+

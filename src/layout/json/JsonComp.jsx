@@ -8,7 +8,7 @@ import EmptyList from './EmptyList';
 import { JsonContextProvider } from './JsonContext';
 import MenuComp from '../../menu/MenuComp';
 import StringInput from './StringInput';
-import RawJsonDisplay from './RawJsonDisplay';
+import RawJsonDisplay from './JsonRaw';
 import { convertValue, getValueType } from './typeConvert';
 import './JsonComp.css';
 

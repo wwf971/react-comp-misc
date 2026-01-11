@@ -1,0 +1,35 @@
+.selectable-value-dropdown {
+  display: inline-block;
+  outline: none;
+  background: #ffffff;
+  border: 1px solid #2196F3;
+  border-radius: 1px;
+  padding: 0px 4px;
+  margin: -1px 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  line-height: inherit;
+  min-width: 150px;
+  cursor: pointer;
+  height: auto;
+  vertical-align: baseline;
+  box-sizing: border-box;
+}
+
+.selectable-value-dropdown:focus {
+  outline: 1px solid #2196F3;
+  outline-offset: 0;
+}
+
+.selectable-value-dropdown:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.selectable-value-text {
+  display: inline-block;
+  vertical-align: baseline;
+  line-height: inherit;
+}
+

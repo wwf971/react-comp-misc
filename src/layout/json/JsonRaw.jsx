@@ -1,15 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import { formatJson } from '../../utils/parseString';
-import './RawJsonDisplay.css';
+import './JsonRaw.css';
 
 /**
- * RawJsonDisplay - Component for displaying raw JSON in a popup
+ * JsonRaw - Component for displaying raw JSON in a popup
  * 
  * @param {Object|Array} data - The data to display as JSON
  * @param {Function} onClose - Callback: () => void
  * @param {string} title - Dialog title (default: "Raw JSON")
  */
-const RawJsonDisplay = ({ data, onClose, title = "Raw JSON" }) => {
+const JsonRaw = ({ data, onClose, title = "Raw JSON" }) => {
   const [copied, setCopied] = useState(false);
 
   const jsonString = formatJson(data, 2);
@@ -70,5 +70,5 @@ const RawJsonDisplay = ({ data, onClose, title = "Raw JSON" }) => {
   );
 };
 
-export default RawJsonDisplay;
+export default JsonRaw;
 

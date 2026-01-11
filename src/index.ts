@@ -32,7 +32,7 @@ export {
 } from "./common.js";
 
 export { 
-    default as MasterDetail, 
+    default as MasterDetail,
     Tab as MasterDetailTab, 
     SubTab as MasterDetailSubTab, 
     Panel as MasterDetailPanel 
@@ -52,6 +52,7 @@ export { default as KeyValues } from "./dict/KeyValues.jsx";
 export { default as KeyValuesComp } from "./dict/KeyValuesComp.jsx";
 
 export { default as EditableValueComp } from "./layout/EditableValueComp.jsx";
+export { default as EditableValueWithInfo } from "./layout/EditableValueWithInfo.jsx";
 export { default as SelectableValueComp } from "./layout/SelectableValueComp.jsx";
 
 export { default as JsonComp } from "./layout/json/JsonComp.jsx";
@@ -61,6 +62,7 @@ export { default as JsonTextComp } from "./layout/json/JsonTextComp.jsx";
 export { default as JsonNumberComp } from "./layout/json/JsonNumberComp.jsx";
 export { default as JsonBoolComp } from "./layout/json/JsonBoolComp.jsx";
 export { default as JsonNullComp } from "./layout/json/JsonNullComp.jsx";
+export { default as JsonRaw } from "./layout/json/JsonRaw.jsx";
 
 export { JsonContextProvider, useJsonContext } from "./layout/json/JsonContext";
 export type { TypeConversionBehavior, ConversionMenuRequest } from "./layout/json/JsonContext";

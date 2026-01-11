@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SpinningCircle, EditIcon } from '@wwf971/react-comp-misc';
+import './SelectableValue.css';
 
 /**
  * Selectable value component for config editing with dropdown selection

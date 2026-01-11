@@ -1,119 +1,39 @@
 import { useState } from 'react';
 import KeyValues from './KeyValues.jsx';
 import KeyValuesComp from './KeyValuesComp.jsx';
-import { InfoIcon } from '../icon/Icon.jsx';
+import EditableValueWithInfo from '../layout/EditableValueWithInfo.jsx';
+import EditableValueComp from '../layout/EditableValueComp.jsx';
+import PlusIcon from '../icon/PlusIcon.jsx';
 
 /**
- * Custom Text Component with Info Icon
- * Displays text with a circled exclamation mark that shows a popup on hover
+ * Wrapper component to adapt EditableValueComp for use with KeyValuesComp
+ * EditableValueComp expects: data, configKey, onUpdate, valueType, isNotSet, onAction
+ * KeyValuesComp provides: data, onChangeAttempt, isEditable, field, index
  */
-const TextWithInfo = ({ data, onChangeAttempt, isEditable, field, index }) => {
-  const [showPopup, setShowPopup] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const editRef = useState(null);
-  const originalValueRef = useState('');
-  
-  const handleTextClick = (e) => {
-    if (!isEditable) return;
-    
-    const selection = window.getSelection();
-    if (selection && selection.toString().length > 0) {
-      return;
+const EditableValueAdapter = ({ data, onChangeAttempt, isEditable, field, index, onAction }) => {
+  // Adapter function to convert onChangeAttempt to onUpdate format
+  const handleUpdate = async (configKey, newValue) => {
+    if (onChangeAttempt) {
+      onChangeAttempt(index, field, newValue);
     }
-    
-    originalValueRef.current = String(data);
-    setIsEditing(true);
+    // Return success response
+    return { code: 0, message: 'Updated successfully' };
   };
 
-  const handleBlur = () => {
-    if (editRef.current) {
-      const newValue = editRef.current.textContent;
-      
-      if (newValue !== originalValueRef.current) {
-        if (onChangeAttempt) {
-          onChangeAttempt(index, field, newValue);
-        }
-      }
-    }
-    
-    setIsEditing(false);
-    originalValueRef.current = '';
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleBlur();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      if (editRef.current) {
-        editRef.current.textContent = originalValueRef.current;
-      }
-      setIsEditing(false);
-      originalValueRef.current = '';
-    }
-  };
+  // Use configKey as a combination of field and index for uniqueness
+  const configKey = `${field}_${index}`;
 
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-      <span 
-        ref={editRef}
-        className={`keyvalues-text ${isEditing ? 'editing' : ''}`}
-        contentEditable={isEditing}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        onClick={handleTextClick}
-        suppressContentEditableWarning={true}
-        style={{ display: 'inline' }}
-      >
-        {data}
-      </span>
-      <span 
-        style={{ 
-          position: 'relative',
-          display: 'inline-flex',
-          alignItems: 'center',
-          cursor: 'help',
-          color: '#999'
-        }}
-        onMouseEnter={() => setShowPopup(true)}
-        onMouseLeave={() => setShowPopup(false)}
-      >
-        <InfoIcon width={14} height={14} />
-        {showPopup && (
-          <div 
-            style={{
-              position: 'absolute',
-              top: '20px',
-              left: '-60px',
-              width: '180px',
-              padding: '8px 10px',
-              background: '#333',
-              color: '#fff',
-              borderRadius: '4px',
-              fontSize: '11px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-              zIndex: 1000,
-              pointerEvents: 'none'
-            }}
-          >
-            This is an example tooltip with additional information about the field.
-            <div 
-              style={{
-                position: 'absolute',
-                top: '-6px',
-                left: '65px',
-                width: '0',
-                height: '0',
-                borderLeft: '6px solid transparent',
-                borderRight: '6px solid transparent',
-                borderBottom: '6px solid #333'
-              }}
-            />
-          </div>
-        )}
-      </span>
-    </span>
+    <EditableValueComp
+      data={data}
+      configKey={configKey}
+      onUpdate={handleUpdate}
+      onAction={onAction}
+      valueType="text"
+      isNotSet={false}
+      index={index}
+      field={field}
+    />
   );
 };
 
@@ -256,12 +176,12 @@ export const dictExamples = {
           { 
             key: 'username', 
             value: 'john_doe',
-            valueComp: TextWithInfo  // Custom component with info icon
+            valueComp: EditableValueWithInfo  // Custom component with info icon
           },
           { 
             key: 'email',
             value: 'john@example.com',
-            valueComp: TextWithInfo
+            valueComp: EditableValueWithInfo
           },
           { 
             key: 'status', 
@@ -271,8 +191,8 @@ export const dictExamples = {
           { 
             key: 'role',
             value: 'Administrator',
-            keyComp: TextWithInfo,  // Info icon on key
-            valueComp: TextWithInfo  // Info icon on value
+            keyComp: EditableValueWithInfo,  // Info icon on key
+            valueComp: EditableValueWithInfo  // Info icon on value
           }
         ]);
 
@@ -280,6 +200,13 @@ export const dictExamples = {
         const [dataDefault, setDataDefault] = useState([
           { key: 'city', value: 'New York' },
           { key: 'country', value: 'USA' }
+        ]);
+
+        // Data with EditableValueComp and add functionality
+        const [dataWithAdd, setDataWithAdd] = useState([
+          { key: 'name', value: 'John Doe' },
+          { key: 'email', value: 'john@example.com' },
+          { key: 'phone', value: '+1234567890' }
         ]);
 
         const handleChange = (index, field, newValue) => {
@@ -305,6 +232,76 @@ export const dictExamples = {
           });
           setMessage(`Updated ${field} at index ${index} to: ${newValue}`);
         };
+
+        const handleChangeWithAdd = (index, field, newValue) => {
+          console.log('Change attempt (with add):', index, field, newValue);
+          setDataWithAdd(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], [field]: newValue };
+            return updated;
+          });
+          setMessage(`Updated ${field} at index ${index} to: ${newValue}`);
+        };
+
+        const handleAddEntry = () => {
+          setDataWithAdd(prev => [
+            ...prev,
+            { key: `field_${prev.length + 1}`, value: '' }
+          ]);
+          setMessage('Added new entry');
+        };
+
+        // Handle menu actions (add above/below, delete)
+        const handleAction = async (action, actionData) => {
+          const { index } = actionData;
+          
+          console.log('Action:', action, 'Data:', actionData);
+          
+          switch (action) {
+            case 'addEntryAbove':
+              setDataWithAdd(prev => {
+                const updated = [...prev];
+                updated.splice(index, 0, { key: `field_${Date.now()}`, value: '' });
+                return updated;
+              });
+              setMessage(`Added entry above index ${index}`);
+              break;
+              
+            case 'addEntryBelow':
+              setDataWithAdd(prev => {
+                const updated = [...prev];
+                updated.splice(index + 1, 0, { key: `field_${Date.now()}`, value: '' });
+                return updated;
+              });
+              setMessage(`Added entry below index ${index}`);
+              break;
+              
+            case 'deleteEntry':
+              if (dataWithAdd.length <= 1) {
+                return { code: -1, message: 'Cannot delete the last entry' };
+              }
+              setDataWithAdd(prev => {
+                const updated = [...prev];
+                updated.splice(index, 1);
+                return updated;
+              });
+              setMessage(`Deleted entry at index ${index}`);
+              break;
+              
+            default:
+              return { code: -1, message: `Unknown action: ${action}` };
+          }
+          
+          return { code: 0, message: 'Success' };
+        };
+
+        // Create data with EditableValueAdapter for all values
+        const dataWithComp = dataWithAdd.map((item, idx) => ({
+          ...item,
+          valueComp: (props) => (
+            <EditableValueAdapter {...props} onAction={handleAction} />
+          )
+        }));
 
         return (
           <div style={{ padding: '20px', maxWidth: '700px' }}>
@@ -334,12 +331,95 @@ export const dictExamples = {
             </h4>
             <KeyValuesComp 
               data={[
-                { key: 'field1', value: 'value1', valueComp: TextWithInfo },
-                { key: 'field2', value: 'value2', valueComp: TextWithInfo }
+                { key: 'field1', value: 'value1', valueComp: EditableValueWithInfo },
+                { key: 'field2', value: 'value2', valueComp: EditableValueWithInfo }
               ]}
               isKeyEditable={true}
               isValueEditable={true}
               onChangeAttempt={handleChange}
+            />
+
+            <h4 style={{ marginTop: '24px', marginBottom: '8px' }}>
+              With EditableValueComp and Add Entry Button
+              <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
+                Click edit icon to modify, plus icon to add
+              </span>
+            </h4>
+            
+            <div>
+              <KeyValuesComp 
+                data={dataWithComp}
+                onChangeAttempt={handleChangeWithAdd}
+                isValueEditable={true}
+              />
+              
+              <div style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                marginTop: '8px',
+                padding: '6px 10px',
+                cursor: 'pointer',
+                color: '#666',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                transition: 'all 0.2s',
+                width: 'fit-content'
+              }}
+                onClick={handleAddEntry}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#333';
+                  e.currentTarget.style.borderColor = '#999';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#666';
+                  e.currentTarget.style.borderColor = '#ccc';
+                }}
+              >
+                <PlusIcon width={16} height={16} />
+                <span style={{ fontSize: '13px' }}>Add Entry</span>
+              </div>
+            </div>
+
+            <h4 style={{ marginTop: '24px', marginBottom: '8px' }}>
+              With Boolean Type and EditableValueComp
+            </h4>
+            
+            <KeyValuesComp 
+              data={[
+                { 
+                  key: 'enabled', 
+                  value: 'true',
+                  valueComp: ({ data, onChangeAttempt, isEditable, field, index }) => (
+                    <EditableValueComp
+                      data={data}
+                      configKey={`boolean_${index}`}
+                      onUpdate={async (key, val) => {
+                        onChangeAttempt(index, field, val);
+                        return { code: 0, message: 'Updated' };
+                      }}
+                      valueType="boolean"
+                    />
+                  )
+                },
+                { 
+                  key: 'active', 
+                  value: 'false',
+                  valueComp: ({ data, onChangeAttempt, isEditable, field, index }) => (
+                    <EditableValueComp
+                      data={data}
+                      configKey={`boolean_${index}`}
+                      onUpdate={async (key, val) => {
+                        onChangeAttempt(index, field, val);
+                        return { code: 0, message: 'Updated' };
+                      }}
+                      valueType="boolean"
+                    />
+                  )
+                }
+              ]}
+              onChangeAttempt={handleChangeWithAdd}
+              isValueEditable={true}
             />
 
             {message && (
@@ -356,6 +436,13 @@ export const dictExamples = {
                 <li>Hover over ⓘ icons to see tooltips</li>
                 <li>Click on values to edit them (where editable)</li>
                 <li>Custom components receive: data, onChangeAttempt, isEditable, field, index</li>
+                <li>Uses <code>EditableValueComp</code> for advanced editing features</li>
+                <li>Click the edit icon next to values to enter edit mode</li>
+                <li>Shows "Saving..." indicator during updates</li>
+                <li>Click the plus icon below to add new entries at the end</li>
+                <li><strong>Right-click on any value</strong> to access context menu with: Add Entry Above, Add Entry Below, Delete Entry</li>
+                <li>Supports both text and boolean value types</li>
+                <li>For booleans, click edit icon to enable radio buttons</li>
               </ul>
             </div>
 
