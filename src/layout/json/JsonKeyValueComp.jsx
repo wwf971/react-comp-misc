@@ -20,7 +20,8 @@ const JsonKeyValueComp = ({
   isValueEditable,
   onChange,
   children,
-  depth
+  depth,
+  keyOperationState
 }) => {
   const [isEditingKey, setIsEditingKey] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,6 +36,12 @@ const JsonKeyValueComp = ({
   // Check if value is a primitive (can be edited inline)
   const isPrimitive = value === null || value === undefined || typeof value !== 'object';
   const valueType = value === null || value === undefined ? 'null' : typeof value;
+  
+  // Check if this key has an ongoing operation or error
+  const hasKeyOperation = keyOperationState && keyOperationState.path === path;
+  const isKeyProcessing = hasKeyOperation && keyOperationState.isProcessing;
+  const keyError = hasKeyOperation && keyOperationState.error;
+  const keyWarning = hasKeyOperation && keyOperationState.warning;
 
   // Handle key edit
   useEffect(() => {
@@ -209,6 +216,24 @@ const JsonKeyValueComp = ({
       </div>
       
       {renderValueComponent()}
+      
+      {isKeyProcessing && (
+        <span className="json-spinner" style={{ marginLeft: '8px' }}>
+          <SpinningCircle width={14} height={14} color="#666" />
+        </span>
+      )}
+      
+      {keyError && (
+        <span className="json-error" style={{ color: '#f44336', marginLeft: '8px', fontSize: '13px' }}>
+          {keyError}
+        </span>
+      )}
+      
+      {keyWarning && (
+        <span className="json-warning" style={{ color: '#ff9800', marginLeft: '8px', fontSize: '13px' }}>
+          ⚠ {keyWarning}
+        </span>
+      )}
     </div>
   );
 };
@@ -219,5 +244,6 @@ export default React.memo(JsonKeyValueComp, (prev, next) => {
          prev.isEditable === next.isEditable &&
          prev.isKeyEditable === next.isKeyEditable &&
          prev.isValueEditable === next.isValueEditable &&
-         prev.onChange === next.onChange; // Include onChange - if it changes, child needs new callback
+         prev.onChange === next.onChange &&
+         prev.keyOperationState === next.keyOperationState;
 });

@@ -15,6 +15,7 @@ const JsonTextComp = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isShowingError, setIsShowingError] = useState(null);
   
   const valueRef = useRef(null);
   const originalValueRef = useRef('');
@@ -37,7 +38,7 @@ const JsonTextComp = ({
   }, [isEditing]);
 
   const handleClick = () => {
-    if (!isEditable || isSubmitting) return;
+    if (!isEditable || isSubmitting || isShowingError) return;
     originalValueRef.current = String(value);
     setIsEditing(true);
     
@@ -59,6 +60,7 @@ const JsonTextComp = ({
     }
 
     setIsSubmitting(true);
+    setIsShowingError(null);
     
     try {
       if (onChange) {
@@ -70,16 +72,22 @@ const JsonTextComp = ({
         
         if (result.code !== 0) {
           console.error('Failed to update value:', result.message);
+          setIsShowingError(result.message || 'Update failed');
           if (valueRef.current) {
             valueRef.current.textContent = originalValueRef.current;
           }
+          // Clear error after 3 seconds
+          setTimeout(() => setIsShowingError(null), 3000);
         }
       }
     } catch (error) {
       console.error('Failed to update value:', error);
+      setIsShowingError(error.message || 'Network error');
       if (valueRef.current) {
         valueRef.current.textContent = originalValueRef.current;
       }
+      // Clear error after 3 seconds
+      setTimeout(() => setIsShowingError(null), 3000);
     } finally {
       setIsSubmitting(false);
       setIsEditing(false);
@@ -139,7 +147,7 @@ const JsonTextComp = ({
     <span className="json-value-wrapper">
       <span
         ref={valueRef}
-        className={`json-value json-string ${isEditable ? 'editable' : ''} ${isEditing ? 'editing' : ''} ${isWhitespaceOnly ? 'whitespace-only' : ''} ${isEmpty ? 'empty-text' : ''}`}
+        className={`json-value json-string ${isEditable && !isShowingError ? 'editable' : ''} ${isEditing ? 'editing' : ''} ${isWhitespaceOnly ? 'whitespace-only' : ''} ${isEmpty ? 'empty-text' : ''}`}
         contentEditable={isEditing}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
@@ -150,9 +158,14 @@ const JsonTextComp = ({
       >
         {isEmpty && !isEditing ? 'EMPTY' : value}
       </span>
-      {isSubmitting && (
+      {isSubmitting && !isShowingError && (
         <span className="json-spinner">
           <SpinningCircle width={14} height={14} color="#666" />
+        </span>
+      )}
+      {isShowingError && (
+        <span className="json-error" style={{ color: '#f44336', fontSize: '11px', marginLeft: '6px' }}>
+          {isShowingError}
         </span>
       )}
     </span>

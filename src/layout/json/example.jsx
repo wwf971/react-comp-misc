@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import JsonComp from './JsonComp';
+import { parsePathToSegments, navigateToPath } from './pathUtils';
 
 /**
  * Consolidated JSON examples in a single panel
@@ -243,37 +244,87 @@ const JsonExamplesPanel = () => {
 
       setData(prevData => {
         const result = JSON.parse(JSON.stringify(prevData));
-        
-        // Helper to parse path into parts
-        const parsePathParts = (path) => {
-          if (path.includes('..')) {
-            // Mixed path - keep for special handling
-            return { type: 'array', path };
-          } else {
-            // Object path
-            return { type: 'object', parts: path.split('.').filter(p => p !== '') };
-          }
-        };
-        
-        const parsedPath = parsePathParts(path);
+        const segments = parsePathToSegments(path);
         
         // Handle key rename (special case)
         if (_keyRename) {
-          const pathParts = parsedPath.type === 'object' ? parsedPath.parts : path.split('.').filter(p => p !== '');
-          let current = result;
-          for (let i = 0; i < pathParts.length - 1; i++) {
-            current = current[pathParts[i]];
-          }
-          const oldKey = pathParts[pathParts.length - 1];
+          const parent = navigateToPath(result, segments, true);
+          const lastSeg = segments[segments.length - 1];
+          const oldKey = lastSeg.key;
           const newKey = newData.value;
-          const value = current[oldKey];
-          delete current[oldKey];
-          current[newKey] = value;
+          const value = parent[oldKey];
+          delete parent[oldKey];
+          parent[newKey] = value;
+        } else if (_action === 'mergeDictWithJson') {
+          // Merge dict entries below the current entry
+          const currentKey = changeData._currentKey;
+          const parentObj = navigateToPath(result, segments);
+          
+          console.log('[example mergeDictWithJson] path:', path, 'segments:', segments);
+          console.log('[example mergeDictWithJson] currentKey:', currentKey);
+          console.log('[example mergeDictWithJson] parentObj keys:', Object.keys(parentObj));
+          
+          // Get all existing keys (excluding pseudo keys)
+          const existingKeys = Object.keys(parentObj).filter(k => !k.startsWith('__pseudo__'));
+          const currentIndex = existingKeys.indexOf(currentKey);
+          
+          console.log('[example mergeDictWithJson] existingKeys:', existingKeys);
+          console.log('[example mergeDictWithJson] currentIndex:', currentIndex);
+          
+          // Get keys from the new object to merge
+          const newKeys = Object.keys(newData.value);
+          
+          console.log('[example mergeDictWithJson] newKeys to merge:', newKeys);
+          
+          // Check if any of the new keys are numeric-looking (would be auto-sorted by JavaScript)
+          const hasNumericKeys = newKeys.some(k => /^\d+$/.test(k));
+          if (hasNumericKeys) {
+            console.warn('[example mergeDictWithJson] Warning: Numeric-looking keys detected. JavaScript will automatically sort them to the beginning of the object.');
+          }
+          
+          // Build array of all keys in desired order
+          const keysInOrder = [
+            ...existingKeys.slice(0, currentIndex + 1),  // Keys up to and including current
+            ...newKeys,                                    // New keys to insert
+            ...existingKeys.slice(currentIndex + 1)       // Remaining keys
+          ];
+          
+          console.log('[example mergeDictWithJson] Desired key order:', keysInOrder);
+          
+          // Build new object by iterating in desired order
+          // Note: JavaScript will still reorder numeric-looking keys to the front
+          const newObj = {};
+          for (const key of keysInOrder) {
+            if (key in parentObj) {
+              newObj[key] = parentObj[key];
+            } else if (key in newData.value) {
+              newObj[key] = newData.value[key];
+            }
+          }
+          
+          console.log('[example mergeDictWithJson] newObj keys (actual order after JS reordering):', Object.keys(newObj));
+          
+          // Replace parent object keys with newObj
+          // Delete all existing keys first
+          Object.keys(parentObj).forEach(k => delete parentObj[k]);
+          
+          // Re-add keys from newObj (will maintain newObj's order, including JS's auto-sort for numeric keys)
+          Object.keys(newObj).forEach(k => {
+            parentObj[k] = newObj[k];
+          });
+          
+          console.log('[example mergeDictWithJson] parentObj keys after merge:', Object.keys(parentObj));
+          
+          // Return success, but with warning if numeric keys were detected
+          if (hasNumericKeys) {
+            // We need to signal this back through the return value
+            // Store a flag that will be checked by the caller
+            changeData._hasNumericKeyWarning = true;
+          }
         } else if (_action === 'moveEntryUp' || _action === 'moveEntryDown') {
           // Move dict entry up or down
-          const pathParts = parsedPath.type === 'object' ? parsedPath.parts : path.split('.').filter(p => p !== '');
-          const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
-          const currentKey = pathParts[pathParts.length - 1];
+          const parentObj = segments.length === 0 ? result : navigateToPath(result, segments, true);
+          const currentKey = segments[segments.length - 1].key;
           const keys = Object.keys(parentObj).filter(k => !k.startsWith('__pseudo__'));
           const currentIndex = keys.indexOf(currentKey);
           const newIndex = _action === 'moveEntryUp' ? currentIndex - 1 : currentIndex + 1;
@@ -301,9 +352,8 @@ const JsonExamplesPanel = () => {
           }
         } else if (_action === 'moveEntryToTop' || _action === 'moveEntryToBottom') {
           // Move dict entry to top or bottom
-          const pathParts = parsedPath.type === 'object' ? parsedPath.parts : path.split('.').filter(p => p !== '');
-          const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
-          const currentKey = pathParts[pathParts.length - 1];
+          const parentObj = segments.length === 0 ? result : navigateToPath(result, segments, true);
+          const currentKey = segments[segments.length - 1].key;
           const keys = Object.keys(parentObj).filter(k => !k.startsWith('__pseudo__'));
           
           const newObj = {};
@@ -327,27 +377,12 @@ const JsonExamplesPanel = () => {
           Object.assign(parentObj, newObj);
         } else if (_action === 'moveItemUp' || _action === 'moveItemDown') {
           // Move array item up or down
-          if (parsedPath.type === 'array') {
-            const parts = parsedPath.path.split('..');
-            let current = result;
+          const parentArray = navigateToPath(result, segments, true);
+          const currentIndex = segments[segments.length - 1].index;
             
-            if (parts[0]) {
-              const objKeys = parts[0].split('.').filter(k => k !== '');
-              for (const key of objKeys) {
-                current = current[key];
-              }
-            }
-            
-            for (let i = 1; i < parts.length - 1; i++) {
-              const index = parseInt(parts[i]);
-              current = current[index];
-            }
-            
-            const currentIndex = parseInt(parts[parts.length - 1]);
-            
-            if (Array.isArray(current)) {
+            if (Array.isArray(parentArray)) {
               const realIndices = [];
-              current.forEach((item, idx) => {
+              parentArray.forEach((item, idx) => {
                 if (!(item && typeof item === 'object' && item.isPseudo)) {
                   realIndices.push(idx);
                 }
@@ -358,51 +393,34 @@ const JsonExamplesPanel = () => {
                 const targetPos = _action === 'moveItemUp' ? posInReal - 1 : posInReal + 1;
                 if (targetPos >= 0 && targetPos < realIndices.length) {
                   const targetIndex = realIndices[targetPos];
-                  const temp = current[currentIndex];
-                  current[currentIndex] = current[targetIndex];
-                  current[targetIndex] = temp;
+                  const temp = parentArray[currentIndex];
+                  parentArray[currentIndex] = parentArray[targetIndex];
+                  parentArray[targetIndex] = temp;
                 }
               }
             }
-          }
         } else if (_action === 'moveItemToTop' || _action === 'moveItemToBottom') {
           // Move array item to top or bottom
-          if (parsedPath.type === 'array') {
-            const parts = parsedPath.path.split('..');
-            let current = result;
-            
-            if (parts[0]) {
-              const objKeys = parts[0].split('.').filter(k => k !== '');
-              for (const key of objKeys) {
-                current = current[key];
+          const parentArray = navigateToPath(result, segments, true);
+          const currentIndex = segments[segments.length - 1].index;
+          
+          if (Array.isArray(parentArray)) {
+            const realIndices = [];
+            parentArray.forEach((item, idx) => {
+              if (!(item && typeof item === 'object' && item.isPseudo)) {
+                realIndices.push(idx);
               }
-            }
+            });
             
-            for (let i = 1; i < parts.length - 1; i++) {
-              const index = parseInt(parts[i]);
-              current = current[index];
-            }
-            
-            const currentIndex = parseInt(parts[parts.length - 1]);
-            
-            if (Array.isArray(current)) {
-              const realIndices = [];
-              current.forEach((item, idx) => {
-                if (!(item && typeof item === 'object' && item.isPseudo)) {
-                  realIndices.push(idx);
-                }
-              });
+            const posInReal = realIndices.indexOf(currentIndex);
+            if (posInReal >= 0) {
+              const item = parentArray[currentIndex];
+              parentArray.splice(currentIndex, 1);
               
-              const posInReal = realIndices.indexOf(currentIndex);
-              if (posInReal >= 0) {
-                const item = current[currentIndex];
-                current.splice(currentIndex, 1);
-                
-                if (_action === 'moveItemToTop') {
-                  current.unshift(item);
-                } else {
-                  current.push(item);
-                }
+              if (_action === 'moveItemToTop') {
+                parentArray.unshift(item);
+              } else {
+                parentArray.push(item);
               }
             }
           }
@@ -411,9 +429,8 @@ const JsonExamplesPanel = () => {
           switch (_action) {
             case 'createEntry': {
               // Convert pseudo to real entry
-              const pathParts = parsedPath.type === 'object' ? parsedPath.parts : path.split('.').filter(p => p !== '');
-              const parentObj = pathParts.length === 0 ? result : pathParts.slice(0, -1).reduce((obj, key) => obj[key], result);
-              const pseudoKey = pathParts[pathParts.length - 1];
+              const parentObj = segments.length === 0 ? result : navigateToPath(result, segments, true);
+              const pseudoKey = segments[segments.length - 1].key;
               const pseudoData = parentObj[pseudoKey];
               
               if (pseudoData && pseudoData.position && pseudoData.referenceKey) {
@@ -444,35 +461,18 @@ const JsonExamplesPanel = () => {
             }
             case 'createItem': {
               // Convert pseudo array item to real item
-              const parts = parsedPath.path.split('..');
-              let current = result;
-              
-              if (parts[0]) {
-                const objKeys = parts[0].split('.').filter(k => k !== '');
-                for (const key of objKeys) {
-                  current = current[key];
-                }
-              }
-              
-              for (let i = 1; i < parts.length - 1; i++) {
-                const index = parseInt(parts[i]);
-                current = current[index];
-              }
-              
-              const targetIndex = parseInt(parts[parts.length - 1]);
-              current[targetIndex] = newData.value;
-              if (current[targetIndex] && typeof current[targetIndex] === 'object') {
-                delete current[targetIndex].isPseudo;
+              const parentArray = navigateToPath(result, segments, true);
+              const targetIndex = segments[segments.length - 1].index;
+              parentArray[targetIndex] = newData.value;
+              if (parentArray[targetIndex] && typeof parentArray[targetIndex] === 'object') {
+                delete parentArray[targetIndex].isPseudo;
               }
               return result;
             }
             case 'deleteEntry': {
-              const pathParts = parsedPath.type === 'object' ? parsedPath.parts : path.split('.').filter(p => p !== '');
-              let current = result;
-              for (let i = 0; i < pathParts.length - 1; i++) {
-                current = current[pathParts[i]];
-              }
-              delete current[pathParts[pathParts.length - 1]];
+              const parent = navigateToPath(result, segments, true);
+              const lastSeg = segments[segments.length - 1];
+              delete parent[lastSeg.key];
               break;
             }
             case 'deleteParentDict': {
@@ -505,33 +505,9 @@ const JsonExamplesPanel = () => {
               break;
             }
             case 'deleteArrayItem': {
-              if (parsedPath.type === 'array') {
-                const parts = parsedPath.path.split('..');
-                let current = result;
-                
-                if (parts[0]) {
-                  const objKeys = parts[0].split('.').filter(k => k !== '');
-                  for (const key of objKeys) {
-                    current = current[key];
-                  }
-                }
-                
-                for (let i = 1; i < parts.length - 1; i++) {
-                  const index = parseInt(parts[i]);
-                  current = current[index];
-                }
-                
-                const targetIndex = parseInt(parts[parts.length - 1]);
-                current.splice(targetIndex, 1);
-              } else {
-                // Handle simple array at root
-                const pathParts = path.split('..').filter(p => p !== '').map(p => parseInt(p));
-                let current = result;
-                for (let i = 0; i < pathParts.length - 1; i++) {
-                  current = current[pathParts[i]];
-                }
-                current.splice(pathParts[pathParts.length - 1], 1);
-              }
+              const parentArray = navigateToPath(result, segments, true);
+              const targetIndex = segments[segments.length - 1].index;
+              parentArray.splice(targetIndex, 1);
               break;
             }
             case 'deleteParentArray': {
@@ -565,52 +541,27 @@ const JsonExamplesPanel = () => {
             }
             default: {
               // Normal value change
-              if (parsedPath.type === 'array') {
-                const parts = parsedPath.path.split('..');
-                let current = result;
-                
-                if (parts[0]) {
-                  const objKeys = parts[0].split('.').filter(k => k !== '');
-                  for (const key of objKeys) {
-                    current = current[key];
-                  }
-                }
-                
-                for (let i = 1; i < parts.length - 1; i++) {
-                  const index = parseInt(parts[i]);
-                  current = current[index];
-                }
-                
-                const targetIndex = parseInt(parts[parts.length - 1]);
-                
-                let finalValue = newData.value;
-                if (old.type === newData.type && newData.type === 'number' && typeof newData.value === 'string') {
-                  finalValue = !isNaN(newData.value) ? Number(newData.value) : old.value;
-                } else if (old.type !== newData.type) {
-                  finalValue = newData.value;
-                } else {
-                  finalValue = newData.value;
-                }
-                
-                current[targetIndex] = finalValue;
+              // Special case: empty path means replace root
+              if (segments.length === 0) {
+                return newData.value;
+              }
+              
+              const parent = navigateToPath(result, segments, true);
+              const lastSeg = segments[segments.length - 1];
+              
+              let finalValue = newData.value;
+              if (old.type === newData.type && newData.type === 'number' && typeof newData.value === 'string') {
+                finalValue = !isNaN(newData.value) ? Number(newData.value) : old.value;
+              } else if (old.type !== newData.type) {
+                finalValue = newData.value;
               } else {
-                // Object path
-                const pathParts = parsedPath.parts;
-                let current = result;
-                for (let i = 0; i < pathParts.length - 1; i++) {
-                  current = current[pathParts[i]];
-                }
-                
-                let finalValue = newData.value;
-                if (old.type === newData.type && newData.type === 'number' && typeof newData.value === 'string') {
-                  finalValue = !isNaN(newData.value) ? Number(newData.value) : old.value;
-                } else if (old.type !== newData.type) {
-                  finalValue = newData.value;
-                } else {
-                  finalValue = newData.value;
-                }
-                
-                current[pathParts[pathParts.length - 1]] = finalValue;
+                finalValue = newData.value;
+              }
+              
+              if (lastSeg.type === 'arr') {
+                parent[lastSeg.index] = finalValue;
+              } else {
+                parent[lastSeg.key] = finalValue;
               }
             }
           }
@@ -622,6 +573,15 @@ const JsonExamplesPanel = () => {
       if (simulateErrors) {
         setMessage(`✓ Updated ${path} successfully`);
         setTimeout(() => setMessage(''), 3000);
+      }
+      
+      // Check if there's a numeric key warning to return
+      if (changeData._hasNumericKeyWarning) {
+        return { 
+          code: 0, 
+          message: 'Success', 
+          warning: 'Numeric keys were reordered by JavaScript' 
+        };
       }
       
       return { code: 0, message: 'Success' };
@@ -666,7 +626,7 @@ const JsonExamplesPanel = () => {
   // Old handlers removed - using unified handler above
 
   return (
-    <div style={{ padding: '20px', maxWidth: '900px' }}>
+    <div style={{ maxWidth: '900px' }}>
       <h3 style={{ marginTop: 0, marginBottom: '8px' }}>1. Simple Nested Object (Read-Only)</h3>
       <div style={{ background: '#f9f9f9', padding: '12px', borderRadius: '3px', marginBottom: '20px' }}>
         <JsonComp 

@@ -8,8 +8,9 @@ import './StringInput.css';
  * @param {Function} onConfirm - Callback: (parsedValue) => void
  * @param {Function} onCancel - Callback: () => void
  * @param {string} title - Dialog title (default: "Insert JSON/YAML")
+ * @param {boolean} isObjectOnly - Only allow objects, not arrays (default: false)
  */
-const StringInput = ({ onConfirm, onCancel, title = "Insert JSON/YAML" }) => {
+const StringInput = ({ onConfirm, onCancel, title = "Insert JSON/YAML", isObjectOnly = false }) => {
   const [inputValue, setInputValue] = useState('');
   const [parseType, setParseType] = useState('json'); // 'json' or 'yaml'
   const [errorMessage, setErrorMessage] = useState('');
@@ -29,14 +30,26 @@ const StringInput = ({ onConfirm, onCancel, title = "Insert JSON/YAML" }) => {
     }
 
     if (result.code === 0) {
-      // Success - call onConfirm with parsed data
+      // Success - validate if object-only is required
+      if (isObjectOnly) {
+        if (Array.isArray(result.data)) {
+          setErrorMessage('Expected an object, but got an array');
+          return;
+        }
+        if (typeof result.data !== 'object' || result.data === null) {
+          setErrorMessage('Expected an object, but got ' + typeof result.data);
+          return;
+        }
+      }
+      
+      // Call onConfirm with parsed data
       onConfirm(result.data);
       setErrorMessage('');
     } else {
       // Error - show error message
       setErrorMessage(result.message);
     }
-  }, [inputValue, parseType, onConfirm]);
+  }, [inputValue, parseType, onConfirm, isObjectOnly]);
 
   const handleCancel = useCallback(() => {
     onCancel();

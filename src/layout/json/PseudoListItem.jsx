@@ -9,7 +9,7 @@ import './JsonComp.css';
 const PseudoListItem = ({ path, onChange, onCancel, depth }) => {
   const [value, setValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [isShowingError, setIsShowingError] = useState('');
   const valueRef = useRef(null);
 
   useEffect(() => {
@@ -21,7 +21,7 @@ const PseudoListItem = ({ path, onChange, onCancel, depth }) => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    setErrorMessage('');
+    setIsShowingError('');
     try {
       const changeData = {
         old: { type: 'pseudo' },
@@ -36,7 +36,7 @@ const PseudoListItem = ({ path, onChange, onCancel, depth }) => {
       } else {
         // Failed - show error briefly then remove via onCancel
         const errMsg = result?.message || 'Failed to create item';
-        setErrorMessage(errMsg);
+        setIsShowingError(errMsg);
         setIsSubmitting(false);
         
         // Auto-remove after showing error for 2 seconds
@@ -46,7 +46,7 @@ const PseudoListItem = ({ path, onChange, onCancel, depth }) => {
       }
     } catch (error) {
       console.error('Failed to create item:', error);
-      setErrorMessage(error.message || 'Network error');
+      setIsShowingError(error.message || 'Network error');
       setIsSubmitting(false);
       
       // Auto-remove after showing error for 2 seconds
@@ -88,17 +88,17 @@ const PseudoListItem = ({ path, onChange, onCancel, depth }) => {
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           placeholder="value"
-          disabled={isSubmitting || errorMessage}
+          disabled={isSubmitting || isShowingError}
           style={{ width: '100px', border: 'none', outline: 'none', background: 'transparent' }}
         />
-        {isSubmitting && !errorMessage && (
+        {isSubmitting && !isShowingError && (
           <span className="json-spinner">
             <SpinningCircle width={14} height={14} color="#666" />
           </span>
         )}
-        {errorMessage && (
+        {isShowingError && (
           <span style={{ marginLeft: '8px', fontSize: '12px', color: '#d32f2f' }}>
-            ✗ {errorMessage}
+            ✗ {isShowingError}
           </span>
         )}
       </span>

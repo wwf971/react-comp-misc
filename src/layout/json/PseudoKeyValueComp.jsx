@@ -10,7 +10,7 @@ const PseudoKeyValueComp = ({ path, onChange, onCancel, depth }) => {
   const [key, setKey] = useState('');
   const [value, setValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [isShowingError, setIsShowingError] = useState('');
   const keyRef = useRef(null);
   const valueRef = useRef(null);
 
@@ -28,7 +28,7 @@ const PseudoKeyValueComp = ({ path, onChange, onCancel, depth }) => {
     }
 
     setIsSubmitting(true);
-    setErrorMessage('');
+    setIsShowingError('');
     try {
       const changeData = {
         old: { type: 'pseudo' },
@@ -44,7 +44,7 @@ const PseudoKeyValueComp = ({ path, onChange, onCancel, depth }) => {
       } else {
         // Failed - show error briefly then remove via onCancel
         const errMsg = result?.message || 'Failed to create entry';
-        setErrorMessage(errMsg);
+        setIsShowingError(errMsg);
         setIsSubmitting(false);
         
         // Auto-remove after showing error for 2 seconds
@@ -54,7 +54,7 @@ const PseudoKeyValueComp = ({ path, onChange, onCancel, depth }) => {
       }
     } catch (error) {
       console.error('Failed to create entry:', error);
-      setErrorMessage(error.message || 'Network error');
+      setIsShowingError(error.message || 'Network error');
       setIsSubmitting(false);
       
       // Auto-remove after showing error for 2 seconds
@@ -107,7 +107,7 @@ const PseudoKeyValueComp = ({ path, onChange, onCancel, depth }) => {
             onKeyDown={(e) => handleKeyDown(e, 'key')}
             onBlur={(e) => handleBlur(e, 'key')}
             placeholder="key"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isShowingError}
             style={{ width: '80px', border: 'none', outline: 'none', background: 'transparent' }}
           />
         </span>
@@ -124,17 +124,17 @@ const PseudoKeyValueComp = ({ path, onChange, onCancel, depth }) => {
           onKeyDown={(e) => handleKeyDown(e, 'value')}
           onBlur={(e) => handleBlur(e, 'value')}
           placeholder="value"
-          disabled={isSubmitting || errorMessage}
+          disabled={isSubmitting || isShowingError}
           style={{ width: '100px', border: 'none', outline: 'none', background: 'transparent' }}
         />
-        {isSubmitting && !errorMessage && (
+        {isSubmitting && !isShowingError && (
           <span className="json-spinner">
             <SpinningCircle width={14} height={14} color="#666" />
           </span>
         )}
-        {errorMessage && (
+        {isShowingError && (
           <span style={{ marginLeft: '8px', fontSize: '12px', color: '#d32f2f' }}>
-            ✗ {errorMessage}
+            ✗ {isShowingError}
           </span>
         )}
       </span>
