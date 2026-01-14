@@ -55,7 +55,7 @@ const IconGallery = () => {
   }, [searchTerm]);
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div>
       <h3 style={{ margin: '0 0 12px 0' }}>Icon Gallery ({filteredIcons.length} icons)</h3>
       <div style={{ position: 'relative', width: '300px', marginBottom: '20px' }}>
         <input

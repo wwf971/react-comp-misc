@@ -370,6 +370,7 @@ const SearchableValueComp = ({
 
   return (
     <span className="editable-value-container searchable-value-wrapper">
+      <span className="searchable-value-fixed-wrapper">
       <span 
         ref={editRef}
         className={`editable-value-text ${isEditing ? 'editing' : ''} ${isNotSet && !isEditing ? 'not-set' : ''}`}
@@ -384,6 +385,7 @@ const SearchableValueComp = ({
         }}
       >
         {data}
+        </span>
       </span>
       
       {showDropdown && searchResults.length > 0 && (

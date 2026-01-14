@@ -2,6 +2,28 @@
   position: relative;
 }
 
+.searchable-value-fixed-wrapper {
+  display: inline-block;
+  vertical-align: baseline;
+  line-height: 1.2;
+  min-height: 1.2em;
+}
+
+.searchable-value-fixed-wrapper .editable-value-text {
+  display: inline-block;
+  vertical-align: baseline;
+  line-height: inherit;
+  padding: 1px 3px;
+  margin: -1px -3px;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.searchable-value-fixed-wrapper .editable-value-text.editing {
+  border-color: #2196F3 !important;
+  background: #ffffff !important;
+}
+
 .searchable-dropdown {
   position: absolute;
   top: 100%;

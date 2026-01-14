@@ -5,13 +5,50 @@ import TabsOnTop from './TabsOnTop';
  * Example usage of TabsOnTop component
  */
 
+/**
+ * Consolidated TabsOnTop examples in a single panel
+ */
+const TabsOnTopExamplesPanel = () => {
+  return (
+    <div style={{ padding: '20px', maxWidth: '1200px' }}>
+      <h2 style={{ marginTop: 0, marginBottom: '20px' }}>TabsOnTop Component Examples</h2>
+      
+      {/* Example 1 */}
+      <div style={{ marginBottom: '40px' }}>
+        <h3 style={{ marginBottom: '8px' }}>1. Basic Tabs</h3>
+        <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '12px' }}>
+          Simple tabs without close or create functionality.
+        </p>
+        <BasicExample />
+      </div>
+
+      {/* Example 2 */}
+      <div style={{ marginBottom: '40px' }}>
+        <h3 style={{ marginBottom: '8px' }}>2. Tabs with Close Button</h3>
+        <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '12px' }}>
+          Tabs that can be closed by clicking the × button.
+        </p>
+        <TabsWithClose />
+      </div>
+
+      {/* Example 3 */}
+      <div>
+        <h3 style={{ marginBottom: '8px' }}>3. Tabs with Close and Create</h3>
+        <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '12px' }}>
+          Tabs with both close functionality and ability to create new tabs.
+        </p>
+        <TabsWithCloseAndCreate />
+      </div>
+    </div>
+  );
+};
+
 // Example 1: Basic tabs without close/create
 function BasicExample() {
   const [activeTab, setActiveTab] = useState('tab-1');
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Basic Tabs</h2>
+    <div>
       <TabsOnTop 
         defaultTab="users"
         onTabChange={(key) => {
@@ -60,8 +97,7 @@ function TabsWithClose() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Tabs with Close Button</h2>
+    <div>
       <TabsOnTop 
         allowCloseTab={true}
         onTabClose={handleClose}
@@ -108,8 +144,7 @@ function TabsWithCloseAndCreate() {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Tabs with Close and Create</h2>
+    <div>
       <TabsOnTop 
         allowCloseTab={true}
         onTabClose={handleClose}
@@ -129,24 +164,12 @@ function TabsWithCloseAndCreate() {
   );
 }
 
-// Export examples in the format expected by DevPage
-const tabExamples = {
-  'TabsOnTop - Basic': {
+// Export in the format expected by examples.jsx
+export const tabExamples = {
+  'TabsOnTop': {
     component: TabsOnTop,
-    description: 'Basic tabs layout',
-    example: BasicExample,
-  },
-  'TabsOnTop - With Close': {
-    component: TabsOnTop,
-    description: 'Tabs with close button',
-    example: TabsWithClose,
-  },
-  'TabsOnTop - With Close & Create': {
-    component: TabsOnTop,
-    description: 'Tabs with close and create functionality',
-    example: TabsWithCloseAndCreate,
+    description: 'Tabs component with basic, closeable, and create functionality',
+    example: TabsOnTopExamplesPanel,
   },
 };
-
-export { tabExamples };
 

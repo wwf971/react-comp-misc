@@ -43,7 +43,6 @@ const MenuSingleLevel = () => {
     <div>
       <div 
         style={{
-          padding: '40px',
           border: '2px dashed #ccc',
           textAlign: 'center',
           cursor: 'context-menu',
@@ -155,7 +154,6 @@ const MenuMultiLevel = () => {
     <div>
       <div 
         style={{
-          padding: '40px',
           border: '2px dashed #ccc',
           textAlign: 'center',
           cursor: 'context-menu',
@@ -186,7 +184,7 @@ const MenuMultiLevel = () => {
 // Combined Menu Examples
 const MenuExamplesAll = () => {
   return (
-    <div style={{ padding: '20px', maxWidth: '800px' }}>
+    <div style={{ maxWidth: '800px' }}>
       <h4 style={{ marginTop: 0, marginBottom: '8px' }}>
         Single-Level Menu
       </h4>

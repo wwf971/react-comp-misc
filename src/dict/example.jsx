@@ -83,7 +83,7 @@ export const dictExamples = {
         };
 
         return (
-          <div style={{ padding: '20px', maxWidth: '700px' }}>
+          <div style={{ maxWidth: '700px' }}>
             <h4 style={{ marginTop: 0, marginBottom: '8px' }}>
               Aligned Columns with Auto Width (default)
               <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
@@ -304,7 +304,7 @@ export const dictExamples = {
         }));
 
         return (
-          <div style={{ padding: '20px', maxWidth: '700px' }}>
+          <div style={{ maxWidth: '700px' }}>
             <h4 style={{ marginTop: 0, marginBottom: '8px' }}>
               With Custom Text Component (Info Icons)
               <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
