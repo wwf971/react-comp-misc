@@ -209,6 +209,12 @@ export const dictExamples = {
           { key: 'phone', value: '+1234567890' }
         ]);
 
+        // Data for boolean type example
+        const [dataBooleanType, setDataBooleanType] = useState([
+          { key: 'enabled', value: 'true' },
+          { key: 'active', value: 'false' }
+        ]);
+
         const handleChange = (index, field, newValue) => {
           console.log('Change attempt:', index, field, newValue);
           setDataWithCustomComp(prev => {
@@ -236,6 +242,16 @@ export const dictExamples = {
         const handleChangeWithAdd = (index, field, newValue) => {
           console.log('Change attempt (with add):', index, field, newValue);
           setDataWithAdd(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], [field]: newValue };
+            return updated;
+          });
+          setMessage(`Updated ${field} at index ${index} to: ${newValue}`);
+        };
+
+        const handleChangeBooleanType = (index, field, newValue) => {
+          console.log('Change attempt (boolean type):', index, field, newValue);
+          setDataBooleanType(prev => {
             const updated = [...prev];
             updated[index] = { ...updated[index], [field]: newValue };
             return updated;
@@ -386,39 +402,21 @@ export const dictExamples = {
             </h4>
             
             <KeyValuesComp 
-              data={[
-                { 
-                  key: 'enabled', 
-                  value: 'true',
-                  valueComp: ({ data, onChangeAttempt, isEditable, field, index }) => (
-                    <EditableValueComp
-                      data={data}
-                      configKey={`boolean_${index}`}
-                      onUpdate={async (key, val) => {
-                        onChangeAttempt(index, field, val);
-                        return { code: 0, message: 'Updated' };
-                      }}
-                      valueType="boolean"
-                    />
-                  )
-                },
-                { 
-                  key: 'active', 
-                  value: 'false',
-                  valueComp: ({ data, onChangeAttempt, isEditable, field, index }) => (
-                    <EditableValueComp
-                      data={data}
-                      configKey={`boolean_${index}`}
-                      onUpdate={async (key, val) => {
-                        onChangeAttempt(index, field, val);
-                        return { code: 0, message: 'Updated' };
-                      }}
-                      valueType="boolean"
-                    />
-                  )
-                }
-              ]}
-              onChangeAttempt={handleChangeWithAdd}
+              data={dataBooleanType.map((item, idx) => ({
+                ...item,
+                valueComp: ({ data, onChangeAttempt, isEditable, field, index }) => (
+                  <EditableValueComp
+                    data={data}
+                    configKey={`boolean_${index}`}
+                    onUpdate={async (key, val) => {
+                      onChangeAttempt(index, field, val);
+                      return { code: 0, message: 'Updated' };
+                    }}
+                    valueType="boolean"
+                  />
+                )
+              }))}
+              onChangeAttempt={handleChangeBooleanType}
               isValueEditable={true}
             />
 
