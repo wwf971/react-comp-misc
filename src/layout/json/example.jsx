@@ -78,6 +78,28 @@ const JsonExamplesPanel = () => {
 
   const [message, setMessage] = useState('');
 
+  // Helper to create a shallow clone with structural sharing
+  const cloneAlongPath = useCallback((data, segments, segmentIndex, mutator) => {
+    if (segmentIndex >= segments.length) {
+      // Reached the end - apply the mutation
+      return mutator(data);
+    }
+    
+    const seg = segments[segmentIndex];
+    
+    if (seg.type === 'arr') {
+      // Clone array and recursively update the specific index
+      const newArray = [...data];
+      newArray[seg.index] = cloneAlongPath(data[seg.index], segments, segmentIndex + 1, mutator);
+      return newArray;
+    } else {
+      // Clone object and recursively update the specific key
+      const newObj = { ...data };
+      newObj[seg.key] = cloneAlongPath(data[seg.key], segments, segmentIndex + 1, mutator);
+      return newObj;
+    }
+  }, []);
+
   // Unified handler factory function
   const createUnifiedHandler = useCallback((setData, options = {}) => {
     const {
@@ -102,119 +124,91 @@ const JsonExamplesPanel = () => {
         case 'addItemBelow':
         case 'cancelCreate':
           setData(prevData => {
-            const result = JSON.parse(JSON.stringify(prevData));
-            
-            // Helper to parse path (handles both dict paths and array paths)
-            const parsePath = (path) => {
-              if (path.includes('..')) {
-                // Array path - keep it for later processing
-                return path;
-              } else {
-                // Dict path - split and filter
-                return path.split('.').filter(p => p !== '');
-              }
-            };
-            
-            const pathParts = parsePath(path);
+            const segments = parsePathToSegments(path);
+            let result;
             
             switch (_action) {
               case 'addEntry': {
                 // Add pseudo entry to empty dict
-                const isSimplePath = Array.isArray(pathParts);
-                const targetObj = isSimplePath 
-                  ? (pathParts.length === 0 ? result : pathParts.reduce((obj, key) => obj[key], result))
-                  : result;
+                const targetObj = segments.length === 0 ? prevData : navigateToPath(prevData, segments);
                 const pseudoKey = `__pseudo__${Date.now()}`;
-                targetObj[pseudoKey] = { __pseudo__: true };
+                const newObj = { ...targetObj, [pseudoKey]: { __pseudo__: true } };
+                
+                result = segments.length === 0 
+                  ? newObj 
+                  : cloneAlongPath(prevData, segments, 0, () => newObj);
                 return result;
               }
               case 'addEntryAbove':
               case 'addEntryBelow': {
                 // Add pseudo entry above/below current entry
-                const isSimplePath = Array.isArray(pathParts);
-                const parentObj = isSimplePath && pathParts.length === 1 
-                  ? result 
-                  : (isSimplePath ? pathParts.slice(0, -1).reduce((obj, key) => obj[key], result) : result);
+                const parentObj = segments.length === 0 ? prevData : navigateToPath(prevData, segments, true);
+                const referenceKey = segments[segments.length - 1].key;
                 const pseudoKey = `__pseudo__${Date.now()}`;
-                const referenceKey = isSimplePath ? pathParts[pathParts.length - 1] : pathParts;
-                parentObj[pseudoKey] = { 
-                  __pseudo__: true,
-                  position: _action === 'addEntryAbove' ? 'above' : 'below', 
-                  referenceKey: referenceKey
+                const newObj = { 
+                  ...parentObj, 
+                  [pseudoKey]: { 
+                    __pseudo__: true,
+                    position: _action === 'addEntryAbove' ? 'above' : 'below', 
+                    referenceKey: referenceKey
+                  }
                 };
+                
+                result = segments.length === 0 
+                  ? newObj
+                  : cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newObj);
                 return result;
               }
-              case 'addItem':
+              case 'addItem': {
+                // Add pseudo item to empty array
+                const targetArray = segments.length === 0 ? prevData : navigateToPath(prevData, segments);
+                if (Array.isArray(targetArray)) {
+                  const newArray = [...targetArray, { isPseudo: true }];
+                  result = segments.length === 0 
+                    ? newArray 
+                    : cloneAlongPath(prevData, segments, 0, () => newArray);
+                } else {
+                  result = prevData;
+                }
+                return result;
+              }
               case 'addItemAbove':
               case 'addItemBelow': {
-                // Add pseudo item to array
-                const pathIsArray = typeof pathParts === 'string' && pathParts.includes('..');
-                if (pathIsArray) {
-                  // Parse path like "tags..0" or "user.roles..2"
-                  const parts = pathParts.split('..');
-                  let current = result;
+                // Add pseudo item above/below current item
+                const parentArray = navigateToPath(prevData, segments, true);
+                const targetIndex = segments[segments.length - 1].index;
+                
+                if (Array.isArray(parentArray)) {
+                  const newArray = [...parentArray];
+                  const insertIndex = _action === 'addItemAbove' ? targetIndex : targetIndex + 1;
+                  newArray.splice(insertIndex, 0, { isPseudo: true });
                   
-                  // First part: navigate through object keys
-                  if (parts[0]) {
-                    const objKeys = parts[0].split('.').filter(k => k !== '');
-                    for (const key of objKeys) {
-                      current = current[key];
-                    }
-                  }
-                  
-                  // Remaining parts: navigate through array indices (except last)
-                  for (let i = 1; i < parts.length - 1; i++) {
-                    const index = parseInt(parts[i]);
-                    current = current[index];
-                  }
-                  
-                  const targetIndex = parseInt(parts[parts.length - 1]);
-                  if (_action === 'addItemAbove') {
-                    current.splice(targetIndex, 0, { isPseudo: true });
-                  } else if (_action === 'addItemBelow') {
-                    current.splice(targetIndex + 1, 0, { isPseudo: true });
-                  }
+                  result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newArray);
                 } else {
-                  // Empty array or root array - add to it
-                  const targetArray = Array.isArray(pathParts) && pathParts.length === 0 
-                    ? result 
-                    : (Array.isArray(pathParts) ? pathParts.reduce((obj, key) => obj[key], result) : result);
-                  if (Array.isArray(targetArray)) {
-                    targetArray.push({ isPseudo: true });
-                  }
+                  result = prevData;
                 }
                 return result;
               }
               case 'cancelCreate': {
                 // Remove pseudo entry/item
-                if (typeof pathParts === 'string' && pathParts.includes('..')) {
-                  // Array item - parse path like "tags..0"
-                  const parts = pathParts.split('..');
-                  let current = result;
+                if (segments.length > 0 && segments[segments.length - 1].type === 'arr') {
+                  // Array item
+                  const parentArray = navigateToPath(prevData, segments, true);
+                  const targetIndex = segments[segments.length - 1].index;
+                  const newArray = [...parentArray];
+                  newArray.splice(targetIndex, 1);
                   
-                  // First part: navigate through object keys
-                  if (parts[0]) {
-                    const objKeys = parts[0].split('.').filter(k => k !== '');
-                    for (const key of objKeys) {
-                      current = current[key];
-                    }
-                  }
-                  
-                  // Remaining parts: navigate through array indices (except last)
-                  for (let i = 1; i < parts.length - 1; i++) {
-                    const index = parseInt(parts[i]);
-                    current = current[index];
-                  }
-                  
-                  const targetIndex = parseInt(parts[parts.length - 1]);
-                  current.splice(targetIndex, 1);
+                  result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newArray);
                 } else {
-                  // Dict entry - delete the pseudo key
-                  const parentObj = Array.isArray(pathParts) && pathParts.length === 0 
-                    ? result 
-                    : (Array.isArray(pathParts) ? pathParts.slice(0, -1).reduce((obj, key) => obj[key], result) : result);
-                  const pseudoKey = Array.isArray(pathParts) ? pathParts[pathParts.length - 1] : pathParts;
-                  delete parentObj[pseudoKey];
+                  // Dict entry
+                  const parentObj = segments.length === 0 ? prevData : navigateToPath(prevData, segments, true);
+                  const pseudoKey = segments[segments.length - 1].key;
+                  const newObj = { ...parentObj };
+                  delete newObj[pseudoKey];
+                  
+                  result = segments.length === 0 
+                    ? newObj
+                    : cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newObj);
                 }
                 return result;
               }
@@ -243,22 +237,25 @@ const JsonExamplesPanel = () => {
       }
 
       setData(prevData => {
-        const result = JSON.parse(JSON.stringify(prevData));
         const segments = parsePathToSegments(path);
+        let result;
         
         // Handle key rename (special case)
         if (_keyRename) {
-          const parent = navigateToPath(result, segments, true);
+          const parent = navigateToPath(prevData, segments, true);
           const lastSeg = segments[segments.length - 1];
           const oldKey = lastSeg.key;
           const newKey = newData.value;
           const value = parent[oldKey];
-          delete parent[oldKey];
-          parent[newKey] = value;
+          const newParent = { ...parent };
+          delete newParent[oldKey];
+          newParent[newKey] = value;
+          
+          result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newParent);
         } else if (_action === 'mergeDictWithJson') {
           // Merge dict entries below the current entry
           const currentKey = changeData._currentKey;
-          const parentObj = navigateToPath(result, segments);
+          const parentObj = navigateToPath(prevData, segments);
           
           console.log('[example mergeDictWithJson] path:', path, 'segments:', segments);
           console.log('[example mergeDictWithJson] currentKey:', currentKey);
@@ -280,6 +277,7 @@ const JsonExamplesPanel = () => {
           const hasNumericKeys = newKeys.some(k => /^\d+$/.test(k));
           if (hasNumericKeys) {
             console.warn('[example mergeDictWithJson] Warning: Numeric-looking keys detected. JavaScript will automatically sort them to the beginning of the object.');
+            changeData._hasNumericKeyWarning = true;
           }
           
           // Build array of all keys in desired order
@@ -304,26 +302,15 @@ const JsonExamplesPanel = () => {
           
           console.log('[example mergeDictWithJson] newObj keys (actual order after JS reordering):', Object.keys(newObj));
           
-          // Replace parent object keys with newObj
-          // Delete all existing keys first
-          Object.keys(parentObj).forEach(k => delete parentObj[k]);
+          // Now clone with the computed new object
+          result = cloneAlongPath(prevData, segments, 0, () => newObj);
           
-          // Re-add keys from newObj (will maintain newObj's order, including JS's auto-sort for numeric keys)
-          Object.keys(newObj).forEach(k => {
-            parentObj[k] = newObj[k];
-          });
-          
-          console.log('[example mergeDictWithJson] parentObj keys after merge:', Object.keys(parentObj));
-          
-          // Return success, but with warning if numeric keys were detected
-          if (hasNumericKeys) {
-            // We need to signal this back through the return value
-            // Store a flag that will be checked by the caller
-            changeData._hasNumericKeyWarning = true;
-          }
+          // Log the final result for debugging
+          const mergedParent = navigateToPath(result, segments);
+          console.log('[example mergeDictWithJson] parentObj keys after merge:', Object.keys(mergedParent));
         } else if (_action === 'moveEntryUp' || _action === 'moveEntryDown') {
           // Move dict entry up or down
-          const parentObj = segments.length === 0 ? result : navigateToPath(result, segments, true);
+          const parentObj = navigateToPath(prevData, segments, true);
           const currentKey = segments[segments.length - 1].key;
           const keys = Object.keys(parentObj).filter(k => !k.startsWith('__pseudo__'));
           const currentIndex = keys.indexOf(currentKey);
@@ -347,12 +334,13 @@ const JsonExamplesPanel = () => {
               }
             });
             
-            keys.forEach(k => delete parentObj[k]);
-            Object.assign(parentObj, newObj);
+            result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newObj);
+          } else {
+            result = prevData;
           }
         } else if (_action === 'moveEntryToTop' || _action === 'moveEntryToBottom') {
           // Move dict entry to top or bottom
-          const parentObj = segments.length === 0 ? result : navigateToPath(result, segments, true);
+          const parentObj = navigateToPath(prevData, segments, true);
           const currentKey = segments[segments.length - 1].key;
           const keys = Object.keys(parentObj).filter(k => !k.startsWith('__pseudo__'));
           
@@ -373,40 +361,16 @@ const JsonExamplesPanel = () => {
             newObj[currentKey] = parentObj[currentKey];
           }
           
-          keys.forEach(k => delete parentObj[k]);
-          Object.assign(parentObj, newObj);
+          result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newObj);
         } else if (_action === 'moveItemUp' || _action === 'moveItemDown') {
           // Move array item up or down
-          const parentArray = navigateToPath(result, segments, true);
-          const currentIndex = segments[segments.length - 1].index;
-            
-            if (Array.isArray(parentArray)) {
-              const realIndices = [];
-              parentArray.forEach((item, idx) => {
-                if (!(item && typeof item === 'object' && item.isPseudo)) {
-                  realIndices.push(idx);
-                }
-              });
-              
-              const posInReal = realIndices.indexOf(currentIndex);
-              if (posInReal >= 0) {
-                const targetPos = _action === 'moveItemUp' ? posInReal - 1 : posInReal + 1;
-                if (targetPos >= 0 && targetPos < realIndices.length) {
-                  const targetIndex = realIndices[targetPos];
-                  const temp = parentArray[currentIndex];
-                  parentArray[currentIndex] = parentArray[targetIndex];
-                  parentArray[targetIndex] = temp;
-                }
-              }
-            }
-        } else if (_action === 'moveItemToTop' || _action === 'moveItemToBottom') {
-          // Move array item to top or bottom
-          const parentArray = navigateToPath(result, segments, true);
+          const parentArray = navigateToPath(prevData, segments, true);
           const currentIndex = segments[segments.length - 1].index;
           
           if (Array.isArray(parentArray)) {
+            const newArray = [...parentArray];
             const realIndices = [];
-            parentArray.forEach((item, idx) => {
+            newArray.forEach((item, idx) => {
               if (!(item && typeof item === 'object' && item.isPseudo)) {
                 realIndices.push(idx);
               }
@@ -414,27 +378,60 @@ const JsonExamplesPanel = () => {
             
             const posInReal = realIndices.indexOf(currentIndex);
             if (posInReal >= 0) {
-              const item = parentArray[currentIndex];
-              parentArray.splice(currentIndex, 1);
-              
-              if (_action === 'moveItemToTop') {
-                parentArray.unshift(item);
-              } else {
-                parentArray.push(item);
+              const targetPos = _action === 'moveItemUp' ? posInReal - 1 : posInReal + 1;
+              if (targetPos >= 0 && targetPos < realIndices.length) {
+                const targetIndex = realIndices[targetPos];
+                const temp = newArray[currentIndex];
+                newArray[currentIndex] = newArray[targetIndex];
+                newArray[targetIndex] = temp;
               }
             }
+            
+            result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newArray);
+          } else {
+            result = prevData;
+          }
+        } else if (_action === 'moveItemToTop' || _action === 'moveItemToBottom') {
+          // Move array item to top or bottom
+          const parentArray = navigateToPath(prevData, segments, true);
+          const currentIndex = segments[segments.length - 1].index;
+          
+          if (Array.isArray(parentArray)) {
+            const newArray = [...parentArray];
+            const realIndices = [];
+            newArray.forEach((item, idx) => {
+              if (!(item && typeof item === 'object' && item.isPseudo)) {
+                realIndices.push(idx);
+              }
+            });
+            
+            const posInReal = realIndices.indexOf(currentIndex);
+            if (posInReal >= 0) {
+              const item = newArray[currentIndex];
+              newArray.splice(currentIndex, 1);
+              
+              if (_action === 'moveItemToTop') {
+                newArray.unshift(item);
+              } else {
+                newArray.push(item);
+              }
+            }
+            
+            result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newArray);
+          } else {
+            result = prevData;
           }
         } else {
           // Handle specific actions
           switch (_action) {
             case 'createEntry': {
               // Convert pseudo to real entry
-              const parentObj = segments.length === 0 ? result : navigateToPath(result, segments, true);
+              const parentObj = navigateToPath(prevData, segments, true);
               const pseudoKey = segments[segments.length - 1].key;
               const pseudoData = parentObj[pseudoKey];
               
+              const newParentObj = {};
               if (pseudoData && pseudoData.position && pseudoData.referenceKey) {
-                const newParentObj = {};
                 for (const key of Object.keys(parentObj)) {
                   if (key === pseudoKey) continue;
                   
@@ -450,118 +447,142 @@ const JsonExamplesPanel = () => {
                     newParentObj[key] = parentObj[key];
                   }
                 }
-                Object.keys(parentObj).forEach(k => delete parentObj[k]);
-                Object.assign(parentObj, newParentObj);
               } else {
-                delete parentObj[pseudoKey];
-                parentObj[_key] = newData.value;
+                Object.assign(newParentObj, parentObj);
+                delete newParentObj[pseudoKey];
+                newParentObj[_key] = newData.value;
               }
               
+              result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newParentObj);
               return result;
             }
             case 'createItem': {
               // Convert pseudo array item to real item
-              const parentArray = navigateToPath(result, segments, true);
+              const parentArray = navigateToPath(prevData, segments, true);
               const targetIndex = segments[segments.length - 1].index;
-              parentArray[targetIndex] = newData.value;
-              if (parentArray[targetIndex] && typeof parentArray[targetIndex] === 'object') {
-                delete parentArray[targetIndex].isPseudo;
+              const newArray = [...parentArray];
+              newArray[targetIndex] = newData.value;
+              if (newArray[targetIndex] && typeof newArray[targetIndex] === 'object') {
+                delete newArray[targetIndex].isPseudo;
               }
+              
+              result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newArray);
               return result;
             }
             case 'deleteEntry': {
-              const parent = navigateToPath(result, segments, true);
+              const parent = navigateToPath(prevData, segments, true);
               const lastSeg = segments[segments.length - 1];
-              delete parent[lastSeg.key];
+              const newParent = { ...parent };
+              delete newParent[lastSeg.key];
+              
+              result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newParent);
               break;
             }
             case 'deleteParentDict': {
               if (_parentPath === '') {
                 return {};
               }
-              const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
-              let current = result;
-              for (let i = 0; i < parentParts.length - 1; i++) {
-                current = current[parentParts[i]];
-              }
-              const lastKey = parentParts[parentParts.length - 1];
-              if (Array.isArray(current)) {
-                current.splice(parseInt(lastKey), 1);
+              const parentPathSegs = parsePathToSegments(_parentPath);
+              const container = navigateToPath(prevData, parentPathSegs, true);
+              const lastSeg = parentPathSegs[parentPathSegs.length - 1];
+              
+              let newContainer;
+              if (Array.isArray(container)) {
+                newContainer = [...container];
+                newContainer.splice(lastSeg.index, 1);
               } else {
-                current[lastKey] = null;
+                newContainer = { ...container };
+                newContainer[lastSeg.key] = null;
               }
+              
+              result = cloneAlongPath(prevData, parentPathSegs.slice(0, -1), 0, () => newContainer);
               break;
             }
             case 'clearParentDict': {
               if (_parentPath === '') {
                 return {};
               }
-              const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
-              let current = result;
-              for (let i = 0; i < parentParts.length - 1; i++) {
-                current = current[parentParts[i]];
+              const parentPathSegs = parsePathToSegments(_parentPath);
+              const container = navigateToPath(prevData, parentPathSegs, true);
+              const lastSeg = parentPathSegs[parentPathSegs.length - 1];
+              
+              let newContainer;
+              if (lastSeg.type === 'arr') {
+                newContainer = [...container];
+                newContainer[lastSeg.index] = {};
+              } else {
+                newContainer = { ...container };
+                newContainer[lastSeg.key] = {};
               }
-              current[parentParts[parentParts.length - 1]] = {};
+              
+              result = cloneAlongPath(prevData, parentPathSegs.slice(0, -1), 0, () => newContainer);
               break;
             }
             case 'deleteArrayItem': {
-              const parentArray = navigateToPath(result, segments, true);
+              const parentArray = navigateToPath(prevData, segments, true);
               const targetIndex = segments[segments.length - 1].index;
-              parentArray.splice(targetIndex, 1);
+              const newArray = [...parentArray];
+              newArray.splice(targetIndex, 1);
+              
+              result = cloneAlongPath(prevData, segments.slice(0, -1), 0, () => newArray);
               break;
             }
             case 'deleteParentArray': {
               if (_parentPath === '') {
                 return [];
               }
-              const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
-              let current = result;
-              for (let i = 0; i < parentParts.length - 1; i++) {
-                current = current[parentParts[i]];
-              }
-              const lastKey = parentParts[parentParts.length - 1];
-              if (Array.isArray(current)) {
-                current.splice(parseInt(lastKey), 1);
+              const parentPathSegs = parsePathToSegments(_parentPath);
+              const container = navigateToPath(prevData, parentPathSegs, true);
+              const lastSeg = parentPathSegs[parentPathSegs.length - 1];
+              
+              let newContainer;
+              if (Array.isArray(container)) {
+                newContainer = [...container];
+                newContainer.splice(lastSeg.index, 1);
               } else {
-                current[lastKey] = null;
+                newContainer = { ...container };
+                newContainer[lastSeg.key] = null;
               }
+              
+              result = cloneAlongPath(prevData, parentPathSegs.slice(0, -1), 0, () => newContainer);
               break;
             }
             case 'clearParentArray': {
               if (_parentPath === '') {
                 return [];
               }
-              const parentParts = _parentPath.split('.').filter(p => p !== '' && !p.startsWith('.'));
-              let current = result;
-              for (let i = 0; i < parentParts.length - 1; i++) {
-                current = current[parentParts[i]];
+              const parentPathSegs = parsePathToSegments(_parentPath);
+              const container = navigateToPath(prevData, parentPathSegs, true);
+              const lastSeg = parentPathSegs[parentPathSegs.length - 1];
+              
+              let newContainer;
+              if (lastSeg.type === 'arr') {
+                newContainer = [...container];
+                newContainer[lastSeg.index] = [];
+              } else {
+                newContainer = { ...container };
+                newContainer[lastSeg.key] = [];
               }
-              current[parentParts[parentParts.length - 1]] = [];
+              
+              result = cloneAlongPath(prevData, parentPathSegs.slice(0, -1), 0, () => newContainer);
               break;
             }
             default: {
               // Normal value change
               // Special case: empty path means replace root
               if (segments.length === 0) {
-                return newData.value;
-              }
-              
-              const parent = navigateToPath(result, segments, true);
-              const lastSeg = segments[segments.length - 1];
-              
-              let finalValue = newData.value;
-              if (old.type === newData.type && newData.type === 'number' && typeof newData.value === 'string') {
-                finalValue = !isNaN(newData.value) ? Number(newData.value) : old.value;
-              } else if (old.type !== newData.type) {
-                finalValue = newData.value;
+                result = newData.value;
               } else {
-                finalValue = newData.value;
-              }
-              
-              if (lastSeg.type === 'arr') {
-                parent[lastSeg.index] = finalValue;
-              } else {
-                parent[lastSeg.key] = finalValue;
+                let finalValue = newData.value;
+                if (old.type === newData.type && newData.type === 'number' && typeof newData.value === 'string') {
+                  finalValue = !isNaN(newData.value) ? Number(newData.value) : old.value;
+                } else if (old.type !== newData.type) {
+                  finalValue = newData.value;
+                } else {
+                  finalValue = newData.value;
+                }
+                
+                result = cloneAlongPath(prevData, segments, 0, () => finalValue);
               }
             }
           }
@@ -586,7 +607,7 @@ const JsonExamplesPanel = () => {
       
       return { code: 0, message: 'Success' };
     };
-  }, [setMessage]);
+  }, [setMessage, cloneAlongPath]);
 
   // Create handlers using the unified function
   const handleValueOnlyEditableChange = useCallback(
