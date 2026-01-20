@@ -4,6 +4,7 @@ import DeleteIcon from './DeleteIcon';
 import SearchIcon from './SearchIcon';
 import ClearIcon from './ClearIcon';
 import InfoIcon from './InfoIcon';
+import InfoIconWithTooltip from './InfoIconWithTooltip';
 import SuccessIcon from './SuccessIcon';
 import ErrorIcon from './ErrorIcon';
 import UploadIcon from './UploadIcon';
@@ -26,6 +27,7 @@ export {
 	SearchIcon,
 	ClearIcon,
 	InfoIcon,
+	InfoIconWithTooltip,
 	SuccessIcon,
 	ErrorIcon,
 	UploadIcon,

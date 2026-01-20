@@ -5,6 +5,7 @@ export {
     SearchIcon,
     ClearIcon,
     InfoIcon,
+    InfoIconWithTooltip,
     SuccessIcon,
     ErrorIcon,
     UploadIcon,
