@@ -18,6 +18,8 @@
     "./src/icon/Icon": "./src/icon/Icon.jsx",
     "./src/icon/SpinningCircle": "./src/icon/SpinningCircle.jsx",
     "./src/icon/PdfIcon": "./src/icon/PdfIcon.jsx",
+    "./src/icon/CrossIcon": "./src/icon/CrossIcon.jsx",
+    "./src/icon/DragIcon": "./src/icon/DragIcon.jsx",
     "./src/auth/Login": "./src/auth/Login.jsx",
     "./src/menu/Menu": "./src/menu/Menu.tsx",
     "./src/menu/Menu.css": "./src/menu/Menu.css",
@@ -44,6 +46,7 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
+    "jotai": "^2.16.2",
     "js-yaml": "^4.1.0"
   }
 }

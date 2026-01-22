@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   FileIconDefault, 
   DeleteIcon, 
+  DragIcon, 
   SearchIcon, 
   ClearIcon, 
   InfoIcon,
@@ -44,6 +45,7 @@ const IconGallery = () => {
     { name: 'FolderIcon', component: FolderIcon, description: 'Folder' },
     { name: 'EditIconNotepad', component: EditIconNotepad, description: 'Edit/pen on notepad' },
     { name: 'EditIconPen', component: EditIconPen, description: 'Edit/pencil only' },
+    { name: 'DragIcon', component: DragIcon, description: 'Drag/grip lines' },
   ];
 
   const filteredIcons = useMemo(() => {

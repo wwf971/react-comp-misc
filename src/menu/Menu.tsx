@@ -47,11 +47,20 @@ const Menu: React.FC<MenuProps> = ({ items, position, onClose, onItemClick, onCo
     setSubmenuPosition(null)
   }, [position.x, position.y])
 
-  const handleItemClick = (item: MenuItem) => {
+  const handleItemClick = (item: MenuItem, e: React.MouseEvent) => {
+    // Only handle left clicks
+    if (e.button !== 0) return
+    
     if (item.type === 'item') {
       onItemClick(item)
       onClose()
     }
+  }
+
+  const handleItemContextMenu = (e: React.MouseEvent) => {
+    // Suppress browser's context menu on menu items
+    e.preventDefault()
+    e.stopPropagation()
   }
 
   const handleItemMouseEnter = (item: MenuItem, index: number, event: React.MouseEvent<HTMLDivElement>) => {
@@ -101,8 +110,9 @@ const Menu: React.FC<MenuProps> = ({ items, position, onClose, onItemClick, onCo
           <div
             key={index}
             className={`context-menu-item ${item.type === 'menu' ? 'has-submenu' : ''}`}
-            onClick={() => handleItemClick(item)}
+            onClick={(e) => handleItemClick(item, e)}
             onMouseEnter={(e) => handleItemMouseEnter(item, index, e)}
+            onContextMenu={handleItemContextMenu}
           >
             <span>{item.name}</span>
             {item.type === 'menu' && <span className="submenu-arrow">▶</span>}
