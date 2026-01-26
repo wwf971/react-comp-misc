@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import ConfigPanel from './Config';
 import ConfigPanelWithSubtabs from './ConfigSubtab';
-import './ConfigTabGroup.css';
+import baseStyles from './Config.module.css';
+import styles from './ConfigTabGroup.module.css';
 import type { ConfigItemStruct, MissingItemStrategy } from './Config';
 import type { ConfigSubtabStruct } from './ConfigSubtab';
 
@@ -57,12 +58,12 @@ const ConfigPanelWithTabGroups: React.FC<ConfigPanelWithTabGroupsProps> = ({
     // Validate tab type
     if (tab.type !== 'tab') {
       return (
-        <div className="config-tab-error">
-          <div className="error-title">⚠️ Invalid Tab Configuration</div>
-          <div className="error-message">
+        <div className={baseStyles.configTabError}>
+          <div className={baseStyles.errorTitle}>⚠️ Invalid Tab Configuration</div>
+          <div className={baseStyles.errorMessage}>
             Expected type "tab" but got "{tab.type}"
           </div>
-          <pre className="error-json">
+          <pre className={baseStyles.errorJson}>
             {JSON.stringify(tab, null, 2)}
           </pre>
         </div>
@@ -102,7 +103,7 @@ const ConfigPanelWithTabGroups: React.FC<ConfigPanelWithTabGroupsProps> = ({
       return (
         <button
           key={item.id}
-          className={`config-tab ${activeTabId === item.id ? 'active' : ''}`}
+          className={`${baseStyles.configTab} ${activeTabId === item.id ? baseStyles.active : ''}`}
           onClick={() => setActiveTabId(item.id)}
         >
           {item.name}
@@ -117,20 +118,20 @@ const ConfigPanelWithTabGroups: React.FC<ConfigPanelWithTabGroupsProps> = ({
       const showGroupName = group.name && group.name.trim() !== '';
 
       return (
-        <div key={group.id} className="config-tab-group">
+        <div key={group.id} className={styles.configTabGroup}>
           {/* Show group name if it exists and is not empty */}
           {showGroupName && (
-            <div className="config-tab-group-name">{group.name}</div>
+            <div className={styles.configTabGroupName}>{group.name}</div>
           )}
 
           {/* Show divider if not the first group, or if first group has a name */}
-          {showDivider && <div className="config-tab-group-divider" />}
+          {showDivider && <div className={styles.configTabGroupDivider} />}
                   
           {/* Render tabs in this group */}
           {group.children?.map(tab => (
             <button
               key={tab.id}
-              className={`config-tab ${activeTabId === tab.id ? 'active' : ''}`}
+              className={`${baseStyles.configTab} ${activeTabId === tab.id ? baseStyles.active : ''}`}
               onClick={() => setActiveTabId(tab.id)}
             >
               {tab.name}
@@ -143,12 +144,12 @@ const ConfigPanelWithTabGroups: React.FC<ConfigPanelWithTabGroupsProps> = ({
     // Invalid type
     const anyItem = item as any;
     return (
-      <div key={anyItem.id} className="config-tab-error">
-        <div className="error-title">⚠️ Invalid Configuration</div>
-        <div className="error-message">
+      <div key={anyItem.id} className={baseStyles.configTabError}>
+        <div className={baseStyles.errorTitle}>⚠️ Invalid Configuration</div>
+        <div className={baseStyles.errorMessage}>
           Expected type "tab" or "tab-group" but got "{anyItem.type}"
         </div>
-        <pre className="error-json">
+        <pre className={baseStyles.errorJson}>
           {JSON.stringify(anyItem, null, 2)}
         </pre>
       </div>
@@ -171,18 +172,18 @@ const ConfigPanelWithTabGroups: React.FC<ConfigPanelWithTabGroupsProps> = ({
   const activeTab = findActiveTab();
 
   return (
-    <div className="config-tab-container">
-      <div className="config-tab-sidebar-container">
+    <div className={baseStyles.configTabContainer}>
+      <div className={baseStyles.configTabSidebarContainer}>
         {/* Left sidebar with grouped tabs and simple tabs */}
-        <div className="config-tab-sidebar">
+        <div className={`${baseStyles.configTabSidebar} ${styles.configTabSidebar}`}>
           {configStruct.items.map((item, index) => renderItem(item, index))}
         </div>
       </div>
 
       {/* Right panel with config content */}
-      <div className="config-tab-content">
+      <div className={baseStyles.configTabContent}>
         {activeTab ? renderTabContent(activeTab) : (
-          <div className="config-tab-empty">
+          <div className={baseStyles.configTabEmpty}>
             No tab selected
           </div>
         )}

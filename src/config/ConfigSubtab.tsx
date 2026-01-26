@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ConfigPanel from './Config';
-import './ConfigSubtab.css';
+import baseStyles from './Config.module.css';
+import styles from './ConfigSubtab.module.css';
 import type { ConfigItemStruct, MissingItemStrategy } from './Config';
 
 export type ConfigSubtabItemType = 'subtab';
@@ -37,12 +38,12 @@ const ConfigPanelWithSubtabs: React.FC<ConfigPanelWithSubtabsProps> = ({
     // Validate subtab type
     if (subtab.type !== 'subtab') {
       return (
-        <div className="config-tab-error">
-          <div className="error-title">⚠️ Invalid Subtab Configuration</div>
-          <div className="error-message">
+        <div className={baseStyles.configTabError}>
+          <div className={baseStyles.errorTitle}>⚠️ Invalid Subtab Configuration</div>
+          <div className={baseStyles.errorMessage}>
             Expected type "subtab" but got "{subtab.type}"
           </div>
-          <pre className="error-json">
+          <pre className={baseStyles.errorJson}>
             {JSON.stringify(subtab, null, 2)}
           </pre>
         </div>
@@ -63,13 +64,13 @@ const ConfigPanelWithSubtabs: React.FC<ConfigPanelWithSubtabsProps> = ({
   const activeSubtab = configStruct.items.find(subtab => subtab.id === activeSubtabId);
 
   return (
-    <div className="config-subtab-container">
+    <div className={styles.configSubtabContainer}>
       {/* Top horizontal subtabs */}
-      <div className="config-subtab-bar">
+      <div className={styles.configSubtabBar}>
         {configStruct.items.map(subtab => (
           <button
             key={subtab.id}
-            className={`config-subtab ${activeSubtabId === subtab.id ? 'active' : ''}`}
+            className={`${styles.configSubtab} ${activeSubtabId === subtab.id ? styles.active : ''}`}
             onClick={() => setActiveSubtabId(subtab.id)}
           >
             {subtab.name}
@@ -78,9 +79,9 @@ const ConfigPanelWithSubtabs: React.FC<ConfigPanelWithSubtabsProps> = ({
       </div>
 
       {/* Content area */}
-      <div className="config-subtab-content">
+      <div className={styles.configSubtabContent}>
         {activeSubtab ? renderSubtabContent(activeSubtab) : (
-          <div className="config-tab-empty">
+          <div className={baseStyles.configTabEmpty}>
             No subtab selected
           </div>
         )}

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import './Config.css';
+import styles from './Config.module.css';
 
 // Define config item types
 export type ConfigItemType = 'boolean' | 'string' | 'number' | 'select' | 'group';
@@ -69,7 +69,7 @@ const ConfigPanel: React.FC<ConfigProps> = ({
     // Handle missing value with reportError strategy
     if (!(item.id in configValue) && missingItemStrategy === 'reportError') {
       return (
-        <div className="config-error">
+        <div className={styles.configError}>
           ⚠️ Value missing in configValue
         </div>
       );
@@ -80,13 +80,13 @@ const ConfigPanel: React.FC<ConfigProps> = ({
     switch (item.type) {
       case 'boolean':
         return (
-          <label className="toggle-switch">
+          <label className={styles.toggleSwitch}>
             <input
               type="checkbox"
               checked={value}
               onChange={(e) => handleChange(item.id, e.target.checked)}
             />
-            <span className="toggle-slider"></span>
+            <span className={styles.toggleSlider}></span>
           </label>
         );
       
@@ -96,7 +96,7 @@ const ConfigPanel: React.FC<ConfigProps> = ({
             type="text"
             value={value}
             onChange={(e) => handleChange(item.id, e.target.value)}
-            className="config-input"
+            className={styles.configInput}
           />
         );
       
@@ -106,7 +106,7 @@ const ConfigPanel: React.FC<ConfigProps> = ({
             type="number"
             value={value}
             onChange={(e) => handleChange(item.id, Number(e.target.value))}
-            className="config-input"
+            className={styles.configInput}
           />
         );
       
@@ -115,7 +115,7 @@ const ConfigPanel: React.FC<ConfigProps> = ({
           <select
             value={value}
             onChange={(e) => handleChange(item.id, e.target.value)}
-            className="config-select"
+            className={styles.configSelect}
           >
             {item.options?.map(option => (
               <option key={option} value={option}>{option}</option>
@@ -132,19 +132,19 @@ const ConfigPanel: React.FC<ConfigProps> = ({
     // Handle group type
     if (item.type === 'group') {
       return (
-        <div key={item.id} className="config-group">
-          <div className="config-group-title">{item.label}</div>
-          <div className="config-group-divider" />
-          <div className="config-group-items">
+        <div key={item.id} className={styles.configGroup}>
+          <div className={styles.configGroupTitle}>{item.label}</div>
+          <div className={styles.configGroupDivider} />
+          <div className={styles.configGroupItems}>
             {item.children?.map(subItem => (
-              <div key={subItem.id} className="config-item">
-                <div className="config-info">
-                  <div className="config-label">{subItem.label}</div>
+              <div key={subItem.id} className={styles.configItem}>
+                <div className={styles.configInfo}>
+                  <div className={styles.configLabel}>{subItem.label}</div>
                   {subItem.description && (
-                    <div className="config-description">{subItem.description}</div>
+                    <div className={styles.configDescription}>{subItem.description}</div>
                   )}
                 </div>
-                <div className="config-control">
+                <div className={styles.configControl}>
                   {renderConfigItem(subItem)}
                 </div>
               </div>
@@ -156,14 +156,14 @@ const ConfigPanel: React.FC<ConfigProps> = ({
     
     // Handle regular config item
     return (
-      <div key={item.id} className="config-item">
-        <div className="config-info">
-          <div className="config-label">{item.label}</div>
+      <div key={item.id} className={styles.configItem}>
+        <div className={styles.configInfo}>
+          <div className={styles.configLabel}>{item.label}</div>
           {item.description && (
-            <div className="config-description">{item.description}</div>
+            <div className={styles.configDescription}>{item.description}</div>
           )}
         </div>
-        <div className="config-control">
+        <div className={styles.configControl}>
           {renderConfigItem(item)}
         </div>
       </div>
@@ -171,8 +171,8 @@ const ConfigPanel: React.FC<ConfigProps> = ({
   };
 
   return (
-    <div className="config-container">
-      <div className="config-list">
+    <div className={styles.configContainer}>
+      <div className={styles.configList}>
         {configStruct.items.map(item => renderItem(item))}
       </div>
     </div>

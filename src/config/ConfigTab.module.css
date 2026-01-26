@@ -1,0 +1,11 @@
+/* ConfigPanelWithTabs - Specific styles */
+
+
+/* Wrapper for tab list with top padding to align with right panel content */
+.configTabList {
+  padding-top: 0px;
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+}
+

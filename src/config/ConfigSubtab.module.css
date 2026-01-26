@@ -1,14 +1,14 @@
 /* ConfigPanelWithSubtabs - Horizontal tabs at top */
-@import './Config.css';
 
-.config-subtab-container {
+
+.configSubtabContainer {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
 /* Horizontal subtab bar at top */
-.config-subtab-bar {
+.configSubtabBar {
   display: flex;
   border-bottom: 2px solid #e5e7eb;
   background: #f9fafb;
@@ -17,7 +17,7 @@
 }
 
 /* Individual subtab button */
-.config-subtab {
+.configSubtab {
   padding: 8px 8px;
   border: none;
   background: transparent;
@@ -31,22 +31,23 @@
   white-space: nowrap;
 }
 
-.config-subtab:hover {
+.configSubtab:hover {
   color: #111827;
   background: #f3f4f6;
 }
 
-.config-subtab.active {
+.active {
   color: #3b82f6;
   border-bottom-color: #3b82f6;
   font-weight: 600;
 }
 
 /* Content area below subtabs */
-.config-subtab-content {
+.configSubtabContent {
   flex: 1;
   padding: 8px;
   overflow-y: auto;
   background: #ffffff;
 }
+
 

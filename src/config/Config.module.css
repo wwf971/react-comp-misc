@@ -1,14 +1,14 @@
-.config-container {
+.configContainer {
   width: 100%;
 }
 
-.config-list {
+.configList {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.config-item {
+.configItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -19,36 +19,36 @@
   transition: all 0.2s ease;
 }
 
-.config-item:hover {
+.configItem:hover {
   background: #f9fafb;
   border-color: #d1d5db;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.config-info {
+.configInfo {
   flex: 1;
   margin-right: 12px;
 }
 
-.config-label {
+.configLabel {
   font-size: 14px;
   font-weight: 500;
   color: #111827;
   margin-bottom: 4px;
 }
 
-.config-description {
+.configDescription {
   font-size: 12px;
   color: #6b7280;
   line-height: 1.4;
 }
 
-.config-control {
+.configControl {
   flex-shrink: 0;
 }
 
 /* Toggle Switch */
-.toggle-switch {
+.toggleSwitch {
   position: relative;
   display: inline-block;
   width: 44px;
@@ -56,13 +56,13 @@
   cursor: pointer;
 }
 
-.toggle-switch input {
+.toggleSwitch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.toggle-slider {
+.toggleSlider {
   position: absolute;
   cursor: pointer;
   top: 0;
@@ -74,7 +74,7 @@
   border-radius: 24px;
 }
 
-.toggle-slider:before {
+.toggleSlider:before {
   position: absolute;
   content: "";
   height: 18px;
@@ -87,20 +87,20 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-input:checked + .toggle-slider {
+input:checked + .toggleSlider {
   background-color: #3b82f6;
 }
 
-input:checked + .toggle-slider:before {
+input:checked + .toggleSlider:before {
   transform: translateX(20px);
 }
 
-input:focus + .toggle-slider {
+input:focus + .toggleSlider {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 /* Text Input */
-.config-input {
+.configInput {
   padding: 6px 10px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
@@ -108,14 +108,14 @@ input:focus + .toggle-slider {
   min-width: 120px;
 }
 
-.config-input:focus {
+.configInput:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Select */
-.config-select {
+.configSelect {
   padding: 6px 10px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
@@ -125,14 +125,14 @@ input:focus + .toggle-slider {
   cursor: pointer;
 }
 
-.config-select:focus {
+.configSelect:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Error Display */
-.config-error {
+.configError {
   font-size: 12px;
   color: #dc2626;
   padding: 6px 10px;
@@ -142,24 +142,24 @@ input:focus + .toggle-slider {
 }
 
 /* Config Group */
-.config-group {
+.configGroup {
   margin-bottom: 20px;
 }
 
-.config-group-title {
+.configGroupTitle {
   font-size: 15px;
   font-weight: 600;
   color: #374151;
   margin-bottom: 6px;
 }
 
-.config-group-divider {
+.configGroupDivider {
   height: 1px;
   background: #e5e7eb;
   margin-bottom: 8px;
 }
 
-.config-group-items {
+.configGroupItems {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -169,7 +169,7 @@ input:focus + .toggle-slider {
    Shared styles for ConfigPanelWithTabs and ConfigPanelWithTabGroups
    ============================================================ */
 
-.config-tab-container {
+.configTabContainer {
   display: flex;
   height: 100%;
   min-height: 400px;
@@ -180,7 +180,7 @@ input:focus + .toggle-slider {
   background: #f9fafb;
 }
 
-.config-tab-sidebar-container {
+.configTabSidebarContainer {
   border-right: 1px solid #e5e7eb;
   overflow: hidden;
   width: 200px;
@@ -190,7 +190,7 @@ input:focus + .toggle-slider {
 }
 
 /* Left Sidebar - Common Styles */
-.config-tab-sidebar {
+.configTabSidebar {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -199,7 +199,7 @@ input:focus + .toggle-slider {
 }
 
 /* Tab Styles */
-.config-tab {
+.configTab {
   padding: 6px 16px;
   border: none;
   background: transparent;
@@ -214,26 +214,26 @@ input:focus + .toggle-slider {
   text-overflow: ellipsis;
 }
 
-.config-tab:hover {
+.configTab:hover {
   background: #e5e7eb;
   color: #111827;
 }
 
-.config-tab.active {
+.active {
   background: #d1d5db;
   color: #111827;
   font-weight: 600;
 }
 
 /* Right Panel - Content */
-.config-tab-content {
+.configTabContent {
   flex: 1;
   padding: 20px;
   padding-top: 10px;
   overflow-y: auto;
 }
 
-.config-tab-empty {
+.configTabEmpty {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -243,27 +243,27 @@ input:focus + .toggle-slider {
 }
 
 /* Error Display */
-.config-tab-error {
+.configTabError {
   padding: 20px;
   background: #fef2f2;
   border: 1px solid #fecaca;
   border-radius: 8px;
 }
 
-.error-title {
+.errorTitle {
   font-size: 16px;
   font-weight: 600;
   color: #dc2626;
   margin-bottom: 8px;
 }
 
-.error-message {
+.errorMessage {
   font-size: 14px;
   color: #991b1b;
   margin-bottom: 12px;
 }
 
-.error-json {
+.errorJson {
   background: #ffffff;
   border: 1px solid #fecaca;
   border-radius: 4px;
@@ -274,4 +274,5 @@ input:focus + .toggle-slider {
   max-height: 300px;
   overflow-y: auto;
 }
+
 
