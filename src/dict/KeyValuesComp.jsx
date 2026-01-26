@@ -186,34 +186,27 @@ const KeyValuesComp = ({
 
     // Measure the natural width of each key cell and find the maximum
     const measureMaxWidth = () => {
-      // Create canvas for measuring text (doesn't affect DOM or selection)
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
       let maxWidth = 0;
       
       keyRefs.current.forEach(ref => {
         if (ref) {
           const cell = ref.closest('.keyvalues-cell');
           if (cell) {
-            const text = ref.textContent || '';
+            // Temporarily remove width constraint to measure natural size
+            const originalWidth = cell.style.width;
+            const originalFlexShrink = cell.style.flexShrink;
+            cell.style.width = 'auto';
+            cell.style.flexShrink = '0';
             
-            // Get the computed font style for accurate measurement
-            const styles = window.getComputedStyle(ref);
-            ctx.font = `${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
+            // Measure the natural width of the cell
+            const cellWidth = cell.offsetWidth;
             
-            // Measure text width
-            const textWidth = ctx.measureText(text).width;
+            // Restore original styles
+            cell.style.width = originalWidth;
+            cell.style.flexShrink = originalFlexShrink;
             
-            // Add the cell's padding
-            const cellStyles = window.getComputedStyle(cell);
-            const paddingLeft = parseFloat(cellStyles.paddingLeft) || 0;
-            const paddingRight = parseFloat(cellStyles.paddingRight) || 0;
-            
-            const totalWidth = Math.ceil(textWidth + paddingLeft + paddingRight);
-            
-            if (totalWidth > maxWidth) {
-              maxWidth = totalWidth;
+            if (cellWidth > maxWidth) {
+              maxWidth = cellWidth;
             }
           }
         }
@@ -237,7 +230,7 @@ const KeyValuesComp = ({
     measureMaxWidth();
 
     return () => resizeObserver.disconnect();
-  }, [data, alignColumn, keyColWidth]);
+  }, [data, alignColumn, keyColWidth, isKeyEditable, isValueEditable]);
 
   return (
     <div className="keyvalues-container">
