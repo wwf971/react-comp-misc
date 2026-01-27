@@ -21,6 +21,7 @@ import EditIconNotepad from './EditIcon';
 import EditIconPen from './EditIconPen';
 import Refresh from './Refresh';
 import PlusIcon from './PlusIcon';
+import MinusIcon from './MinusIcon';
 
 export {
 	FileIconDefault,
@@ -45,5 +46,6 @@ export {
 	EditIconNotepad as EditIcon,
 	EditIconPen,
 	Refresh,
-	PlusIcon
+	PlusIcon,
+	MinusIcon
 }

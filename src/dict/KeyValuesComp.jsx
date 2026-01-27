@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './KeyValues.css';
 
 /**
@@ -162,13 +162,94 @@ const KeyValuesComp = ({
 }) => {
   const [keyColWidthValue, setKeyColWidthValue] = useState(null);
   const keyRefs = useRef([]);
+  const resizeObserverRef = useRef(null);
+  const measureTimeoutRef = useRef(null);
+  const lastMeasuredWidthRef = useRef(0);
+  const measureAttemptsRef = useRef(0);
 
   // Determine if a field is actually editable
   const canEditKey = isEditable && isKeyEditable;
   const canEditValue = isEditable && isValueEditable;
 
+  // Measure the natural width of each key cell and find the maximum
+  // Keeps measuring until width stabilizes (for custom components that take time to render)
+  const measureMaxWidth = useCallback((isRetry = false) => {
+    // Check if refs are populated
+    const validRefs = keyRefs.current.filter(ref => ref && ref.closest('.keyvalues-cell'));
+    
+    // If refs aren't ready yet and we're in retry mode, retry
+    if (validRefs.length === 0 && isRetry && measureAttemptsRef.current < 20) {
+      measureAttemptsRef.current++;
+      measureTimeoutRef.current = setTimeout(() => {
+        measureMaxWidth(true);
+      }, 150);
+      return;
+    }
+    
+    let maxWidth = 0;
+    
+    keyRefs.current.forEach(ref => {
+      if (ref) {
+        const cell = ref.closest('.keyvalues-cell');
+        if (cell) {
+          // Temporarily remove width constraint to measure natural size
+          const originalWidth = cell.style.width;
+          const originalFlexShrink = cell.style.flexShrink;
+          cell.style.width = 'auto';
+          cell.style.flexShrink = '0';
+          
+          // Measure the natural width of the cell
+          const cellWidth = cell.offsetWidth;
+          
+          // Restore original styles
+          cell.style.width = originalWidth;
+          cell.style.flexShrink = originalFlexShrink;
+          
+          if (cellWidth > maxWidth) {
+            maxWidth = cellWidth;
+          }
+        }
+      }
+    });
+    
+    if (maxWidth > 0) {
+      // Check if width has stabilized
+      const hasWidthChanged = Math.abs(maxWidth - lastMeasuredWidthRef.current) > 1;
+      lastMeasuredWidthRef.current = maxWidth;
+      
+      setKeyColWidthValue(`${maxWidth}px`);
+      
+      // If this is initial measurement and width is changing, keep measuring
+      if (isRetry && hasWidthChanged && measureAttemptsRef.current < 20) {
+        measureAttemptsRef.current++;
+        measureTimeoutRef.current = setTimeout(() => {
+          measureMaxWidth(true);
+        }, 150);
+      } else {
+        measureAttemptsRef.current = 0;
+      }
+    } else if (isRetry && measureAttemptsRef.current < 20) {
+      // Width is still 0 but we're in retry mode, keep trying
+      measureAttemptsRef.current++;
+      measureTimeoutRef.current = setTimeout(() => {
+        measureMaxWidth(true);
+      }, 150);
+    }
+  }, []);
+
   // Calculate minimum key column width when keyColWidth is 'min'
   useEffect(() => {
+    // Clean up any pending measurements
+    if (measureTimeoutRef.current) {
+      clearTimeout(measureTimeoutRef.current);
+      measureTimeoutRef.current = null;
+    }
+    
+    if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+      resizeObserverRef.current = null;
+    }
+
     if (!alignColumn) {
       setKeyColWidthValue(null);
       return;
@@ -184,53 +265,54 @@ const KeyValuesComp = ({
       return;
     }
 
-    // Measure the natural width of each key cell and find the maximum
-    const measureMaxWidth = () => {
-      let maxWidth = 0;
-      
-      keyRefs.current.forEach(ref => {
-        if (ref) {
-          const cell = ref.closest('.keyvalues-cell');
-          if (cell) {
-            // Temporarily remove width constraint to measure natural size
-            const originalWidth = cell.style.width;
-            const originalFlexShrink = cell.style.flexShrink;
-            cell.style.width = 'auto';
-            cell.style.flexShrink = '0';
-            
-            // Measure the natural width of the cell
-            const cellWidth = cell.offsetWidth;
-            
-            // Restore original styles
-            cell.style.width = originalWidth;
-            cell.style.flexShrink = originalFlexShrink;
-            
-            if (cellWidth > maxWidth) {
-              maxWidth = cellWidth;
-            }
-          }
-        }
-      });
-      
-      if (maxWidth > 0) {
-        setKeyColWidthValue(`${maxWidth}px`);
-      }
-    };
+    // Set an initial estimated width immediately to avoid layout shift
+    // This will be refined by the measurement below
+    setKeyColWidthValue('150px');
 
-    // Use ResizeObserver to re-measure when content changes
-    const resizeObserver = new ResizeObserver(measureMaxWidth);
+    // Set up ResizeObserver to re-measure when content changes
+    resizeObserverRef.current = new ResizeObserver(() => {
+      // Debounce the measurement
+      if (measureTimeoutRef.current) {
+        clearTimeout(measureTimeoutRef.current);
+      }
+      measureTimeoutRef.current = setTimeout(() => measureMaxWidth(false), 50);
+    });
     
     keyRefs.current.forEach(ref => {
-      if (ref) {
-        resizeObserver.observe(ref);
+      if (ref && resizeObserverRef.current) {
+        resizeObserverRef.current.observe(ref);
       }
     });
 
-    // Initial measurement
-    measureMaxWidth();
+    // Initial measurement with delay to ensure custom components are fully rendered
+    // Use multiple animation frames to ensure all rendering is complete
+    // Then start adaptive measurement that retries until width stabilizes
+    lastMeasuredWidthRef.current = 0;
+    measureAttemptsRef.current = 0;
+    
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          measureTimeoutRef.current = setTimeout(() => {
+            measureMaxWidth(true); // Enable retry mode for initial measurement
+          }, 50); // Short initial delay before starting adaptive measurement
+        });
+      });
+    });
 
-    return () => resizeObserver.disconnect();
-  }, [data, alignColumn, keyColWidth, isKeyEditable, isValueEditable]);
+    return () => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+      if (measureTimeoutRef.current) {
+        clearTimeout(measureTimeoutRef.current);
+        measureTimeoutRef.current = null;
+      }
+      measureAttemptsRef.current = 0;
+      lastMeasuredWidthRef.current = 0;
+    };
+  }, [data, alignColumn, keyColWidth, measureMaxWidth]); // Watch data directly, not just data.length
 
   return (
     <div className="keyvalues-container">
