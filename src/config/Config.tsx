@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import styles from './Config.module.css';
+import BoolSlider from '../button/BoolSlider.jsx';
 
 // Define config item types
 export type ConfigItemType = 'boolean' | 'string' | 'number' | 'select' | 'group';
@@ -80,14 +81,10 @@ const ConfigPanel: React.FC<ConfigProps> = ({
     switch (item.type) {
       case 'boolean':
         return (
-          <label className={styles.toggleSwitch}>
-            <input
-              type="checkbox"
-              checked={value}
-              onChange={(e) => handleChange(item.id, e.target.checked)}
-            />
-            <span className={styles.toggleSlider}></span>
-          </label>
+          <BoolSlider
+            checked={value}
+            onChange={(checked: boolean) => handleChange(item.id, checked)}
+          />
         );
       
       case 'string':

@@ -70,7 +70,7 @@ function DevPage() {
           <h2>{CompSelectedStr}</h2>
           <p>{components[CompSelectedStr]?.description}</p>
         </div>
-          <div className="component-demo">
+          <div className="comp-demo">
             {CompSelected ? <CompSelected /> : <div>No example available</div>}
           </div>
         </div>

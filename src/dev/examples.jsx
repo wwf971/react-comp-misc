@@ -10,6 +10,7 @@ import { menuExamples } from '../menu/example.tsx';
 import { jsonExamples } from '../layout/json/example.jsx';
 import { jsonJotaiExamples } from '../layout/json-jotai/example.jsx';
 import { valueCompExamples } from '../layout/value-comp/example.jsx';
+import { buttonExamples } from '../button/example.jsx';
 
 // Combine all examples into a single object
 export const components = {
@@ -24,4 +25,5 @@ export const components = {
   ...jsonExamples,
   ...jsonJotaiExamples,
   ...valueCompExamples,
+  ...buttonExamples,
 };

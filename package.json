@@ -24,7 +24,8 @@
     "./src/menu/Menu": "./src/menu/Menu.tsx",
     "./src/menu/Menu.css": "./src/menu/Menu.css",
     "./src/database/DatabaseSetup.css": "./src/database/DatabaseSetup.css",
-    "./src/database/TableManage.css": "./src/database/TableManage.css"
+    "./src/database/TableManage.css": "./src/database/TableManage.css",
+    "./src/layout/json/pathUtils": "./src/layout/json/pathUtils.js"
   },
   "scripts": {
     "dev": "vite",

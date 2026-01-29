@@ -57,6 +57,7 @@ export { default as EditableValueComp } from "./layout/value-comp/EditableValueC
 export { default as EditableValueWithInfo } from "./layout/value-comp/EditableValueWithInfo.jsx";
 export { default as SelectableValueComp } from "./layout/value-comp/SelectableValueComp.jsx";
 export { default as SearchableValueComp } from "./layout/value-comp/SearchableValueComp.jsx";
+export { default as PanelWithToggle } from "./layout/PanelWithToggle.jsx";
 
 export { default as JsonComp } from "./layout/json/JsonComp.jsx";
 export { default as JsonKeyValueComp } from "./layout/json/JsonKeyValueComp.jsx";
@@ -83,3 +84,5 @@ export { default as DatabaseSetup } from "./database/DatabaseSetup";
 export type { DatabaseSetupProps, TableConfig } from "./database/DatabaseSetup";
 export { default as TableManage } from "./database/TableManage";
 export type { TableManageProps } from "./database/TableManage";
+
+export { default as BoolSlider } from "./button/BoolSlider.jsx";
