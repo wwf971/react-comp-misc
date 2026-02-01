@@ -48,6 +48,8 @@
   },
   "dependencies": {
     "jotai": "^2.16.2",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "mobx": "^6.15.0",
+    "mobx-react-lite": "^4.1.1"
   }
 }
