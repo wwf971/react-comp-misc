@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MinusIcon, PlusIcon } from '@wwf971/react-comp-misc';
 
-const TogglePanel = ({ title, children, defaultExpanded = false }) => {
+const PanelToggle = ({ title, children, defaultExpanded = false }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
@@ -34,4 +34,4 @@ const TogglePanel = ({ title, children, defaultExpanded = false }) => {
   );
 };
 
-export default PanelWithToggle;
+export default PanelToggle;

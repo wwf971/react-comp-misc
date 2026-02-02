@@ -9,6 +9,30 @@ to view test page on dev mode, run `pnpm run dev`.
 
 For a series of components belonging to same group, they should share one example component.
 
+Wrong:
+
+```javascript
+export const folderExamples = {
+  'Folder Header - Basic': <BasicHeaderExample />,
+  'Folder Header - Dynamic': <DynamicHeaderExample />,
+  'Folder Header - Non-Resizable': <NonResizableHeaderExample />,
+  'Folder Header - Mixed Width': <MixedWidthHeaderExample />
+};
+```
+
+Right:
+
+```javascript
+export const folderExamples = {
+  'Folder': {
+    component: null,
+    description: 'Folder view components with resizable headers',
+    example: () => <FolderExamplesPanel />
+  }
+};
+```
+
+
 ## export components from the prject.
 
 DO NOT CREATE a separate index.js or index.ts to export the component.
