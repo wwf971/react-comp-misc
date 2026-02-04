@@ -27,9 +27,6 @@ const Header = observer(({ columns, columnsOrder, columnsSize = {}, getComponent
   // Column reordering state
   const [draggingColId, setDraggingColId] = useState(null);
   const [dragOverSeparatorIndex, setDragOverSeparatorIndex] = useState(null);
-  const [ghostPosition, setGhostPosition] = useState({ x: 0, y: 0 });
-  const dragStartX = useRef(0);
-  const dragStartY = useRef(0);
   const dragOffsetX = useRef(0);
   const dragOffsetY = useRef(0);
 
@@ -161,19 +158,13 @@ const Header = observer(({ columns, columnsOrder, columnsSize = {}, getComponent
     
     e.stopPropagation();
     
-    if (!headerRef.current) return;
-    
-    const headerRect = headerRef.current.getBoundingClientRect();
     const cellRect = e.currentTarget.getBoundingClientRect();
     
-    // Calculate offset relative to header
-    dragStartX.current = e.clientX - headerRect.left;
-    dragStartY.current = e.clientY - headerRect.top;
+    // Calculate drag offset for ghost image positioning
     dragOffsetX.current = e.clientX - cellRect.left;
     dragOffsetY.current = e.clientY - cellRect.top;
     
     setDraggingColId(colId);
-    setGhostPosition({ x: dragStartX.current - dragOffsetX.current, y: dragStartY.current - dragOffsetY.current });
     
     // Create a ghost image
     const ghost = e.currentTarget.cloneNode(true);
@@ -194,10 +185,6 @@ const Header = observer(({ columns, columnsOrder, columnsSize = {}, getComponent
     
     const headerRect = headerRef.current.getBoundingClientRect();
     const mouseX = e.clientX - headerRect.left;
-    const mouseY = e.clientY - headerRect.top;
-    
-    // Update ghost position
-    setGhostPosition({ x: mouseX - dragOffsetX.current, y: mouseY - dragOffsetY.current });
     
     // Calculate separator positions
     const cells = headerRef.current.querySelectorAll('.folder-header-cell');

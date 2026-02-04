@@ -1,9 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TabsOnTop from './TabsOnTop';
 
 /**
- * Example usage of TabsOnTop component
+ * Counter component that increases every second to demonstrate continuous rendering
  */
+function Counter({ label }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount(c => c + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{ padding: '8px', background: '#e8f5e9', borderRadius: '4px', marginTop: '8px' }}>
+      <strong>{label}</strong> Counter: {count}s (updates every second even when tab is not active)
+    </div>
+  );
+}
 
 /**
  * Consolidated TabsOnTop examples in a single panel
@@ -11,122 +28,78 @@ import TabsOnTop from './TabsOnTop';
 const TabsOnTopExamplesPanel = () => {
   return (
     <div style={{ padding: '20px', maxWidth: '1200px' }}>
-      <h2 style={{ marginTop: 0, marginBottom: '20px' }}>TabsOnTop Component Examples</h2>
+      <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>TabsOnTop Examples</div>
+      <div style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>
+        Control whether inactive tabs stay mounted or unmount. Watch counters to see the difference.
+      </div>
       
-      {/* Example 1 */}
-      <div style={{ marginBottom: '40px' }}>
-        <h3 style={{ marginBottom: '8px' }}>1. Basic Tabs</h3>
-        <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '12px' }}>
-          Simple tabs without close or create functionality.
-        </p>
+      {/* Example 1: Keep mounted behavior demo */}
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Tab Mount Behavior</div>
         <BasicExample />
       </div>
 
-      {/* Example 2 */}
-      <div style={{ marginBottom: '40px' }}>
-        <h3 style={{ marginBottom: '8px' }}>2. Tabs with Close Button</h3>
-        <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '12px' }}>
-          Tabs that can be closed by clicking the × button.
-        </p>
-        <TabsWithClose />
-      </div>
-
-      {/* Example 3 */}
+      {/* Example 2: All features combined */}
       <div>
-        <h3 style={{ marginBottom: '8px' }}>3. Tabs with Close and Create</h3>
-        <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '12px' }}>
-          Tabs with both close functionality and ability to create new tabs.
-        </p>
-        <TabsWithCloseAndCreate />
+        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>All Features: Close, Create, Reorder</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          Drag tabs to reorder, close with ×, create with +. Blue line shows drop position.
+        </div>
+        <TabsWithAllFeatures />
       </div>
     </div>
   );
 };
 
-// Example 1: Basic tabs without close/create
+// Example 1: Basic tabs with counter to show rendering behavior
 function BasicExample() {
-  const [activeTab, setActiveTab] = useState('tab-1');
-
   return (
     <div>
-      <TabsOnTop 
-        defaultTab="users"
-        onTabChange={(key) => {
-          console.log('Tab changed to:', key);
-          setActiveTab(key);
-        }}
-      >
-        <TabsOnTop.Tab label="Users">
-          <div style={{ padding: '20px' }}>
-            <h3>Users Panel</h3>
-            <p>User management content here...</p>
+      <TabsOnTop defaultTab="tab-1" defaultKeepMounted={true}>
+        <TabsOnTop.Tab label="Always Mounted" keepMounted={true}>
+          <div style={{ padding: '12px' }}>
+            <div>This tab stays mounted (hidden with display:none)</div>
+            <Counter label="Always Mounted" />
           </div>
         </TabsOnTop.Tab>
         
-        <TabsOnTop.Tab label="Settings">
-          <div style={{ padding: '20px' }}>
-            <h3>Settings Panel</h3>
-            <p>Settings content here...</p>
+        <TabsOnTop.Tab label="Unmounts" keepMounted={false}>
+          <div style={{ padding: '12px' }}>
+            <div>This tab unmounts when inactive (counter resets)</div>
+            <Counter label="Unmounts" />
           </div>
         </TabsOnTop.Tab>
         
-        <TabsOnTop.Tab label="Profile">
-          <div style={{ padding: '20px' }}>
-            <h3>Profile Panel</h3>
-            <p>Profile content here...</p>
+        <TabsOnTop.Tab label="Default Behavior">
+          <div style={{ padding: '12px' }}>
+            <div>Uses defaultKeepMounted (true in this example)</div>
+            <Counter label="Default" />
           </div>
         </TabsOnTop.Tab>
       </TabsOnTop>
+      <div style={{ marginTop: '8px', padding: '6px', background: '#fff3e0', borderRadius: '2px', fontSize: '12px' }}>
+        Switch between tabs: "Always Mounted" keeps counting, "Unmounts" resets to 0
+      </div>
     </div>
   );
 }
 
-// Example 2: Tabs with close functionality
-function TabsWithClose() {
+// Example 2: All features combined - close, create, and reorder
+function TabsWithAllFeatures() {
   const [tabs, setTabs] = useState([
-    { id: '1', label: 'Tab 1', content: 'Content for Tab 1' },
-    { id: '2', label: 'Tab 2', content: 'Content for Tab 2' },
-    { id: '3', label: 'Tab 3', content: 'Content for Tab 3' },
+    { id: '1', label: 'First', content: 'Content 1' },
+    { id: '2', label: 'Second', content: 'Content 2' },
+    { id: '3', label: 'Third', content: 'Content 3' },
   ]);
+  const [nextId, setNextId] = useState(4);
 
-  const handleClose = (tabKey) => {
-    console.log('Close tab:', tabKey);
-    // Extract the index from tab key (e.g., "tab-1" -> 1)
-    const tabIndex = parseInt(tabKey.split('-')[1]) - 1;
-    setTabs(tabs.filter((_, idx) => idx !== tabIndex));
+  const handleReorder = (newTabsConfig) => {
+    const reorderedTabs = newTabsConfig.map(tabConfig => {
+      const tabIndex = parseInt(tabConfig.key.split('-')[1]) - 1;
+      return tabs[tabIndex];
+    });
+    setTabs(reorderedTabs);
   };
-
-  return (
-    <div>
-      <TabsOnTop 
-        allowCloseTab={true}
-        onTabClose={handleClose}
-      >
-        {tabs.map(tab => (
-          <TabsOnTop.Tab key={tab.id} label={tab.label}>
-            <div style={{ padding: '20px' }}>
-              <h3>{tab.label}</h3>
-              <p>{tab.content}</p>
-            </div>
-          </TabsOnTop.Tab>
-        ))}
-      </TabsOnTop>
-      {tabs.length === 0 && (
-        <div style={{ padding: '20px', color: '#999' }}>
-          No tabs available
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Example 3: Tabs with close and create functionality
-function TabsWithCloseAndCreate() {
-  const [tabs, setTabs] = useState([
-    { id: '1', label: 'Tab 1', content: 'Content for Tab 1' },
-    { id: '2', label: 'Tab 2', content: 'Content for Tab 2' },
-  ]);
-  const [nextId, setNextId] = useState(3);
 
   const handleClose = (tabKey) => {
     const tabIndex = parseInt(tabKey.split('-')[1]) - 1;
@@ -137,7 +110,7 @@ function TabsWithCloseAndCreate() {
     const newTab = {
       id: nextId.toString(),
       label: `Tab ${nextId}`,
-      content: `Content for Tab ${nextId}`
+      content: `Content ${nextId}`
     };
     setTabs([...tabs, newTab]);
     setNextId(nextId + 1);
@@ -146,6 +119,8 @@ function TabsWithCloseAndCreate() {
   return (
     <div>
       <TabsOnTop 
+        allowTabReorder={true}
+        onTabReorder={handleReorder}
         allowCloseTab={true}
         onTabClose={handleClose}
         allowTabCreate={true}
@@ -153,13 +128,16 @@ function TabsWithCloseAndCreate() {
       >
         {tabs.map(tab => (
           <TabsOnTop.Tab key={tab.id} label={tab.label}>
-            <div style={{ padding: '20px' }}>
-              <h3>{tab.label}</h3>
-              <p>{tab.content}</p>
+            <div style={{ padding: '12px' }}>
+              <div>{tab.content}</div>
+              <Counter label={tab.label} />
             </div>
           </TabsOnTop.Tab>
         ))}
       </TabsOnTop>
+      <div style={{ marginTop: '8px', padding: '6px', background: '#f0f0f0', borderRadius: '2px', fontSize: '12px' }}>
+        <strong>Order:</strong> {tabs.map(t => t.label).join(' → ')}
+      </div>
     </div>
   );
 }
@@ -168,8 +146,8 @@ function TabsWithCloseAndCreate() {
 export const tabExamples = {
   'TabsOnTop': {
     component: TabsOnTop,
-    description: 'Tabs component with basic, closeable, and create functionality',
-    example: TabsOnTopExamplesPanel,
+    description: 'Tabs with close, create, and reorder (drag and drop)',
+    example: () => <TabsOnTopExamplesPanel />
   },
 };
 

@@ -11,6 +11,7 @@
   padding: 0px 0px;
   padding-bottom: 0px;
   border-radius: 4px 4px 0 0;
+  position: relative;
 }
 
 .tab-on-top-btn {
@@ -94,3 +95,14 @@
   display: block !important;
 }
 
+.tab-on-top-btn.dragging {
+  opacity: 0.3;
+}
+
+.tab-separator-indicator {
+  position: absolute;
+  width: 2px;
+  background: #2196f3;
+  z-index: 100;
+  pointer-events: none;
+}

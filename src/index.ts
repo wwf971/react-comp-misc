@@ -40,8 +40,8 @@ export {
     Panel as MasterDetailPanel 
 } from "./layout/master-detail/MasterDetail.tsx";
 
-export { default as TabsOnTop } from "./layout/tab/TabsOnTop.tsx";
-export type { TabsOnTopRef, TabsOnTopProps } from "./layout/tab/TabsOnTop.tsx";
+export { default as TabsOnTop } from "./layout/tab/TabsOnTop.jsx";
+export type { TabsOnTopRef, TabsOnTopProps } from "./layout/tab/TabsOnTop.jsx";
 
 export { default as Login } from "./auth/Login.jsx";
 
