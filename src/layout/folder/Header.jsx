@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import './Header.css';
+import './folder.css';
 
 /**
  * Default component for rendering plain text in header cells
@@ -14,10 +14,20 @@ const MemoizedDefaultHeaderTextComp = React.memo(DefaultHeaderTextComp, (prev, n
   return prev.data === next.data;
 });
 
-const Header = observer(({ columns, columnsOrder, columnsSize = {}, getComponent, onColumnResize, allowColumnReorder = false, onColumnReorder }) => {
+const Header = observer(({ 
+  columns, 
+  columnsOrder, 
+  columnsSize = {}, 
+  columnWidths: externalColumnWidths,
+  getComponent, 
+  onColumnWidthChange,
+  onColumnResize, 
+  allowColumnReorder = false, 
+  onDataChangeRequest 
+}) => {
   
   const headerRef = useRef(null);
-  const [columnWidths, setColumnWidths] = useState({});
+  const [localColumnWidths, setLocalColumnWidths] = useState({});
   const [resizing, setResizing] = useState(null);
   const resizeStartX = useRef(0);
   const initialEdgePositions = useRef([]);
@@ -30,9 +40,12 @@ const Header = observer(({ columns, columnsOrder, columnsSize = {}, getComponent
   const dragOffsetX = useRef(0);
   const dragOffsetY = useRef(0);
 
-  // Initialize column widths from columnsSize prop
+  // Use external columnWidths if provided, otherwise calculate locally
+  const columnWidths = externalColumnWidths || localColumnWidths;
+  
+  // Initialize column widths from columnsSize prop (only when no external widths)
   useEffect(() => {
-    if (!headerRef.current || !columnsOrder) return;
+    if (externalColumnWidths || !headerRef.current || !columnsOrder) return;
     
     const totalWidth = headerRef.current.offsetWidth;
     const newWidths = {};
@@ -57,8 +70,8 @@ const Header = observer(({ columns, columnsOrder, columnsSize = {}, getComponent
       newWidths[colId] = columnsSize[colId]?.width || undefinedColWidth;
     });
     
-    setColumnWidths(newWidths);
-  }, [columns, columnsOrder, columnsSize]);
+    setLocalColumnWidths(newWidths);
+  }, [columns, columnsOrder, columnsSize, externalColumnWidths]);
 
   const handleResizeStart = (e, columnId, colIndex) => {
     e.preventDefault();
@@ -124,7 +137,12 @@ const Header = observer(({ columns, columnsOrder, columnsSize = {}, getComponent
       prevEdge = currentEdge;
     });
     
-    setColumnWidths(newWidths);
+    // Update widths (either external or local)
+    if (onColumnWidthChange) {
+      onColumnWidthChange(newWidths);
+    } else {
+      setLocalColumnWidths(newWidths);
+    }
   };
 
   const handleResizeEnd = () => {
@@ -216,8 +234,8 @@ const Header = observer(({ columns, columnsOrder, columnsSize = {}, getComponent
     }
   };
 
-  const handleColumnDragEnd = (e) => {
-    if (!draggingColId || !onColumnReorder) {
+  const handleColumnDragEnd = async (e) => {
+    if (!draggingColId || !onDataChangeRequest) {
       setDraggingColId(null);
       setDragOverSeparatorIndex(null);
       return;
@@ -237,7 +255,22 @@ const Header = observer(({ columns, columnsOrder, columnsSize = {}, getComponent
       newOrder.splice(draggedIndex, 1);
       newOrder.splice(newIndex, 0, draggingColId);
       
-      onColumnReorder(newOrder);
+      // Call the data change callback with reorder type (may be async)
+      try {
+        const result = await onDataChangeRequest('reorder', { 
+          columnId: draggingColId, 
+          fromIndex: draggedIndex, 
+          toIndex: newIndex, 
+          newOrder 
+        });
+        
+        // If callback returns an error result, log it
+        if (result && result.code !== 0) {
+          console.error('Column reorder failed:', result.message);
+        }
+      } catch (error) {
+        console.error('Column reorder error:', error);
+      }
     }
     
     setDraggingColId(null);

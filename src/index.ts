@@ -25,7 +25,7 @@ export {
 } from "./icon/Icon.jsx";
 
 export { default as PdfIcon } from "./icon/PdfIcon.jsx";
-export { default as RefreshIcon } from "./icon/Refresh.jsx";
+export { default as RefreshIcon } from "./icon/RefreshIcon.jsx";
 
 export {
     get_local_timezone_int,
@@ -41,7 +41,6 @@ export {
 } from "./layout/master-detail/MasterDetail.tsx";
 
 export { default as TabsOnTop } from "./layout/tab/TabsOnTop.jsx";
-export type { TabsOnTopRef, TabsOnTopProps } from "./layout/tab/TabsOnTop.jsx";
 
 export { default as Login } from "./auth/Login.jsx";
 
@@ -86,3 +85,7 @@ export { default as TableManage } from "./database/TableManage";
 export type { TableManageProps } from "./database/TableManage";
 
 export { default as BoolSlider } from "./button/BoolSlider.jsx";
+
+export { default as FolderView } from "./layout/folder/FolderView.jsx";
+export { default as FolderHeader } from "./layout/folder/Header.jsx";
+export { default as FolderBody } from "./layout/folder/Body.jsx";

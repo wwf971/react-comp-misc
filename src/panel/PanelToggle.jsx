@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { MinusIcon, PlusIcon } from '@wwf971/react-comp-misc';
 
-const PanelToggle = ({ title, children, defaultExpanded = false }) => {
+const PanelToggle = ({ title, children, defaultExpanded = false, style }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
-    <div className="config-section" style={{ marginTop: '12px' }}>
+    <div className="config-section" style={style}>
       <div style={{ padding: '6px', border: '1px solid #ddd', borderRadius: '4px' }}>
         {title && (
           <div 

@@ -19,7 +19,7 @@ import SpinningCircle from './SpinningCircle';
 import FolderIcon from './FolderIcon';
 import EditIconNotepad from './EditIcon';
 import EditIconPen from './EditIconPen';
-import Refresh from './Refresh';
+import Refresh from './RefreshIcon';
 import PlusIcon from './PlusIcon';
 import MinusIcon from './MinusIcon';
 

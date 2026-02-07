@@ -1,3 +1,7 @@
+/*
+use this exmample as reference, when you cannot implement the "right-click after right-click" behavior correctly.
+*/
+
 import React, { useState } from 'react'
 import Menu, { MenuItem } from './Menu'
 

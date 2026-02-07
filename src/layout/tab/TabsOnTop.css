@@ -83,7 +83,7 @@
 
 .tabs-on-top-content {
   /* Remove flex: 1 and overflow: auto to allow natural content height */
-  min-height: 100px; /* Ensure content area has minimum height */
+  /* min-height: 100px; *//* Ensure content area has minimum height */
 }
 
 .tab-panel {

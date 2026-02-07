@@ -17,7 +17,8 @@ import { folderExamples } from '../layout/folder/example.jsx';
 
 // Combine all examples into a single object
 export const components = {
-  ...authExamples,
+  ...folderExamples,
+  ...jsonExamples,
   ...layoutExamples,
   ...iconExamples,
   ...configExamples,
@@ -25,11 +26,10 @@ export const components = {
   ...pathExamples,
   ...dictExamples,
   ...menuExamples,
-  ...jsonExamples,
   ...jsonJotaiExamples,
   ...jsonMobxExamples,
   ...valueCompExamples,
   ...buttonExamples,
   ...panelExamples,
-  ...folderExamples,
+  ...authExamples,
 };
