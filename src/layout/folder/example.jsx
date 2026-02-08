@@ -145,6 +145,15 @@ const FolderExamplesPanel = observer(() => {
     basicData.columnsSize[columnId].width = newWidth;
   };
 
+  const handleCustomColumnResize = (columnId, newWidth) => {
+    console.log(`Custom column ${columnId} resized to ${newWidth}px`);
+    // Update columnsSize in MobX store for customData
+    if (!customData.columnsSize[columnId]) {
+      customData.columnsSize[columnId] = {};
+    }
+    customData.columnsSize[columnId].width = newWidth;
+  };
+
   const handleBasicDataChangeRequest = async (type, params) => {
     if (type === 'reorder') {
       // Column reorder for basic header
@@ -165,6 +174,16 @@ const FolderExamplesPanel = observer(() => {
         console.error('Column reorder failed');
         return { code: -1, message: 'Failed to reorder column' };
       }
+    } else if (type === 'resize') {
+      // Column resize - persist the new width immediately
+      console.log(`Column resize: colId=${params.columnId}, newWidth=${params.newWidth}`);
+      
+      if (!basicData.columnsSize[params.columnId]) {
+        basicData.columnsSize[params.columnId] = {};
+      }
+      basicData.columnsSize[params.columnId].width = params.newWidth;
+      
+      return { code: 0, message: 'Column resized' };
     }
   };
 
@@ -289,6 +308,14 @@ const FolderExamplesPanel = observer(() => {
         
         return { code: -1, message: 'Failed to delete row' };
       }
+    } else if (type === 'resize') {
+      // Column resize - persist the new width immediately
+      if (!folderData.columnsSize[params.columnId]) {
+        folderData.columnsSize[params.columnId] = {};
+      }
+      folderData.columnsSize[params.columnId].width = params.newWidth;
+      
+      return { code: 0, message: 'Column resized' };
     }
   };
 
@@ -329,7 +356,7 @@ const FolderExamplesPanel = observer(() => {
             columnsOrder={customData.columnsOrder}
             columnsSize={customData.columnsSize}
             getComponent={getComponent}
-            onColumnResize={handleColumnResize}
+            onColumnResize={handleCustomColumnResize}
           />
         </div>
       </div>
@@ -343,7 +370,7 @@ const FolderExamplesPanel = observer(() => {
         <FolderView 
           columns={folderData.columns}
           columnsOrder={folderData.columnsOrder}
-          columnsSize={folderData.columnsSize}
+          columnsSizeInit={folderData.columnsSize}
           rows={folderData.rows}
           getBodyComponent={getBodyComponent}
           allowColumnReorder={true}
@@ -356,6 +383,12 @@ const FolderExamplesPanel = observer(() => {
           loadingMessage={folderData.loadingMessage}
           error={folderData.error}
           bodyHeight={300}
+          contextMenuItems={[
+            {
+              type: 'item',
+              name: 'Delete'
+            }
+          ]}
         />
       </div>
     </div>

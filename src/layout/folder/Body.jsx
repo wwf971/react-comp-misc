@@ -18,7 +18,7 @@ const MemoizedDefaultBodyCellComp = React.memo(DefaultBodyCellComp, (prev, next)
 const Body = observer(({ 
   columns, 
   columnsOrder, 
-  columnsSize = {}, 
+  columnsSizeInit = {}, 
   columnWidths: externalColumnWidths,
   rows = [], 
   getComponent,
@@ -26,11 +26,11 @@ const Body = observer(({
   selectedRowId,
   allowRowReorder = false,
   onDataChangeRequest,
-  locked = false
+  locked = false,
+  contextMenuItems = null // Optional: if provided, shows context menu with these items
 }) => {
   
   const bodyRef = useRef(null);
-  const [localColumnWidths, setLocalColumnWidths] = useState({});
   
   // Row reordering state
   const [draggingRowId, setDraggingRowId] = useState(null);
@@ -41,38 +41,8 @@ const Body = observer(({
   // Context menu state
   const [contextMenu, setContextMenu] = useState(null);
 
-  // Use external columnWidths if provided, otherwise calculate locally
-  const columnWidths = externalColumnWidths || localColumnWidths;
-
-  // Initialize column widths from columnsSize prop (only when no external widths)
-  useEffect(() => {
-    if (externalColumnWidths || !bodyRef.current || !columnsOrder) return;
-    
-    const totalWidth = bodyRef.current.offsetWidth;
-    const newWidths = {};
-    
-    // Calculate total defined width
-    let definedWidth = 0;
-    let undefinedCount = 0;
-    
-    columnsOrder.forEach(colId => {
-      if (columnsSize[colId]?.width) {
-        definedWidth += columnsSize[colId].width;
-      } else {
-        undefinedCount++;
-      }
-    });
-    
-    // Calculate width for undefined columns
-    const remainingWidth = totalWidth - definedWidth;
-    const undefinedColWidth = undefinedCount > 0 ? remainingWidth / undefinedCount : 0;
-    
-    columnsOrder.forEach(colId => {
-      newWidths[colId] = columnsSize[colId]?.width || undefinedColWidth;
-    });
-    
-    setLocalColumnWidths(newWidths);
-  }, [columns, columnsOrder, columnsSize, externalColumnWidths]);
+  // Always use external columnWidths - FolderView manages all widths
+  const columnWidths = externalColumnWidths || {};
 
   if (!columnsOrder || !rows) return null;
 
@@ -86,7 +56,8 @@ const Body = observer(({
     e.preventDefault();
     e.stopPropagation();
     
-    if (locked || !onDataChangeRequest) return;
+    // Only show context menu if contextMenuItems are provided
+    if (locked || !contextMenuItems || contextMenuItems.length === 0) return;
     
     // Close existing menu first
     setContextMenu(null);
@@ -108,7 +79,8 @@ const Body = observer(({
   const handleBackdropContextMenu = (e) => {
     e.preventDefault();
     
-    if (locked || !onDataChangeRequest) return;
+    // Only handle if contextMenuItems are provided
+    if (locked || !contextMenuItems || contextMenuItems.length === 0) return;
     
     // Temporarily hide backdrop to find element underneath
     const backdrop = e.currentTarget;
@@ -285,8 +257,8 @@ const Body = observer(({
               if (!column) return null;
               
               const align = column.align || 'left';
-              const width = columnWidths[colId];
-              const cellData = row.data[colId];
+              const width = columnWidths?.[colId];
+              const cellData = row.data?.[colId];
               
               // Get custom component via callback or use default text component
               const CustomComp = getComponent ? getComponent(colId, row.id) : undefined;
@@ -330,18 +302,13 @@ const Body = observer(({
       )}
       
       {/* Context menu */}
-      {contextMenu && (
+      {contextMenu && contextMenuItems && (
         <Menu
           position={{ x: contextMenu.x, y: contextMenu.y }}
           onClose={handleCloseContextMenu}
           onItemClick={handleMenuItemClick}
           onContextMenu={handleBackdropContextMenu}
-          items={[
-            {
-              type: 'item',
-              name: 'Delete'
-            }
-          ]}
+          items={contextMenuItems}
         />
       )}
     </div>

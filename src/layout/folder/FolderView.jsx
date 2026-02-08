@@ -11,11 +11,10 @@ import './folder.css';
  * Props:
  * - columns: { [colId]: { data, align } }
  * - columnsOrder: [colId1, colId2, ...]
- * - columnsSize: { [colId]: { width, minWidth, resizable } }
+ * - columnsSizeInit: { [colId]: { width, minWidth, resizable } } - Initial column sizes (not updated by FolderView)
  * - rows: [{ id, data: { [colId]: value } }]
  * - getHeaderComponent: (colId) => Component (optional)
  * - getBodyComponent: (colId, rowId) => Component (optional)
- * - onColumnResize: (colId, newWidth) => void (optional)
  * - onDataChangeRequest: (type, params) => void (optional)
  *   - For column reorder: ('reorder', { columnId, fromIndex, toIndex, newOrder })
  *   - For row reorder: ('reorder', { rowId, fromIndex, toIndex })
@@ -29,15 +28,15 @@ import './folder.css';
  * - loadingMessage: message to show when loading (optional)
  * - error: error object { message: string } or null (optional)
  * - bodyHeight: fixed height for body in pixels (optional, enables scrollbar)
+ * - contextMenuItems: array of menu items for row right-click (optional, e.g., [{ type: 'item', name: 'Delete' }])
  */
 const FolderView = observer(({ 
   columns,
   columnsOrder,
-  columnsSize,
+  columnsSizeInit,
   rows,
   getHeaderComponent,
   getBodyComponent,
-  onColumnResize,
   onDataChangeRequest,
   allowColumnReorder = false,
   onRowClick,
@@ -47,41 +46,33 @@ const FolderView = observer(({
   loading = false,
   loadingMessage,
   error = null,
-  bodyHeight
+  bodyHeight,
+  contextMenuItems = null // Optional: context menu items for row right-click
 }) => {
   
   const containerRef = useRef(null);
   const [columnWidths, setColumnWidths] = useState({});
 
-  // Calculate column widths from columnsSize prop
+  // Calculate column widths from columnsSizeInit - run on every render of deps
   useEffect(() => {
-    if (!containerRef.current || !columnsOrder) return;
+    if (!columnsOrder || columnsOrder.length === 0) return;
     
-    const totalWidth = containerRef.current.offsetWidth;
     const newWidths = {};
-    
-    // Calculate total defined width
-    let definedWidth = 0;
-    let undefinedCount = 0;
+    const DEFAULT_MIN_WIDTH = 40;
     
     columnsOrder.forEach(colId => {
-      if (columnsSize[colId]?.width) {
-        definedWidth += columnsSize[colId].width;
+      const width = columnsSizeInit?.[colId]?.width;
+      const minWidth = columnsSizeInit?.[colId]?.minWidth ?? DEFAULT_MIN_WIDTH;
+      
+      if (width !== undefined && width !== null && width > 0) {
+        newWidths[colId] = Math.max(width, minWidth);
       } else {
-        undefinedCount++;
+        newWidths[colId] = minWidth;
       }
     });
     
-    // Calculate width for undefined columns
-    const remainingWidth = totalWidth - definedWidth;
-    const undefinedColWidth = undefinedCount > 0 ? remainingWidth / undefinedCount : 0;
-    
-    columnsOrder.forEach(colId => {
-      newWidths[colId] = columnsSize[colId]?.width || undefinedColWidth;
-    });
-    
     setColumnWidths(newWidths);
-  }, [columns, columnsOrder, columnsSize]);
+  }, [columnsOrder, columnsSizeInit]);
 
   // Handle column width changes during resize
   const handleColumnWidthChange = (newWidths) => {
@@ -93,11 +84,10 @@ const FolderView = observer(({
       <Header 
         columns={columns}
         columnsOrder={columnsOrder}
-        columnsSize={columnsSize}
+        columnsSizeInit={columnsSizeInit}
         columnWidths={columnWidths}
         getComponent={getHeaderComponent}
         onColumnWidthChange={handleColumnWidthChange}
-        onColumnResize={onColumnResize}
         onDataChangeRequest={onDataChangeRequest}
         allowColumnReorder={allowColumnReorder && !loading}
       />
@@ -111,7 +101,7 @@ const FolderView = observer(({
         <Body 
           columns={columns}
           columnsOrder={columnsOrder}
-          columnsSize={columnsSize}
+          columnsSizeInit={columnsSizeInit}
           columnWidths={columnWidths}
           rows={rows}
           getComponent={getBodyComponent}
@@ -120,6 +110,7 @@ const FolderView = observer(({
           allowRowReorder={allowRowReorder && !loading}
           onDataChangeRequest={onDataChangeRequest}
           locked={loading}
+          contextMenuItems={contextMenuItems}
         />
       </div>
       {showStatusBar && (

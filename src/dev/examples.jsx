@@ -19,6 +19,8 @@ import { folderExamples } from '../layout/folder/example.jsx';
 export const components = {
   ...folderExamples,
   ...jsonExamples,
+  ...jsonJotaiExamples,
+  ...jsonMobxExamples,
   ...layoutExamples,
   ...iconExamples,
   ...configExamples,
@@ -26,8 +28,6 @@ export const components = {
   ...pathExamples,
   ...dictExamples,
   ...menuExamples,
-  ...jsonJotaiExamples,
-  ...jsonMobxExamples,
   ...valueCompExamples,
   ...buttonExamples,
   ...panelExamples,

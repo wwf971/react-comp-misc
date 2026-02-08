@@ -1,49 +1,19 @@
 import React, { createContext, useContext, useMemo } from 'react';
+import { getOrderedKeys } from './keyOrderStore';
 
-export type TypeConversionBehavior = 'allow' | 'reject';
-
-export interface ConversionMenuRequest {
-  position: { x: number; y: number };
-  currentValue: any;
-  currentType: string;
-  path: string;
-  availableConversions: {
-    targetType: string;
-    canConvert: boolean;
-  }[];
-}
-
-interface JsonContextValue {
-  typeConversionBehavior: TypeConversionBehavior;
-  showConversionMenu?: (request: ConversionMenuRequest) => void;
-  queryParentInfo?: (path: string) => { 
-    isSingleEntryInParent: boolean; 
-    itemKey?: string;
-    isFirstInParent?: boolean;
-    isLastInParent?: boolean;
-  };
-  isDebug?: boolean;
-}
-
-const JsonContext = createContext<JsonContextValue>({
+const JsonContext = createContext({
   typeConversionBehavior: 'allow',
   isDebug: false
 });
 
 export const useJsonContext = () => useContext(JsonContext);
 
-export const JsonContextProvider: React.FC<{
-  children: React.ReactNode;
-  typeConversionBehavior?: TypeConversionBehavior;
-  showConversionMenu?: (request: ConversionMenuRequest) => void;
-  rootData?: any;
-  isDebug?: boolean;
-}> = ({ children, typeConversionBehavior = 'allow', showConversionMenu, rootData, isDebug = false }) => {
+export const JsonContextProvider = ({ children, typeConversionBehavior = 'allow', showConversionMenu, rootData, isDebug = false }) => {
   // Query function to check if a path is the only entry/item in its parent
   const queryParentInfo = useMemo(() => {
     if (!rootData) return undefined;
     
-    return (path: string) => {
+    return (path) => {
       try {
         // Check if path contains array notation (..)
         if (path.includes('..')) {
@@ -87,9 +57,9 @@ export const JsonContextProvider: React.FC<{
           const currentIndex = parseInt(lastSegments[0], 10);
           
           // Get indices of real items (non-pseudo)
-          const realItemIndices: number[] = [];
+          const realItemIndices = [];
           parent.forEach((item, idx) => {
-            if (!(item && typeof item === 'object' && 'isPseudo' in item && (item as any).isPseudo)) {
+            if (!(item && typeof item === 'object' && 'isPseudo' in item && item.isPseudo)) {
               realItemIndices.push(idx);
             }
           });
@@ -122,8 +92,11 @@ export const JsonContextProvider: React.FC<{
           
           // Check if parent is object
           if (typeof parent === 'object' && parent !== null && !Array.isArray(parent)) {
+            // Get keys in visual order from keyOrderStore
+            const rawKeys = Object.keys(parent);
+            const orderedKeys = getOrderedKeys(parent, rawKeys);
             // Filter out pseudo keys
-            const realKeys = Object.keys(parent).filter(k => !k.startsWith('__pseudo__'));
+            const realKeys = orderedKeys.filter(k => !k.startsWith('__pseudo__'));
             const currentIndex = realKeys.indexOf(currentKey);
             const isFirst = currentIndex === 0;
             const isLast = currentIndex === realKeys.length - 1;
@@ -155,4 +128,3 @@ export const JsonContextProvider: React.FC<{
     </JsonContext.Provider>
   );
 };
-

@@ -89,3 +89,13 @@ export { default as BoolSlider } from "./button/BoolSlider.jsx";
 export { default as FolderView } from "./layout/folder/FolderView.jsx";
 export { default as FolderHeader } from "./layout/folder/Header.jsx";
 export { default as FolderBody } from "./layout/folder/Body.jsx";
+
+export {
+    parsePathToSegments,
+    navigateToPath,
+    segmentsToPath,
+    convertPathToMongoDotNotation,
+    navigateToParentArray,
+    isPathToArrayItem,
+    extractDocId
+} from "./layout/json/pathUtils.js";

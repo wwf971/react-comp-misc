@@ -69,9 +69,24 @@
   overflow: hidden;
 }
 
+.folder-header-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.folder-header-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.folder-header-wrapper {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .folder-body-wrapper {
   flex: 1;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .folder-body {
@@ -112,10 +127,12 @@
 
 .folder-body-cell {
   position: relative;
-  padding: 6px 8px;
+  padding: 4px 6px;
   overflow: hidden;
   flex-shrink: 0;
   border-right: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
 }
 
 .folder-body-cell-content {
