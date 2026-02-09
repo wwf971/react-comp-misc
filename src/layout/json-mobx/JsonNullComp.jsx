@@ -1,7 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useJsonContext } from './JsonContext';
-import { getAvailableConversions } from './typeConvert';
+import { getAvailableConversions } from './typeConvert.js';
 import './JsonComp.css';
 
 /**

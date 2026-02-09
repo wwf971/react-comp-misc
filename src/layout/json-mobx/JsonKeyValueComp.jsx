@@ -7,7 +7,6 @@ import JsonTextComp from './JsonTextComp';
 import JsonNumberComp from './JsonNumberComp';
 import JsonBoolComp from './JsonBoolComp';
 import JsonNullComp from './JsonNullComp';
-import SpinningCircle from '../../icon/SpinningCircle';
 
 /**
  * JsonKeyValueComp - Displays a key-value pair in an object

@@ -30,7 +30,7 @@ export function createHandleChange(observableData) {
           });
           break;
         }
-        W
+        
         case 'deleteParentDict': {
           const parentPath = changeData._parentPath;
           if (!parentPath || parentPath === '') {

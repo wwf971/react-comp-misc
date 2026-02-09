@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { runInAction } from 'mobx';
 import { useJsonContext } from './JsonContext';
-import { getAvailableConversions } from './typeConvert';
+import { getAvailableConversions } from './typeConvert.js';
 import { useRenderCount } from './renderCountStore';
 import './JsonComp.css';
 

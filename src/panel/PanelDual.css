@@ -1,0 +1,109 @@
+.panel-dual {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #d0d0d0;
+  border-radius: 2px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.panel-dual-vertical {
+  flex-direction: row;
+}
+
+.panel-dual-horizontal {
+  flex-direction: column;
+}
+
+.panel-dual-pane {
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.panel-dual-divider {
+  flex: 0 0 auto;
+  background: #e2e2e2;
+}
+
+.panel-dual-divider-vertical {
+  width: 6px;
+  cursor: col-resize;
+}
+
+.panel-dual-divider-horizontal {
+  height: 6px;
+  cursor: row-resize;
+}
+
+.panel-dual-divider:hover {
+  background: #d6d6d6;
+}
+
+.panel-dual-dragging {
+  user-select: none;
+}
+
+.panel-dual-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 900px;
+}
+
+.panel-dual-examples-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.panel-dual-examples-desc {
+  font-size: 12px;
+  color: #666;
+}
+
+.panel-dual-example-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.panel-dual-example-label {
+  font-size: 12px;
+  color: #333;
+}
+
+.panel-dual-example-frame {
+  height: 180px;
+}
+
+.panel-dual-example-frame-tall {
+  height: 220px;
+}
+
+.panel-dual-example-pane {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #333;
+}
+
+.panel-dual-example-pane-a {
+  background: #f3f6ff;
+}
+
+.panel-dual-example-pane-b {
+  background: #f6fbf3;
+}
+
+.panel-dual-example-pane-c {
+  background: #fff4f4;
+}
+
+.panel-dual-example-pane-d {
+  background: #f4f4ff;
+}

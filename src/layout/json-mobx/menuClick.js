@@ -1,4 +1,4 @@
-import { convertValue } from './typeConvert';
+import { convertValue } from './typeConvert.js';
 
 /**
  * Handle menu item click actions for JSON editing
