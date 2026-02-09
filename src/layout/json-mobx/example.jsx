@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import JsonCompMobx from './JsonCompMobx';
 import BoolSlider from '../../button/BoolSlider';
+import { createHandleChange } from './exampleHandleChange';
 
 /**
  * Example demonstrating MobX-based JSON component with in-place mutations
@@ -39,14 +40,8 @@ const JsonMobxExample = observer(() => {
   const [isKeyEditable, setIsKeyEditable] = useState(true);
   const [isDebug, setIsDebug] = useState(false);
 
-  // onChange handler for edits
-  const handleChange = useCallback(async (path, changeData) => {
-    // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Return success - the component already mutated the data
-    return { code: 0, message: 'Success' };
-  }, []);
+  // Create the onChange handler using the helper function
+  const handleChange = useMemo(() => createHandleChange(observableData), [observableData]);
 
   return (
     <div style={{ maxWidth: '900px', padding: '20px' }}>
