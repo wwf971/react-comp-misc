@@ -40,6 +40,13 @@ export {
     Panel as MasterDetailPanel 
 } from "./layout/master-detail/MasterDetail.tsx";
 
+export {
+    default as MasterDetailInfiLevel,
+    Tab as MasterDetailInfiLevelTab,
+    SubTab as MasterDetailInfiLevelSubTab,
+    Panel as MasterDetailInfiLevelPanel
+} from "./layout/master-detail/MasterDetailInfiLevel.tsx";
+
 export { default as TabsOnTop } from "./layout/tab/TabsOnTop.jsx";
 
 export { default as Login } from "./auth/Login.jsx";
@@ -57,6 +64,7 @@ export { default as EditableValueWithInfo } from "./layout/value-comp/EditableVa
 export { default as SelectableValueComp } from "./layout/value-comp/SelectableValueComp.jsx";
 export { default as SearchableValueComp } from "./layout/value-comp/SearchableValueComp.jsx";
 export { default as PanelToggle } from "./panel/PanelToggle.jsx";
+export { default as PanelDual } from "./panel/PanelDual.jsx";
 
 export { default as JsonComp } from "./layout/json/JsonComp.jsx";
 export { default as JsonKeyValueComp } from "./layout/json/JsonKeyValueComp.jsx";
@@ -91,6 +99,8 @@ export { default as BoolSlider } from "./button/BoolSlider.jsx";
 export { default as FolderView } from "./layout/folder/FolderView.jsx";
 export { default as FolderHeader } from "./layout/folder/Header.jsx";
 export { default as FolderBody } from "./layout/folder/Body.jsx";
+
+export { default as HtmlRender } from "./dev/HtmlRender.jsx";
 
 export {
     parsePathToSegments,

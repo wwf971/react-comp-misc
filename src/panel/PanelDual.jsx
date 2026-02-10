@@ -11,6 +11,7 @@ const clampRatio = (value) => {
 const PanelDual = ({
   orientation = 'vertical',
   initialRatio = 0.5,
+  fixedDivider = false,
   children
 }) => {
   const containerRef = useRef(null);
@@ -57,6 +58,9 @@ const PanelDual = ({
   };
 
   const startDragging = (event) => {
+    if (fixedDivider) {
+      return;
+    }
     event.preventDefault();
     const container = containerRef.current;
     if (!container) {
@@ -125,6 +129,7 @@ const PanelDual = ({
   const dividerClass = orientation === 'horizontal'
     ? 'panel-dual-divider panel-dual-divider-horizontal'
     : 'panel-dual-divider panel-dual-divider-vertical';
+  const fixedClass = fixedDivider ? 'panel-dual-divider-fixed' : '';
 
   return (
     <div
@@ -135,7 +140,7 @@ const PanelDual = ({
         {childrenArray[0]}
       </div>
       <div
-        className={dividerClass}
+        className={`${dividerClass} ${fixedClass}`}
         onMouseDown={startDragging}
       />
       <div className="panel-dual-pane" ref={paneBRef}>

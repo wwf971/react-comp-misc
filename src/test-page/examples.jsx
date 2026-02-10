@@ -14,6 +14,7 @@ import { valueCompExamples } from '../layout/value-comp/example.jsx';
 import { buttonExamples } from '../button/example.jsx';
 import { panelExamples } from '../panel/example.jsx';
 import { folderExamples } from '../layout/folder/example.jsx';
+import { htmlExamples } from '../dev/example.jsx';
 
 // Combine all examples into a single object
 export const components = {
@@ -32,4 +33,5 @@ export const components = {
   ...buttonExamples,
   ...panelExamples,
   ...authExamples,
+  ...htmlExamples,
 };

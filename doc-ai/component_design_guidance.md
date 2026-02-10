@@ -3,7 +3,7 @@ this is a project for miscellaneous react components.
 
 ## test examples for components.
 
-for each component series, their examples will be imported by ./src/dev/examples.jsx, which will be shown in test page.
+for each component series, their examples will be imported by ./src/test-page/examples.jsx, which will be shown in test page.
 
 to view test page on dev mode, run `pnpm run dev`.
 
