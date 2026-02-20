@@ -23,6 +23,8 @@ const Body = observer(({
   rows = [], 
   getComponent,
   onRowClick,
+  onRowDoubleClick,
+  onRowContextMenu,
   selectedRowId,
   allowRowReorder = false,
   onDataChangeRequest,
@@ -52,12 +54,22 @@ const Body = observer(({
     }
   };
 
+  const handleRowDoubleClick = (rowId) => {
+    if (onRowDoubleClick) {
+      onRowDoubleClick(rowId);
+    }
+  };
+
   const handleRowContextMenu = (e, rowId) => {
+    if (onRowContextMenu) {
+      onRowContextMenu(e, rowId);
+      return;
+    }
+
+    // Only intercept and show built-in context menu when contextMenuItems are provided
+    if (locked || !contextMenuItems || contextMenuItems.length === 0) return;
     e.preventDefault();
     e.stopPropagation();
-    
-    // Only show context menu if contextMenuItems are provided
-    if (locked || !contextMenuItems || contextMenuItems.length === 0) return;
     
     // Close existing menu first
     setContextMenu(null);
@@ -246,6 +258,7 @@ const Body = observer(({
             className={`folder-body-row ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${allowRowReorder ? 'reorderable' : ''}`}
             style={{ opacity: isDragging ? 0.3 : 1 }}
             onClick={() => handleRowClick(row.id)}
+            onDoubleClick={() => handleRowDoubleClick(row.id)}
             onContextMenu={(e) => handleRowContextMenu(e, row.id)}
             draggable={allowRowReorder}
             onDragStart={(e) => handleRowDragStart(e, row.id, index)}

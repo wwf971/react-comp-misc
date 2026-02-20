@@ -11,6 +11,8 @@ import ErrorIcon from './ErrorIcon';
 import UploadIcon from './UploadIcon';
 import BackIcon from './BackIcon';
 import ForwardIcon from './ForwardIcon';
+import UpIcon from './UpIcon';
+import DownIcon from './DownIcon';
 import EyeIcon from './EyeIcon';
 import EyeOffIcon from './EyeOffIcon';
 import CrossIcon from './CrossIcon';
@@ -36,6 +38,8 @@ export {
 	UploadIcon,
 	BackIcon,
 	ForwardIcon,
+	UpIcon,
+	DownIcon,
 	EyeIcon,
 	EyeOffIcon,
 	CrossIcon,

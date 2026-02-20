@@ -21,6 +21,8 @@ import './folder.css';
  *   - For row delete: ('delete', { rowId })
  * - allowColumnReorder: boolean (default: false)
  * - onRowClick: (rowId) => void (optional)
+ * - onRowDoubleClick: (rowId) => void (optional)
+ * - onRowContextMenu: (event, rowId) => void (optional)
  * - selectedRowId: string/number (optional)
  * - allowRowReorder: boolean (default: false)
  * - showStatusBar: boolean (default: true)
@@ -40,6 +42,8 @@ const FolderView = observer(({
   onDataChangeRequest,
   allowColumnReorder = false,
   onRowClick,
+  onRowDoubleClick,
+  onRowContextMenu,
   selectedRowId,
   allowRowReorder = false,
   showStatusBar = true,
@@ -106,6 +110,8 @@ const FolderView = observer(({
           rows={rows}
           getComponent={getBodyComponent}
           onRowClick={onRowClick}
+          onRowDoubleClick={onRowDoubleClick}
+          onRowContextMenu={onRowContextMenu}
           selectedRowId={selectedRowId}
           allowRowReorder={allowRowReorder && !loading}
           onDataChangeRequest={onDataChangeRequest}

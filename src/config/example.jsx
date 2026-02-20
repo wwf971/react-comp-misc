@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import ConfigPanel from './Config.tsx';
-import ConfigPanelWithTabs from './ConfigTab.tsx';
-import ConfigPanelWithTabGroups from './ConfigTabGroup.tsx';
-import ConfigPanelWithSubtabs from './ConfigSubtab.tsx';
+import ConfigPanel from './Config.jsx';
+import ConfigPanelWithTabs from './ConfigTab.jsx';
+import ConfigPanelWithTabGroups from './ConfigTabGroup.jsx';
+import ConfigPanelWithSubtabs from './ConfigSubtab.jsx';
 
 // Example 1: Basic ConfigPanel
 const BasicConfigPanelExample = () => {
@@ -56,7 +56,6 @@ const BasicConfigPanelExample = () => {
   });
 
   const handleChange = (id, newValue) => {
-    console.log('Config changed:', id, '=', newValue);
     setConfigValue(prev => ({ ...prev, [id]: newValue }));
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
@@ -118,8 +117,7 @@ const ConfigPanelWithTabsExample = () => {
     items: [
       { id: 'general_tab', name: 'General', type: 'tab', children: [groups.general] },
       { id: 'appearance_tab', name: 'Appearance', type: 'tab', children: [groups.ui] },
-      { id: 'advanced_tab', name: 'Advanced', type: 'tab', children: [groups.debug, groups.performance] },
-      { id: 'invalid_tab', name: 'Invalid Tab', type: 'invalid_type', children: [] }
+      { id: 'advanced_tab', name: 'Advanced', type: 'tab', children: [groups.debug, groups.performance] }
     ]
   };
 
@@ -136,7 +134,6 @@ const ConfigPanelWithTabsExample = () => {
   });
 
   const handleChange = (id, newValue) => {
-    console.log('ConfigTab changed:', id, '=', newValue);
     setConfigValue(prev => ({ ...prev, [id]: newValue }));
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
@@ -234,7 +231,6 @@ const ConfigPanelWithTabGroupsExample = () => {
   });
 
   const handleChange = (id, newValue) => {
-    console.log('ConfigTabGroups changed:', id, '=', newValue);
     setConfigValue(prev => ({ ...prev, [id]: newValue }));
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
@@ -296,7 +292,6 @@ const ConfigPanelWithSubtabsExample = () => {
   });
 
   const handleChange = (id, newValue) => {
-    console.log('ConfigPanelWithSubtabs changed:', id, '=', newValue);
     setConfigValue(prev => ({ ...prev, [id]: newValue }));
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };

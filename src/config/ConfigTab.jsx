@@ -1,47 +1,24 @@
 import React, { useState } from 'react';
-import ConfigPanel from './Config';
-import ConfigPanelWithSubtabs from './ConfigSubtab';
+import ConfigPanel from './Config.jsx';
+import ConfigPanelWithSubtabs from './ConfigSubtab.jsx';
 import baseStyles from './Config.module.css';
 import styles from './ConfigTab.module.css';
-import type { ConfigItemStruct, MissingItemStrategy } from './Config';
-import type { ConfigSubtabStruct } from './ConfigSubtab';
 
-export type ConfigTabItemType = 'tab';
-
-export interface ConfigTabStruct {
-  id: string;
-  name: string; // Display name for the tab
-  type: ConfigTabItemType;
-  children?: ConfigItemStruct[]; // Groups and items under this tab
-}
-
-export interface ConfigPanelWithTabsStruct {
-  items: ConfigTabStruct[];
-}
-
-export interface ConfigPanelWithTabsProps {
-  configStruct: ConfigPanelWithTabsStruct;
-  configValue: Record<string, any>;
-  onChangeAttempt?: (id: string, newValue: any) => void;
-  missingItemStrategy?: MissingItemStrategy;
-}
-
-const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
+const ConfigPanelWithTabs = ({
   configStruct,
   configValue,
   onChangeAttempt,
   missingItemStrategy = 'setDefault'
 }) => {
-  const [activeTabId, setActiveTabId] = useState<string>(
+  const [activeTabId, setActiveTabId] = useState(
     configStruct.items.length > 0 ? configStruct.items[0].id : ''
   );
 
-  const renderTabContent = (tab: ConfigTabStruct) => {
-    // Validate tab type
+  const renderTabContent = (tab) => {
     if (tab.type !== 'tab') {
       return (
         <div className={baseStyles.configTabError}>
-          <div className={baseStyles.errorTitle}>⚠️ Invalid Tab Configuration</div>
+          <div className={baseStyles.errorTitle}>Invalid Tab Configuration</div>
           <div className={baseStyles.errorMessage}>
             Expected type "tab" but got "{tab.type}"
           </div>
@@ -52,15 +29,13 @@ const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
       );
     }
 
-    // Check if this tab contains subtabs
     const children = tab.children || [];
-    const hasSubtabs = children.length > 0 && children.every((child: any) => child.type === 'subtab');
+    const hasSubtabs = children.length > 0 && children.every((child) => child.type === 'subtab');
 
     if (hasSubtabs) {
-      // Render with ConfigPanelWithSubtabs
       return (
         <ConfigPanelWithSubtabs
-          configStruct={{ items: children as unknown as ConfigSubtabStruct[] }}
+          configStruct={{ items: children }}
           configValue={configValue}
           onChangeAttempt={onChangeAttempt}
           missingItemStrategy={missingItemStrategy}
@@ -68,7 +43,6 @@ const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
       );
     }
 
-    // Render config items for this tab
     return (
       <ConfigPanel
         configStruct={{ items: children }}
@@ -84,7 +58,6 @@ const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
   return (
     <div className={baseStyles.configTabContainer}>
       <div className={baseStyles.configTabSidebarContainer}>
-        {/* Left sidebar with tabs */}
         <div className={baseStyles.configTabSidebar}>
           <div className={styles.configTabList}>
             {configStruct.items.map(tab => (
@@ -99,14 +72,12 @@ const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
           </div>
         </div>
       </div>
-      {/* Right panel with config content */}
       <div className={baseStyles.configTabContent}>
         {activeTab ? renderTabContent(activeTab) : (
           <div className={baseStyles.configTabEmpty}>
             No tab selected
           </div>
         )}
-
       </div>
     </div>
   );
@@ -115,4 +86,3 @@ const ConfigPanelWithTabs: React.FC<ConfigPanelWithTabsProps> = ({
 ConfigPanelWithTabs.displayName = 'ConfigPanelWithTabs';
 
 export default ConfigPanelWithTabs;
-

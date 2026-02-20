@@ -18,6 +18,7 @@
     "./KeyValues.css": "./src/dict/KeyValues.css",
     "./Icon": "./src/icon/Icon.jsx",
     "./SpinningCircle": "./src/icon/SpinningCircle.jsx",
+    "./RefreshIcon": "./src/icon/RefreshIcon.jsx",
     "./PdfIcon": "./src/icon/PdfIcon.jsx",
     "./CrossIcon": "./src/icon/CrossIcon.jsx",
     "./DragIcon": "./src/icon/DragIcon.jsx",

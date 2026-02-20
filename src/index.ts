@@ -11,6 +11,8 @@ export {
     UploadIcon,
     BackIcon,
     ForwardIcon,
+    UpIcon,
+    DownIcon,
     EyeIcon,
     EyeOffIcon,
     CrossIcon,
@@ -51,8 +53,10 @@ export { default as TabsOnTop } from "./layout/tab/TabsOnTop.jsx";
 
 export { default as Login } from "./auth/Login.jsx";
 
-export { ConfigPanel, ConfigPanelWithTabs, ConfigPanelWithTabGroups, ConfigPanelWithSubtabs } from "./config";
-export type { ConfigStruct, ConfigItemStruct, ConfigItemType, ConfigProps, MissingItemStrategy } from "./config";
+export { default as ConfigPanel } from "./config/Config.jsx";
+export { default as ConfigPanelWithTabs } from "./config/ConfigTab.jsx";
+export { default as ConfigPanelWithTabGroups } from "./config/ConfigTabGroup.jsx";
+export { default as ConfigPanelWithSubtabs } from "./config/ConfigSubtab.jsx";
 
 export { default as PathBar } from "./path/PathBar.tsx";
 

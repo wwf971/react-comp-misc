@@ -2,54 +2,19 @@ import React, { useEffect } from 'react';
 import styles from './Config.module.css';
 import BoolSlider from '../button/BoolSlider.jsx';
 
-// Define config item types
-export type ConfigItemType = 'boolean' | 'string' | 'number' | 'select' | 'group';
-
-export interface ConfigItemStruct {
-  id: string;
-  label: string;
-  description?: string;
-  type: ConfigItemType;
-  defaultValue?: any;
-  options?: string[]; // For 'select' type
-  children?: ConfigItemStruct[]; // For 'group' type (one level only)
-}
-
-export interface ConfigStruct {
-  items: ConfigItemStruct[];
-}
-
-export type MissingItemStrategy = 'setDefault' | 'reportError';
-
-export interface ConfigProps {
-  configStruct: ConfigStruct;
-  configValue: Record<string, any>;
-  onChangeAttempt?: (id: string, newValue: any) => void;
-  missingItemStrategy?: MissingItemStrategy;
-}
-
-
-// onChangeAttempt should be used for submitting change request only.
-  // it does not directly change configValue.
-  // the change should be implemented by directly changing configValue.
-const ConfigPanel: React.FC<ConfigProps> = ({ 
-  configStruct, 
+const ConfigPanel = ({
+  configStruct,
   configValue,
   onChangeAttempt,
   missingItemStrategy = 'setDefault'
 }) => {
-  
-  // Check for missing items in configValue, based on configStruct.
-  // missing values are handled according to missingItemStrategy.
   useEffect(() => {
     if (missingItemStrategy === 'setDefault') {
-      const checkItems = (items: ConfigItemStruct[]) => {
+      const checkItems = (items) => {
         items.forEach(item => {
           if (item.type === 'group' && item.children) {
-            // Recursively check group items
             checkItems(item.children);
           } else if (!(item.id in configValue) && onChangeAttempt && item.defaultValue !== undefined) {
-            // Set default value and notify parent
             onChangeAttempt(item.id, item.defaultValue);
           }
         });
@@ -57,36 +22,35 @@ const ConfigPanel: React.FC<ConfigProps> = ({
       checkItems(configStruct.items);
     }
   }, [configStruct, configValue, onChangeAttempt, missingItemStrategy]);
-  
-  const handleChange = (id: string, newValue: any) => {
+
+  const handleChange = (id, newValue) => {
     if (onChangeAttempt) {
       onChangeAttempt(id, newValue);
     }
   };
 
-  const renderConfigItem = (item: ConfigItemStruct) => {
+  const renderConfigItem = (item) => {
     const currentValue = configValue[item.id];
-    
-    // Handle missing value with reportError strategy
+
     if (!(item.id in configValue) && missingItemStrategy === 'reportError') {
       return (
         <div className={styles.configError}>
-          ⚠️ Value missing in configValue
+          Value missing in configValue
         </div>
       );
     }
-    
+
     const value = currentValue ?? item.defaultValue;
-    
+
     switch (item.type) {
       case 'boolean':
         return (
           <BoolSlider
             checked={value}
-            onChange={(checked: boolean) => handleChange(item.id, checked)}
+            onChange={(checked) => handleChange(item.id, checked)}
           />
         );
-      
+
       case 'string':
         return (
           <input
@@ -96,7 +60,7 @@ const ConfigPanel: React.FC<ConfigProps> = ({
             className={styles.configInput}
           />
         );
-      
+
       case 'number':
         return (
           <input
@@ -106,7 +70,7 @@ const ConfigPanel: React.FC<ConfigProps> = ({
             className={styles.configInput}
           />
         );
-      
+
       case 'select':
         return (
           <select
@@ -119,14 +83,13 @@ const ConfigPanel: React.FC<ConfigProps> = ({
             ))}
           </select>
         );
-      
+
       default:
         return null;
     }
   };
 
-  const renderItem = (item: ConfigItemStruct) => {
-    // Handle group type
+  const renderItem = (item) => {
     if (item.type === 'group') {
       return (
         <div key={item.id} className={styles.configGroup}>
@@ -150,8 +113,7 @@ const ConfigPanel: React.FC<ConfigProps> = ({
         </div>
       );
     }
-    
-    // Handle regular config item
+
     return (
       <div key={item.id} className={styles.configItem}>
         <div className={styles.configInfo}>

@@ -103,28 +103,30 @@ const PathBar: React.FC<PathBarProps> = ({
         />
       ) : (
         <div className="pathbar-content">
-          {addSlashBeforeFirstSeg && (
-            <span className="pathbar-separator">/</span>
-          )}
           {segments.length === 0 ? (
             <span className="pathbar-empty">{addSlashBeforeFirstSeg ? '/' : '(empty)'}</span>
           ) : (
-            segments.map((segment, index) => (
-              <React.Fragment key={segment.id || index}>
-                <span
-                  className="pathbar-segment"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSegmentClick(index);
-                  }}
-                >
-                  {segment.name}
-                </span>
-                {index < segments.length - 1 && separator && (
-                  <span className="pathbar-separator">{separator}</span>
-                )}
-              </React.Fragment>
-            ))
+            <>
+              {addSlashBeforeFirstSeg && (
+                <span className="pathbar-separator">/</span>
+              )}
+              {segments.map((segment, index) => (
+                <React.Fragment key={segment.id || index}>
+                  <span
+                    className="pathbar-segment"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSegmentClick(index);
+                    }}
+                  >
+                    {segment.name}
+                  </span>
+                  {index < segments.length - 1 && separator && (
+                    <span className="pathbar-separator">{separator}</span>
+                  )}
+                </React.Fragment>
+              ))}
+            </>
           )}
         </div>
       )}
