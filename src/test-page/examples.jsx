@@ -8,7 +8,7 @@ import { dictExamples } from '../dict/example.jsx';
 import { tabExamples } from '../layout/tab/example.jsx';
 import { menuExamples } from '../menu/example.tsx';
 import { jsonExamples } from '../layout/json/example.jsx';
-import { jsonJotaiExamples } from '../layout/json-jotai/example.jsx';
+// import { jsonJotaiExamples } from '../layout/json-jotai/example.jsx';
 import { jsonMobxExamples } from '../layout/json-mobx/example.jsx';
 import { valueCompExamples } from '../layout/value-comp/example.jsx';
 import { buttonExamples } from '../button/example.jsx';
@@ -20,7 +20,7 @@ import { htmlExamples } from '../dev/example.jsx';
 export const components = {
   ...folderExamples,
   ...jsonExamples,
-  ...jsonJotaiExamples,
+  // ...jsonJotaiExamples,
   ...jsonMobxExamples,
   ...layoutExamples,
   ...iconExamples,

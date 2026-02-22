@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import ConfigPanel from './Config.jsx';
 import baseStyles from './Config.module.css';
 import styles from './ConfigSubtab.module.css';
 
-const ConfigPanelWithSubtabs = ({
+const ConfigPanelWithSubtabs = observer(({
   configStruct,
   configValue,
   onChangeAttempt,
@@ -63,7 +64,7 @@ const ConfigPanelWithSubtabs = ({
       </div>
     </div>
   );
-};
+});
 
 ConfigPanelWithSubtabs.displayName = 'ConfigPanelWithSubtabs';
 

@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
+import { observer } from 'mobx-react-lite';
 import styles from './Config.module.css';
 import BoolSlider from '../button/BoolSlider.jsx';
 
-const ConfigPanel = ({
+const ConfigPanel = observer(({
   configStruct,
   configValue,
   onChangeAttempt,
@@ -136,7 +137,7 @@ const ConfigPanel = ({
       </div>
     </div>
   );
-};
+});
 
 ConfigPanel.displayName = 'ConfigPanel';
 

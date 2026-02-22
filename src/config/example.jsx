@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { makeAutoObservable } from 'mobx';
+import { observer } from 'mobx-react-lite';
 import ConfigPanel from './Config.jsx';
 import ConfigPanelWithTabs from './ConfigTab.jsx';
 import ConfigPanelWithTabGroups from './ConfigTabGroup.jsx';
 import ConfigPanelWithSubtabs from './ConfigSubtab.jsx';
 
 // Example 1: Basic ConfigPanel
-const BasicConfigPanelExample = () => {
+const BasicConfigPanelExample = observer(() => {
   const [message, setMessage] = useState('');
   
   const configStruct = {
@@ -49,19 +51,22 @@ const BasicConfigPanelExample = () => {
     ]
   };
 
-  const [configValue, setConfigValue] = useState({
-    enable_feature: true,
-    username: 'john_doe',
-    theme: 'light'
+  const [configValue] = useState(() => {
+    const data = {
+      enable_feature: true,
+      username: 'john_doe',
+      theme: 'light'
+    };
+    return makeAutoObservable(data, {}, { deep: true });
   });
 
   const handleChange = (id, newValue) => {
-    setConfigValue(prev => ({ ...prev, [id]: newValue }));
+    configValue[id] = newValue;
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
 
   const handleExternalUpdate = () => {
-    setConfigValue(prev => ({ ...prev, enable_feature: false }));
+    configValue.enable_feature = false;
     setMessage('External update applied: enable_feature = false');
   };
 
@@ -87,10 +92,10 @@ const BasicConfigPanelExample = () => {
       </div>
     </div>
   );
-};
+});
 
 // Example 2: ConfigPanel with Tabs
-const ConfigPanelWithTabsExample = () => {
+const ConfigPanelWithTabsExample = observer(() => {
   const [message, setMessage] = useState('');
   
   // Reusable config items
@@ -121,20 +126,23 @@ const ConfigPanelWithTabsExample = () => {
     ]
   };
 
-  const [configValue, setConfigValue] = useState({
-    enable_notifications: true,
-    app_name: 'My App',
-    max_connections: 10,
-    theme: 'light',
-    font_size: 'medium',
-    compact_mode: false,
-    debug_mode: false,
-    log_level: 'info',
-    cache_size: 100
+  const [configValue] = useState(() => {
+    const data = {
+      enable_notifications: true,
+      app_name: 'My App',
+      max_connections: 10,
+      theme: 'light',
+      font_size: 'medium',
+      compact_mode: false,
+      debug_mode: false,
+      log_level: 'info',
+      cache_size: 100
+    };
+    return makeAutoObservable(data, {}, { deep: true });
   });
 
   const handleChange = (id, newValue) => {
-    setConfigValue(prev => ({ ...prev, [id]: newValue }));
+    configValue[id] = newValue;
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
 
@@ -157,10 +165,10 @@ const ConfigPanelWithTabsExample = () => {
       </div>
     </div>
   );
-};
+});
 
 // Example 3: ConfigPanel with Tab Groups
-const ConfigPanelWithTabGroupsExample = () => {
+const ConfigPanelWithTabGroupsExample = observer(() => {
   const [message, setMessage] = useState('');
   
   // Define reusable config items
@@ -218,20 +226,23 @@ const ConfigPanelWithTabGroupsExample = () => {
     ]
   };
 
-  const [configValue, setConfigValue] = useState({
-    enable_notifications: true,
-    app_name: 'My App',
-    theme: 'light',
-    font_size: 14,
-    compact_mode: false,
-    debug_mode: false,
-    log_level: 'info',
-    cache_size: 100,
-    version: '1.0.0'
+  const [configValue] = useState(() => {
+    const data = {
+      enable_notifications: true,
+      app_name: 'My App',
+      theme: 'light',
+      font_size: 14,
+      compact_mode: false,
+      debug_mode: false,
+      log_level: 'info',
+      cache_size: 100,
+      version: '1.0.0'
+    };
+    return makeAutoObservable(data, {}, { deep: true });
   });
 
   const handleChange = (id, newValue) => {
-    setConfigValue(prev => ({ ...prev, [id]: newValue }));
+    configValue[id] = newValue;
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
 
@@ -254,10 +265,10 @@ const ConfigPanelWithTabGroupsExample = () => {
       </div>
     </div>
   );
-};
+});
 
 // Example 4: ConfigPanel with Subtabs
-const ConfigPanelWithSubtabsExample = () => {
+const ConfigPanelWithSubtabsExample = observer(() => {
   const [message, setMessage] = useState('');
   
   // Reusable config items
@@ -283,16 +294,19 @@ const ConfigPanelWithSubtabsExample = () => {
     ]
   };
 
-  const [configValue, setConfigValue] = useState({
-    app_name: 'My App',
-    enable_notifications: true,
-    theme: 'light',
-    font_size: 14,
-    debug_mode: false
+  const [configValue] = useState(() => {
+    const data = {
+      app_name: 'My App',
+      enable_notifications: true,
+      theme: 'light',
+      font_size: 14,
+      debug_mode: false
+    };
+    return makeAutoObservable(data, {}, { deep: true });
   });
 
   const handleChange = (id, newValue) => {
-    setConfigValue(prev => ({ ...prev, [id]: newValue }));
+    configValue[id] = newValue;
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
 
@@ -315,7 +329,7 @@ const ConfigPanelWithSubtabsExample = () => {
       </div>
     </div>
   );
-};
+});
 
 // Consolidated examples panel
 const ConfigPanelExamplesPanel = () => {

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import ConfigPanel from './Config.jsx';
 import ConfigPanelWithSubtabs from './ConfigSubtab.jsx';
 import baseStyles from './Config.module.css';
 import styles from './ConfigTabGroup.module.css';
 
-const ConfigPanelWithTabGroups = ({
+const ConfigPanelWithTabGroups = observer(({
   configStruct,
   configValue,
   onChangeAttempt,
@@ -145,7 +146,7 @@ const ConfigPanelWithTabGroups = ({
       </div>
     </div>
   );
-};
+});
 
 ConfigPanelWithTabGroups.displayName = 'ConfigPanelWithTabGroups';
 
