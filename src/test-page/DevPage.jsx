@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { components } from './examples.jsx';
+import PanelDual from '../panel/PanelDual.jsx';
 import './DevPage.css';
 
 function DevPage() {
@@ -20,7 +21,8 @@ function DevPage() {
   const CompSelected = components[CompSelectedStr]?.example;
 
   return (
-      <div className="dev-page">
+    <div className="dev-page">
+      <PanelDual orientation="vertical" initialRatio={0.3}>
         <div className="dev-header">
           <div className="dev-header-flex">
             <h1>React Components Assortment</h1>
@@ -32,51 +34,51 @@ function DevPage() {
             >
               view source code
             </a>
-
           </div>
           <div className="search-container">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search components..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button 
-              className="clear-button"
-              onClick={() => setSearchTerm('')}
-            >
-              ×
-            </button>
-          )}
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Search components..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button 
+                className="clear-button"
+                onClick={() => setSearchTerm('')}
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <div className="component-list">
+            {filteredComponents.map(name => (
+              <button
+                key={name}
+                className={`component-item ${CompSelectedStr === name ? 'selected' : ''}`}
+                onClick={() => setCompSelectedStr(name)}
+              >
+                <div className="component-name">{name}</div>
+                <div className="component-description">{components[name].description}</div>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="component-list">
-          {filteredComponents.map(name => (
-            <button
-              key={name}
-              className={`component-item ${CompSelectedStr === name ? 'selected' : ''}`}
-              onClick={() => setCompSelectedStr(name)}
-            >
-              <div className="component-name">{name}</div>
-              <div className="component-description">{components[name].description}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-      
-      <div className="dev-content">
-        <div className="content-header">
-          <h2>{CompSelectedStr}</h2>
-          <p>{components[CompSelectedStr]?.description}</p>
-        </div>
+        
+        <div className="dev-content">
+          <div className="content-header">
+            <h2>{CompSelectedStr}</h2>
+            <p>{components[CompSelectedStr]?.description}</p>
+          </div>
           <div className="comp-demo">
             {CompSelected ? <CompSelected /> : <div>No example available</div>}
           </div>
         </div>
-      </div>
-    );
-  }
-  
-  export default DevPage;
+      </PanelDual>
+    </div>
+  );
+}
+
+export default DevPage;
 

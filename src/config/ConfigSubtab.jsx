@@ -5,8 +5,8 @@ import baseStyles from './Config.module.css';
 import styles from './ConfigSubtab.module.css';
 
 const ConfigPanelWithSubtabs = observer(({
+  parentData,
   configStruct,
-  configValue,
   onChangeAttempt,
   missingItemStrategy = 'setDefault'
 }) => {
@@ -31,8 +31,8 @@ const ConfigPanelWithSubtabs = observer(({
 
     return (
       <ConfigPanel
+        parentData={parentData}
         configStruct={{ items: subtab.children || [] }}
-        configValue={configValue}
         onChangeAttempt={onChangeAttempt}
         missingItemStrategy={missingItemStrategy}
       />

@@ -6,8 +6,8 @@ import baseStyles from './Config.module.css';
 import styles from './ConfigTabGroup.module.css';
 
 const ConfigPanelWithTabGroups = observer(({
+  parentData,
   configStruct,
-  configValue,
   onChangeAttempt,
   missingItemStrategy = 'setDefault'
 }) => {
@@ -45,8 +45,8 @@ const ConfigPanelWithTabGroups = observer(({
     if (hasSubtabs) {
       return (
         <ConfigPanelWithSubtabs
+          parentData={parentData}
           configStruct={{ items: children }}
-          configValue={configValue}
           onChangeAttempt={onChangeAttempt}
           missingItemStrategy={missingItemStrategy}
         />
@@ -55,8 +55,8 @@ const ConfigPanelWithTabGroups = observer(({
 
     return (
       <ConfigPanel
+        parentData={parentData}
         configStruct={{ items: children }}
-        configValue={configValue}
         onChangeAttempt={onChangeAttempt}
         missingItemStrategy={missingItemStrategy}
       />

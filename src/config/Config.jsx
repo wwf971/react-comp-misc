@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import styles from './Config.module.css';
-import BoolSlider from '../button/BoolSlider.jsx';
+import ConfigBool from './ConfigBool.jsx';
+import ConfigStr from './ConfigStr.jsx';
+import ConfigNumber from './ConfigNumber.jsx';
+import ConfigSelect from './ConfigSelect.jsx';
 
 const ConfigPanel = observer(({
+  parentData,
   configStruct,
-  configValue,
   onChangeAttempt,
   missingItemStrategy = 'setDefault'
 }) => {
@@ -15,74 +18,64 @@ const ConfigPanel = observer(({
         items.forEach(item => {
           if (item.type === 'group' && item.children) {
             checkItems(item.children);
-          } else if (!(item.id in configValue) && onChangeAttempt && item.defaultValue !== undefined) {
+          } else if (!(item.id in parentData) && onChangeAttempt && item.defaultValue !== undefined) {
             onChangeAttempt(item.id, item.defaultValue);
           }
         });
       };
       checkItems(configStruct.items);
     }
-  }, [configStruct, configValue, onChangeAttempt, missingItemStrategy]);
-
-  const handleChange = (id, newValue) => {
-    if (onChangeAttempt) {
-      onChangeAttempt(id, newValue);
-    }
-  };
+  }, [configStruct, parentData, onChangeAttempt, missingItemStrategy]);
 
   const renderConfigItem = (item) => {
-    const currentValue = configValue[item.id];
-
-    if (!(item.id in configValue) && missingItemStrategy === 'reportError') {
+    if (!(item.id in parentData) && missingItemStrategy === 'reportError') {
       return (
         <div className={styles.configError}>
-          Value missing in configValue
+          Value missing in parentData
         </div>
       );
     }
 
-    const value = currentValue ?? item.defaultValue;
-
     switch (item.type) {
       case 'boolean':
         return (
-          <BoolSlider
-            checked={value}
-            onChange={(checked) => handleChange(item.id, checked)}
+          <ConfigBool
+            parentData={parentData}
+            entry={item.id}
+            onChangeAttempt={onChangeAttempt}
+            defaultValue={item.defaultValue}
           />
         );
 
       case 'string':
         return (
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => handleChange(item.id, e.target.value)}
-            className={styles.configInput}
+          <ConfigStr
+            parentData={parentData}
+            entry={item.id}
+            onChangeAttempt={onChangeAttempt}
+            defaultValue={item.defaultValue}
           />
         );
 
       case 'number':
         return (
-          <input
-            type="number"
-            value={value}
-            onChange={(e) => handleChange(item.id, Number(e.target.value))}
-            className={styles.configInput}
+          <ConfigNumber
+            parentData={parentData}
+            entry={item.id}
+            onChangeAttempt={onChangeAttempt}
+            defaultValue={item.defaultValue}
           />
         );
 
       case 'select':
         return (
-          <select
-            value={value}
-            onChange={(e) => handleChange(item.id, e.target.value)}
-            className={styles.configSelect}
-          >
-            {item.options?.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
+          <ConfigSelect
+            parentData={parentData}
+            entry={item.id}
+            onChangeAttempt={onChangeAttempt}
+            defaultValue={item.defaultValue}
+            options={item.options}
+          />
         );
 
       default:

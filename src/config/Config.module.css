@@ -1,11 +1,34 @@
 .configContainer {
   width: 100%;
+  max-width: 100%;
+  overflow-x: scroll;
+  scrollbar-width: thin;
+}
+
+.configContainer::-webkit-scrollbar {
+  height: 8px;
+}
+
+.configContainer::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.configContainer::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.configContainer::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .configList {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: max-content;
+  min-width: 100%;
 }
 
 .configItem {
@@ -17,6 +40,9 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  width: max-content;
+  min-width: 100%;
 }
 
 .configItem:hover {
@@ -28,6 +54,7 @@
 .configInfo {
   flex: 1;
   margin-right: 12px;
+  min-width: 0;
 }
 
 .configLabel {
@@ -45,6 +72,7 @@
 
 .configControl {
   flex-shrink: 0;
+  min-width: 120px;
 }
 
 /* Toggle Switch - now using BoolSlider component */
@@ -94,6 +122,9 @@
 /* Config Group */
 .configGroup {
   margin-bottom: 20px;
+  width: max-content;
+  min-width: 100%;
+  flex-shrink: 0;
 }
 
 .configGroupTitle {
@@ -113,6 +144,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: max-content;
+  min-width: 100%;
 }
 
 /* ============================================================
@@ -181,6 +214,27 @@
   padding: 20px;
   padding-top: 10px;
   overflow-y: auto;
+  overflow-x: scroll;
+  min-width: 0;
+  scrollbar-width: thin;
+}
+
+.configTabContent::-webkit-scrollbar {
+  height: 8px;
+}
+
+.configTabContent::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.configTabContent::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.configTabContent::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .configTabEmpty {

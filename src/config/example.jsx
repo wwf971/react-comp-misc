@@ -51,7 +51,7 @@ const BasicConfigPanelExample = observer(() => {
     ]
   };
 
-  const [configValue] = useState(() => {
+  const [configData] = useState(() => {
     const data = {
       enable_feature: true,
       username: 'john_doe',
@@ -61,20 +61,20 @@ const BasicConfigPanelExample = observer(() => {
   });
 
   const handleChange = (id, newValue) => {
-    configValue[id] = newValue;
+    configData[id] = newValue;
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
 
   const handleExternalUpdate = () => {
-    configValue.enable_feature = false;
+    configData.enable_feature = false;
     setMessage('External update applied: enable_feature = false');
   };
 
   return (
     <div>
       <ConfigPanel
+        parentData={configData}
         configStruct={configStruct}
-        configValue={configValue}
         onChangeAttempt={handleChange}
       />
       <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
@@ -88,7 +88,7 @@ const BasicConfigPanelExample = observer(() => {
         </div>
       )}
       <div style={{ marginTop: '10px', fontSize: '12px', background: '#f0f0f0', padding: '8px', borderRadius: '4px' }}>
-        <strong>Values:</strong> {JSON.stringify(configValue)}
+        <strong>Values:</strong> {JSON.stringify(configData)}
       </div>
     </div>
   );
@@ -126,7 +126,7 @@ const ConfigPanelWithTabsExample = observer(() => {
     ]
   };
 
-  const [configValue] = useState(() => {
+  const [configData] = useState(() => {
     const data = {
       enable_notifications: true,
       app_name: 'My App',
@@ -142,7 +142,7 @@ const ConfigPanelWithTabsExample = observer(() => {
   });
 
   const handleChange = (id, newValue) => {
-    configValue[id] = newValue;
+    configData[id] = newValue;
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
 
@@ -150,8 +150,8 @@ const ConfigPanelWithTabsExample = observer(() => {
     <div>
       <div style={{ height: '500px', maxWidth: '100%' }}>
         <ConfigPanelWithTabs
+          parentData={configData}
           configStruct={configStruct}
-          configValue={configValue}
           onChangeAttempt={handleChange}
         />
       </div>
@@ -161,7 +161,7 @@ const ConfigPanelWithTabsExample = observer(() => {
         </div>
       )}
       <div style={{ marginTop: '10px', fontSize: '12px', background: '#f0f0f0', padding: '8px', borderRadius: '4px' }}>
-        <strong>Values:</strong> {JSON.stringify(configValue, null, 2)}
+        <strong>Values:</strong> {JSON.stringify(configData, null, 2)}
       </div>
     </div>
   );
@@ -226,7 +226,7 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
     ]
   };
 
-  const [configValue] = useState(() => {
+  const [configData] = useState(() => {
     const data = {
       enable_notifications: true,
       app_name: 'My App',
@@ -242,7 +242,7 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
   });
 
   const handleChange = (id, newValue) => {
-    configValue[id] = newValue;
+    configData[id] = newValue;
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
 
@@ -250,8 +250,8 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
     <div>
       <div style={{ height: '600px', maxWidth: '100%' }}>
         <ConfigPanelWithTabGroups
+          parentData={configData}
           configStruct={configStruct}
-          configValue={configValue}
           onChangeAttempt={handleChange}
         />
       </div>
@@ -261,7 +261,7 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
         </div>
       )}
       <div style={{ marginTop: '10px', fontSize: '12px', background: '#f0f0f0', padding: '8px', borderRadius: '4px' }}>
-        <strong>Values:</strong> {JSON.stringify(configValue, null, 2)}
+        <strong>Values:</strong> {JSON.stringify(configData, null, 2)}
       </div>
     </div>
   );
@@ -294,7 +294,7 @@ const ConfigPanelWithSubtabsExample = observer(() => {
     ]
   };
 
-  const [configValue] = useState(() => {
+  const [configData] = useState(() => {
     const data = {
       app_name: 'My App',
       enable_notifications: true,
@@ -306,7 +306,7 @@ const ConfigPanelWithSubtabsExample = observer(() => {
   });
 
   const handleChange = (id, newValue) => {
-    configValue[id] = newValue;
+    configData[id] = newValue;
     setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
   };
 
@@ -314,8 +314,8 @@ const ConfigPanelWithSubtabsExample = observer(() => {
     <div>
       <div style={{ height: '500px', maxWidth: '100%', border: '1px solid #e5e7eb', borderRadius: '2px', overflow: 'hidden' }}>
         <ConfigPanelWithSubtabs
+          parentData={configData}
           configStruct={configStruct}
-          configValue={configValue}
           onChangeAttempt={handleChange}
         />
       </div>
@@ -325,7 +325,7 @@ const ConfigPanelWithSubtabsExample = observer(() => {
         </div>
       )}
       <div style={{ marginTop: '10px', fontSize: '12px', background: '#f0f0f0', padding: '8px', borderRadius: '4px' }}>
-        <strong>Values:</strong> {JSON.stringify(configValue, null, 2)}
+        <strong>Values:</strong> {JSON.stringify(configData, null, 2)}
       </div>
     </div>
   );
