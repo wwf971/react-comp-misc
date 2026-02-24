@@ -1,22 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { components } from './examples.jsx';
 import PanelDual from '../panel/PanelDual.jsx';
+import ItemsListVert from '../layout/list/ItemsListVert.jsx';
 import './DevPage.css';
 
-function DevPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [CompSelectedStr, setCompSelectedStr] = useState('Login');
+const devPageItems = Object.keys(components).map((name) => ({
+  key: name,
+  label: name,
+  description: components[name].description,
+}));
 
-  // Filter components based on search term
-  const filteredComponents = useMemo(() => {
-    if (!searchTerm) return Object.keys(components);
-    
-    const term = searchTerm.toLowerCase();
-    return Object.keys(components).filter(name => 
-      name.toLowerCase().includes(term) ||
-      components[name].description.toLowerCase().includes(term)
-    );
-  }, [searchTerm]);
+function DevPage() {
+  const [CompSelectedStr, setCompSelectedStr] = useState('Login');
 
   const CompSelected = components[CompSelectedStr]?.example;
 
@@ -35,35 +30,14 @@ function DevPage() {
               view source code
             </a>
           </div>
-          <div className="search-container">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search components..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button 
-                className="clear-button"
-                onClick={() => setSearchTerm('')}
-              >
-                ×
-              </button>
-            )}
-          </div>
-          <div className="component-list">
-            {filteredComponents.map(name => (
-              <button
-                key={name}
-                className={`component-item ${CompSelectedStr === name ? 'selected' : ''}`}
-                onClick={() => setCompSelectedStr(name)}
-              >
-                <div className="component-name">{name}</div>
-                <div className="component-description">{components[name].description}</div>
-              </button>
-            ))}
-          </div>
+          <ItemsListVert
+            items={devPageItems}
+            searchEnabled
+            searchPlaceholder="Search components..."
+            getItemKey={(item) => item.key}
+            onItemSelect={(data) => setCompSelectedStr(data.key)}
+            itemSelectedKey={CompSelectedStr}
+          />
         </div>
         
         <div className="dev-content">
