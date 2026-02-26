@@ -324,6 +324,168 @@ const FolderExamplesPanel = observer(() => {
     folderData.selectedRowId = rowId;
   };
 
+  // Example 4: Single selection with type filtering
+  const [singleSelectStore] = useState(() => {
+    return makeAutoObservable({
+      rowsById: new Map([
+        [1, { name: 'Documents', size: '4 items', type: 'folder' }],
+        [2, { name: 'Pictures', size: '12 items', type: 'folder' }],
+        [3, { name: 'App.jsx', size: '4.2 KB', type: 'file' }],
+        [4, { name: 'styles.css', size: '1.8 KB', type: 'file' }],
+        [5, { name: 'Music', size: '8 items', type: 'folder' }],
+      ]),
+      rowsOrder: [1, 2, 3, 4, 5],
+      selectedRowIds: [],
+      allowedTypes: ['folder'], // Only folders can be selected
+      
+      get rows() {
+        return this.rowsOrder.map(id => ({ id, data: this.rowsById.get(id) }));
+      },
+      
+      getRowData(rowId, columnId) {
+        const row = this.rowsById.get(rowId);
+        return row?.[columnId];
+      },
+      
+      handleRowInteraction(event) {
+        if (event.type !== 'click') return;
+        
+        const row = this.rowsById.get(event.rowId);
+        
+        // Validation: only allow folder selection
+        if (!this.allowedTypes.includes(row.type)) {
+          console.log(`Cannot select ${row.type}, only folders allowed`);
+          return;
+        }
+        
+        // Toggle selection
+        if (this.selectedRowIds.includes(event.rowId)) {
+          this.selectedRowIds = [];
+        } else {
+          this.selectedRowIds = [event.rowId];
+        }
+      }
+    });
+  });
+
+  // Example 5: Multiple selection with Ctrl/Shift
+  const [multiSelectStore] = useState(() => {
+    return makeAutoObservable({
+      rowsById: new Map([
+        [1, { name: 'File1.txt', size: '2.1 KB', type: 'file' }],
+        [2, { name: 'File2.txt', size: '3.5 KB', type: 'file' }],
+        [3, { name: 'File3.txt', size: '1.2 KB', type: 'file' }],
+        [4, { name: 'File4.txt', size: '5.8 KB', type: 'file' }],
+        [5, { name: 'File5.txt', size: '2.9 KB', type: 'file' }],
+        [6, { name: 'File6.txt', size: '4.1 KB', type: 'file' }],
+      ]),
+      rowsOrder: [1, 2, 3, 4, 5, 6],
+      selectedRowIds: [],
+      
+      get rows() {
+        return this.rowsOrder.map(id => ({ id, data: this.rowsById.get(id) }));
+      },
+      
+      getRowData(rowId, columnId) {
+        const row = this.rowsById.get(rowId);
+        return row?.[columnId];
+      },
+      
+      handleRowInteraction(event) {
+        if (event.type !== 'click') return;
+        
+        const { rowId, modifiers } = event;
+        
+        if (modifiers.ctrl || modifiers.meta) {
+          // Ctrl: toggle in selection
+          if (this.selectedRowIds.includes(rowId)) {
+            this.selectedRowIds = this.selectedRowIds.filter(id => id !== rowId);
+          } else {
+            this.selectedRowIds.push(rowId);
+          }
+        } else if (modifiers.shift && this.selectedRowIds.length > 0) {
+          // Shift: range selection
+          const lastSelectedId = this.selectedRowIds[this.selectedRowIds.length - 1];
+          const lastIndex = this.rowsOrder.indexOf(lastSelectedId);
+          const currentIndex = this.rowsOrder.indexOf(rowId);
+          const start = Math.min(lastIndex, currentIndex);
+          const end = Math.max(lastIndex, currentIndex);
+          
+          const rangeIds = this.rowsOrder.slice(start, end + 1);
+          
+          // Add range to selection (union)
+          const newSelection = [...new Set([...this.selectedRowIds, ...rangeIds])];
+          this.selectedRowIds = newSelection;
+        } else {
+          // No modifier: replace selection
+          this.selectedRowIds = [rowId];
+        }
+      }
+    });
+  });
+
+  // Example 6: MobX pattern with mixed types
+  const [mixedSelectStore] = useState(() => {
+    return makeAutoObservable({
+      rowsById: new Map([
+        [1, { name: 'Projects', size: '8 items', type: 'folder' }],
+        [2, { name: 'README.md', size: '2.1 KB', type: 'file' }],
+        [3, { name: 'Downloads', size: '15 items', type: 'folder' }],
+        [4, { name: 'config.json', size: '856 B', type: 'file' }],
+        [5, { name: 'Photos', size: '42 items', type: 'folder' }],
+      ]),
+      rowsOrder: [1, 2, 3, 4, 5],
+      selectedRowIds: [],
+      allowMixed: false, // If false, can only select all same type
+      
+      get rows() {
+        return this.rowsOrder.map(id => ({ id, data: this.rowsById.get(id) }));
+      },
+      
+      getRowData(rowId, columnId) {
+        const row = this.rowsById.get(rowId);
+        return row?.[columnId];
+      },
+      
+      handleRowInteraction(event) {
+        if (event.type !== 'click') return;
+        
+        const { rowId, modifiers } = event;
+        const row = this.rowsById.get(rowId);
+        
+        // Check type compatibility if mixed not allowed
+        if (!this.allowMixed && this.selectedRowIds.length > 0) {
+          const firstSelectedId = this.selectedRowIds[0];
+          const firstSelectedRow = this.rowsById.get(firstSelectedId);
+          if (firstSelectedRow.type !== row.type) {
+            console.log(`Cannot mix types: already selected ${firstSelectedRow.type}, trying to select ${row.type}`);
+            return;
+          }
+        }
+        
+        if (modifiers.ctrl || modifiers.meta) {
+          // Ctrl: toggle
+          if (this.selectedRowIds.includes(rowId)) {
+            this.selectedRowIds = this.selectedRowIds.filter(id => id !== rowId);
+          } else {
+            this.selectedRowIds.push(rowId);
+          }
+        } else {
+          // Replace selection
+          this.selectedRowIds = [rowId];
+        }
+      },
+      
+      clearSelection() {
+        this.selectedRowIds = [];
+      },
+      
+      getSelectedItems() {
+        return this.selectedRowIds.map(id => this.rowsById.get(id));
+      }
+    });
+  });
+
   return (
     <div>
       {/* Basic Example */}
@@ -389,6 +551,138 @@ const FolderExamplesPanel = observer(() => {
               name: 'Delete'
             }
           ]}
+        />
+      </div>
+
+      {/* Example 4: Single Selection with Type Filtering */}
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Single Selection with Type Filter</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          MobX pattern with type validation. Only folders can be selected. Try clicking files vs folders.
+        </div>
+        <div style={{ marginBottom: '8px', fontSize: '12px' }}>
+          <strong>Selected:</strong> {singleSelectStore.selectedRowIds.length > 0 
+            ? singleSelectStore.selectedRowIds.map(id => singleSelectStore.rowsById.get(id).name).join(', ')
+            : 'None'}
+        </div>
+        <FolderView
+          columns={{ 
+            name: { data: 'Name', align: 'left' }, 
+            size: { data: 'Size', align: 'left' },
+            type: { data: 'Type', align: 'left' }
+          }}
+          columnsOrder={['name', 'size', 'type']}
+          columnsSizeInit={{
+            name: { width: 200, minWidth: 100, resizable: true },
+            size: { width: 120, minWidth: 80, resizable: true },
+            type: { width: 100, minWidth: 80, resizable: true }
+          }}
+          rows={singleSelectStore.rows}
+          dataStore={singleSelectStore}
+          getRowData={(rowId, colId) => singleSelectStore.getRowData(rowId, colId)}
+          selectedRowIds={singleSelectStore.selectedRowIds}
+          selectionMode="single"
+          onRowInteraction={(event) => singleSelectStore.handleRowInteraction(event)}
+          bodyHeight={200}
+          showStatusBar={false}
+        />
+      </div>
+
+      {/* Example 5: Multiple Selection */}
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Multiple Selection with Ctrl/Shift</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          Click to select. Ctrl+Click to toggle. Shift+Click for range selection. Notice the blue indicator on selected items.
+        </div>
+        <div style={{ marginBottom: '8px', fontSize: '12px' }}>
+          <strong>Selected:</strong> {multiSelectStore.selectedRowIds.length} item(s)
+          {multiSelectStore.selectedRowIds.length > 0 && ` - ${multiSelectStore.selectedRowIds.join(', ')}`}
+        </div>
+        <FolderView
+          columns={{ 
+            name: { data: 'Name', align: 'left' }, 
+            size: { data: 'Size', align: 'left' }
+          }}
+          columnsOrder={['name', 'size']}
+          columnsSizeInit={{
+            name: { width: 250, minWidth: 150, resizable: true },
+            size: { width: 150, minWidth: 100, resizable: true }
+          }}
+          rows={multiSelectStore.rows}
+          dataStore={multiSelectStore}
+          getRowData={(rowId, colId) => multiSelectStore.getRowData(rowId, colId)}
+          selectedRowIds={multiSelectStore.selectedRowIds}
+          selectionMode="multiple"
+          onRowInteraction={(event) => multiSelectStore.handleRowInteraction(event)}
+          bodyHeight={220}
+          showStatusBar={false}
+        />
+      </div>
+
+      {/* Example 6: Mixed Types with Validation */}
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Multiple Selection with Type Validation</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          Multiple selection but all selected must be same type. Try selecting a folder then a file with Ctrl+Click.
+        </div>
+        <div style={{ marginBottom: '8px', fontSize: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div>
+            <strong>Selected:</strong> {mixedSelectStore.selectedRowIds.length > 0 
+              ? mixedSelectStore.selectedRowIds.map(id => mixedSelectStore.rowsById.get(id).name).join(', ')
+              : 'None'}
+          </div>
+          <button
+            onClick={() => mixedSelectStore.clearSelection()}
+            style={{
+              padding: '4px 8px',
+              fontSize: '12px',
+              backgroundColor: '#f5f5f5',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Clear Selection
+          </button>
+          <button
+            onClick={() => {
+              const items = mixedSelectStore.getSelectedItems();
+              console.log('Selected items:', items);
+              alert(`Selected ${items.length} item(s):\n${items.map(i => i.name).join('\n')}`);
+            }}
+            style={{
+              padding: '4px 8px',
+              fontSize: '12px',
+              backgroundColor: '#2196F3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Get Selected
+          </button>
+        </div>
+        <FolderView
+          columns={{ 
+            name: { data: 'Name', align: 'left' }, 
+            size: { data: 'Size', align: 'left' },
+            type: { data: 'Type', align: 'left' }
+          }}
+          columnsOrder={['name', 'size', 'type']}
+          columnsSizeInit={{
+            name: { width: 200, minWidth: 120, resizable: true },
+            size: { width: 120, minWidth: 80, resizable: true },
+            type: { width: 100, minWidth: 80, resizable: true }
+          }}
+          rows={mixedSelectStore.rows}
+          dataStore={mixedSelectStore}
+          getRowData={(rowId, colId) => mixedSelectStore.getRowData(rowId, colId)}
+          selectedRowIds={mixedSelectStore.selectedRowIds}
+          selectionMode="multiple"
+          onRowInteraction={(event) => mixedSelectStore.handleRowInteraction(event)}
+          bodyHeight={200}
+          showStatusBar={false}
         />
       </div>
     </div>

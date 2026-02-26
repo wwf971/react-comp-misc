@@ -53,3 +53,16 @@ const CustomHeaderComp = ({ data, columnId, align }) => {
 ```
 
 commonly used columns: name, size, createAt, updateAt.
+
+## MobX Cell Optimization
+
+**Why not pass cell data directly?** If Body accesses `store.rowsById.get(rowId)[colId]` to pass as props, Body (the parent component of all items) observes that data and re-renders when ANY cell changes. This defeats MobX's fine-grained reactivity.
+
+**Solution:** Always use `getRowData` function. Cell fetches its own data, so only that cell observes it.
+
+Body.jsx uses two cell wrappers:
+- **ObservableCell**: Wrapped with `observer()`, fetches data via `getRowData(rowId, colId)`. Auto re-renders when its data changes (for MobX stores).
+- **StaticCell**: Not wrapped with `observer()`, also fetches via `getRowData(rowId, colId)`. No auto re-render (for non-reactive data).
+
+Both cells use the same data access pattern. The only difference is the `observer()` wrapper. If no `getRowData` provided, Body creates a default one for backward compatibility.
+

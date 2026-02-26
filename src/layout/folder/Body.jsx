@@ -15,6 +15,50 @@ const MemoizedDefaultBodyCellComp = React.memo(DefaultBodyCellComp, (prev, next)
   return prev.data === next.data;
 });
 
+/**
+ * Cell component that observes MobX store directly
+ * Only re-renders when its specific data changes
+ */
+const ObservableCell = observer(({ 
+  rowId, 
+  columnId, 
+  getRowData, 
+  CustomComp, 
+  align 
+}) => {
+  // Cell fetches its own data - only observes this specific slice
+  const cellData = getRowData ? getRowData(rowId, columnId) : null;
+  
+  const CellComp = CustomComp || MemoizedDefaultBodyCellComp;
+  
+  return (
+    <CellComp 
+      data={cellData}
+      columnId={columnId}
+      rowId={rowId}
+      align={align}
+    />
+  );
+});
+
+/**
+ * Non-observable cell for non-reactive data
+ * Always uses getRowData (same as ObservableCell but without observer())
+ */
+const StaticCell = ({ rowId, columnId, getRowData, CustomComp, align }) => {
+  const cellData = getRowData(rowId, columnId);
+  const CellComp = CustomComp || MemoizedDefaultBodyCellComp;
+  
+  return (
+    <CellComp 
+      data={cellData}
+      columnId={columnId}
+      rowId={rowId}
+      align={align}
+    />
+  );
+};
+
 const Body = observer(({ 
   columns, 
   columnsOrder, 
@@ -22,10 +66,19 @@ const Body = observer(({
   columnWidths: externalColumnWidths,
   rows = [], 
   getComponent,
+  // Legacy callbacks (deprecated but still supported)
   onRowClick,
   onRowDoubleClick,
   onRowContextMenu,
-  selectedRowId,
+  selectedRowId, // Legacy single selection (deprecated)
+  // New unified interaction handler
+  onRowInteraction,
+  selectedRowIds, // New multi-selection support
+  selectionMode = 'single', // 'none' | 'single' | 'multiple'
+  // MobX pattern support
+  dataStore,
+  getRowData,
+  // Other props
   allowRowReorder = false,
   onDataChangeRequest,
   locked = false,
@@ -48,25 +101,47 @@ const Body = observer(({
 
   if (!columnsOrder || !rows) return null;
 
-  const handleRowClick = (rowId) => {
-    if (onRowClick) {
+  // Provide default getRowData if not provided (backward compatibility)
+  const effectiveGetRowData = getRowData || ((rowId, columnId) => {
+    const row = rows.find(r => r.id === rowId);
+    return row?.data?.[columnId];
+  });
+
+  // Unified row interaction handler
+  const handleRowInteraction = (e, type, rowId, rowIndex) => {
+    // New unified interaction handler
+    if (onRowInteraction) {
+      onRowInteraction({
+        type,
+        rowId,
+        rowIndex, // auxiliary
+        nativeEvent: e,
+        modifiers: {
+          ctrl: e.ctrlKey,
+          shift: e.shiftKey,
+          meta: e.metaKey,
+          alt: e.altKey
+        }
+      });
+    }
+    
+    // Backward compatibility - call old handlers
+    if (type === 'click' && onRowClick) {
       onRowClick(rowId);
-    }
-  };
-
-  const handleRowDoubleClick = (rowId) => {
-    if (onRowDoubleClick) {
+    } else if (type === 'double-click' && onRowDoubleClick) {
       onRowDoubleClick(rowId);
+    } else if (type === 'context-menu' && onRowContextMenu) {
+      onRowContextMenu(e, rowId);
     }
   };
 
-  const handleRowContextMenu = (e, rowId) => {
-    if (onRowContextMenu) {
-      onRowContextMenu(e, rowId);
-      return;
-    }
-
+  const handleRowContextMenu = (e, rowId, rowIndex) => {
+    // Call unified handler first
+    handleRowInteraction(e, 'context-menu', rowId, rowIndex);
+    
     // Only intercept and show built-in context menu when contextMenuItems are provided
+    // and onRowContextMenu is not provided (to allow custom context menu handling)
+    if (onRowContextMenu) return;
     if (locked || !contextMenuItems || contextMenuItems.length === 0) return;
     e.preventDefault();
     e.stopPropagation();
@@ -241,14 +316,20 @@ const Body = observer(({
     return position;
   };
 
+  // Determine selection class names
+  const selectionClassName = selectionMode !== 'none' ? `selection-${selectionMode}` : '';
+
   return (
     <div 
-      className={`folder-body ${locked ? 'locked' : ''}`}
+      className={`folder-body ${locked ? 'locked' : ''} ${selectionClassName}`}
       ref={bodyRef}
       onDragOver={handleRowDragOver}
     >
       {rows.map((row, index) => {
-        const isSelected = selectedRowId === row.id;
+        // Support both new (selectedRowIds array) and legacy (selectedRowId single) patterns
+        const isSelected = selectedRowIds 
+          ? selectedRowIds.includes(row.id) 
+          : selectedRowId === row.id;
         const isDragging = draggingRowId === row.id;
         
         return (
@@ -257,9 +338,9 @@ const Body = observer(({
             data-row-id={row.id}
             className={`folder-body-row ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${allowRowReorder ? 'reorderable' : ''}`}
             style={{ opacity: isDragging ? 0.3 : 1 }}
-            onClick={() => handleRowClick(row.id)}
-            onDoubleClick={() => handleRowDoubleClick(row.id)}
-            onContextMenu={(e) => handleRowContextMenu(e, row.id)}
+            onClick={(e) => handleRowInteraction(e, 'click', row.id, index)}
+            onDoubleClick={(e) => handleRowInteraction(e, 'double-click', row.id, index)}
+            onContextMenu={(e) => handleRowContextMenu(e, row.id, index)}
             draggable={allowRowReorder}
             onDragStart={(e) => handleRowDragStart(e, row.id, index)}
             onDrag={handleRowDrag}
@@ -271,11 +352,10 @@ const Body = observer(({
               
               const align = column.align || 'left';
               const width = columnWidths?.[colId];
-              const cellData = row.data?.[colId];
-              
-              // Get custom component via callback or use default text component
               const CustomComp = getComponent ? getComponent(colId, row.id) : undefined;
-              const CellComp = CustomComp || MemoizedDefaultBodyCellComp;
+              
+              // Use ObservableCell (with observer()) when dataStore provided, otherwise StaticCell
+              const useObservableCell = !!dataStore;
               
               return (
                 <div 
@@ -287,12 +367,23 @@ const Body = observer(({
                   }}
                 >
                   <div className="folder-body-cell-content">
-                    <CellComp 
-                      data={cellData}
-                      columnId={colId}
-                      rowId={row.id}
-                      align={align}
-                    />
+                    {useObservableCell ? (
+                      <ObservableCell
+                        rowId={row.id}
+                        columnId={colId}
+                        getRowData={effectiveGetRowData}
+                        CustomComp={CustomComp}
+                        align={align}
+                      />
+                    ) : (
+                      <StaticCell
+                        rowId={row.id}
+                        columnId={colId}
+                        getRowData={effectiveGetRowData}
+                        CustomComp={CustomComp}
+                        align={align}
+                      />
+                    )}
                   </div>
                 </div>
               );
@@ -329,4 +420,4 @@ const Body = observer(({
 });
 
 export default Body;
-export { DefaultBodyCellComp, MemoizedDefaultBodyCellComp };
+export { DefaultBodyCellComp, MemoizedDefaultBodyCellComp, ObservableCell, StaticCell };

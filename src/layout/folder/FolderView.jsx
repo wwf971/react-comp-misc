@@ -20,10 +20,24 @@ import './folder.css';
  *   - For row reorder: ('reorder', { rowId, fromIndex, toIndex })
  *   - For row delete: ('delete', { rowId })
  * - allowColumnReorder: boolean (default: false)
+ * 
+ * Selection (New Unified API):
+ * - onRowInteraction: (event) => void - Unified interaction handler
+ *   event: { type: 'click' | 'double-click' | 'context-menu', rowId, rowIndex, nativeEvent, modifiers }
+ * - selectedRowIds: array - Controlled selection state (new)
+ * - selectionMode: 'none' | 'single' | 'multiple' (default: 'single')
+ * 
+ * MobX Pattern Support:
+ * - dataStore: object - MobX observable store
+ * - getRowData: (rowId, columnId) => any - Function to extract cell data from store
+ * 
+ * Legacy Props (deprecated but supported):
  * - onRowClick: (rowId) => void (optional)
  * - onRowDoubleClick: (rowId) => void (optional)
  * - onRowContextMenu: (event, rowId) => void (optional)
- * - selectedRowId: string/number (optional)
+ * - selectedRowId: string/number (optional, use selectedRowIds instead)
+ * 
+ * Other:
  * - allowRowReorder: boolean (default: false)
  * - showStatusBar: boolean (default: true)
  * - loading: boolean indicating if a request is in progress (optional)
@@ -41,10 +55,19 @@ const FolderView = observer(({
   getBodyComponent,
   onDataChangeRequest,
   allowColumnReorder = false,
+  // New unified interaction
+  onRowInteraction,
+  selectedRowIds,
+  selectionMode = 'single',
+  // MobX pattern
+  dataStore,
+  getRowData,
+  // Legacy (deprecated)
   onRowClick,
   onRowDoubleClick,
   onRowContextMenu,
   selectedRowId,
+  // Other
   allowRowReorder = false,
   showStatusBar = true,
   loading = false,
@@ -109,10 +132,19 @@ const FolderView = observer(({
           columnWidths={columnWidths}
           rows={rows}
           getComponent={getBodyComponent}
+          // New unified interaction
+          onRowInteraction={onRowInteraction}
+          selectedRowIds={selectedRowIds}
+          selectionMode={selectionMode}
+          // MobX pattern
+          dataStore={dataStore}
+          getRowData={getRowData}
+          // Legacy (deprecated but supported)
           onRowClick={onRowClick}
           onRowDoubleClick={onRowDoubleClick}
           onRowContextMenu={onRowContextMenu}
           selectedRowId={selectedRowId}
+          // Other
           allowRowReorder={allowRowReorder && !loading}
           onDataChangeRequest={onDataChangeRequest}
           locked={loading}

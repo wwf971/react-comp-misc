@@ -13,7 +13,15 @@ import { parsePathToSegments, navigateToPath } from '../json/pathUtils';
  */
 export function createHandleChange(observableData) {
   return async (path, changeData) => {
-    const { old, new: newData, _action, _key } = changeData;
+    const { old, new: newData, _action, _key, _keyRename } = changeData;
+    
+    // Handle key rename - component handles mutation, just validate
+    if (_keyRename) {
+      // The component itself (JsonKeyValueComp) handles the actual rename
+      // We just validate and return success
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return { code: 0, message: 'Key renamed successfully' };
+    }
     
     // Simulate async operation (e.g., backend API call)
     await new Promise(resolve => setTimeout(resolve, 100));

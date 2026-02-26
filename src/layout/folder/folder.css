@@ -125,6 +125,42 @@
   background: #d1e9fc;
 }
 
+/* Multiple selection mode - visual hints */
+.folder-body.selection-multiple .folder-body-row {
+  position: relative;
+}
+
+.folder-body.selection-multiple .folder-body-row:hover::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #2196F3;
+  opacity: 0.5;
+}
+
+.folder-body.selection-multiple .folder-body-row.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #2196F3;
+  opacity: 1;
+}
+
+/* No selection mode */
+.folder-body.selection-none .folder-body-row {
+  cursor: default;
+}
+
+.folder-body.selection-none .folder-body-row:hover {
+  background: #f9f9f9;
+}
+
 .folder-body-cell {
   position: relative;
   padding: 4px 6px;
