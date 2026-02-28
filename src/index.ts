@@ -69,6 +69,7 @@ export { default as SelectableValueComp } from "./layout/value-comp/SelectableVa
 export { default as SearchableValueComp } from "./layout/value-comp/SearchableValueComp.jsx";
 export { default as PanelToggle } from "./panel/PanelToggle.jsx";
 export { default as PanelDual } from "./panel/PanelDual.jsx";
+export { default as PanelPopup } from "./panel/PanelPopup.jsx";
 
 export { default as JsonComp } from "./layout/json/JsonComp.jsx";
 export { default as JsonKeyValueComp } from "./layout/json/JsonKeyValueComp.jsx";
