@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  width: 100%;
   height: 100%;
 }
 
@@ -48,16 +49,19 @@
 
 .items-list-vert-list {
   flex: 1;
+  width: 100%;
   overflow-y: auto;
   padding: 4px;
 }
 
 .items-list-vert-list-cell {
+  width: 100%;
   margin-bottom: 2px;
 }
 
 .items-list-vert-item-button,
 .items-list-vert-item-block {
+  display: block;
   width: 100%;
   padding: 8px;
   border: none;

@@ -12,6 +12,8 @@
   border-right: 1px solid #dee2e6;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Header */
@@ -32,6 +34,7 @@
 .tabs-list {
   flex: 1;
   padding: 0px 0px;
+  overflow-y: auto;
 }
 
 /* ===== TAB COMPONENT ===== */
@@ -129,6 +132,6 @@
 
 /* ===== PANELS ===== */
 .panels-container {
-  flex: 1;
+  height: 100%;
   overflow: auto;
 }

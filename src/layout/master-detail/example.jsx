@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import MasterDetail, { Tab, SubTab, Panel } from './MasterDetail.tsx';
+import MasterDetail, { Tab, SubTab, Panel } from './MasterDetail.jsx';
 import MasterDetailInfiLevel, { 
   Tab as ITab, 
   SubTab as ISubTab, 
   Panel as IPanel 
-} from './MasterDetailInfiLevel.tsx';
+} from './MasterDetailInfiLevel.jsx';
 
 // Example 1: 2-level layout
 const TwoLevelExample = () => (

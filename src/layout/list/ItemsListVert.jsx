@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import CrossIcon from '../../icon/CrossIcon.jsx';
 import './ItemsListVert.css';
 
 function defaultMatchFn(data, query) {
@@ -88,7 +89,7 @@ function ItemsListVert({
               onClick={handleClear}
               aria-label="Clear search"
             >
-              ×
+              <CrossIcon size={14} />
             </button>
           )}
         </div>

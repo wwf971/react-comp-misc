@@ -35,19 +35,19 @@ export {
     get_cookie,
 } from "./common.js";
 
-export { 
-    default as MasterDetail,
+export {
+    default as MasterDetail, 
     Tab as MasterDetailTab, 
     SubTab as MasterDetailSubTab, 
     Panel as MasterDetailPanel 
-} from "./layout/master-detail/MasterDetail.tsx";
+} from "./layout/master-detail/MasterDetail.jsx";
 
 export {
     default as MasterDetailInfiLevel,
     Tab as MasterDetailInfiLevelTab,
     SubTab as MasterDetailInfiLevelSubTab,
     Panel as MasterDetailInfiLevelPanel
-} from "./layout/master-detail/MasterDetailInfiLevel.tsx";
+} from "./layout/master-detail/MasterDetailInfiLevel.jsx";
 
 export { default as TabsOnTop } from "./layout/tab/TabsOnTop.jsx";
 

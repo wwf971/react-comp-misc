@@ -1,83 +1,14 @@
-import React, { useState, ReactNode } from 'react';
+import React, { useState } from 'react';
 import './MasterDetail.css';
 import MasterDetailInfiLevel from './MasterDetailInfiLevel';
+import PanelDual from '../../panel/PanelDual';
 
-// Type definitions
-interface Tab {
-  key: string;
-  label: string;
-  subtabKeys: string[];
-  isExpanded?: boolean;
-}
-
-interface Subtab {
-  label: string;
-  isDefault?: boolean;
-}
-
-interface TabStructure {
-  tabs: Tab[];
-  subtabs: Record<string, Subtab>;
-  panels: Record<string, ReactNode>;
-}
-
-interface MasterDetailProps {
-  title: string;
-  sidebarWidth?: string;
-  children: ReactNode;
-  lazyRender?: boolean;
-}
-
-interface TabProps {
-  tabKey: string;
-  label: string;
-  isActive: boolean;
-  isExpanded: boolean;
-  onClick: (tabKey: string) => void;
-  onToggleExpand: (tabKey: string) => void;
-}
-
-interface SubTabProps {
-  subtabKey: string;
-  label: string;
-  isActive: boolean;
-  onClick: (subtabKey: string | null) => void;
-}
-
-interface TabsProps {
-  title: string;
-  tabs: Tab[];
-  subtabs: Record<string, Subtab>;
-  activeTabKey: string;
-  activeSubtabKey: string | null;
-  onTabClicked: (tabKey: string) => void;
-  onSubtabClicked: (subtabKey: string | null) => void;
-  onToggleExpand: (tabKey: string) => void;
-  sidebarWidth?: string;
-}
-
-interface PanelsProps {
-  activeSubtabKey: string | null;
-  panels: Record<string, ReactNode>;
-  displayedPanels: Set<string>;
-}
-
-interface SlotProps {
-  label?: string;
-  children?: ReactNode;
-  isDefault?: boolean;
-}
-
-/**
- * Render all panels with visibility control and lazy rendering
- */
 const renderPanels = (
-  panels: Record<string, ReactNode>,
-  activeSubtabKey: string | null,
-  displayedPanels: Set<string>
-): React.JSX.Element[] => {
+  panels,
+  activeSubtabKey,
+  displayedPanels
+) => {
   return Object.entries(panels).map(([subtabKey, panelComponent]) => {
-    // lazy rendering: only render if panel has been displayed before
     const shouldRender = displayedPanels.has(subtabKey);
     
     return (
@@ -91,25 +22,19 @@ const renderPanels = (
   });
 };
 
-/**
- * MasterDetail - Reusable component with tabs on left (master), panels on right (detail)
- * Automatically delegates to MasterDetailInfiLevel if nesting depth > 2
- */
-const MasterDetail: React.FC<MasterDetailProps> = ({
+const MasterDetail = ({
   title,
-  sidebarWidth = '200px',
+  initialSidebarRatio = 0.25,
   children,
   lazyRender = true
 }) => {
-  // Detect nesting depth first
   const maxDepth = detectMaxDepth(children);
   
-  // If depth > 2, delegate to infinite-level component
   if (maxDepth > 2) {
     return (
       <MasterDetailInfiLevel
         title={title}
-        sidebarWidth={sidebarWidth}
+        initialSidebarRatio={initialSidebarRatio}
         lazyRender={lazyRender}
       >
         {children}
@@ -117,24 +42,18 @@ const MasterDetail: React.FC<MasterDetailProps> = ({
     );
   }
   
-  // Otherwise, use two-level implementation
-  // Extract configuration from children - only run once
   const [config] = useState(() => extractTabStructure(children));
   const { tabs: initialTabs, subtabs, panels } = config;
   
-  // Find default subtab or use first one
   const initialActiveSubtabKey = (() => {
-    // Look for a subtab with isDefault=true
     for (const [subtabKey, subtab] of Object.entries(subtabs)) {
       if (subtab.isDefault) {
         return subtabKey;
       }
     }
-    // Fallback to first subtab
     return initialTabs[0]?.subtabKeys[0] || null;
   })();
   
-  // Find which tab contains the default/active subtab
   const initialActiveTabKey = (() => {
     if (initialActiveSubtabKey) {
       const parentTab = initialTabs.find(tab => tab.subtabKeys.includes(initialActiveSubtabKey));
@@ -143,7 +62,6 @@ const MasterDetail: React.FC<MasterDetailProps> = ({
     return initialTabs[0]?.key || '';
   })();
   
-  // add isExpanded property to initialTabs - expand the tab containing default subtab
   const [tabs, setTabs] = useState(() =>
     initialTabs.map(tab => ({
       ...tab,
@@ -151,32 +69,26 @@ const MasterDetail: React.FC<MasterDetailProps> = ({
     }))
   );
   
-  const [activeTabKey, setActiveTabKey] = useState<string>(initialActiveTabKey);
-  const [activeSubtabKey, setActiveSubtabKey] = useState<string | null>(initialActiveSubtabKey);
+  const [activeTabKey, setActiveTabKey] = useState(initialActiveTabKey);
+  const [activeSubtabKey, setActiveSubtabKey] = useState(initialActiveSubtabKey);
   
-  // track which panels have been displayed (for lazy rendering)
   const [displayedPanels, setDisplayedPanels] = useState(() => {
     if (lazyRender) {
-      // Start with the active subtab (which may be the default one)
       return new Set(activeSubtabKey ? [activeSubtabKey] : []);
     } else {
-      // all panels
       return new Set(Object.keys(panels));
     }
   });
   
-  // update displayed panels when activeSubtabKey changes
   React.useEffect(() => {
     if (activeSubtabKey) {
       setDisplayedPanels(prev => new Set([...prev, activeSubtabKey]));
     }
   }, [activeSubtabKey]);
 
-  const onTabClicked = (tabKey: string) => {
-    // switch to new tab
+  const onTabClicked = (tabKey) => {
     setActiveTabKey(tabKey);
 
-    // toggle expand state
     const targetTab = tabs.find(tab => tab.key === tabKey);
     if (targetTab) {
       setTabs(prevTabs => 
@@ -187,7 +99,6 @@ const MasterDetail: React.FC<MasterDetailProps> = ({
         )
       );
 
-      // set first subtab as active if tab has subtabs
       if (targetTab.subtabKeys.length > 0) {
         setActiveSubtabKey(targetTab.subtabKeys[0]);
       } else {
@@ -196,13 +107,11 @@ const MasterDetail: React.FC<MasterDetailProps> = ({
     }
   };
 
-  const onSubtabClicked = (subtabKey: string | null) => {
+  const onSubtabClicked = (subtabKey) => {
     if (!subtabKey) return;
     
-    // find the parent tab that contains this subtab
     const parentTab = tabs.find(tab => tab.subtabKeys.includes(subtabKey));
 
-    // set the parent tab as active if found and not already active
     if (parentTab && parentTab.key !== activeTabKey) {
       setActiveTabKey(parentTab.key);
     }
@@ -210,7 +119,7 @@ const MasterDetail: React.FC<MasterDetailProps> = ({
     setActiveSubtabKey(subtabKey);
   };
 
-  const onToggleExpand = (tabKey: string) => {
+  const onToggleExpand = (tabKey) => {
     setTabs(prevTabs => 
       prevTabs.map(tab => 
         tab.key === tabKey 
@@ -219,12 +128,9 @@ const MasterDetail: React.FC<MasterDetailProps> = ({
       )
     );
     
-    // handle subtab state when toggling
     const currentTab = tabs.find(tab => tab.key === tabKey);
     if (currentTab?.isExpanded) {
-      // active subtab won't be cleared, even if parent tab is collapsed
     } else {
-      // if expanding and this is the active tab, set first subtab as active
       if (activeTabKey === tabKey && currentTab && currentTab.subtabKeys.length > 0) {
         setActiveSubtabKey(currentTab.subtabKeys[0]);
       }
@@ -234,35 +140,32 @@ const MasterDetail: React.FC<MasterDetailProps> = ({
 
   return (
     <div className="master-detail-container">
-      <Tabs
-        title={title}
-        tabs={tabs}
-        subtabs={subtabs}
-        activeTabKey={activeTabKey}
-        activeSubtabKey={activeSubtabKey}
-        onTabClicked={onTabClicked}
-        onSubtabClicked={onSubtabClicked}
-        onToggleExpand={onToggleExpand}
-        sidebarWidth={sidebarWidth}
-      />
-      <Panels
-        activeSubtabKey={activeSubtabKey}
-        panels={panels}
-        displayedPanels={displayedPanels}
-      />
+      <PanelDual orientation="vertical" initialRatio={initialSidebarRatio}>
+        <Tabs
+          title={title}
+          tabs={tabs}
+          subtabs={subtabs}
+          activeTabKey={activeTabKey}
+          activeSubtabKey={activeSubtabKey}
+          onTabClicked={onTabClicked}
+          onSubtabClicked={onSubtabClicked}
+          onToggleExpand={onToggleExpand}
+        />
+        <Panels
+          activeSubtabKey={activeSubtabKey}
+          panels={panels}
+          displayedPanels={displayedPanels}
+        />
+      </PanelDual>
     </div>
   );
 };
 
-/**
- * Individual Tab component
- */
-const Tab: React.FC<TabProps> = ({ tabKey, label, isActive, isExpanded, onClick, onToggleExpand }) => {
+const Tab = ({ tabKey, label, isActive, isExpanded, onClick, onToggleExpand }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div className="tab-container">
-      {/* Triangle icon for expand/collapse */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -275,7 +178,6 @@ const Tab: React.FC<TabProps> = ({ tabKey, label, isActive, isExpanded, onClick,
         </span>
       </button>
 
-      {/* Tab label */}
       <button
         onClick={() => onClick(tabKey)}
         onMouseEnter={() => setIsHovered(true)}
@@ -288,10 +190,7 @@ const Tab: React.FC<TabProps> = ({ tabKey, label, isActive, isExpanded, onClick,
   );
 };
 
-/**
- * Individual SubTab component
- */
-const SubTab: React.FC<SubTabProps> = ({ subtabKey, label, isActive, onClick }) => {
+const SubTab = ({ subtabKey, label, isActive, onClick }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -306,10 +205,7 @@ const SubTab: React.FC<SubTabProps> = ({ subtabKey, label, isActive, onClick }) 
   );
 };
 
-/**
- * Tabs container component with subtabs
- */
-const Tabs: React.FC<TabsProps> = ({ 
+const Tabs = ({ 
   title, 
   tabs, 
   subtabs, 
@@ -317,22 +213,19 @@ const Tabs: React.FC<TabsProps> = ({
   activeSubtabKey, 
   onTabClicked, 
   onSubtabClicked,
-  onToggleExpand,
-  sidebarWidth = '200px'
+  onToggleExpand
 }) => {
   const currentTab = tabs.find(tab => tab.key === activeTabKey);
   const currentSubTabs = currentTab?.subtabKeys || [];
 
   return (
-    <div className="tabs-sidebar" style={{ width: sidebarWidth }}>
-      {/* Header */}
+    <div className="tabs-sidebar">
       <div className="tabs-header">
         <h3>
           {title}
         </h3>
       </div>
 
-      {/* Tab List */}
       <div className="tabs-list">
         {tabs.map(tab => (
           <div key={tab.key}>
@@ -344,7 +237,6 @@ const Tabs: React.FC<TabsProps> = ({
               onClick={onTabClicked}
               onToggleExpand={onToggleExpand}
             />
-            {/* Render subtabs if this tab is expanded */}
             {tab.isExpanded && tab.subtabKeys.map(subtabKey => {
               const subTab = subtabs[subtabKey];
               return subTab ? (
@@ -364,10 +256,7 @@ const Tabs: React.FC<TabsProps> = ({
   );
 };
 
-/**
- * Panels container component
- */
-const Panels: React.FC<PanelsProps> = ({ activeSubtabKey, panels, displayedPanels }) => {
+const Panels = ({ activeSubtabKey, panels, displayedPanels }) => {
   return (
     <div className="panels-container">
       {renderPanels(panels, activeSubtabKey, displayedPanels)}
@@ -375,31 +264,23 @@ const Panels: React.FC<PanelsProps> = ({ activeSubtabKey, panels, displayedPanel
   );
 };
 
-// Generate unique tab keys
 let tabCounter = 0;
 const genTabKey = () => `tab-${++tabCounter}`;
 
-// Generate unique subtab keys
 let subTabCounter = 0;
 const genSubTabKey = () => `subtab-${++subTabCounter}`;
 
-/**
- * Detect maximum nesting depth in children structure
- * Returns: 1 for Tab only, 2 for Tab+SubTab, 3+ for deeper nesting
- */
-const detectMaxDepth = (children: ReactNode, currentDepth: number = 1): number => {
+const detectMaxDepth = (children, currentDepth = 1) => {
   let maxDepth = currentDepth;
   
-  React.Children.forEach(children, (child: any) => {
+  React.Children.forEach(children, (child) => {
     if (child && child.type && (child.type.__isTabSlot || child.type.__isSubTabSlot)) {
       let childMaxDepth = currentDepth;
       
-      // Check if this node has SubTab children (not Panel)
       let hasSubTabChildren = false;
-      React.Children.forEach(child.props.children, (subChild: any) => {
+      React.Children.forEach(child.props.children, (subChild) => {
         if (subChild && subChild.type && subChild.type.__isSubTabSlot) {
           hasSubTabChildren = true;
-          // Recursively check depth of SubTab children
           const subDepth = detectMaxDepth(child.props.children, currentDepth + 1);
           childMaxDepth = Math.max(childMaxDepth, subDepth);
         }
@@ -412,25 +293,21 @@ const detectMaxDepth = (children: ReactNode, currentDepth: number = 1): number =
   return maxDepth;
 };
 
-/**
- * Helper function to extract tab/subtab/panel configuration from children
- */
-const extractTabStructure = (children: ReactNode): TabStructure => {
-  // Reset counters for each extraction
+const extractTabStructure = (children) => {
   tabCounter = 0;
   subTabCounter = 0;
   
-  const tabs: Tab[] = [];
-  const subtabs: Record<string, Subtab> = {};
-  const panels: Record<string, ReactNode> = {};
+  const tabs = [];
+  const subtabs = {};
+  const panels = {};
 
-  React.Children.forEach(children, (tabChild: any) => {
+  React.Children.forEach(children, (tabChild) => {
     if (tabChild && tabChild.type && tabChild.type.__isTabSlot) {
       const tabKey = genTabKey();
       const tabLabel = tabChild.props.label;
-      const subtabKeys: string[] = [];
+      const subtabKeys = [];
 
-      React.Children.forEach(tabChild.props.children, (subtabChild: any) => {
+      React.Children.forEach(tabChild.props.children, (subtabChild) => {
         if (subtabChild && subtabChild.type && subtabChild.type.__isSubTabSlot) {
           const subtabKey = genSubTabKey();
           const subtabLabel = subtabChild.props.label;
@@ -439,17 +316,14 @@ const extractTabStructure = (children: ReactNode): TabStructure => {
           subtabKeys.push(subtabKey);
           subtabs[subtabKey] = { label: subtabLabel, isDefault };
 
-          // Extract panel content
-          // Check if there's an explicit <Panel> component, otherwise use all children
           let foundPanel = false;
-          React.Children.forEach(subtabChild.props.children, (panelChild: any) => {
+          React.Children.forEach(subtabChild.props.children, (panelChild) => {
             if (panelChild && panelChild.type && panelChild.type.__isPanelSlot) {
               panels[subtabKey] = panelChild.props.children;
               foundPanel = true;
             }
           });
           
-          // If no <Panel> component found, use all children as panel content
           if (!foundPanel) {
             panels[subtabKey] = subtabChild.props.children;
           }
@@ -467,35 +341,26 @@ const extractTabStructure = (children: ReactNode): TabStructure => {
 };
 
 
-/**
- * Tab slot component - defines a tab and its subtabs
- */
-const TabSlot: React.FC<SlotProps> & { __isTabSlot: boolean } = ({ label, children }) => {
+const TabSlot = ({ label, children }) => {
   return null;
 };
 TabSlot.__isTabSlot = true;
 
-const SubTabSlot: React.FC<SlotProps> & { __isSubTabSlot: boolean } = ({ label, children }) => {
+const SubTabSlot = ({ label, children }) => {
   return null;
 };
 SubTabSlot.__isSubTabSlot = true;
 
-const PanelSlot: React.FC<SlotProps> & { __isPanelSlot: boolean } = ({ children }) => {
+const PanelSlot = ({ children }) => {
   return null;
 };
 PanelSlot.__isPanelSlot = true;
 
-// Extend the component with slot properties
-const MasterDetailWithSlots = MasterDetail as typeof MasterDetail & {
-  Tab: typeof TabSlot;
-  SubTab: typeof SubTabSlot;
-  Panel: typeof PanelSlot;
-};
+const MasterDetailWithSlots = MasterDetail;
 
 MasterDetailWithSlots.Tab = TabSlot;
 MasterDetailWithSlots.SubTab = SubTabSlot;
 MasterDetailWithSlots.Panel = PanelSlot;
 
-// Export components individually for cleaner imports
 export { TabSlot as Tab, SubTabSlot as SubTab, PanelSlot as Panel };
 export default MasterDetailWithSlots;
