@@ -86,6 +86,15 @@ const MasterDetail = ({
     }
   }, [activeSubtabKey]);
 
+  const getDefaultSubtabKeyForTab = (tab) => {
+    for (const subtabKey of tab.subtabKeys) {
+      if (subtabs[subtabKey]?.isDefault) {
+        return subtabKey;
+      }
+    }
+    return tab.subtabKeys[0] || null;
+  };
+
   const onTabClicked = (tabKey) => {
     setActiveTabKey(tabKey);
 
@@ -99,11 +108,7 @@ const MasterDetail = ({
         )
       );
 
-      if (targetTab.subtabKeys.length > 0) {
-        setActiveSubtabKey(targetTab.subtabKeys[0]);
-      } else {
-        setActiveSubtabKey(null);
-      }
+      setActiveSubtabKey(getDefaultSubtabKeyForTab(targetTab));
     }
   };
 
@@ -132,7 +137,7 @@ const MasterDetail = ({
     if (currentTab?.isExpanded) {
     } else {
       if (activeTabKey === tabKey && currentTab && currentTab.subtabKeys.length > 0) {
-        setActiveSubtabKey(currentTab.subtabKeys[0]);
+        setActiveSubtabKey(getDefaultSubtabKeyForTab(currentTab));
       }
     }
   };

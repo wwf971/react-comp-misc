@@ -39,17 +39,17 @@ const MasterDetailInfiLevel = ({
         setDisplayedPanels(prev => new Set([...prev, nodeKey]));
       }
     } else {
-      const firstLeaf = findFirstLeaf([node]);
-      if (firstLeaf) {
-        const pathToLeaf = getPathToNode(treeWithExpansion, firstLeaf.key);
+      const preferredLeaf = findDefaultNode([node]) || findFirstLeaf([node]);
+      if (preferredLeaf) {
+        const pathToLeaf = getPathToNode(treeWithExpansion, preferredLeaf.key);
         const newTree = expandPath(treeWithExpansion, pathToLeaf);
         treeWithExpansion.splice(0, treeWithExpansion.length, ...newTree);
         
-        setActiveNodeKey(firstLeaf.key);
+        setActiveNodeKey(preferredLeaf.key);
         setActivePath(pathToLeaf);
         
         if (lazyRender) {
-          setDisplayedPanels(prev => new Set([...prev, firstLeaf.key]));
+          setDisplayedPanels(prev => new Set([...prev, preferredLeaf.key]));
         }
       } else {
         onToggleExpand(nodeKey);

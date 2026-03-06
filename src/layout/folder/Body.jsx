@@ -138,7 +138,7 @@ const Body = observer(({
   const handleRowContextMenu = (e, rowId, rowIndex) => {
     // Call unified handler first
     handleRowInteraction(e, 'context-menu', rowId, rowIndex);
-    
+
     // Only intercept and show built-in context menu when contextMenuItems are provided
     // and onRowContextMenu is not provided (to allow custom context menu handling)
     if (onRowContextMenu) return;
@@ -370,19 +370,19 @@ const Body = observer(({
                     {useObservableCell ? (
                       <ObservableCell
                         rowId={row.id}
-                        columnId={colId}
+                      columnId={colId}
                         getRowData={effectiveGetRowData}
                         CustomComp={CustomComp}
                         align={align}
                       />
                     ) : (
                       <StaticCell
-                        rowId={row.id}
+                      rowId={row.id}
                         columnId={colId}
                         getRowData={effectiveGetRowData}
                         CustomComp={CustomComp}
-                        align={align}
-                      />
+                      align={align}
+                    />
                     )}
                   </div>
                 </div>
