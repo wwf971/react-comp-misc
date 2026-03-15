@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
-import Menu, { MenuItem } from './Menu'
+import Menu from './Menu'
 import MenuRightClickExample from './exampleRightClick'
 
 // Example: Single-level menu
 const MenuSingleLevel = () => {
-  const [menuPos, setMenuPos] = useState<{x: number, y: number} | null>(null)
-  const [clickedItem, setClickedItem] = useState<string>('')
+  const [menuPos, setMenuPos] = useState(null)
+  const [clickedItem, setClickedItem] = useState('')
 
-  const menuItems: MenuItem[] = [
+  const menuItems = [
     {
       type: 'item',
       name: 'Open',
@@ -25,13 +25,13 @@ const MenuSingleLevel = () => {
     }
   ]
 
-  const handleContextMenu = (e: React.MouseEvent) => {
+  const handleContextMenu = (e) => {
     e.preventDefault()
     // Close current menu and open new one at new position
     setMenuPos({ x: e.clientX, y: e.clientY })
   }
 
-  const handleItemClick = (item: any) => {
+  const handleItemClick = (item) => {
     setClickedItem(`${item.name} (${item.data?.action})`)
   }
 
@@ -72,10 +72,10 @@ const MenuSingleLevel = () => {
 
 // Example: Multi-level menu
 const MenuMultiLevel = () => {
-  const [menuPos, setMenuPos] = useState<{x: number, y: number} | null>(null)
-  const [clickedItem, setClickedItem] = useState<string>('')
+  const [menuPos, setMenuPos] = useState(null)
+  const [clickedItem, setClickedItem] = useState('')
 
-  const menuItems: MenuItem[] = [
+  const menuItems = [
     {
       type: 'item',
       name: 'New File',
@@ -136,13 +136,13 @@ const MenuMultiLevel = () => {
     }
   ]
 
-  const handleContextMenu = (e: React.MouseEvent) => {
+  const handleContextMenu = (e) => {
     e.preventDefault()
     // Close current menu and open new one at new position
     setMenuPos({ x: e.clientX, y: e.clientY })
   }
 
-  const handleItemClick = (item: any) => {
+  const handleItemClick = (item) => {
     setClickedItem(`${item.name} (${item.data?.action})`)
   }
 

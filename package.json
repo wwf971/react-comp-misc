@@ -23,7 +23,7 @@
     "./CrossIcon": "./src/icon/CrossIcon.jsx",
     "./DragIcon": "./src/icon/DragIcon.jsx",
     "./Login": "./src/auth/Login.jsx",
-    "./Menu": "./src/menu/Menu.tsx",
+    "./Menu": "./src/menu/Menu.jsx",
     "./Menu.css": "./src/menu/Menu.css",
     "./DatabaseSetup.css": "./src/database/DatabaseSetup.css",
     "./TableManage.css": "./src/database/TableManage.css"

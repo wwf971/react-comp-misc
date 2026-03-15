@@ -16,7 +16,7 @@ import './panelPopup.css';
  * - onCancel: () => void - Called when user cancels (only for confirm/input type)
  * - confirmButtonStyle: object - Custom style for confirm button
  * - isDanger: boolean - If true, uses red/danger styling for confirm button
- * - isDisabled: boolean - If true, disables the confirm button
+ * - isConfirmDisabled: boolean - If true, disables the confirm button
  * - isLoading: boolean - If true, shows loading state and disables all buttons
  * - inputProps: object - Props for input field (for 'input' type):
  *   - placeholder: string
@@ -35,7 +35,7 @@ const PanelPopup = ({
   onCancel,
   confirmButtonStyle,
   isDanger = false,
-  isDisabled = false,
+  isConfirmDisabled = false,
   isLoading = false,
   inputProps = {}
 }) => {
@@ -45,7 +45,7 @@ const PanelPopup = ({
   
   // Lock buttons when status message is shown or during loading
   const isLocked = isLoading || !!statusMessage;
-  const isConfirmDisabled = isDisabled || isLocked || (type === 'input' && inputProps.required && !inputValue.trim());
+  const isConfirmDisabledFinal = isConfirmDisabled || isLocked || (type === 'input' && inputProps.required && !inputValue.trim());
   
   useEffect(() => {
     setInputValue(inputProps.defaultValue || '');
@@ -107,7 +107,7 @@ const PanelPopup = ({
               placeholder={inputProps.placeholder || ''}
               disabled={isLocked}
               onKeyPress={(e) => {
-                if (e.key === 'Enter' && !isConfirmDisabled) {
+                if (e.key === 'Enter' && !isConfirmDisabledFinal) {
                   handleConfirmClick();
                 }
               }}
@@ -138,12 +138,12 @@ const PanelPopup = ({
           )}
           <button
             onClick={handleConfirmClick}
-            disabled={isConfirmDisabled}
+            disabled={isConfirmDisabledFinal}
             className={`panel-popup-button ${isDanger ? 'panel-popup-button-danger' : 'panel-popup-button-primary'}`}
             style={{
               ...confirmButtonStyle,
-              opacity: isConfirmDisabled ? 0.6 : 1,
-              cursor: isConfirmDisabled ? 'not-allowed' : 'pointer'
+              opacity: isConfirmDisabledFinal ? 0.6 : 1,
+              cursor: isConfirmDisabledFinal ? 'not-allowed' : 'pointer'
             }}
           >
             {isLoading ? 'Loading...' : confirmText}

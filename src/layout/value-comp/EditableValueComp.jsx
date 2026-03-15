@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SpinningCircle, EditIcon } from '@wwf971/react-comp-misc';
-import Menu from '../../menu/Menu.tsx';
+import Menu from '../../menu/Menu.jsx';
 import './EditableValue.css';
 
 /**

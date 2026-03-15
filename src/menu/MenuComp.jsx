@@ -4,35 +4,6 @@ import './Menu.css'
 /**
  * Menu item that renders a custom component
  */
-export interface MenuCompItemBase {
-  name: string
-  component?: React.ComponentType<any>
-  componentProps?: any
-  preferredWidth?: number  // in pixels
-  preferredHeight?: number // in pixels
-  data?: any
-  disabled?: boolean
-}
-
-export interface MenuCompItemSingle extends MenuCompItemBase {
-  type: 'item'
-}
-
-export interface MenuCompItemSubmenu extends MenuCompItemBase {
-  type: 'menu'
-  children: MenuCompItem[]
-}
-
-export type MenuCompItem = MenuCompItemSingle | MenuCompItemSubmenu
-
-interface MenuCompProps {
-  items: MenuCompItem[]
-  position: { x: number; y: number }
-  onClose: () => void
-  onItemClick: (item: MenuCompItemSingle) => void
-  onContextMenu?: (e: React.MouseEvent) => void
-}
-
 /**
  * Multi-level context menu component with custom component support
  * 
@@ -42,11 +13,11 @@ interface MenuCompProps {
  * - preferredHeight: if exceeded, item height increases to fit content
  * - Handles right-click-after-right-click correctly
  */
-const MenuComp: React.FC<MenuCompProps> = ({ items, position, onClose, onItemClick, onContextMenu }) => {
-  const [hoveredSubmenu, setHoveredSubmenu] = useState<number | null>(null)
-  const [submenuPosition, setSubmenuPosition] = useState<{ x: number; y: number } | null>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const backdropRef = useRef<HTMLDivElement>(null)
+const MenuComp = ({ items, position, onClose, onItemClick, onContextMenu }) => {
+  const [hoveredSubmenu, setHoveredSubmenu] = useState(null)
+  const [submenuPosition, setSubmenuPosition] = useState(null)
+  const menuRef = useRef(null)
+  const backdropRef = useRef(null)
 
   // Reset submenu state when menu position changes (right-click reposition)
   useEffect(() => {
@@ -81,7 +52,7 @@ const MenuComp: React.FC<MenuCompProps> = ({ items, position, onClose, onItemCli
     }
   }, [position.x, position.y])
 
-  const handleItemClick = (item: MenuCompItem, e: React.MouseEvent) => {
+  const handleItemClick = (item, e) => {
     if (item.disabled) {
       e.stopPropagation()
       return
@@ -93,7 +64,7 @@ const MenuComp: React.FC<MenuCompProps> = ({ items, position, onClose, onItemCli
     }
   }
 
-  const handleItemMouseEnter = (item: MenuCompItem, index: number, event: React.MouseEvent<HTMLDivElement>) => {
+  const handleItemMouseEnter = (item, index, event) => {
     if (item.type === 'menu' && !item.disabled) {
       const rect = event.currentTarget.getBoundingClientRect()
       setHoveredSubmenu(index)
@@ -107,7 +78,7 @@ const MenuComp: React.FC<MenuCompProps> = ({ items, position, onClose, onItemCli
     }
   }
 
-  const handleBackdropContextMenu = (e: React.MouseEvent) => {
+  const handleBackdropContextMenu = (e) => {
     e.preventDefault()
     e.stopPropagation() // Stop propagation to prevent infinite loop with nested menus
     
@@ -116,19 +87,19 @@ const MenuComp: React.FC<MenuCompProps> = ({ items, position, onClose, onItemCli
     const allBackdrops = document.querySelectorAll('.menu-backdrop')
     
     // Store original styles
-    const originalStyles: Array<{ element: HTMLElement, display: string }> = []
-    const originalBackdropStyles: Array<{ element: HTMLElement, pointerEvents: string }> = []
+    const originalStyles = []
+    const originalBackdropStyles = []
     
     // Hide all menus
     allMenus.forEach(menu => {
-      const htmlMenu = menu as HTMLElement
+      const htmlMenu = menu
       originalStyles.push({ element: htmlMenu, display: htmlMenu.style.display })
       htmlMenu.style.display = 'none'
     })
     
     // Disable pointer events on all backdrops
     allBackdrops.forEach(backdrop => {
-      const htmlBackdrop = backdrop as HTMLElement
+      const htmlBackdrop = backdrop
       originalBackdropStyles.push({ element: htmlBackdrop, pointerEvents: htmlBackdrop.style.pointerEvents })
       htmlBackdrop.style.pointerEvents = 'none'
     })
@@ -169,10 +140,10 @@ const MenuComp: React.FC<MenuCompProps> = ({ items, position, onClose, onItemCli
     }
   }
 
-  const renderItemContent = (item: MenuCompItem) => {
+  const renderItemContent = (item) => {
     if (item.component) {
       const Component = item.component
-      const style: React.CSSProperties = {}
+      const style = {}
 
       // Apply width constraint (overflow hidden if exceeded)
       if (item.preferredWidth) {
@@ -231,7 +202,7 @@ const MenuComp: React.FC<MenuCompProps> = ({ items, position, onClose, onItemCli
       {/* Submenu */}
       {hoveredSubmenu !== null && submenuPosition && items[hoveredSubmenu].type === 'menu' && (
         <MenuComp
-          items={(items[hoveredSubmenu] as MenuCompItemSubmenu).children}
+          items={items[hoveredSubmenu].children}
           position={submenuPosition}
           onClose={onClose}
           onItemClick={onItemClick}

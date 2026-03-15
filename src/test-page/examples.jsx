@@ -6,7 +6,7 @@ import { configExamples } from '../config/example.jsx';
 import { pathExamples } from '../path/example.jsx';
 import { dictExamples } from '../dict/example.jsx';
 import { tabExamples } from '../layout/tab/example.jsx';
-import { menuExamples } from '../menu/example.tsx';
+import { menuExamples } from '../menu/example.jsx';
 import { jsonExamples } from '../layout/json/example.jsx';
 // import { jsonJotaiExamples } from '../layout/json-jotai/example.jsx';
 import { jsonMobxExamples } from '../layout/json-mobx/example.jsx';

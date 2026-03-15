@@ -11,35 +11,12 @@ import './Menu.css'
  * - Key: onContextMenu on backdrop prevents browser's default menu and allows repositioning
  */
 
-export interface MenuItemBase {
-  name: string
-  data?: any  // Optional custom data to pass back
-}
-
-export interface MenuItemSingle extends MenuItemBase {
-  type: 'item'
-}
-
-export interface MenuItemSubmenu extends MenuItemBase {
-  type: 'menu'
-  children: MenuItem[]
-}
-export type MenuItem = MenuItemSingle | MenuItemSubmenu
-
-interface MenuProps {
-  items: MenuItem[]
-  position: { x: number; y: number }
-  onClose: () => void
-  onItemClick: (item: MenuItemSingle) => void
-  onContextMenu?: (e: React.MouseEvent) => void
-}
-
 /**
  * Multi-level context menu component
  */
-const Menu: React.FC<MenuProps> = ({ items, position, onClose, onItemClick, onContextMenu }) => {
-  const [hoveredSubmenu, setHoveredSubmenu] = useState<number | null>(null)
-  const [submenuPosition, setSubmenuPosition] = useState<{ x: number; y: number } | null>(null)
+const Menu = ({ items, position, onClose, onItemClick, onContextMenu }) => {
+  const [hoveredSubmenu, setHoveredSubmenu] = useState(null)
+  const [submenuPosition, setSubmenuPosition] = useState(null)
 
   // Reset submenu state when menu position changes (e.g., from right-click reposition)
   useEffect(() => {
@@ -47,7 +24,7 @@ const Menu: React.FC<MenuProps> = ({ items, position, onClose, onItemClick, onCo
     setSubmenuPosition(null)
   }, [position.x, position.y])
 
-  const handleItemClick = (item: MenuItem, e: React.MouseEvent) => {
+  const handleItemClick = (item, e) => {
     // Only handle left clicks
     if (e.button !== 0) return
     
@@ -57,13 +34,13 @@ const Menu: React.FC<MenuProps> = ({ items, position, onClose, onItemClick, onCo
     }
   }
 
-  const handleItemContextMenu = (e: React.MouseEvent) => {
+  const handleItemContextMenu = (e) => {
     // Suppress browser's context menu on menu items
     e.preventDefault()
     e.stopPropagation()
   }
 
-  const handleItemMouseEnter = (item: MenuItem, index: number, event: React.MouseEvent<HTMLDivElement>) => {
+  const handleItemMouseEnter = (item, index, event) => {
     if (item.type === 'menu') {
       const rect = event.currentTarget.getBoundingClientRect()
       setHoveredSubmenu(index)
@@ -81,7 +58,7 @@ const Menu: React.FC<MenuProps> = ({ items, position, onClose, onItemClick, onCo
     // Don't immediately close submenu - let the submenu's own hover handle it
   }
 
-  const handleBackdropContextMenu = (e: React.MouseEvent) => {
+  const handleBackdropContextMenu = (e) => {
     if (onContextMenu) {
       // Pass the right-click event to parent to reposition menu
       onContextMenu(e)
@@ -123,7 +100,7 @@ const Menu: React.FC<MenuProps> = ({ items, position, onClose, onItemClick, onCo
       {/* Submenu */}
       {hoveredSubmenu !== null && submenuPosition && items[hoveredSubmenu].type === 'menu' && (
         <Menu
-          items={(items[hoveredSubmenu] as MenuItemSubmenu).children}
+          items={items[hoveredSubmenu].children}
           position={submenuPosition}
           onClose={onClose}
           onItemClick={onItemClick}

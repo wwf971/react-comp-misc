@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import Menu from '../../menu/Menu.tsx';
+import Menu from '../../menu/Menu.jsx';
 import './folder.css';
 
 /**

@@ -3,7 +3,7 @@ use this exmample as reference, when you cannot implement the "right-click after
 */
 
 import React, { useState } from 'react'
-import Menu, { MenuItem } from './Menu'
+import Menu from './Menu'
 
 /**
  * Example demonstrating correct right-click menu repositioning
@@ -24,28 +24,22 @@ import Menu, { MenuItem } from './Menu'
  */
 const MenuRightClickExample = () => {
   // Example 1: Simple case - clickable area not covered by backdrop
-  const [menuState, setMenuState] = useState<{
-    position: {x: number, y: number} | null,
-    clickCount: number
-  }>({
+  const [menuState, setMenuState] = useState({
     position: null,
     clickCount: 0
   })
   
   // Example 2: Complex case - clickable tags covered by backdrop
-  const [tagsMenuState, setTagsMenuState] = useState<{
-    position: {x: number, y: number} | null,
-    selectedTag: string | null
-  }>({
+  const [tagsMenuState, setTagsMenuState] = useState({
     position: null,
     selectedTag: null
   })
   const tags = ['Tag A', 'Tag B', 'Tag C', 'Tag D', 'Tag E']
   
-  const [clickedItem, setClickedItem] = useState<string>('')
+  const [clickedItem, setClickedItem] = useState('')
 
   // Generate menu items that change based on click count to demonstrate content updates
-  const getMenuItems = (clickCount: number, position: {x: number, y: number}): MenuItem[] => [
+  const getMenuItems = (clickCount, position) => [
     {
       type: 'item',
       name: `X: ${position.x}, Y: ${position.y}`,
@@ -92,7 +86,7 @@ const MenuRightClickExample = () => {
    * - Content updates properly
    * - Position updates reliably
    */
-  const handleContextMenu = (e: React.MouseEvent) => {
+  const handleContextMenu = (e) => {
     e.preventDefault()
     
     const newClickCount = menuState.clickCount + 1
@@ -112,7 +106,7 @@ const MenuRightClickExample = () => {
     })
   }
 
-  const handleItemClick = (item: any) => {
+  const handleItemClick = (item) => {
     setClickedItem(`${item.name} - Action: ${item.data?.action}`)
   }
 
@@ -135,7 +129,7 @@ const MenuRightClickExample = () => {
    * 3. Restore pointer-events immediately
    * 4. Check if element is a tag and handle accordingly
    */
-  const handleTagContextMenu = (e: React.MouseEvent, tagName: string) => {
+  const handleTagContextMenu = (e, tagName) => {
     e.preventDefault()
     e.stopPropagation() // Prevent backdrop from handling this
     
@@ -151,11 +145,11 @@ const MenuRightClickExample = () => {
     })
   }
 
-  const handleBackdropContextMenu = (e: React.MouseEvent) => {
+  const handleBackdropContextMenu = (e) => {
     e.preventDefault()
     
     // CRUCIAL: Temporarily hide backdrop to find element underneath
-    const backdrop = e.currentTarget as HTMLElement
+    const backdrop = e.currentTarget
     backdrop.style.pointerEvents = 'none'
     const clickedElement = document.elementFromPoint(e.clientX, e.clientY)
     backdrop.style.pointerEvents = ''
@@ -183,7 +177,7 @@ const MenuRightClickExample = () => {
     }
   }
 
-  const handleTagItemClick = (item: any) => {
+  const handleTagItemClick = (item) => {
     setClickedItem(`Tag menu: ${item.name} on "${tagsMenuState.selectedTag}"`)
   }
 
