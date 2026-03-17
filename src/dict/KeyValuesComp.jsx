@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { observer } from 'mobx-react-lite';
+import { runInAction } from 'mobx';
 import './KeyValues.css';
 
 /**
@@ -9,7 +11,8 @@ const DefaultTextComp = ({
   onChangeAttempt, 
   isEditable, 
   field,
-  index 
+  index,
+  itemRef
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const editRef = useRef(null);
@@ -95,6 +98,10 @@ const DefaultTextComp = ({
       if (newValue !== originalValueRef.current) {
         if (onChangeAttempt) {
           onChangeAttempt(index, field, newValue);
+        } else if (itemRef && field) {
+          runInAction(() => {
+            itemRef[field] = newValue;
+          });
         }
       }
     }
@@ -136,14 +143,20 @@ const DefaultTextComp = ({
 const MemoizedDefaultTextComp = React.memo(DefaultTextComp, (prev, next) => {
   return prev.data === next.data && 
          prev.isEditable === next.isEditable &&
-         prev.onChangeAttempt === next.onChangeAttempt;
+         prev.onChangeAttempt === next.onChangeAttempt &&
+         prev.itemRef === next.itemRef;
 });
 
 /**
  * KeyValuesComp component for displaying key-value pairs with custom components
  * 
+ * MobX Support:
+ * - Use observable([...]) from mobx to enable in-place mutations on arrays
+ * - Component will auto-track accessed properties and re-render only affected rows
+ * - Backward compatible: works with plain arrays and onChangeAttempt callback
+ * 
  * @param {Object} props
- * @param {Array<{key: any, keyComp: React.Component, value: any, valueComp: React.Component}>} props.data - Array of key-value pairs with optional custom components
+ * @param {Array<{key: any, keyComp: React.Component, value: any, valueComp: React.Component}>} props.data - Array of key-value pairs with optional custom components (can be observable)
  * @param {boolean} props.isEditable - Whether the data is editable (default: true)
  * @param {boolean} props.isKeyEditable - Whether keys are editable (default: false)
  * @param {boolean} props.isValueEditable - Whether values are editable (default: true)
@@ -151,7 +164,7 @@ const MemoizedDefaultTextComp = React.memo(DefaultTextComp, (prev, next) => {
  * @param {string} props.keyColWidth - Width of key column: 'min' for auto-calculated, or fixed like '200px' (default: 'min')
  * @param {Function} props.onChangeAttempt - Callback when user attempts to change a key or value: (index, field, newValue) => void
  */
-const KeyValuesComp = ({ 
+const KeyValuesCompInner = ({ 
   data = [], 
   isEditable = true, 
   isKeyEditable = false, 
@@ -346,6 +359,7 @@ const KeyValuesComp = ({
                       isEditable={canEditKey}
                       field="key"
                       index={index}
+                      itemRef={item}
                     />
                   </span>
                 </div>
@@ -359,6 +373,7 @@ const KeyValuesComp = ({
                     isEditable={canEditValue}
                     field="value"
                     index={index}
+                    itemRef={item}
                   />
                 </div>
               </div>
@@ -370,16 +385,8 @@ const KeyValuesComp = ({
   );
 };
 
-export default React.memo(KeyValuesComp, (prev, next) => {
-  // Compare all props that affect rendering
-  return prev.data === next.data && 
-         prev.isEditable === next.isEditable &&
-         prev.isKeyEditable === next.isKeyEditable &&
-         prev.isValueEditable === next.isValueEditable &&
-         prev.alignColumn === next.alignColumn &&
-         prev.keyColWidth === next.keyColWidth &&
-         prev.onChangeAttempt === next.onChangeAttempt;
-});
+const KeyValuesComp = observer(KeyValuesCompInner);
 
+export default KeyValuesComp;
 export { DefaultTextComp, MemoizedDefaultTextComp };
 

@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { observer } from 'mobx-react-lite';
+import { runInAction } from 'mobx';
 import './KeyValues.css';
 
 /**
@@ -48,8 +50,13 @@ const getClosestCharIndex = (element, targetPageX) => {
 /**
  * KeyValues component for displaying and editing key-value pairs
  * 
+ * MobX Support:
+ * - Use observable([...]) from mobx to enable in-place mutations on arrays
+ * - Component will auto-track which properties are accessed and re-render only when they change
+ * - Backward compatible: still works with plain arrays and onChangeAttempt callback
+ * 
  * @param {Object} props
- * @param {Array<{key: string, value: any}>} props.data - Array of key-value pairs
+ * @param {Array<{key: string, value: any}>} props.data - Array of key-value pairs (can be observable)
  * @param {boolean} props.isEditable - Whether the data is editable (default: true)
  * @param {boolean} props.isKeyEditable - Whether keys are editable (default: false)
  * @param {boolean} props.isValueEditable - Whether values are editable (default: true)
@@ -57,7 +64,7 @@ const getClosestCharIndex = (element, targetPageX) => {
  * @param {string} props.keyColWidth - Width of key column: 'min' for auto-calculated, or fixed like '200px' (default: 'min')
  * @param {Function} props.onChangeAttempt - Callback when user attempts to change a key or value: (index, field, newValue) => void
  */
-const KeyValues = ({ 
+const KeyValuesInner = ({ 
   data = [], 
   isEditable = true, 
   isKeyEditable = false, 
@@ -195,10 +202,13 @@ const KeyValues = ({
     if (editingIndex !== null && editingField !== null && editRef.current) {
       const newValue = editRef.current.textContent;
       
-      // Only call callback if value actually changed
       if (newValue !== originalValueRef.current) {
         if (onChangeAttempt) {
           onChangeAttempt(editingIndex, editingField, newValue);
+        } else if (data[editingIndex]) {
+          runInAction(() => {
+            data[editingIndex][editingField] = newValue;
+          });
         }
       }
     }
@@ -284,6 +294,8 @@ const KeyValues = ({
     </div>
   );
 };
+
+const KeyValues = observer(KeyValuesInner);
 
 export default KeyValues;
 
