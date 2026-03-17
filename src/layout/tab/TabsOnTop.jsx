@@ -6,8 +6,10 @@ import AddIcon from '../../icon/AddIcon';
 /**
  * TabsOnTop - Layout component with horizontal tabs at the top
  * 
+ * Grammar: If TabsOnTop.TabLabel appears before TabsOnTop.Tab, it defines custom tab button component
+ * 
  * @param {Object} props
- * @param {React.ReactNode} props.children - Tab components
+ * @param {React.ReactNode} props.children - Tab components (can include TabLabel before Tab for custom tab buttons)
  * @param {string} props.defaultTab - Default tab key (optional)
  * @param {Function} props.onTabChange - Callback when tab changes (optional)
  * @param {boolean} props.allowCloseTab - Allow closing tabs (default: false)
@@ -33,9 +35,11 @@ const TabsOnTop = forwardRef(
     onTabReorder,
     defaultKeepMounted = true
   }, ref) => {
-  // Use useMemo instead of useState so config updates when children change
   const config = useMemo(() => extractTabConfig(children), [children]);
   const { tabs, panels, tabKeyMap } = config;
+  
+  const prevTabLabelsRef = React.useRef(null);
+  const activeTabLabelRef = React.useRef(null);
   
   // Determine initial tab - prefer defaultTab, then first tab
   const getInitialTab = () => {
@@ -49,8 +53,14 @@ const TabsOnTop = forwardRef(
     return tabs[0]?.key || null;
   };
   
-  // Initialize with first available tab, then update when config is ready
-  const [activeTabKey, setActiveTabKey] = useState(() => getInitialTab());
+  const [activeTabKey, setActiveTabKey] = useState(() => {
+    const initialKey = getInitialTab();
+    const initialTab = tabs.find(t => t.key === initialKey);
+    if (initialTab) {
+      activeTabLabelRef.current = initialTab.label;
+    }
+    return initialKey;
+  });
   
   // Track tab states (click count and focus status)
   const [tabsState, setTabsState] = useState(() => {
@@ -85,7 +95,20 @@ const TabsOnTop = forwardRef(
     });
   }, [tabs, activeTabKey]);
   
-  // Update active tab if config changes and current tab is invalid
+  React.useEffect(() => {
+    const currentTabLabels = tabs.map(t => t.label).join(',');
+    const prevTabLabels = prevTabLabelsRef.current;
+    
+    if (prevTabLabels && prevTabLabels !== currentTabLabels && activeTabLabelRef.current) {
+      const newActiveTab = tabs.find(t => t.label === activeTabLabelRef.current);
+      if (newActiveTab && newActiveTab.key !== activeTabKey) {
+        setActiveTabKey(newActiveTab.key);
+      }
+    }
+    
+    prevTabLabelsRef.current = currentTabLabels;
+  }, [tabs, activeTabKey]);
+  
   React.useEffect(() => {
     if (!activeTabKey || !panels[activeTabKey]) {
       const newTab = getInitialTab();
@@ -114,12 +137,15 @@ const TabsOnTop = forwardRef(
   }, [tabs.length, autoSwitchToNewTab]);
 
   const switchToTab = (tabIdentifier) => {
-    // Support both tab key (tab-1) and label (Users, JWT Tokens)
     const targetKey = tabKeyMap[tabIdentifier] || tabIdentifier;
     if (panels[targetKey]) {
+      const targetTab = tabs.find(t => t.key === targetKey);
+      if (targetTab) {
+        activeTabLabelRef.current = targetTab.label;
+      }
+      
       setActiveTabKey(targetKey);
       
-      // Update tabs state: increment click count and update focus
       setTabsState(prevState => {
         const newState = {};
         Object.keys(prevState).forEach(key => {
@@ -238,18 +264,18 @@ const TabsOnTop = forwardRef(
     }
     
     const draggedIndex = tabs.findIndex(t => t.key === draggingTabKey);
+    const draggedTab = tabs[draggedIndex];
+    const wasActiveDragged = draggingTabKey === activeTabKey;
     
     if (dragOverSeparatorIndex !== null && dragOverSeparatorIndex !== draggedIndex && dragOverSeparatorIndex !== draggedIndex + 1) {
-      // Calculate new position
       let newIndex = dragOverSeparatorIndex;
       if (dragOverSeparatorIndex > draggedIndex) {
         newIndex = dragOverSeparatorIndex - 1;
       }
       
-      // Create new order
       const newTabs = [...tabs];
-      const [draggedTab] = newTabs.splice(draggedIndex, 1);
-      newTabs.splice(newIndex, 0, draggedTab);
+      const [movedTab] = newTabs.splice(draggedIndex, 1);
+      newTabs.splice(newIndex, 0, movedTab);
       
       onTabReorder(newTabs);
     }
@@ -284,10 +310,41 @@ const TabsOnTop = forwardRef(
       >
         {tabs.map((tab, index) => {
           const isDragging = draggingTabKey === tab.key;
+          const isActive = activeTabKey === tab.key;
+          
+          if (tab.customComponent) {
+            const customProps = {
+              label: tab.label,
+              tabKey: tab.key,
+              isActive: isActive,
+              isDragging: isDragging,
+              onClick: () => handleTabClick(tab.key),
+              onClose: allowCloseTab ? (e) => handleCloseTab(e, tab.key) : undefined,
+              draggable: allowTabReorder,
+              onDragStart: allowTabReorder ? (e) => handleTabDragStart(e, tab.key, index) : undefined,
+              onDrag: allowTabReorder ? handleTabDrag : undefined,
+              onDragEnd: allowTabReorder ? handleTabDragEnd : undefined
+            };
+            
+            let customContent;
+            if (typeof tab.customComponent === 'function') {
+              const CustomTabComponent = tab.customComponent;
+              customContent = <CustomTabComponent {...customProps} />;
+            } else if (React.isValidElement(tab.customComponent)) {
+              customContent = React.cloneElement(tab.customComponent, customProps);
+            }
+            
+            return (
+              <div key={tab.key} style={{ display: 'inline-block' }}>
+                {customContent}
+              </div>
+            );
+          }
+          
           return (
             <button
               key={tab.key}
-              className={`tab-on-top-btn ${activeTabKey === tab.key ? 'active' : ''} ${isDragging ? 'dragging' : ''} ${allowTabReorder ? 'reorderable' : ''}`}
+              className={`tab-on-top-btn ${isActive ? 'active' : ''} ${isDragging ? 'dragging' : ''} ${allowTabReorder ? 'reorderable' : ''}`}
               onClick={() => handleTabClick(tab.key)}
               draggable={allowTabReorder}
               onDragStart={(e) => handleTabDragStart(e, tab.key, index)}
@@ -381,26 +438,36 @@ const extractTabConfig = (children) => {
   
   const tabs = [];
   const panels = {};
-  const tabKeyMap = {}; // Map label to key for easy lookup
+  const tabKeyMap = {};
+  let pendingTabLabel = null;
 
-  React.Children.forEach(children, (child) => {
-    if (child && child.type && child.type.__isTabOnTopSlot) {
+  const processChild = (child) => {
+    if (child && child.type && child.type.__isTabLabelSlot) {
+      pendingTabLabel = child.props.children;
+    } else if (child && child.type && child.type.__isTabOnTopSlot) {
       const tabKey = genTabKey();
       const tabLabel = child.props.label;
       const keepMounted = child.props.keepMounted;
 
       tabs.push({
         key: tabKey,
-        label: tabLabel
+        label: tabLabel,
+        customComponent: pendingTabLabel
       });
 
       panels[tabKey] = {
         content: child.props.children,
         keepMounted: keepMounted
       };
-      tabKeyMap[tabLabel.toLowerCase()] = tabKey; // Map lowercase label to key
+      tabKeyMap[tabLabel.toLowerCase()] = tabKey;
+      
+      pendingTabLabel = null;
+    } else if (child && child.type === React.Fragment) {
+      React.Children.forEach(child.props.children, processChild);
     }
-  });
+  };
+
+  React.Children.forEach(children, processChild);
 
   return { tabs, panels, tabKeyMap };
 };
@@ -416,8 +483,18 @@ const TabSlot = ({ label, keepMounted, children }) => {
 };
 TabSlot.__isTabOnTopSlot = true;
 
-// Add Tab as a property of TabsOnTop
+/**
+ * TabLabel slot component - defines custom tab button component
+ * If placed before a Tab, it will be used as the custom tab button for that Tab
+ * @param {React.ReactNode} children - Custom tab button component (receives: label, tabKey, isActive, isDragging, onClick, onClose, drag handlers)
+ */
+const TabLabelSlot = ({ children }) => {
+  return null;
+};
+TabLabelSlot.__isTabLabelSlot = true;
+
 TabsOnTop.Tab = TabSlot;
+TabsOnTop.TabLabel = TabLabelSlot;
 
 export default TabsOnTop;
-export { TabSlot as Tab };
+export { TabSlot as Tab, TabLabelSlot as TabLabel };

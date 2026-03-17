@@ -49,7 +49,7 @@ export {
     Panel as MasterDetailInfiLevelPanel
 } from "./layout/master-detail/MasterDetailInfiLevel.jsx";
 
-export { default as TabsOnTop } from "./layout/tab/TabsOnTop.jsx";
+export { default as TabsOnTop, Tab as TabsOnTopTab, TabLabel as TabsOnTopTabLabel } from "./layout/tab/TabsOnTop.jsx";
 
 export { default as Login } from "./auth/Login.jsx";
 
