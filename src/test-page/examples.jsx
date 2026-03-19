@@ -4,7 +4,7 @@ import { layoutExamples } from '../layout/master-detail/example.jsx';
 import { iconExamples } from '../icon/example.jsx';
 import { configExamples } from '../config/example.jsx';
 import { pathExamples } from '../path/example.jsx';
-import { dictExamples } from '../dict/example.jsx';
+import { dictExamples } from '../key-value/example.jsx';
 import { tabExamples } from '../layout/tab/example.jsx';
 import { menuExamples } from '../menu/example.jsx';
 import { jsonExamples } from '../layout/json/example.jsx';

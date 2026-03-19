@@ -17,7 +17,7 @@ function DevPage() {
 
   return (
     <div className="dev-page">
-      <PanelDual orientation="vertical" initialRatio={0.3}>
+      <PanelDual orientation="vertical" initialWidth={300}>
         <div className="dev-header">
           <div className="dev-header-flex">
             <h1>React Components Assortment</h1>

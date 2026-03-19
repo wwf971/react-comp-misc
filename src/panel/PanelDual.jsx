@@ -11,6 +11,7 @@ const clampRatio = (value) => {
 const PanelDual = ({
   orientation = 'vertical',
   initialRatio = 0.5,
+  initialWidth = null,
   fixedDivider = false,
   children
 }) => {
@@ -87,9 +88,22 @@ const PanelDual = ({
   };
 
   useLayoutEffect(() => {
+    if (initialWidth !== null) {
+      const container = containerRef.current;
+      const totalSize = container
+        ? (orientation === 'horizontal'
+            ? container.getBoundingClientRect().height
+            : container.getBoundingClientRect().width)
+        : 0;
+      if (totalSize > 0 && initialWidth < totalSize) {
+        ratioRef.current = clampRatio(initialWidth / totalSize);
+        applyRatio(ratioRef.current);
+        return;
+      }
+    }
     ratioRef.current = clampRatio(initialRatio);
     applyRatio(ratioRef.current);
-  }, [initialRatio, orientation]);
+  }, [initialRatio, initialWidth, orientation]);
 
   useEffect(() => {
     const container = containerRef.current;
