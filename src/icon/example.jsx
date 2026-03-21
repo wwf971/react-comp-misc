@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  FileIconDefault, 
+  FileIcon, 
   DeleteIcon, 
   DragIcon, 
   SearchIcon, 
@@ -28,7 +28,7 @@ const IconGallery = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const icons = [
-    { name: 'FileIconDefault', component: FileIconDefault, description: 'Default file icon' },
+    { name: 'FileIcon', component: FileIcon, description: 'Default file icon' },
     { name: 'DeleteIcon', component: DeleteIcon, description: 'Delete/trash icon' },
     { name: 'SearchIcon', component: SearchIcon, description: 'Search/magnifying glass' },
     { name: 'ClearIcon', component: ClearIcon, description: 'Clear/reset' },

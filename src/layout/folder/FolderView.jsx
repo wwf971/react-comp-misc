@@ -17,7 +17,7 @@ import './folder.css';
  * - getBodyComponent: (colId, rowId) => Component (optional)
  * - onDataChangeRequest: (type, params) => void (optional)
  *   - For column reorder: ('reorder', { columnId, fromIndex, toIndex, newOrder })
- *   - For row reorder: ('reorder', { rowId, fromIndex, toIndex })
+ *   - For row reorder: ('reorder', { rowId, fromIndex, toIndex, newOrder })
  *   - For row delete: ('delete', { rowId })
  * - allowColumnReorder: boolean (default: false)
  * 

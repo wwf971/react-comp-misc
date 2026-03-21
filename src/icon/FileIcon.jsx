@@ -1,6 +1,6 @@
 import React from 'react';
 
-const FileIconDefault = React.memo(({ width = 24, height = 24, ...props })=>{
+const FileIcon = React.memo(({ width = 24, height = 24, ...props })=>{
 	return (
 		<svg 
 			width={width} 
@@ -47,5 +47,5 @@ const FileIconDefault = React.memo(({ width = 24, height = 24, ...props })=>{
 	return prevProps.width === nextProps.width && prevProps.height === nextProps.height;
 })
 
-export default FileIconDefault;
+export default FileIcon;
 

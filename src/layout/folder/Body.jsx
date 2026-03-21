@@ -225,6 +225,9 @@ const Body = observer(({
     
     setDraggingRowId(rowId);
     
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(rowId));
+    
     // Create a ghost image
     const ghost = e.currentTarget.cloneNode(true);
     ghost.style.opacity = '0.5';
@@ -275,7 +278,7 @@ const Body = observer(({
     }
   };
 
-  const handleRowDragEnd = async (e) => {
+  const handleRowDragEnd = async () => {
     if (!draggingRowId || !onDataChangeRequest) {
       setDraggingRowId(null);
       setDragOverSeparatorIndex(null);
@@ -285,14 +288,29 @@ const Body = observer(({
     const draggedIndex = rows.findIndex(row => row.id === draggingRowId);
     
     if (dragOverSeparatorIndex !== null && dragOverSeparatorIndex !== draggedIndex && dragOverSeparatorIndex !== draggedIndex + 1) {
-      // Calculate new position
       let newIndex = dragOverSeparatorIndex;
       if (dragOverSeparatorIndex > draggedIndex) {
         newIndex = dragOverSeparatorIndex - 1;
       }
       
-      // Call the data change callback with reorder type
-      onDataChangeRequest('reorder', { rowId: draggingRowId, fromIndex: draggedIndex, toIndex: newIndex });
+      const newOrder = rows.map((row) => row.id);
+      newOrder.splice(draggedIndex, 1);
+      newOrder.splice(newIndex, 0, draggingRowId);
+      
+      try {
+        const result = await onDataChangeRequest('reorder', {
+          rowId: draggingRowId,
+          fromIndex: draggedIndex,
+          toIndex: newIndex,
+          newOrder
+        });
+        
+        if (result && result.code !== 0) {
+          console.error('Row reorder failed:', result.message);
+        }
+      } catch (error) {
+        console.error('Row reorder error:', error);
+      }
     }
     
     setDraggingRowId(null);

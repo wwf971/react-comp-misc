@@ -157,6 +157,10 @@
   cursor: default;
 }
 
+.folder-body.selection-none .folder-body-row.reorderable {
+  cursor: move;
+}
+
 .folder-body.selection-none .folder-body-row:hover {
   background: #f9f9f9;
 }

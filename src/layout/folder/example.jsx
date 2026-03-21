@@ -4,6 +4,8 @@ import { observer } from 'mobx-react-lite';
 import Header from './Header';
 import FolderView from './FolderView';
 import InfoIconWithTooltip from '../../icon/InfoIconWithTooltip';
+import FolderIcon from '../../icon/FolderIcon';
+import FileIcon from '../../icon/FileIcon';
 import './folder.css';
 
 /**
@@ -27,16 +29,17 @@ const TextWithInfoIconComp = observer(({ data }) => {
  * Example file icon component
  */
 const FileNameCell = observer(({ data }) => {
-  const iconMap = {
-    folder: '📁',
-    file: '📄',
-    image: '🖼️',
-    code: '💻'
-  };
-  
+  const iconSize = 16;
+  const icon =
+    data.type === 'folder' ? (
+      <FolderIcon width={iconSize} height={iconSize} />
+    ) : (
+      <FileIcon width={iconSize} height={iconSize} />
+    );
+
   return (
-    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-      <span>{iconMap[data.type] || '📄'}</span>
+    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <span style={{ display: 'flex', flexShrink: 0, alignItems: 'center' }}>{icon}</span>
       <span>{data.name}</span>
     </span>
   );
@@ -123,6 +126,27 @@ const FolderExamplesPanel = observer(() => {
     });
   });
 
+  const [rowReorderDemo] = useState(() => {
+    return makeAutoObservable({
+      columns: {
+        label: { data: 'Item', align: 'left' }
+      },
+      columnsOrder: ['label'],
+      columnsSize: {
+        label: { width: 280, minWidth: 120, resizable: true }
+      },
+      rows: [
+        { id: 'a', data: { label: 'Alpha' } },
+        { id: 'b', data: { label: 'Bravo' } },
+        { id: 'c', data: { label: 'Charlie' } },
+        { id: 'd', data: { label: 'Delta' } }
+      ],
+      lastReorderNote: ''
+    });
+  });
+
+  const [mixedSelectionSummary, setMixedSelectionSummary] = useState('');
+
   const getComponent = (columnId, rowId) => {
     // All columns use the same custom component with tooltip
     // rowId is available but not used in this header example
@@ -187,14 +211,6 @@ const FolderExamplesPanel = observer(() => {
     }
   };
 
-  const handleFolderColumnResize = (columnId, newWidth) => {
-    console.log(`Folder column ${columnId} resized to ${newWidth}px`);
-    if (!folderData.columnsSize[columnId]) {
-      folderData.columnsSize[columnId] = {};
-    }
-    folderData.columnsSize[columnId].width = newWidth;
-  };
-
   const handleFolderDataChangeRequest = async (type, params) => {
     if (type === 'reorder') {
       // Check if it's column or row reorder based on params
@@ -245,11 +261,15 @@ const FolderExamplesPanel = observer(() => {
         
         // Simulate 90% success rate
         if (Math.random() > 0.1) {
-          // Success - update the MobX observable array
-          const newRows = [...folderData.rows];
-          const [movedRow] = newRows.splice(params.fromIndex, 1);
-          newRows.splice(params.toIndex, 0, movedRow);
-          folderData.rows.replace(newRows);
+          if (params.newOrder && Array.isArray(params.newOrder)) {
+            const byId = new Map(folderData.rows.map((r) => [r.id, r]));
+            folderData.rows.replace(params.newOrder.map((id) => byId.get(id)).filter(Boolean));
+          } else {
+            const newRows = [...folderData.rows];
+            const [movedRow] = newRows.splice(params.fromIndex, 1);
+            newRows.splice(params.toIndex, 0, movedRow);
+            folderData.rows.replace(newRows);
+          }
           folderData.loading = false;
           
           console.log('Row reorder successful');
@@ -317,6 +337,22 @@ const FolderExamplesPanel = observer(() => {
       
       return { code: 0, message: 'Column resized' };
     }
+  };
+
+  const handleRowReorderDemoRequest = async (type, params) => {
+    if (type !== 'reorder' || params.rowId === undefined) return { code: 0, message: 'noop' };
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    if (params.newOrder && Array.isArray(params.newOrder)) {
+      const byId = new Map(rowReorderDemo.rows.map((r) => [r.id, r]));
+      rowReorderDemo.rows.replace(params.newOrder.map((id) => byId.get(id)).filter(Boolean));
+    } else {
+      const next = [...rowReorderDemo.rows];
+      const [moved] = next.splice(params.fromIndex, 1);
+      next.splice(params.toIndex, 0, moved);
+      rowReorderDemo.rows.replace(next);
+    }
+    rowReorderDemo.lastReorderNote = `rowId=${params.rowId} toIndex=${params.toIndex}`;
+    return { code: 0, message: 'Row reordered' };
   };
 
   const handleRowClick = (rowId) => {
@@ -537,7 +573,6 @@ const FolderExamplesPanel = observer(() => {
           getBodyComponent={getBodyComponent}
           allowColumnReorder={true}
           allowRowReorder={true}
-          onColumnResize={handleFolderColumnResize}
           onDataChangeRequest={handleFolderDataChangeRequest}
           onRowClick={handleRowClick}
           selectedRowId={folderData.selectedRowId}
@@ -551,6 +586,33 @@ const FolderExamplesPanel = observer(() => {
               name: 'Delete'
             }
           ]}
+        />
+      </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Row reorder only</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          Drag rows to change order. Parent receives onDataChangeRequest(&apos;reorder&apos;, {'{'} rowId, fromIndex, toIndex, newOrder {'}'}). Blue line shows drop position.
+        </div>
+        <div style={{ fontSize: '12px', color: '#444', marginBottom: '6px' }}>
+          Order: {rowReorderDemo.rows.map((r) => r.data.label).join(' → ')}
+        </div>
+        {rowReorderDemo.lastReorderNote ? (
+          <div style={{ fontSize: '11px', color: '#888', marginBottom: '6px' }}>
+            Last: {rowReorderDemo.lastReorderNote}
+          </div>
+        ) : null}
+        <FolderView
+          columns={rowReorderDemo.columns}
+          columnsOrder={rowReorderDemo.columnsOrder}
+          columnsSizeInit={rowReorderDemo.columnsSize}
+          rows={rowReorderDemo.rows}
+          allowColumnReorder={false}
+          allowRowReorder={true}
+          selectionMode="none"
+          onDataChangeRequest={handleRowReorderDemoRequest}
+          bodyHeight={200}
+          showStatusBar={false}
         />
       </div>
 
@@ -645,10 +707,10 @@ const FolderExamplesPanel = observer(() => {
             Clear Selection
           </button>
           <button
+            type="button"
             onClick={() => {
               const items = mixedSelectStore.getSelectedItems();
-              console.log('Selected items:', items);
-              alert(`Selected ${items.length} item(s):\n${items.map(i => i.name).join('\n')}`);
+              setMixedSelectionSummary(items.map((i) => i.name).join(', ') || '(none)');
             }}
             style={{
               padding: '4px 8px',
@@ -663,6 +725,11 @@ const FolderExamplesPanel = observer(() => {
             Get Selected
           </button>
         </div>
+        {mixedSelectionSummary ? (
+          <div style={{ fontSize: '11px', color: '#555', marginBottom: '6px' }}>
+            {mixedSelectionSummary}
+          </div>
+        ) : null}
         <FolderView
           columns={{ 
             name: { data: 'Name', align: 'left' }, 

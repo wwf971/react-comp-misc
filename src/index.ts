@@ -1,6 +1,6 @@
 // common/src/index.ts
 export {
-    FileIconDefault,
+    FileIcon,
     DeleteIcon,
     SearchIcon,
     ClearIcon,

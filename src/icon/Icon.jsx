@@ -1,5 +1,5 @@
 import './Icon.css';
-import FileIconDefault from './FileIconDefault';
+import FileIcon from './FileIcon';
 import DeleteIcon from './DeleteIcon';
 import DragIcon from './DragIcon';
 import SearchIcon from './SearchIcon';
@@ -26,7 +26,7 @@ import PlusIcon from './PlusIcon';
 import MinusIcon from './MinusIcon';
 
 export {
-	FileIconDefault,
+	FileIcon,
 	DeleteIcon,
 	DragIcon,
 	SearchIcon,
