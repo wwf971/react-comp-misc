@@ -1,4 +1,4 @@
-// common/src/index.ts
+// common/src/index.js
 export {
     FileIcon,
     DeleteIcon,
@@ -81,7 +81,6 @@ export { default as JsonNullComp } from "./layout/json/JsonNullComp.jsx";
 export { default as JsonRaw } from "./layout/json/JsonRaw.jsx";
 
 export { JsonContextProvider, useJsonContext } from "./layout/json/JsonContext";
-export type { TypeConversionBehavior, ConversionMenuRequest } from "./layout/json/JsonContext";
 export * from "./layout/json/typeConvert";
 
 export { default as JsonCompMobx } from "./layout/json-mobx/JsonCompMobx.jsx";
@@ -89,17 +88,14 @@ export { default as JsonCompMobx } from "./layout/json-mobx/JsonCompMobx.jsx";
 export { parseYamlToJson, parseJsonString, parseStringToJson, formatJson } from "./utils/parseString";
 
 export { default as Menu } from "./menu/Menu";
-export type { MenuItem, MenuItemSingle, MenuItemSubmenu } from "./menu/Menu";
 
 export { default as MenuComp } from "./menu/MenuComp";
-export type { MenuCompItem, MenuCompItemSingle, MenuCompItemSubmenu } from "./menu/MenuComp";
 
 export { default as DatabaseSetup } from "./database/DatabaseSetup";
-export type { DatabaseSetupProps, TableConfig } from "./database/DatabaseSetup";
 export { default as TableManage } from "./database/TableManage";
-export type { TableManageProps } from "./database/TableManage";
 
 export { default as BoolSlider } from "./button/BoolSlider.jsx";
+export { default as SegmentedControl } from "./button/SegmentedControl.jsx";
 
 export { default as FolderView } from "./layout/folder/FolderView.jsx";
 export { default as FolderHeader } from "./layout/folder/Header.jsx";

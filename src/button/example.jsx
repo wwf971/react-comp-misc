@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import BoolSlider from './BoolSlider.jsx';
+import SegmentedControl from './SegmentedControl.jsx';
 
 const BoolSliderExample = () => {
   const [checked1, setChecked1] = useState(false);
@@ -31,6 +32,72 @@ const BoolSliderExample = () => {
   );
 };
 
+const multiOptions = [
+  { value: 'day', label: 'Day' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+];
+
+const SegmentedControlExample = () => {
+  const [range, setRange] = useState('week');
+  const [size, setSize] = useState('m');
+  const [preset, setPreset] = useState('b');
+
+  return (
+    <div style={{ maxWidth: '420px' }}>
+      <div style={{ marginBottom: '12px' }}>
+        <SegmentedControl
+          data={range}
+          onChange={setRange}
+          options={multiOptions}
+        />
+        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
+          Selected: {range}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <SegmentedControl
+          data={size}
+          onChange={setSize}
+          options={[
+            { value: 's', label: 'S' },
+            { value: 'm', label: 'M' },
+            { value: 'l', label: 'L' },
+            { value: 'xl', label: 'XL' },
+          ]}
+          color="#10b981"
+        />
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <SegmentedControl
+          data={preset}
+          onChange={setPreset}
+          options={[
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+            { value: 'c', label: 'C' },
+          ]}
+          color="#f59e0b"
+        />
+      </div>
+
+      <div>
+        <SegmentedControl
+          data="on"
+          onChange={() => {}}
+          options={[
+            { value: 'off', label: 'Off' },
+            { value: 'on', label: 'On' },
+          ]}
+          disabled
+        />
+      </div>
+    </div>
+  );
+};
+
 const ButtonExamplesPanel = () => {
   return (
     <div>
@@ -38,6 +105,13 @@ const ButtonExamplesPanel = () => {
         <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>BoolSlider</div>
         <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>Toggle switch for boolean values</div>
         <BoolSliderExample />
+      </div>
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>SegmentedControl</div>
+        <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>
+          Parent owns value; sliding highlight moves to the clicked option (radio-group behavior)
+        </div>
+        <SegmentedControlExample />
       </div>
     </div>
   );

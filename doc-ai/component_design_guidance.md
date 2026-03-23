@@ -39,7 +39,9 @@ export const folderExamples = {
 
 DO NOT CREATE a separate index.js or index.ts to export the component.
 
-export the component in ./src/index.ts by adding a line like:
+export the component in ./src/index.js by adding a line like:
 ```
 export { default as BoolSlider } from "./button/BoolSlider.jsx";
 ```
+
+type-only re-exports from the package root go in ./src/index.d.ts.
