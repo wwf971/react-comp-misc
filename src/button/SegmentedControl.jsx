@@ -7,6 +7,7 @@ const SegmentedControl = ({
   disabled = false,
   color = '#3b82f6',
   style = {},
+  getComp = null,
 }) => {
   const count = options.length;
   const selectedIndex = options.findIndex((opt) => opt.value === data);
@@ -74,6 +75,27 @@ const SegmentedControl = ({
           color: isSelected ? '#ffffff' : '#475569',
           fontWeight: isSelected ? 600 : 400,
         };
+        
+        let content;
+        if (opt.component && getComp) {
+          const CustomComp = getComp(opt.component);
+          if (CustomComp) {
+            const compProps = {
+              value: opt.value,
+              isSelected,
+              disabled,
+              color: itemStyle.color,
+            };
+            content = typeof CustomComp === 'function' 
+              ? <CustomComp {...compProps} />
+              : React.cloneElement(CustomComp, compProps);
+          } else {
+            content = opt.label || opt.value;
+          }
+        } else {
+          content = opt.label;
+        }
+        
         return (
           <button
             key={String(opt.value)}
@@ -88,7 +110,7 @@ const SegmentedControl = ({
               }
             }}
           >
-            {opt.label}
+            {content}
           </button>
         );
       })}

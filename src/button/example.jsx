@@ -38,10 +38,70 @@ const multiOptions = [
   { value: 'month', label: 'Month' },
 ];
 
+const IconText = ({ icon, text, isSelected, color }) => {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
+      <span style={{ fontSize: '14px' }}>{icon}</span>
+      <span>{text}</span>
+    </div>
+  );
+};
+
+const BadgeItem = ({ label, badge, isSelected, color }) => {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
+      <span>{label}</span>
+      {badge > 0 && (
+        <span style={{
+          fontSize: '10px',
+          padding: '1px 4px',
+          borderRadius: '8px',
+          backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.3)' : 'rgba(239, 68, 68, 0.8)',
+          color: '#ffffff',
+          minWidth: '16px',
+          textAlign: 'center',
+        }}>
+          {badge}
+        </span>
+      )}
+    </div>
+  );
+};
+
 const SegmentedControlExample = () => {
   const [range, setRange] = useState('week');
   const [size, setSize] = useState('m');
   const [preset, setPreset] = useState('b');
+  const [view, setView] = useState('grid');
+  const [section, setSection] = useState('inbox');
+
+  const notificationCounts = {
+    inbox: 5,
+    sent: 0,
+    archive: 12,
+  };
+
+  const getComponent = (compName) => {
+    if (compName === 'GridIcon') {
+      return (props) => <IconText icon="⊞" text="Grid" {...props} />;
+    }
+    if (compName === 'ListIcon') {
+      return (props) => <IconText icon="☰" text="List" {...props} />;
+    }
+    if (compName === 'TableIcon') {
+      return (props) => <IconText icon="⊟" text="Table" {...props} />;
+    }
+    if (compName === 'InboxBadge') {
+      return (props) => <BadgeItem label="Inbox" badge={notificationCounts.inbox} {...props} />;
+    }
+    if (compName === 'SentBadge') {
+      return (props) => <BadgeItem label="Sent" badge={notificationCounts.sent} {...props} />;
+    }
+    if (compName === 'ArchiveBadge') {
+      return (props) => <BadgeItem label="Archive" badge={notificationCounts.archive} {...props} />;
+    }
+    return null;
+  };
 
   return (
     <div style={{ maxWidth: '420px' }}>
@@ -81,6 +141,39 @@ const SegmentedControlExample = () => {
           ]}
           color="#f59e0b"
         />
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <SegmentedControl
+          data={view}
+          onChange={setView}
+          options={[
+            { value: 'grid', component: 'GridIcon' },
+            { value: 'list', component: 'ListIcon' },
+            { value: 'table', component: 'TableIcon' },
+          ]}
+          getComp={getComponent}
+        />
+        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
+          View mode: {view}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <SegmentedControl
+          data={section}
+          onChange={setSection}
+          options={[
+            { value: 'inbox', component: 'InboxBadge' },
+            { value: 'sent', component: 'SentBadge' },
+            { value: 'archive', component: 'ArchiveBadge' },
+          ]}
+          getComp={getComponent}
+          color="#8b5cf6"
+        />
+        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
+          Section: {section}
+        </div>
       </div>
 
       <div>
