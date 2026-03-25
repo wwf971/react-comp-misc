@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import KeyValues from './KeyValues.jsx';
@@ -20,12 +20,12 @@ const DictExamplesPanel = observer(() => {
         { 
           key: 'username', 
           value: 'john_doe',
-          valueComp: EditableValueWithInfo
+          valueCompName: 'editableWithInfo'
         },
         { 
           key: 'email',
           value: 'john@example.com',
-          valueComp: EditableValueWithInfo
+          valueCompName: 'editableWithInfo'
         },
         { 
           key: 'status', 
@@ -34,14 +34,14 @@ const DictExamplesPanel = observer(() => {
         { 
           key: 'role',
           value: 'Administrator',
-          keyComp: EditableValueWithInfo,
-          valueComp: EditableValueWithInfo
+          keyCompName: 'editableWithInfo',
+          valueCompName: 'editableWithInfo'
         }
       ],
       dataWithActions: [
-        { key: 'field_1', value: 'value 1' },
-        { key: 'field_2', value: 'value 2' },
-        { key: 'field_3', value: 'value 3' }
+        { key: 'field_1', value: 'value 1', valueCompName: 'editableWithActions' },
+        { key: 'field_2', value: 'value 2', valueCompName: 'editableWithActions' },
+        { key: 'field_3', value: 'value 3', valueCompName: 'editableWithActions' }
       ]
     };
     return makeAutoObservable(store, {}, { deep: true });
@@ -94,7 +94,8 @@ const DictExamplesPanel = observer(() => {
     runInAction(() => {
       store.dataWithActions.push({ 
         key: `field_${store.dataWithActions.length + 1}`, 
-        value: '' 
+        value: '',
+        valueCompName: 'editableWithActions'
       });
     });
   };
@@ -107,14 +108,16 @@ const DictExamplesPanel = observer(() => {
         case 'addEntryAbove':
           store.dataWithActions.splice(index, 0, { 
             key: `field_${Date.now()}`, 
-            value: '' 
+            value: '',
+            valueCompName: 'editableWithActions'
           });
           break;
           
         case 'addEntryBelow':
           store.dataWithActions.splice(index + 1, 0, { 
             key: `field_${Date.now()}`, 
-            value: '' 
+            value: '',
+            valueCompName: 'editableWithActions'
           });
           break;
           
@@ -133,26 +136,33 @@ const DictExamplesPanel = observer(() => {
     });
   };
 
-  const dataWithAdapter = store.dataWithActions.map((item, idx) => ({
-    ...item,
-    valueComp: (props) => (
-      <EditableValueComp
-        data={props.data}
-        configKey={`${props.field}_${props.index}`}
-        onUpdate={async (key, val) => {
-          runInAction(() => {
-            item[props.field] = val;
-          });
-          return { code: 0, message: 'Updated' };
-        }}
-        onAction={handleAction}
-        valueType="text"
-        isNotSet={false}
-        index={props.index}
-        field={props.field}
-      />
-    )
-  }));
+  const EditableValueWithActionsComp = ({ data, field, index, itemRef }) => (
+    <EditableValueComp
+      data={data}
+      configKey={`${field}_${index}`}
+      onUpdate={async (key, val) => {
+        runInAction(() => {
+          itemRef[field] = val;
+        });
+        return { code: 0, message: 'Updated' };
+      }}
+      onAction={handleAction}
+      valueType="text"
+      isNotSet={false}
+      index={index}
+      field={field}
+    />
+  );
+
+  const getComp = useCallback((name) => {
+    if (name === 'editableWithInfo') {
+      return EditableValueWithInfo;
+    }
+    if (name === 'editableWithActions') {
+      return EditableValueWithActionsComp;
+    }
+    return null;
+  }, [handleAction]);
 
   return (
     <div style={{ maxWidth: '900px', padding: '12px' }}>
@@ -228,6 +238,7 @@ const DictExamplesPanel = observer(() => {
       <KeyValuesComp 
         data={store.dataWithComp}
         isValueEditable={true}
+        getComp={getComp}
       />
 
       <div style={{ marginTop: '24px', marginBottom: '16px', fontSize: '14px', fontWeight: 'bold' }}>
@@ -240,8 +251,9 @@ const DictExamplesPanel = observer(() => {
       
       <div>
         <KeyValuesComp 
-          data={dataWithAdapter}
+          data={store.dataWithActions}
           isValueEditable={true}
+          getComp={getComp}
         />
         
         <div style={{ 

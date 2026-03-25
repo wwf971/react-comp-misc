@@ -156,13 +156,14 @@ const MemoizedDefaultTextComp = React.memo(DefaultTextComp, (prev, next) => {
  * - Backward compatible: works with plain arrays and onChangeAttempt callback
  * 
  * @param {Object} props
- * @param {Array<{key: any, keyComp: React.Component, value: any, valueComp: React.Component}>} props.data - Array of key-value pairs with optional custom components (can be observable)
+ * @param {Array<{key: any, keyCompName?: string, value: any, valueCompName?: string}>} props.data - Array of key-value pairs with optional custom component names (can be observable)
  * @param {boolean} props.isEditable - Whether the data is editable (default: true)
  * @param {boolean} props.isKeyEditable - Whether keys are editable (default: false)
  * @param {boolean} props.isValueEditable - Whether values are editable (default: true)
  * @param {boolean} props.alignColumn - Whether to align key/value columns (default: true)
  * @param {string} props.keyColWidth - Width of key column: 'min' for auto-calculated, or fixed like '200px' (default: 'min')
  * @param {Function} props.onChangeAttempt - Callback when user attempts to change a key or value: (index, field, newValue) => void
+ * @param {Function} props.getComp - Resolve component by name: (name, context) => React.Component | null
  */
 const KeyValuesCompInner = ({ 
   data = [], 
@@ -171,7 +172,8 @@ const KeyValuesCompInner = ({
   isValueEditable = true,
   alignColumn = true,
   keyColWidth = 'min',
-  onChangeAttempt 
+  onChangeAttempt,
+  getComp
 }) => {
   const [keyColWidthValue, setKeyColWidthValue] = useState(null);
   const keyRefs = useRef([]);
@@ -183,6 +185,13 @@ const KeyValuesCompInner = ({
   // Determine if a field is actually editable
   const canEditKey = isEditable && isKeyEditable;
   const canEditValue = isEditable && isValueEditable;
+  const resolveComp = useCallback((compName, context) => {
+    if (!compName || !getComp) {
+      return MemoizedDefaultTextComp;
+    }
+    const resolvedComp = getComp(compName, context);
+    return resolvedComp || MemoizedDefaultTextComp;
+  }, [getComp]);
 
   // Measure the natural width of each key cell and find the maximum
   // Keeps measuring until width stabilizes (for custom components that take time to render)
@@ -334,9 +343,10 @@ const KeyValuesCompInner = ({
       ) : (
         <div className="keyvalues-list">
           {data.map((item, index) => {
-            // Use custom component or default (use memoized version)
-            const KeyComp = item.keyComp || MemoizedDefaultTextComp;
-            const ValueComp = item.valueComp || MemoizedDefaultTextComp;
+            const keyContext = { item, index, field: 'key' };
+            const valueContext = { item, index, field: 'value' };
+            const KeyComp = resolveComp(item.keyCompName, keyContext);
+            const ValueComp = resolveComp(item.valueCompName, valueContext);
 
             return (
               <div 
