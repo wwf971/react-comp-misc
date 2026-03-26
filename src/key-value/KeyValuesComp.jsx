@@ -164,27 +164,70 @@ const MemoizedDefaultTextComp = React.memo(DefaultTextComp, (prev, next) => {
  * @param {string} props.keyColWidth - Width of key column: 'min' for auto-calculated, or fixed like '200px' (default: 'min')
  * @param {Function} props.onChangeAttempt - Callback when user attempts to change a key or value: (index, field, newValue) => void
  * @param {Function} props.getComp - Resolve component by name: (name, context) => React.Component | null
+ * @param {boolean} props.isDividerDraggable - Whether the key/value divider line can be dragged to resize columns (default: false)
+ * @param {boolean} props.isWrap - Whether cell content wraps to the next line when it overflows; false clips with ellipsis (default: false)
  */
 const KeyValuesCompInner = ({ 
   data = [], 
   isEditable = true, 
   isKeyEditable = false, 
   isValueEditable = true,
+  isDividerDraggable = false,
+  isWrap = false,
   alignColumn = true,
   keyColWidth = 'min',
   onChangeAttempt,
-  getComp
+  getComp,
 }) => {
   const [keyColWidthValue, setKeyColWidthValue] = useState(null);
+  const [isDividerDragging, setIsDividerDragging] = useState(false);
   const keyRefs = useRef([]);
+  const listRef = useRef(null);
   const resizeObserverRef = useRef(null);
   const measureTimeoutRef = useRef(null);
   const lastMeasuredWidthRef = useRef(0);
   const measureAttemptsRef = useRef(0);
+  const isDraggingRef = useRef(false);
+  const dragHandlersRef = useRef({ onMove: null, onUp: null });
 
-  // Determine if a field is actually editable
   const canEditKey = isEditable && isKeyEditable;
   const canEditValue = isEditable && isValueEditable;
+  const cellOverflowClass = isWrap ? 'cell-wrap' : 'cell-clip';
+  const startDividerDrag = useCallback((event) => {
+    event.preventDefault();
+    const list = listRef.current;
+    if (!list) return;
+    isDraggingRef.current = true;
+    setIsDividerDragging(true);
+
+    const onMove = (moveEvent) => {
+      const rect = list.getBoundingClientRect();
+      const newWidth = moveEvent.clientX - rect.left;
+      const clamped = Math.max(40, Math.min(rect.width - 40, newWidth));
+      setKeyColWidthValue(`${Math.round(clamped)}px`);
+    };
+
+    const onUp = () => {
+      isDraggingRef.current = false;
+      setIsDividerDragging(false);
+      window.removeEventListener('mousemove', dragHandlersRef.current.onMove);
+      window.removeEventListener('mouseup', dragHandlersRef.current.onUp);
+      dragHandlersRef.current = { onMove: null, onUp: null };
+    };
+
+    dragHandlersRef.current = { onMove, onUp };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      const { onMove, onUp } = dragHandlersRef.current;
+      if (onMove) window.removeEventListener('mousemove', onMove);
+      if (onUp) window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+
   const resolveComp = useCallback((compName, context) => {
     if (!compName || !getComp) {
       return MemoizedDefaultTextComp;
@@ -291,9 +334,8 @@ const KeyValuesCompInner = ({
     // This will be refined by the measurement below
     setKeyColWidthValue('150px');
 
-    // Set up ResizeObserver to re-measure when content changes
     resizeObserverRef.current = new ResizeObserver(() => {
-      // Debounce the measurement
+      if (isDraggingRef.current) return;
       if (measureTimeoutRef.current) {
         clearTimeout(measureTimeoutRef.current);
       }
@@ -341,7 +383,17 @@ const KeyValuesCompInner = ({
       {data.length === 0 ? (
         <div className="keyvalues-empty">No data</div>
       ) : (
-        <div className="keyvalues-list">
+        <div
+          className={`keyvalues-list${isDividerDragging ? ' divider-dragging' : ''}`}
+          ref={listRef}
+        >
+          {isDividerDraggable && alignColumn && keyColWidthValue && (
+            <div
+              className={`keyvalues-divider-handle${isDividerDragging ? ' dragging' : ''}`}
+              style={{ left: keyColWidthValue }}
+              onMouseDown={startDividerDrag}
+            />
+          )}
           {data.map((item, index) => {
             const keyContext = { item, index, field: 'key' };
             const valueContext = { item, index, field: 'value' };
@@ -359,7 +411,7 @@ const KeyValuesCompInner = ({
                 }}
               >
                 <div 
-                  className={`keyvalues-cell key-cell ${canEditKey ? 'editable' : ''}`}
+                  className={`keyvalues-cell key-cell ${cellOverflowClass} ${canEditKey ? 'editable' : ''}`}
                   style={alignColumn && keyColWidthValue ? { width: keyColWidthValue, flexShrink: 0 } : {}}
                 >
                   <span ref={(el) => { keyRefs.current[index] = el; }}>
@@ -374,7 +426,7 @@ const KeyValuesCompInner = ({
                   </span>
                 </div>
                 <div 
-                  className={`keyvalues-cell value-cell ${canEditValue ? 'editable' : ''}`}
+                  className={`keyvalues-cell value-cell ${cellOverflowClass} ${canEditValue ? 'editable' : ''}`}
                   style={alignColumn ? { flex: 1 } : {}}
                 >
                   <ValueComp 

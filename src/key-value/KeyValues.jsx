@@ -25,7 +25,9 @@ const KeyValues = ({
   isValueEditable = true,
   alignColumn = true,
   keyColWidth = 'min',
-  onChangeAttempt
+  onChangeAttempt,
+  isWrap = false,
+  isDividerDraggable = false
 }) => {
   return (
     <KeyValuesComp
@@ -36,9 +38,10 @@ const KeyValues = ({
       alignColumn={alignColumn}
       keyColWidth={keyColWidth}
       onChangeAttempt={onChangeAttempt}
+      isWrap={isWrap}
+      isDividerDraggable={isDividerDraggable}
     />
   );
 };
 
 export default KeyValues;
-

@@ -284,6 +284,46 @@ const DictExamplesPanel = observer(() => {
         </div>
       </div>
 
+      <div style={{ marginTop: '24px', marginBottom: '8px', fontSize: '14px', fontWeight: 'bold' }}>
+        KeyValues - Content Overflow: wrap vs clip
+      </div>
+
+      <div style={{ marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+        Clip (default)
+      </div>
+      <KeyValues
+        data={[
+          { key: 'short_key', value: 'Short value' },
+          { key: 'a_very_long_key_name_that_overflows', value: 'A value that is also quite long and would normally overflow the available cell width' }
+        ]}
+        keyColWidth="120px"
+      />
+
+      <div style={{ marginTop: '12px', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+        Wrap (isWrap=true)
+      </div>
+      <KeyValues
+        data={[
+          { key: 'short_key', value: 'Short value' },
+          { key: 'a_very_long_key_name_that_overflows', value: 'A value that is also quite long and would normally overflow the available cell width' }
+        ]}
+        keyColWidth="120px"
+        isWrap={true}
+      />
+
+      <div style={{ marginTop: '24px', marginBottom: '8px', fontSize: '14px', fontWeight: 'bold' }}>
+        KeyValuesComp - Draggable Divider
+      </div>
+
+      <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
+        Hover the divider line and drag to resize columns
+      </div>
+      <KeyValuesComp
+        data={store.basicData}
+        isKeyEditable={true}
+        isDividerDraggable={true}
+      />
+
       <div style={{ marginTop: '16px', padding: '8px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '2px', fontSize: '12px' }}>
         <strong>Current Data:</strong>
         <pre style={{ margin: '4px 0', fontSize: '11px' }}>{JSON.stringify(store.basicData, null, 2)}</pre>

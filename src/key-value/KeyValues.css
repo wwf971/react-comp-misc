@@ -9,6 +9,37 @@
 .keyvalues-list {
   width: 100%;
   font-size: 13px;
+  position: relative;
+}
+
+.keyvalues-list.divider-dragging {
+  user-select: none;
+}
+
+.keyvalues-divider-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  transform: translateX(-50%);
+  cursor: col-resize;
+  z-index: 2;
+}
+
+.keyvalues-divider-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.keyvalues-divider-handle:hover::after,
+.keyvalues-divider-handle.dragging::after {
+  background: #0078d7;
 }
 
 .keyvalues-row {
@@ -49,13 +80,32 @@
 .key-cell {
   font-weight: 500;
   color: #1a1a1a;
+}
+
+.key-cell.cell-clip {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.key-cell.cell-wrap {
+  white-space: normal;
+  overflow: visible;
+}
+
 .value-cell {
   color: #333333;
+}
+
+.value-cell.cell-clip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.value-cell.cell-wrap {
+  white-space: normal;
+  overflow: visible;
 }
 
 .keyvalues-text {
