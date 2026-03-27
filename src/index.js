@@ -65,7 +65,9 @@ export { default as KeyValuesComp } from "./key-value/KeyValuesComp.jsx";
 
 export { default as EditableValueComp } from "./layout/value-comp/EditableValueComp.jsx";
 export { default as EditableValueWithInfo } from "./layout/value-comp/EditableValueWithInfo.jsx";
+export { default as SelectableValue } from "./layout/value-comp/SelectableValue.jsx";
 export { default as SelectableValueComp } from "./layout/value-comp/SelectableValueComp.jsx";
+export { default as SearchableValue } from "./layout/value-comp/SearchableValue.jsx";
 export { default as SearchableValueComp } from "./layout/value-comp/SearchableValueComp.jsx";
 export { default as PanelToggle } from "./panel/PanelToggle.jsx";
 export { default as PanelDual } from "./panel/PanelDual.jsx";

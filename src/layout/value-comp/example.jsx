@@ -26,6 +26,52 @@ const mockLanguages = [
   { value: 'rust', label: 'Rust' },
 ];
 
+const customSelectableOptions = [
+  { value: 'fast', label: 'Fast', description: 'Lower latency path', tone: 'ok', compName: 'customSelectableItem' },
+  { value: 'balanced', label: 'Balanced', description: 'Default path', tone: 'info', compName: 'customSelectableItem' },
+  { value: 'safe', label: 'Safe', description: 'Strict path', tone: 'warn', compName: 'customSelectableItem' }
+];
+
+const customSearchItems = [
+  { value: 'tokyo', label: 'Tokyo', description: 'Japan', tone: 'ok', compName: 'customDropDownItem' },
+  { value: 'seoul', label: 'Seoul', description: 'Korea', tone: 'info', compName: 'customDropDownItem' },
+  { value: 'berlin', label: 'Berlin', description: 'Selectable and Searchable with getComp callGermany', tone: 'warn', compName: 'customDropDownItem' },
+  { value: 'osaka', label: 'Osaka', description: 'Japan', tone: 'neutral', compName: 'customDropDownItem' }
+];
+
+const CustomDropdownItem = ({ data }) => {
+  const item = data;
+  const tone = item?.tone || 'neutral';
+  const toneColorMap = {
+    neutral: '#999',
+    ok: '#2e7d32',
+    info: '#1565c0',
+    warn: '#ef6c00'
+  };
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+      <span
+        style={{
+          width: '6px',
+          height: '6px',
+          borderRadius: '50%',
+          background: toneColorMap[tone] || toneColorMap.neutral,
+          flexShrink: 0
+        }}
+      />
+      <span style={{ fontSize: '12px', color: '#333' }}>{item?.label || item?.value}</span>
+      {item?.description ? <span style={{ fontSize: '11px', color: '#777' }}>{item.description}</span> : null}
+    </div>
+  );
+};
+
+const getCustomComp = (name) => {
+  if (name === 'customSelectableItem' || name === 'customDropDownItem') {
+    return CustomDropdownItem;
+  }
+  return null;
+};
+
 // Example 1: Basic EditableValueComp
 const EditableValueExample = () => {
   const [value, setValue] = useState('Hello World');
@@ -115,7 +161,7 @@ const SearchableValueAnyExample = () => {
   const handleSearch = async (searchValue, version) => {
     console.log('Search:', searchValue, 'version:', version);
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Filter cities based on search value
     const filtered = mockCities.filter(city => 
@@ -160,7 +206,7 @@ const SearchableValueStrictExample = () => {
 
   const handleSearch = async (searchValue, version) => {
     console.log('Search:', searchValue, 'version:', version);
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     const filtered = mockCities.filter(city => 
       city.label.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -268,7 +314,64 @@ const SearchableValueRaceConditionExample = () => {
   );
 };
 
-// Example 7: EditableValueWithInfo
+// Example 7: callback-based custom dropdown item components
+const ValueCompCustomItemExample = () => {
+  const [selectableValue, setSelectableValue] = useState('balanced');
+  const [searchableValue, setSearchableValue] = useState('tokyo');
+
+  const handleUpdateSelectable = async (_configKey, newValue) => {
+    setSelectableValue(newValue);
+    return { code: 0, message: 'Success' };
+  };
+
+  const handleUpdateSearchable = async (_configKey, newValue) => {
+    setSearchableValue(newValue);
+    return { code: 0, message: 'Success' };
+  };
+
+  const handleSearch = async (searchValue) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const lower = (searchValue || '').toLowerCase();
+    const filtered = customSearchItems.filter(item => {
+      return item.label.toLowerCase().includes(lower) || item.value.toLowerCase().includes(lower);
+    });
+    return { code: 0, data: filtered };
+  };
+
+  return (
+    <div style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '8px' }}>
+      <h4>Selectable and Searchable with getComp callback</h4>
+      <p style={{ fontSize: '11px', color: '#666', margin: '3px 0' }}>
+        Dropdown items are resolved by component name through getComp(name, context), not by storing component instances in data.
+      </p>
+      <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div>
+          <label style={{ marginRight: '6px', fontWeight: 'bold' }}>Mode:</label>
+          <SelectableValueComp
+            data={selectableValue}
+            configKey="example.custom.selectable"
+            onUpdate={handleUpdateSelectable}
+            options={customSelectableOptions}
+            getComp={getCustomComp}
+          />
+        </div>
+        <div>
+          <label style={{ marginRight: '6px', fontWeight: 'bold' }}>City:</label>
+          <SearchableValueComp
+            data={searchableValue}
+            configKey="example.custom.searchable"
+            onUpdate={handleUpdateSearchable}
+            onSearch={handleSearch}
+            getComp={getCustomComp}
+            strictValidation={false}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Example 8: EditableValueWithInfo
 const EditableValueWithInfoExample = () => {
   const [value, setValue] = useState('Sample Value');
 
@@ -313,6 +416,7 @@ const ValueCompExamples = () => {
       <SearchableValueAnyExample />
       <SearchableValueStrictExample />
       <SearchableValueRaceConditionExample />
+      <ValueCompCustomItemExample />
       <EditableValueWithInfoExample />
     </div>
   );

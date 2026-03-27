@@ -106,3 +106,64 @@
   z-index: 100;
   pointer-events: none;
 }
+
+.tab-example-value-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #e6e6e6;
+  border-radius: 2px;
+  background: #fff;
+}
+
+.tab-example-value-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tab-example-value-title {
+  min-width: 70px;
+  font-size: 12px;
+  color: #666;
+}
+
+.tab-example-value-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tab-example-value-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tab-example-value-dot-neutral {
+  background: #999;
+}
+
+.tab-example-value-dot-ok {
+  background: #2e7d32;
+}
+
+.tab-example-value-dot-info {
+  background: #1565c0;
+}
+
+.tab-example-value-dot-warn {
+  background: #ef6c00;
+}
+
+.tab-example-value-label {
+  font-size: 12px;
+  color: #333;
+}
+
+.tab-example-value-desc {
+  font-size: 11px;
+  color: #777;
+}

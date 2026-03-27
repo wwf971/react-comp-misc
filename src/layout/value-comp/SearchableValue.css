@@ -65,6 +65,18 @@
   margin-top: 2px;
 }
 
+.searchable-dropdown-empty {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px;
+}
+
+.searchable-dropdown-empty-text {
+  font-size: 12px;
+  color: #9a9a9a;
+}
+
 .validation-status-icon {
   display: inline-flex;
   align-items: center;

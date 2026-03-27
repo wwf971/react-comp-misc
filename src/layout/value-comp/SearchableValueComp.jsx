@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SpinningCircle, EditIcon } from '@wwf971/react-comp-misc';
 import CrossIcon from '../../icon/CrossIcon.jsx';
 import SuccessIcon from '../../icon/SuccessIcon.jsx';
@@ -35,6 +35,8 @@ const SearchableValueComp = ({
   onUpdate,
   onSearch,
   onValidate,
+  getComp,
+  searchItemCompNameField = 'compName',
   strictValidation = false,
   searchDebounce = 300,
   validationDebounce = 300
@@ -48,6 +50,7 @@ const SearchableValueComp = ({
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isShowingNoResults, setIsShowingNoResults] = useState(false);
   const [validationStatus, setValidationStatus] = useState(null); // null, 'valid', 'invalid'
   
   const editRef = useRef(null);
@@ -60,6 +63,10 @@ const SearchableValueComp = ({
   const searchTimerRef = useRef(null);
   const validationTimerRef = useRef(null);
   const isSelectingFromDropdownRef = useRef(false);
+  const resolveResultComp = useCallback((compName, context) => {
+    if (!compName || !getComp) return null;
+    return getComp(compName, context) || null;
+  }, [getComp]);
 
   const handleEditClick = () => {
     if (isSubmitting || isShowingError) return;
@@ -117,6 +124,7 @@ const SearchableValueComp = ({
     if (!value || value.trim() === '') {
       setSearchResults([]);
       setShowDropdown(false);
+      setIsShowingNoResults(false);
       return;
     }
 
@@ -129,6 +137,10 @@ const SearchableValueComp = ({
       const currentPeriod = editPeriodRef.current;
       const currentVersion = ++searchVersionRef.current;
       setIsSearching(true);
+      setSearchResults([]);
+      setSelectedIndex(-1);
+      setIsShowingNoResults(false);
+      setShowDropdown(true);
 
       try {
         const result = await onSearch(value, currentVersion);
@@ -140,10 +152,17 @@ const SearchableValueComp = ({
             if (currentIsEditing) {
               if (result.code === 0 && Array.isArray(result.data)) {
                 setSearchResults(result.data);
-                setShowDropdown(result.data.length > 0);
                 setSelectedIndex(-1);
+                if (result.data.length > 0) {
+                  setIsShowingNoResults(false);
+                  setShowDropdown(true);
+                } else {
+                  setIsShowingNoResults(true);
+                  setShowDropdown(true);
+                }
               } else {
                 setSearchResults([]);
+                setIsShowingNoResults(false);
                 setShowDropdown(false);
               }
             }
@@ -158,6 +177,7 @@ const SearchableValueComp = ({
       } catch (error) {
         console.error('Search failed:', error);
         setSearchResults([]);
+        setIsShowingNoResults(false);
         setShowDropdown(false);
         setIsSearching(false);
       }
@@ -211,6 +231,10 @@ const SearchableValueComp = ({
     if (!editRef.current || !isEditing) return;
     
     const currentValue = editRef.current.textContent;
+    setIsShowingNoResults(false);
+    setShowDropdown(false);
+    setSearchResults([]);
+    setSelectedIndex(-1);
     
     // Trigger search
     performSearch(currentValue);
@@ -395,17 +419,66 @@ const SearchableValueComp = ({
           onMouseDown={(e) => e.preventDefault()}
         >
           {searchResults.map((result, idx) => (
-            <div
-              key={idx}
-              className={`searchable-dropdown-item ${idx === selectedIndex ? 'selected' : ''}`}
-              onClick={() => handleSelectFromDropdown(result.value)}
-            >
-              <div className="searchable-dropdown-value">{result.label || result.value}</div>
-              {result.description && (
-                <div className="searchable-dropdown-desc">{result.description}</div>
-              )}
-            </div>
+            (() => {
+              const context = { result, index: idx, mode: 'searchable' };
+              const ResultComp = resolveResultComp(result[searchItemCompNameField], context);
+
+              if (ResultComp) {
+                return (
+                  <div
+                    key={idx}
+                    className={`searchable-dropdown-item ${idx === selectedIndex ? 'selected' : ''}`}
+                    onClick={() => handleSelectFromDropdown(result.value)}
+                  >
+                    <ResultComp
+                      data={result}
+                      result={result}
+                      isSelected={idx === selectedIndex}
+                      mode="searchable"
+                      index={idx}
+                      context={context}
+                    />
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={idx}
+                  className={`searchable-dropdown-item ${idx === selectedIndex ? 'selected' : ''}`}
+                  onClick={() => handleSelectFromDropdown(result.value)}
+                >
+                  <div className="searchable-dropdown-value">{result.label || result.value}</div>
+                  {result.description && (
+                    <div className="searchable-dropdown-desc">{result.description}</div>
+                  )}
+                </div>
+              );
+            })()
           ))}
+        </div>
+      )}
+      {showDropdown && isSearching && (
+        <div
+          ref={dropdownRef}
+          className="searchable-dropdown"
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <div className="searchable-dropdown-empty">
+            <SpinningCircle width={13} height={13} color="#999" />
+            <span className="searchable-dropdown-empty-text">Searching, waiting for server response...</span>
+          </div>
+        </div>
+      )}
+      {showDropdown && !isSearching && isShowingNoResults && (
+        <div
+          ref={dropdownRef}
+          className="searchable-dropdown"
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <div className="searchable-dropdown-empty">
+            <span className="searchable-dropdown-empty-text">No matching items</span>
+          </div>
         </div>
       )}
       

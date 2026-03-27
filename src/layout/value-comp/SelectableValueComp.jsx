@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { SpinningCircle, EditIcon } from '@wwf971/react-comp-misc';
 import './EditableValue.css';
 import './SearchableValue.css';
@@ -24,7 +24,9 @@ const SelectableValueComp = ({
   isNotSet = false, 
   configKey,
   onUpdate,
-  options = []
+  options = [],
+  getComp,
+  optionCompNameField = 'compName'
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -35,6 +37,22 @@ const SelectableValueComp = ({
   const editRef = useRef(null);
   const dropdownRef = useRef(null);
   const originalValueRef = useRef('');
+
+  const resolveOptionComp = useCallback((compName, context) => {
+    if (!compName || !getComp) return null;
+    return getComp(compName, context) || null;
+  }, [getComp]);
+
+  const getOptionByValue = useCallback((value) => {
+    return options.find(opt => opt.value === value) || null;
+  }, [options]);
+
+  const getOptionLabel = useCallback((option, fallbackValue) => {
+    if (!option) return fallbackValue;
+    if (option.label != null) return option.label;
+    if (option.value != null) return option.value;
+    return fallbackValue;
+  }, []);
 
   const handleEditClick = () => {
     if (isSubmitting || isShowingError) return;
@@ -167,14 +185,14 @@ const SelectableValueComp = ({
   // Find current option label for data prop
   const getCurrentLabel = () => {
     if (isNotSet && !data) return 'NOT SET';
-    const option = options.find(opt => opt.value === data);
-    return option ? option.label : data;
+    const option = getOptionByValue(data);
+    return getOptionLabel(option, data);
   };
 
   // Find label for a specific value
   const getCurrentLabelForValue = (value) => {
-    const option = options.find(opt => opt.value === value);
-    return option ? option.label : value;
+    const option = getOptionByValue(value);
+    return getOptionLabel(option, value);
   };
 
   return (
@@ -203,16 +221,42 @@ const SelectableValueComp = ({
           onMouseDown={(e) => e.preventDefault()}
         >
           {options.map((option, idx) => (
-            <div
-              key={idx}
-              className={`searchable-dropdown-item ${idx === selectedIndex ? 'selected' : ''}`}
-              onClick={() => handleSelectFromDropdown(option.value)}
-            >
-              <div className="searchable-dropdown-value">{option.label}</div>
-              {option.description && (
-                <div className="searchable-dropdown-desc">{option.description}</div>
-              )}
-            </div>
+            (() => {
+              const context = { option, index: idx, mode: 'selectable' };
+              const OptionComp = resolveOptionComp(option[optionCompNameField], context);
+
+              if (OptionComp) {
+                return (
+                  <div
+                    key={idx}
+                    className={`searchable-dropdown-item ${idx === selectedIndex ? 'selected' : ''}`}
+                    onClick={() => handleSelectFromDropdown(option.value)}
+                  >
+                    <OptionComp
+                      data={option}
+                      option={option}
+                      isSelected={idx === selectedIndex}
+                      mode="selectable"
+                      index={idx}
+                      context={context}
+                    />
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={idx}
+                  className={`searchable-dropdown-item ${idx === selectedIndex ? 'selected' : ''}`}
+                  onClick={() => handleSelectFromDropdown(option.value)}
+                >
+                  <div className="searchable-dropdown-value">{getOptionLabel(option, option.value)}</div>
+                  {option.description && (
+                    <div className="searchable-dropdown-desc">{option.description}</div>
+                  )}
+                </div>
+              );
+            })()
           ))}
         </div>
       )}
