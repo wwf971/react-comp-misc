@@ -58,7 +58,11 @@ export { default as ConfigPanelWithTabs } from "./config/ConfigTab.jsx";
 export { default as ConfigPanelWithTabGroups } from "./config/ConfigTabGroup.jsx";
 export { default as ConfigPanelWithSubtabs } from "./config/ConfigSubtab.jsx";
 
-export { default as PathBar } from "./path/PathBar.tsx";
+export {
+  default as PathBar,
+  defaultParsePathStrToPathData,
+  buildCanonicalPathStrFromSegs
+} from "./path/PathBar.jsx";
 
 export { default as KeyValues } from "./key-value/KeyValues.jsx";
 export { default as KeyValuesComp } from "./key-value/KeyValuesComp.jsx";

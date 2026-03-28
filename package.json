@@ -12,7 +12,7 @@
     "./TabsOnTop": "./src/layout/tab/TabsOnTop.tsx",
     "./TabsOnTop.css": "./src/layout/tab/TabsOnTop.css",
     "./folder.css": "./src/layout/folder/folder.css",
-    "./PathBar": "./src/path/PathBar.tsx",
+    "./PathBar": "./src/path/PathBar.jsx",
     "./PathBar.css": "./src/path/PathBar.css",
     "./KeyValues": "./src/dict/KeyValues.jsx",
     "./KeyValuesComp": "./src/dict/KeyValuesComp.jsx",

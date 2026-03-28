@@ -1,0 +1,94 @@
+.path-example-root {
+  padding: 20px;
+  max-width: 700px;
+}
+
+.path-example-section-title {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.path-example-section-title-spaced {
+  margin-top: 30px;
+}
+
+.path-example-server-line {
+  margin-top: 4px;
+  font-size: 12px;
+  min-height: 16px;
+}
+
+.path-example-server-line-placeholder {
+  min-height: 16px;
+}
+
+.path-example-server-line-success {
+  color: #2e7d32;
+}
+
+.path-example-server-line-failure {
+  color: #c62828;
+}
+
+.path-example-controls {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.path-example-new-segment-input {
+  padding: 6px 8px;
+  min-width: 160px;
+}
+
+.path-example-button {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.path-example-activity-note {
+  margin-top: 15px;
+  padding: 10px;
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.path-example-tips {
+  margin-top: 15px;
+  padding: 10px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.path-example-tips-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.path-example-tips-body {
+  margin-left: 12px;
+}
+
+.path-example-current-path {
+  margin-top: 10px;
+  font-size: 12px;
+  background: #f0f0f0;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.path-example-current-path-label {
+  font-weight: 600;
+}
+
+.path-example-current-path-code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}

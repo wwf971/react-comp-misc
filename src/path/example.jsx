@@ -1,13 +1,32 @@
 import { useState } from 'react';
-import PathBar from './PathBar.tsx';
+import PathBar from './PathBar.jsx';
+import './example.css';
+
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const ServerResponseLine = ({ value }) => {
+  if (value == null) {
+    return <div className="path-example-server-line path-example-server-line-placeholder" />;
+  }
+  const className = value.ok
+    ? 'path-example-server-line path-example-server-line-success'
+    : 'path-example-server-line path-example-server-line-failure';
+  return <div className={className}>{value.text}</div>;
+};
 
 export const pathExamples = {
-  'PathBar': {
+  PathBar: {
     component: PathBar,
-    description: 'Pure path bar component for displaying hierarchical paths with clickable segments',
+    description:
+      'Path bar with segment navigation, string edit (Enter or blur to commit), async commit and lock spinner',
     example: () => {
       const PathBarTest = () => {
-        const [message, setMessage] = useState('');
+        const [activityNote, setActivityNote] = useState('');
+        const [newSegmentName, setNewSegmentName] = useState('');
+        const [emptyDemoPath, setEmptyDemoPath] = useState({ segments: [] });
+        const [serverWindows, setServerWindows] = useState(null);
+        const [serverUnix, setServerUnix] = useState(null);
+        const [serverEmpty, setServerEmpty] = useState(null);
         const [currentPath, setCurrentPath] = useState({
           segments: [
             { name: 'Users' },
@@ -18,97 +37,156 @@ export const pathExamples = {
           ]
         });
 
+        const makeSharedPathCommit = (setServerLine) => async (newPathData) => {
+          await delay(500);
+          if (newPathData.segments.some((s) => s.name === 'invalid')) {
+            setServerLine({
+              ok: false,
+              text: 'Server rejected: invalid path (segment name "invalid" is not allowed).'
+            });
+            return false;
+          }
+          if (Math.random() < 0.35) {
+            setServerLine({
+              ok: false,
+              text: 'Server rejected: path does not exist on the server.'
+            });
+            return false;
+          }
+          setCurrentPath(newPathData);
+          setServerLine({
+            ok: true,
+            text: 'Server OK: path change accepted.'
+          });
+          return true;
+        };
+
+        const handlePathCommitWindows = makeSharedPathCommit(setServerWindows);
+        const handlePathCommitUnix = makeSharedPathCommit(setServerUnix);
+
+        const handleEmptyCommit = async (data) => {
+          await delay(400);
+          if (data.segments.some((s) => s.name === 'invalid')) {
+            setServerEmpty({
+              ok: false,
+              text: 'Server rejected: invalid path (segment name "invalid" is not allowed).'
+            });
+            return false;
+          }
+          if (Math.random() < 0.35) {
+            setServerEmpty({
+              ok: false,
+              text: 'Server rejected: path does not exist on the server.'
+            });
+            return false;
+          }
+          setEmptyDemoPath(data);
+          setServerEmpty({
+            ok: true,
+            text: 'Server OK: path change accepted.'
+          });
+          return true;
+        };
+
         const handleSegmentClick = (index) => {
-          console.log('Segment clicked:', index);
-          // Navigate to that segment by trimming the path
           const newSegments = currentPath.segments.slice(0, index + 1);
           setCurrentPath({ segments: newSegments });
-          setMessage(`Navigated to: /${newSegments.map(s => s.name).join('/')}`);
+          setActivityNote(`Navigated to: /${newSegments.map((s) => s.name).join('/')}`);
         };
 
         const addSegment = () => {
-          const newName = prompt('Enter new folder name:');
-          if (newName) {
-            setCurrentPath({
-              segments: [...currentPath.segments, { name: newName }]
-            });
-            setMessage(`Added segment: ${newName}`);
-          }
+          const name = newSegmentName.trim();
+          if (!name) return;
+          setCurrentPath({
+            segments: [...currentPath.segments, { name }]
+          });
+          setNewSegmentName('');
+          setActivityNote(`Added segment: ${name}`);
         };
 
         const goToRoot = () => {
           setCurrentPath({ segments: [] });
-          setMessage('Navigated to root');
+          setActivityNote('Navigated to root');
         };
 
         return (
-          <div style={{ padding: '20px', maxWidth: '700px' }}>
-            <h4 style={{ marginTop: 0, marginBottom: '10px' }}>Windows Style (with leading slash)</h4>
+          <div className="path-example-root">
+            <div className="path-example-section-title">Windows style (leading slash)</div>
             <PathBar
               pathData={currentPath}
               onPathSegClicked={handleSegmentClick}
-              addSlashBeforeFirstSeg={true}
-              allowEdit={true}
+              onPathChangeCommit={handlePathCommitWindows}
+              hasLeadingSlash={true}
+              allowEditText={true}
             />
+            <ServerResponseLine value={serverWindows} />
 
-            <h4 style={{ marginTop: '30px', marginBottom: '10px' }}>Unix Style (no leading slash)</h4>
+            <div className="path-example-section-title path-example-section-title-spaced">Unix style (no leading slash)</div>
             <PathBar
               pathData={currentPath}
               onPathSegClicked={handleSegmentClick}
-              addSlashBeforeFirstSeg={false}
-              allowEdit={true}
+              onPathChangeCommit={handlePathCommitUnix}
+              hasLeadingSlash={false}
+              allowEditText={true}
             />
+            <ServerResponseLine value={serverUnix} />
 
-            <h4 style={{ marginTop: '30px', marginBottom: '10px' }}>Empty Path</h4>
+            <div className="path-example-section-title path-example-section-title-spaced">Empty path</div>
             <PathBar
-              pathData={{ segments: [] }}
-              onPathSegClicked={(idx) => console.log('Clicked:', idx)}
-              addSlashBeforeFirstSeg={false}
-              allowEdit={true}
+              pathData={emptyDemoPath}
+              onPathSegClicked={(idx) => setActivityNote(`Clicked segment index: ${idx}`)}
+              onPathChangeCommit={handleEmptyCommit}
+              hasLeadingSlash={false}
+              allowEditText={true}
             />
+            <ServerResponseLine value={serverEmpty} />
 
-            <h4 style={{ marginTop: '30px', marginBottom: '10px' }}>Read-only Mode (allowEdit={'{'}false{'}'})</h4>
+            <div className="path-example-section-title path-example-section-title-spaced">Read-only (no onPathChangeCommit)</div>
             <PathBar
               pathData={currentPath}
               onPathSegClicked={handleSegmentClick}
-              addSlashBeforeFirstSeg={false}
-              allowEdit={false}
+              hasLeadingSlash={false}
+              allowEditText={false}
             />
 
-            <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button onClick={addSegment} style={{ padding: '8px 12px', cursor: 'pointer' }}>
-                Add Segment
+            <div className="path-example-controls">
+              <input
+                type="text"
+                value={newSegmentName}
+                onChange={(e) => setNewSegmentName(e.target.value)}
+                placeholder="New folder name"
+                className="path-example-new-segment-input"
+              />
+              <button type="button" onClick={addSegment} className="path-example-button">
+                Add segment
               </button>
-              <button onClick={goToRoot} style={{ padding: '8px 12px', cursor: 'pointer' }}>
-                Go to Root
+              <button type="button" onClick={goToRoot} className="path-example-button">
+                Go to root
               </button>
             </div>
 
-            {message && (
-              <div style={{ marginTop: '15px', padding: '10px', background: '#e8f5e9', border: '1px solid #4caf50', borderRadius: '4px', fontSize: '13px' }}>
-                {message}
+            {activityNote ? <div className="path-example-activity-note">{activityNote}</div> : null}
+
+            <div className="path-example-tips">
+              <div className="path-example-tips-title">Tips</div>
+              <div className="path-example-tips-body">
+                <div>Click a segment to navigate up.</div>
+                <div>Click empty bar area to edit the path string; Enter or blur commits.</div>
+                <div>Backslashes normalize to slashes; repeated slashes collapse.</div>
+                <div>Include segment name invalid for a deterministic invalid-path rejection.</div>
+                <div>Random commits may fail with &quot;path does not exist&quot; (simulated server).</div>
+                <div>Escape cancels edit without committing.</div>
               </div>
-            )}
-
-            <div style={{ marginTop: '15px', padding: '10px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}>
-              <strong>Tips:</strong>
-              <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
-                <li>Click on any segment to navigate to that level</li>
-                <li>Click on the empty space in the path bar (when allowEdit=true) to show the path as a string</li>
-                <li>The string is auto-selected for easy copying (Cmd+C / Ctrl+C)</li>
-                <li>Press Enter or Escape, or click outside to return to segment view</li>
-                <li>Set allowEdit=false to disable text editing (useful for navigation-only scenarios)</li>
-              </ul>
             </div>
 
-            <div style={{ marginTop: '10px', fontSize: '12px', background: '#f0f0f0', padding: '8px', borderRadius: '4px' }}>
-              <strong>Current Path:</strong> {JSON.stringify(currentPath, null, 2)}
+            <div className="path-example-current-path">
+              <span className="path-example-current-path-label">Current path: </span>
+              <code className="path-example-current-path-code">{JSON.stringify(currentPath, null, 2)}</code>
             </div>
           </div>
         );
       };
       return <PathBarTest />;
     }
-  },
+  }
 };
-
