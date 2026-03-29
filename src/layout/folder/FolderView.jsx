@@ -45,6 +45,7 @@ import './folder.css';
  * - error: error object { message: string } or null (optional)
  * - bodyHeight: fixed height for body in pixels (optional, enables scrollbar)
  * - contextMenuItems: array of menu items for row right-click (optional, e.g., [{ type: 'item', name: 'Delete' }])
+ * - showStatusItemCount: when false, status bar omits idle item count (keeps height; use when count is shown above)
  */
 const FolderView = observer(({ 
   columns,
@@ -74,7 +75,8 @@ const FolderView = observer(({
   loadingMessage,
   error = null,
   bodyHeight,
-  contextMenuItems = null // Optional: context menu items for row right-click
+  contextMenuItems = null, // Optional: context menu items for row right-click
+  showStatusItemCount = true,
 }) => {
   
   const containerRef = useRef(null);
@@ -157,6 +159,7 @@ const FolderView = observer(({
           loading={loading}
           loadingMessage={loadingMessage}
           error={error}
+          showStatusItemCount={showStatusItemCount}
         />
       )}
     </div>

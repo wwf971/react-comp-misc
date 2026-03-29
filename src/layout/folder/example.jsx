@@ -3,6 +3,8 @@ import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import Header from './Header';
 import FolderView from './FolderView';
+import PathBar from '../../path/PathBar.jsx';
+import { createFolderExplorerDemoStore } from './folderExplorerDemoModel';
 import InfoIconWithTooltip from '../../icon/InfoIconWithTooltip';
 import FolderIcon from '../../icon/FolderIcon';
 import FileIcon from '../../icon/FileIcon';
@@ -94,37 +96,7 @@ const FolderExamplesPanel = observer(() => {
     });
   });
 
-  // Example 3: Full FolderView with rows
-  const [folderData] = useState(() => {
-    return makeAutoObservable({
-      columns: {
-        name: { data: 'Name', align: 'left' },
-        size: { data: 'Size', align: 'right' },
-        type: { data: 'Type', align: 'left' },
-        modified: { data: 'Modified', align: 'left' }
-      },
-      columnsOrder: ['name', 'size', 'type', 'modified'],
-      columnsSize: {
-        name: { width: 250, minWidth: 100, resizable: true },
-        size: { width: 100, minWidth: 60, resizable: true },
-        type: { width: 120, minWidth: 80, resizable: true },
-        modified: { width: 180, minWidth: 100, resizable: true }
-      },
-      rows: [
-        { id: 1, data: { name: { type: 'folder', name: 'Documents' }, size: '4 items', type: 'Folder', modified: '2026-02-01 10:30' } },
-        { id: 2, data: { name: { type: 'folder', name: 'Pictures' }, size: '12 items', type: 'Folder', modified: '2026-02-03 14:22' } },
-        { id: 3, data: { name: { type: 'code', name: 'App.jsx' }, size: '4.2 KB', type: 'JavaScript', modified: '2026-02-08 09:15' } },
-        { id: 4, data: { name: { type: 'code', name: 'styles.css' }, size: '1.8 KB', type: 'CSS', modified: '2026-02-07 16:45' } },
-        { id: 5, data: { name: { type: 'image', name: 'logo.png' }, size: '24.5 KB', type: 'PNG Image', modified: '2026-01-28 11:20' } },
-        { id: 6, data: { name: { type: 'file', name: 'README.md' }, size: '2.1 KB', type: 'Markdown', modified: '2026-02-05 13:10' } },
-        { id: 7, data: { name: { type: 'file', name: 'package.json' }, size: '856 B', type: 'JSON', modified: '2026-02-06 08:30' } },
-      ],
-      selectedRowId: null,
-      loading: false,
-      loadingMessage: '',
-      error: null
-    });
-  });
+  const [fileExplorerStore] = useState(() => createFolderExplorerDemoStore());
 
   const [rowReorderDemo] = useState(() => {
     return makeAutoObservable({
@@ -211,131 +183,118 @@ const FolderExamplesPanel = observer(() => {
     }
   };
 
-  const handleFolderDataChangeRequest = async (type, params) => {
+  const handleExplorerFolderDataChangeRequest = async (type, params) => {
+    const ex = fileExplorerStore;
     if (type === 'reorder') {
-      // Check if it's column or row reorder based on params
       if (params.columnId !== undefined) {
-        // Column reorder
-        console.log(`Folder column reorder: colId=${params.columnId}, from=${params.fromIndex}, to=${params.toIndex}`);
-        
-        // Set loading state
-        folderData.loading = true;
-        folderData.loadingMessage = 'Reordering column';
-        folderData.error = null;
-        
-        // Simulate async API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Simulate 90% success rate
+        ex.loading = true;
+        ex.loadingMessage = 'Reordering column';
+        ex.error = null;
+        await new Promise((resolve) => setTimeout(resolve, 800));
         if (Math.random() > 0.1) {
-          // Success - update the MobX observable array
-          folderData.columnsOrder.replace(params.newOrder);
-          folderData.loading = false;
-          
-          console.log('Folder column reorder successful');
+          ex.columnsOrder.replace(params.newOrder);
+          ex.loading = false;
           return { code: 0, message: 'Column reordered successfully' };
-        } else {
-          // Simulate error
-          console.error('Folder column reorder failed');
-          folderData.loading = false;
-          folderData.error = { message: 'Failed to reorder column' };
-          
-          // Clear error after 1 second
-          setTimeout(() => {
-            folderData.error = null;
-          }, 1000);
-          
-          return { code: -1, message: 'Failed to reorder column' };
         }
-      } else if (params.rowId !== undefined) {
-        // Row reorder
-        console.log(`Row reorder: rowId=${params.rowId}, from=${params.fromIndex}, to=${params.toIndex}`);
-        
-        // Set loading state
-        folderData.loading = true;
-        folderData.loadingMessage = 'Reordering row';
-        folderData.error = null;
-        
-        // Simulate async API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Simulate 90% success rate
+        ex.loading = false;
+        ex.error = { message: 'Failed to reorder column' };
+        setTimeout(() => {
+          ex.error = null;
+        }, 1000);
+        return { code: -1, message: 'Failed to reorder column' };
+      }
+      if (params.rowId !== undefined) {
+        const folder = ex.currentFolder;
+        if (!folder) {
+          return { code: -1, message: 'No folder' };
+        }
+        ex.loading = true;
+        ex.loadingMessage = 'Reordering row';
+        ex.error = null;
+        await new Promise((resolve) => setTimeout(resolve, 800));
         if (Math.random() > 0.1) {
           if (params.newOrder && Array.isArray(params.newOrder)) {
-            const byId = new Map(folderData.rows.map((r) => [r.id, r]));
-            folderData.rows.replace(params.newOrder.map((id) => byId.get(id)).filter(Boolean));
+            const byId = new Map(folder.children.map((c) => [c.id, c]));
+            folder.children.replace(params.newOrder.map((id) => byId.get(id)).filter(Boolean));
           } else {
-            const newRows = [...folderData.rows];
-            const [movedRow] = newRows.splice(params.fromIndex, 1);
-            newRows.splice(params.toIndex, 0, movedRow);
-            folderData.rows.replace(newRows);
+            const next = [...folder.children];
+            const [moved] = next.splice(params.fromIndex, 1);
+            next.splice(params.toIndex, 0, moved);
+            folder.children.replace(next);
           }
-          folderData.loading = false;
-          
-          console.log('Row reorder successful');
+          ex.loading = false;
           return { code: 0, message: 'Row reordered successfully' };
-        } else {
-          // Simulate error
-          console.error('Row reorder failed');
-          folderData.loading = false;
-          folderData.error = { message: 'Failed to reorder row' };
-          
-          // Clear error after 1 second
-          setTimeout(() => {
-            folderData.error = null;
-          }, 1000);
-          
-          return { code: -1, message: 'Failed to reorder row' };
         }
+        ex.loading = false;
+        ex.error = { message: 'Failed to reorder row' };
+        setTimeout(() => {
+          ex.error = null;
+        }, 1000);
+        return { code: -1, message: 'Failed to reorder row' };
       }
     } else if (type === 'delete') {
-      // Row delete
-      console.log(`Row delete: rowId=${params.rowId}`);
-      
-      // Set loading state
-      folderData.loading = true;
-      folderData.loadingMessage = 'Deleting row';
-      folderData.error = null;
-      
-      // Simulate async API call
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      // Simulate 95% success rate
+      const folder = ex.currentFolder;
+      if (!folder) {
+        return { code: -1, message: 'No folder' };
+      }
+      ex.loading = true;
+      ex.loadingMessage = 'Deleting row';
+      ex.error = null;
+      await new Promise((resolve) => setTimeout(resolve, 600));
       if (Math.random() > 0.05) {
-        // Success - remove from MobX observable array
-        const newRows = folderData.rows.filter(row => row.id !== params.rowId);
-        folderData.rows.replace(newRows);
-        
-        // Clear selection if deleted row was selected
-        if (folderData.selectedRowId === params.rowId) {
-          folderData.selectedRowId = null;
+        const idx = folder.children.findIndex((c) => c.id === params.rowId);
+        if (idx >= 0) {
+          folder.children.splice(idx, 1);
         }
-        
-        folderData.loading = false;
-        
-        console.log('Row delete successful');
+        if (ex.selectedRowId === params.rowId) {
+          ex.selectedRowId = null;
+        }
+        ex.loading = false;
         return { code: 0, message: 'Row deleted successfully' };
-      } else {
-        // Simulate error
-        console.error('Row delete failed');
-        folderData.loading = false;
-        folderData.error = { message: 'Failed to delete row' };
-        
-        // Clear error after 1 second
-        setTimeout(() => {
-          folderData.error = null;
-        }, 1000);
-        
-        return { code: -1, message: 'Failed to delete row' };
       }
+      ex.loading = false;
+      ex.error = { message: 'Failed to delete row' };
+      setTimeout(() => {
+        ex.error = null;
+      }, 1000);
+      return { code: -1, message: 'Failed to delete row' };
     } else if (type === 'resize') {
-      // Column resize - persist the new width immediately
-      if (!folderData.columnsSize[params.columnId]) {
-        folderData.columnsSize[params.columnId] = {};
+      if (!ex.columnsSize[params.columnId]) {
+        ex.columnsSize[params.columnId] = {};
       }
-      folderData.columnsSize[params.columnId].width = params.newWidth;
-      
+      ex.columnsSize[params.columnId].width = params.newWidth;
       return { code: 0, message: 'Column resized' };
+    }
+  };
+
+  const handleExplorerPathChangeCommit = async (pathData) => {
+    const ex = fileExplorerStore;
+    ex.loading = true;
+    ex.loadingMessage = 'Resolving path';
+    ex.error = null;
+    ex.clearPathFeedbackTimer();
+    ex.pathFeedback = null;
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    const result = ex.trySetPathFromParsed(pathData);
+    ex.loading = false;
+    if (!result.ok) {
+      ex.showPathFeedbackBriefly({ ok: false, text: result.reason });
+      return false;
+    }
+    ex.showPathFeedbackBriefly({ ok: true, text: 'Opened folder.' });
+    return true;
+  };
+
+  const handleExplorerRowClick = (rowId) => {
+    fileExplorerStore.setSelectedRow(rowId);
+  };
+
+  const handleExplorerRowDoubleClick = (rowId) => {
+    const row = fileExplorerStore.rows.find((r) => r.id === rowId);
+    if (!row) return;
+    const cell = row.data.name;
+    if (cell.type === 'folder') {
+      fileExplorerStore.openChildFolderByName(cell.name);
     }
   };
 
@@ -353,11 +312,6 @@ const FolderExamplesPanel = observer(() => {
     }
     rowReorderDemo.lastReorderNote = `rowId=${params.rowId} toIndex=${params.toIndex}`;
     return { code: 0, message: 'Row reordered' };
-  };
-
-  const handleRowClick = (rowId) => {
-    console.log('Row clicked:', rowId);
-    folderData.selectedRowId = rowId;
   };
 
   // Example 4: Single selection with type filtering
@@ -563,30 +517,60 @@ const FolderExamplesPanel = observer(() => {
       <div style={{ marginBottom: '30px' }}>
         <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Complete FolderView with Body</div>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          File explorer layout. Drag rows to reorder. Right-click rows to delete. Resize and reorder columns. Status bar shows operations. Body locked during requests.
+          MobX tree drives the listing. PathBar shows the folder path; click a segment or edit the path (invalid paths are rejected). Double-click a folder row to open it. Drag rows to reorder; right-click to delete. Body locks during async requests.
         </div>
-        <FolderView 
-          columns={folderData.columns}
-          columnsOrder={folderData.columnsOrder}
-          columnsSizeInit={folderData.columnsSize}
-          rows={folderData.rows}
-          getBodyComponent={getBodyComponent}
-          allowColumnReorder={true}
-          allowRowReorder={true}
-          onDataChangeRequest={handleFolderDataChangeRequest}
-          onRowClick={handleRowClick}
-          selectedRowId={folderData.selectedRowId}
-          loading={folderData.loading}
-          loadingMessage={folderData.loadingMessage}
-          error={folderData.error}
-          bodyHeight={300}
-          contextMenuItems={[
-            {
-              type: 'item',
-              name: 'Delete'
-            }
-          ]}
-        />
+        <div style={{ border: '1px solid #d0d0d0', borderRadius: '2px' }}>
+          <PathBar
+            pathData={fileExplorerStore.pathDataForBar}
+            onPathSegClicked={(index) => fileExplorerStore.trimPathToSegmentIndex(index)}
+            onPathChangeCommit={handleExplorerPathChangeCommit}
+            addSlashBeforeFirstSeg={true}
+            appendTrailingSlash={true}
+            allowEditText={true}
+          />
+          <div className="folder-explorer-under-path-line">
+            {fileExplorerStore.pathFeedback ? (
+              <span
+                className={
+                  fileExplorerStore.pathFeedback.ok
+                    ? 'folder-explorer-under-path-line-success'
+                    : 'folder-explorer-under-path-line-failure'
+                }
+              >
+                {fileExplorerStore.pathFeedback.text}
+              </span>
+            ) : (
+              <span className="folder-explorer-under-path-line-default">
+                {fileExplorerStore.rows.length}{' '}
+                {fileExplorerStore.rows.length === 1 ? 'item' : 'items'}
+              </span>
+            )}
+          </div>
+          <FolderView
+            columns={fileExplorerStore.columns}
+            columnsOrder={fileExplorerStore.columnsOrder}
+            columnsSizeInit={fileExplorerStore.columnsSize}
+            rows={fileExplorerStore.rows}
+            getBodyComponent={getBodyComponent}
+            allowColumnReorder={true}
+            allowRowReorder={true}
+            onDataChangeRequest={handleExplorerFolderDataChangeRequest}
+            onRowClick={handleExplorerRowClick}
+            onRowDoubleClick={handleExplorerRowDoubleClick}
+            selectedRowId={fileExplorerStore.selectedRowId}
+            loading={fileExplorerStore.loading}
+            loadingMessage={fileExplorerStore.loadingMessage}
+            error={fileExplorerStore.error}
+            bodyHeight={300}
+            showStatusItemCount={false}
+            contextMenuItems={[
+              {
+                type: 'item',
+                name: 'Delete',
+              },
+            ]}
+          />
+        </div>
       </div>
 
       <div style={{ marginBottom: '30px' }}>

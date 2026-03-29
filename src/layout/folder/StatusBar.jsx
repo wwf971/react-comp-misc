@@ -11,12 +11,14 @@ import './folder.css';
  * - loading: boolean indicating if a request is in progress
  * - loadingMessage: message to show when loading (optional)
  * - error: error object { message: string } or null
+ * - showStatusItemCount: when false, idle state keeps bar height but omits item count (e.g. count shown elsewhere)
  */
 const StatusBar = observer(({ 
   itemCount = 0,
   loading = false,
   loadingMessage = 'Processing request',
-  error = null
+  error = null,
+  showStatusItemCount = true,
 }) => {
   
   const getStatusContent = () => {
@@ -39,7 +41,9 @@ const StatusBar = observer(({
       );
     }
     
-    // Show normal item count
+    if (!showStatusItemCount) {
+      return <div className="folder-statusbar-content folder-statusbar-content-idle" />;
+    }
     return (
       <div className="folder-statusbar-content">
         {itemCount} {itemCount === 1 ? 'item' : 'items'}

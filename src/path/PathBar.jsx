@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import SpinningCircle from '../icon/SpinningCircle.jsx';
 import './PathBar.css';
 
@@ -56,7 +57,7 @@ function arePathSegNamesEqual(currentSegs, nextSegments) {
   return true;
 }
 
-const PathBar = ({
+const PathBar = observer(function PathBar({
   pathData = { segments: [] },
   onPathSegClicked,
   onPathChangeCommit,
@@ -66,7 +67,7 @@ const PathBar = ({
   allowEditText = true,
   height = 32,
   separator = '/'
-}) => {
+}) {
   const segments = pathData.segments || [];
 
   const pathStringOptions = useMemo(
@@ -74,10 +75,7 @@ const PathBar = ({
     [addSlashBeforeFirstSeg, appendTrailingSlash, separator]
   );
 
-  const canonicalPathString = useMemo(
-    () => buildCanonicalPathStrFromSegs(segments, pathStringOptions),
-    [segments, pathStringOptions]
-  );
+  const canonicalPathString = buildCanonicalPathStrFromSegs(segments, pathStringOptions);
 
   const [isStringEditorOpen, setIsStringEditorOpen] = useState(false);
   const [editorText, setEditorText] = useState('');
@@ -320,6 +318,6 @@ const PathBar = ({
       )}
     </div>
   );
-};
+});
 
 export default PathBar;
