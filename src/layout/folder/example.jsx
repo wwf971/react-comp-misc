@@ -186,6 +186,16 @@ const FolderExamplesPanel = observer(() => {
     return makeAutoObservable(store);
   });
 
+  const [viewSwitchStore] = useState(() => {
+    const store = makeCatalogBase([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    store.handleRowInteraction = function(event) {
+      if (event.type !== 'click') return;
+      const { rowId } = event;
+      this.selectedRowIds = this.selectedRowIds.includes(rowId) ? [] : [rowId];
+    };
+    return makeAutoObservable(store);
+  });
+
   const [mixedSelectionSummary, setMixedSelectionSummary] = useState('');
 
   const getComponent = () => TextWithInfoIconComp;
@@ -381,6 +391,11 @@ const FolderExamplesPanel = observer(() => {
             columnsSizeInit={fileExplorerStore.columnsSize}
             rows={fileExplorerStore.rows}
             getBodyComponent={getBodyComponent}
+            getIconData={rowId => {
+              const row = fileExplorerStore.rows.find(r => r.id === rowId);
+              const nameData = row?.data?.name;
+              return { label: nameData?.name ?? '', kind: nameData?.type ?? 'file' };
+            }}
             allowColumnReorder={true}
             allowRowReorder={true}
             onDataChangeRequest={handleExplorerFolderDataChangeRequest}
@@ -531,6 +546,41 @@ const FolderExamplesPanel = observer(() => {
           showStatusBar={false}
         />
       </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>View Switching via FolderView</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          FolderView includes built-in view switching. Use the List/Icons toolbar to toggle. Column header is hidden in icon mode. Selection carries across views.
+        </div>
+        <div style={{ marginBottom: '8px', fontSize: '12px' }}>
+          <strong>Selected:</strong> {viewSwitchStore.selectedRowIds.length > 0
+            ? viewSwitchStore.selectedRowIds.map(id => viewSwitchStore.rowsById.get(id).name).join(', ')
+            : 'None'}
+        </div>
+        <FolderView
+          columns={{ name: SHARED_COLUMNS.name, size: SHARED_COLUMNS.size, type: SHARED_COLUMNS.type }}
+          columnsOrder={['name', 'size', 'type']}
+          columnsSizeInit={{
+            name: { width: 200, minWidth: 100, resizable: true },
+            size: { width: 120, minWidth: 80, resizable: true },
+            type: { width: 100, minWidth: 80, resizable: true },
+          }}
+          rows={viewSwitchStore.rows}
+          dataStore={viewSwitchStore}
+          getRowData={(rowId, colId) => viewSwitchStore.getRowData(rowId, colId)}
+          getIconData={rowId => {
+            const item = viewSwitchStore.rowsById.get(rowId);
+            return { label: item?.name ?? '', kind: item?.type ?? 'file' };
+          }}
+          selectedRowIds={viewSwitchStore.selectedRowIds}
+          selectionMode="single"
+          onRowInteraction={event => viewSwitchStore.handleRowInteraction(event)}
+          bodyHeight={260}
+          showStatusBar={false}
+        />
+      </div>
+
+
     </div>
   );
 });

@@ -229,6 +229,108 @@
   color: #666;
 }
 
+.folder-view-switcher {
+  display: flex;
+  flex-direction: column;
+}
+
+.folder-view-switcher-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f8f8;
+  flex-shrink: 0;
+}
+
+.folder-view-switcher-btn {
+  padding: 2px 8px;
+  font-size: 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 2px;
+  background: #fff;
+  cursor: pointer;
+  color: #444;
+  line-height: 18px;
+  font-family: inherit;
+}
+
+.folder-view-switcher-btn:hover:not(.active) {
+  background: #f0f0f0;
+}
+
+.folder-view-switcher-btn.active {
+  background: #e3f2fd;
+  border-color: #90caf9;
+  color: #1565c0;
+}
+
+.folder-view-switcher-content {
+  overflow-x: auto;
+}
+
+.folder-icon-view {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 8px 6px;
+  font-size: 12px;
+  position: relative;
+  align-content: flex-start;
+  min-height: 60px;
+}
+
+.folder-icon-view.locked {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.folder-icon-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 88px;
+  padding: 6px 4px 4px;
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+}
+
+.folder-icon-tile:hover {
+  background: #f0f0f0;
+  border-color: #e0e0e0;
+}
+
+.folder-icon-tile.selected {
+  background: #e3f2fd;
+  border-color: #90caf9;
+}
+
+.folder-icon-tile.selected:hover {
+  background: #d1e9fc;
+}
+
+.folder-icon-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.folder-icon-tile-label {
+  text-align: center;
+  word-break: break-word;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-width: 100%;
+  line-height: 1.4;
+  color: #222;
+}
+
 .folder-explorer-under-path-line {
   height: 24px;
   box-sizing: border-box;
