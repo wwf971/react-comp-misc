@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import FolderIcon from '../../icon/FolderIcon';
 import FileIcon from '../../icon/FileIcon';
@@ -19,7 +19,11 @@ const ItemsIconView = observer(({
   locked = false,
   contextMenuItems = null,
   onDataChangeRequest,
+  allowRowReorder = false,
 }) => {
+  const containerRef = useRef(null);
+  const [draggingId, setDraggingId] = useState(null);
+  const [insertBeforeIndex, setInsertBeforeIndex] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
 
   const handleInteraction = (e, type, rowId, rowIndex) => {
@@ -53,12 +57,81 @@ const ItemsIconView = observer(({
     }
   };
 
+  const handleDragStart = (e, rowId) => {
+    if (!allowRowReorder) return;
+    e.stopPropagation();
+    setDraggingId(rowId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(rowId));
+    const ghost = e.currentTarget.cloneNode(true);
+    ghost.style.position = 'absolute';
+    ghost.style.top = '-1000px';
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
+    setTimeout(() => document.body.removeChild(ghost), 0);
+  };
+
+  const handleContainerDragOver = (e) => {
+    if (!draggingId) return;
+    e.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+    const tileEls = [...container.querySelectorAll('.folder-icon-tile')];
+    for (let i = 0; i < tileEls.length; i++) {
+      const rect = tileEls[i].getBoundingClientRect();
+      if (
+        e.clientX >= rect.left && e.clientX <= rect.right &&
+        e.clientY >= rect.top && e.clientY <= rect.bottom
+      ) {
+        setInsertBeforeIndex(e.clientX < rect.left + rect.width / 2 ? i : i + 1);
+        return;
+      }
+    }
+  };
+
+  const handleContainerDragLeave = (e) => {
+    if (containerRef.current && !containerRef.current.contains(e.relatedTarget)) {
+      setInsertBeforeIndex(null);
+    }
+  };
+
+  const handleDragEnd = async () => {
+    const fromIndex = rows.findIndex(r => r.id === draggingId);
+    const capturedInsertIndex = insertBeforeIndex;
+    setDraggingId(null);
+    setInsertBeforeIndex(null);
+
+    if (capturedInsertIndex === null || !onDataChangeRequest) return;
+    const toIndex = capturedInsertIndex > fromIndex ? capturedInsertIndex - 1 : capturedInsertIndex;
+    if (toIndex === fromIndex) return;
+
+    const newOrder = rows.map(r => r.id);
+    newOrder.splice(fromIndex, 1);
+    newOrder.splice(toIndex, 0, rows[fromIndex].id);
+    try {
+      await onDataChangeRequest('reorder', {
+        rowId: rows[fromIndex].id,
+        fromIndex,
+        toIndex,
+        newOrder,
+      });
+    } catch {}
+  };
+
   return (
-    <div className={`folder-icon-view ${locked ? 'locked' : ''}`}>
+    <div
+      className={`folder-icon-view ${locked ? 'locked' : ''}`}
+      ref={containerRef}
+      onDragOver={handleContainerDragOver}
+      onDragLeave={handleContainerDragLeave}
+    >
       {rows.map((row, index) => {
         const isSelected = selectedRowIds
           ? selectedRowIds.includes(row.id)
           : selectedRowId === row.id;
+        const isDragging = draggingId === row.id;
+        const isInsertBefore = allowRowReorder && insertBeforeIndex === index;
+        const isInsertAfter = allowRowReorder && insertBeforeIndex === rows.length && index === rows.length - 1;
         const { label, kind } = getIconData
           ? getIconData(row.id)
           : { label: String(row.id), kind: 'file' };
@@ -66,10 +139,21 @@ const ItemsIconView = observer(({
           <div
             key={row.id}
             data-row-id={row.id}
-            className={`folder-icon-tile ${isSelected ? 'selected' : ''}`}
+            className={[
+              'folder-icon-tile',
+              isSelected ? 'selected' : '',
+              isDragging ? 'dragging' : '',
+              allowRowReorder ? 'reorderable' : '',
+              isInsertBefore ? 'insert-before' : '',
+              isInsertAfter ? 'insert-after' : '',
+            ].filter(Boolean).join(' ')}
+            style={{ opacity: isDragging ? 0.3 : 1 }}
             onClick={(e) => handleInteraction(e, 'click', row.id, index)}
             onDoubleClick={(e) => handleInteraction(e, 'double-click', row.id, index)}
             onContextMenu={(e) => handleContextMenu(e, row.id, index)}
+            draggable={allowRowReorder}
+            onDragStart={(e) => handleDragStart(e, row.id)}
+            onDragEnd={handleDragEnd}
           >
             <div className="folder-icon-tile-icon">
               {kind === 'folder'
@@ -81,6 +165,7 @@ const ItemsIconView = observer(({
           </div>
         );
       })}
+      {locked && <div className="folder-icon-view-overlay" />}
       {contextMenu && contextMenuItems && (
         <Menu
           position={{ x: contextMenu.x, y: contextMenu.y }}

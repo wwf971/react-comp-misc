@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import Header from './Header';
 import ViewSwitcher from './ViewSwitcher';
 import StatusBar from './StatusBar';
 import './folder.css';
@@ -34,7 +33,6 @@ const FolderView = observer(({
   showStatusItemCount = true,
 }) => {
   const [columnWidths, setColumnWidths] = useState({});
-  const [activeView, setActiveView] = useState('list');
 
   useEffect(() => {
     if (!columnsOrder || columnsOrder.length === 0) return;
@@ -54,26 +52,15 @@ const FolderView = observer(({
 
   return (
     <div className="folder-view-container">
-      {activeView === 'list' && (
-        <Header
-          columns={columns}
-          columnsOrder={columnsOrder}
-          columnsSizeInit={columnsSizeInit}
-          columnWidths={columnWidths}
-          getComponent={getHeaderComponent}
-          onColumnWidthChange={setColumnWidths}
-          onDataChangeRequest={onDataChangeRequest}
-          allowColumnReorder={allowColumnReorder && !loading}
-        />
-      )}
       <ViewSwitcher
-        view={activeView}
-        onViewChange={setActiveView}
         bodyHeight={bodyHeight}
         columns={columns}
         columnsOrder={columnsOrder}
         columnsSizeInit={columnsSizeInit}
         columnWidths={columnWidths}
+        getHeaderComponent={getHeaderComponent}
+        onColumnWidthChange={setColumnWidths}
+        allowColumnReorder={allowColumnReorder && !loading}
         getIconData={getIconData}
         rows={rows}
         getComponent={getBodyComponent}

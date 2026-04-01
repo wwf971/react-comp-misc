@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import Header from './Header';
 import ItemsListView from './ItemsListView';
 import ItemsIconView from './ItemsIconView';
 import './folder.css';
@@ -20,6 +21,9 @@ const ViewSwitcher = observer(({
   columnsOrder,
   columnsSizeInit,
   columnWidths,
+  getHeaderComponent,
+  onColumnWidthChange,
+  allowColumnReorder = false,
 
   getIconData,
 
@@ -77,6 +81,18 @@ const ViewSwitcher = observer(({
           </button>
         ))}
       </div>
+      {activeView === 'list' && columns && (
+        <Header
+          columns={columns}
+          columnsOrder={columnsOrder}
+          columnsSizeInit={columnsSizeInit}
+          columnWidths={columnWidths}
+          getComponent={getHeaderComponent}
+          onColumnWidthChange={onColumnWidthChange}
+          onDataChangeRequest={onDataChangeRequest}
+          allowColumnReorder={allowColumnReorder}
+        />
+      )}
       <div
         className="folder-view-switcher-content"
         style={{

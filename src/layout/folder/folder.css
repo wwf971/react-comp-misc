@@ -283,7 +283,14 @@
 
 .folder-icon-view.locked {
   pointer-events: none;
-  opacity: 0.6;
+}
+
+.folder-icon-view-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(210, 210, 210, 0.45);
+  z-index: 5;
+  pointer-events: all;
 }
 
 .folder-icon-tile {
@@ -296,6 +303,22 @@
   cursor: pointer;
   user-select: none;
   border: 1px solid transparent;
+}
+
+.folder-icon-tile.reorderable {
+  cursor: move;
+}
+
+.folder-icon-tile.dragging {
+  opacity: 0.3;
+}
+
+.folder-icon-tile.insert-before {
+  box-shadow: inset 3px 0 0 0 #2196F3;
+}
+
+.folder-icon-tile.insert-after {
+  box-shadow: inset -3px 0 0 0 #2196F3;
 }
 
 .folder-icon-tile:hover {

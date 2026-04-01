@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import Header from './Header';
@@ -195,6 +195,35 @@ const FolderExamplesPanel = observer(() => {
     };
     return makeAutoObservable(store);
   });
+
+  const [viewSwitchLoading, setViewSwitchLoading] = useState(false);
+  const [viewSwitchFeedback, setViewSwitchFeedback] = useState(null);
+  const viewSwitchFeedbackTimer = useRef(null);
+
+  const showViewSwitchFeedback = (feedback) => {
+    if (viewSwitchFeedbackTimer.current) clearTimeout(viewSwitchFeedbackTimer.current);
+    setViewSwitchFeedback(feedback);
+    viewSwitchFeedbackTimer.current = setTimeout(() => {
+      viewSwitchFeedbackTimer.current = null;
+      setViewSwitchFeedback(null);
+    }, 3000);
+  };
+
+  const handleViewSwitchDataChangeRequest = async (type, params) => {
+    if (type !== 'reorder' || params.rowId === undefined) return { code: 0 };
+    setViewSwitchLoading(true);
+    await new Promise(r => setTimeout(r, 600));
+    const isSuccess = Math.random() > 0.3;
+    setViewSwitchLoading(false);
+    if (isSuccess) {
+      const byId = new Map(viewSwitchStore.rowsOrder.map(id => [id, id]));
+      viewSwitchStore.rowsOrder.replace(params.newOrder.map(id => byId.get(id)).filter(id => id !== undefined));
+      showViewSwitchFeedback({ ok: true, text: 'Reordered.' });
+      return { code: 0 };
+    }
+    showViewSwitchFeedback({ ok: false, text: 'Reorder rejected.' });
+    return { code: -1 };
+  };
 
   const [mixedSelectionSummary, setMixedSelectionSummary] = useState('');
 
@@ -550,12 +579,23 @@ const FolderExamplesPanel = observer(() => {
       <div style={{ marginBottom: '30px' }}>
         <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>View Switching via FolderView</div>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          FolderView includes built-in view switching. Use the List/Icons toolbar to toggle. Column header is hidden in icon mode. Selection carries across views.
+          Toggle between List and Icons views. Drag to reorder — requests have a 30% chance of rejection. The view locks while the request is in flight.
         </div>
-        <div style={{ marginBottom: '8px', fontSize: '12px' }}>
+        <div style={{ marginBottom: '6px', fontSize: '12px' }}>
           <strong>Selected:</strong> {viewSwitchStore.selectedRowIds.length > 0
             ? viewSwitchStore.selectedRowIds.map(id => viewSwitchStore.rowsById.get(id).name).join(', ')
             : 'None'}
+        </div>
+        <div className="folder-explorer-under-path-line">
+          {viewSwitchFeedback ? (
+            <span className={viewSwitchFeedback.ok ? 'folder-explorer-under-path-line-success' : 'folder-explorer-under-path-line-failure'}>
+              {viewSwitchFeedback.text}
+            </span>
+          ) : (
+            <span className="folder-explorer-under-path-line-default">
+              {viewSwitchStore.rows.length} {viewSwitchStore.rows.length === 1 ? 'item' : 'items'}
+            </span>
+          )}
         </div>
         <FolderView
           columns={{ name: SHARED_COLUMNS.name, size: SHARED_COLUMNS.size, type: SHARED_COLUMNS.type }}
@@ -575,6 +615,9 @@ const FolderExamplesPanel = observer(() => {
           selectedRowIds={viewSwitchStore.selectedRowIds}
           selectionMode="single"
           onRowInteraction={event => viewSwitchStore.handleRowInteraction(event)}
+          allowRowReorder={true}
+          onDataChangeRequest={handleViewSwitchDataChangeRequest}
+          loading={viewSwitchLoading}
           bodyHeight={260}
           showStatusBar={false}
         />
