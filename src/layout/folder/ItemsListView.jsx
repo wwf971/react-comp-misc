@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Menu from '../../menu/Menu.jsx';
 import './folder.css';
@@ -32,6 +32,7 @@ const ItemsListView = observer(({
   selectedRowId,
   onRowInteraction,
   selectedRowIds,
+  onSelectedRowIdsChange,
   selectionMode = 'single',
   dataStore,
   getRowData,
@@ -46,26 +47,104 @@ const ItemsListView = observer(({
   const dragOffsetX = useRef(0);
   const dragOffsetY = useRef(0);
   const [contextMenu, setContextMenu] = useState(null);
+  const [internalSelectedRowIds, setInternalSelectedRowIds] = useState(() => selectedRowIds || []);
+  const [lastClickedRowId, setLastClickedRowId] = useState(null);
 
   const columnWidths = externalColumnWidths || {};
 
   if (!columnsOrder || !rows) return null;
+
+  const isMultipleSelection = selectionMode === 'multiple';
+  const isSelectionControlled = isMultipleSelection
+    && Array.isArray(selectedRowIds)
+    && typeof onSelectedRowIdsChange === 'function';
+
+  useEffect(() => {
+    if (isSelectionControlled) {
+      setInternalSelectedRowIds(selectedRowIds);
+    }
+  }, [isSelectionControlled, selectedRowIds]);
 
   const effectiveGetRowData = getRowData || ((rowId, columnId) => {
     const row = rows.find(r => r.id === rowId);
     return row?.data?.[columnId];
   });
 
+  const resolveSelectedRowIds = () => {
+    if (isSelectionControlled) return selectedRowIds;
+    return internalSelectedRowIds;
+  };
+
+  const emitSelectionChange = (nextSelectedRowIds) => {
+    if (!isMultipleSelection) return;
+    if (!isSelectionControlled) {
+      setInternalSelectedRowIds(nextSelectedRowIds);
+    }
+    if (onSelectedRowIdsChange) {
+      onSelectedRowIdsChange(nextSelectedRowIds);
+    }
+  };
+
+  const getRowRangeById = (fromRowId, toRowId) => {
+    const fromIndex = rows.findIndex(row => row.id === fromRowId);
+    const toIndex = rows.findIndex(row => row.id === toRowId);
+    if (fromIndex < 0 || toIndex < 0) return [];
+    const startIndex = Math.min(fromIndex, toIndex);
+    const endIndex = Math.max(fromIndex, toIndex);
+    return rows.slice(startIndex, endIndex + 1).map(row => row.id);
+  };
+
+  const handleSelectionForClick = (e, rowId) => {
+    if (selectionMode === 'none') return;
+    if (!isMultipleSelection) {
+      return;
+    }
+    const isShiftPressed = e.shiftKey;
+    const isCtrlPressed = e.ctrlKey || e.metaKey;
+    const currentSelectedRowIds = resolveSelectedRowIds();
+    if (isCtrlPressed && isShiftPressed && lastClickedRowId) {
+      const range = getRowRangeById(lastClickedRowId, rowId);
+      const mergedSelection = [...new Set([...currentSelectedRowIds, ...range])];
+      emitSelectionChange(mergedSelection);
+      setLastClickedRowId(rowId);
+      return;
+    }
+    if (isShiftPressed && lastClickedRowId) {
+      const range = getRowRangeById(lastClickedRowId, rowId);
+      emitSelectionChange(range);
+      setLastClickedRowId(rowId);
+      return;
+    }
+    if (isCtrlPressed) {
+      const isAlreadySelected = currentSelectedRowIds.includes(rowId);
+      const nextSelectedRowIds = isAlreadySelected
+        ? currentSelectedRowIds.filter(id => id !== rowId)
+        : [...currentSelectedRowIds, rowId];
+      emitSelectionChange(nextSelectedRowIds);
+      // Keep shift-range anchor stable when the clicked row is toggled off.
+      // Update anchor only when the row stays selected after toggle.
+      if (!isAlreadySelected) {
+        setLastClickedRowId(rowId);
+      }
+      return;
+    }
+    emitSelectionChange([rowId]);
+    setLastClickedRowId(rowId);
+  };
+
   const handleRowInteraction = (e, type, rowId, rowIndex) => {
+    if (type === 'click') {
+      handleSelectionForClick(e, rowId);
+      if (onRowClick) onRowClick(rowId);
+    }
+    else if (type === 'double-click' && onRowDoubleClick) onRowDoubleClick(rowId);
+    else if (type === 'context-menu' && onRowContextMenu) onRowContextMenu(e, rowId);
     if (onRowInteraction) {
       onRowInteraction({
         type, rowId, rowIndex, nativeEvent: e,
         modifiers: { ctrl: e.ctrlKey, shift: e.shiftKey, meta: e.metaKey, alt: e.altKey },
       });
     }
-    if (type === 'click' && onRowClick) onRowClick(rowId);
-    else if (type === 'double-click' && onRowDoubleClick) onRowDoubleClick(rowId);
-    else if (type === 'context-menu' && onRowContextMenu) onRowContextMenu(e, rowId);
   };
 
   const handleRowContextMenu = (e, rowId, rowIndex) => {
@@ -207,9 +286,10 @@ const ItemsListView = observer(({
       onDragOver={handleRowDragOver}
     >
       {rows.map((row, index) => {
-        const isSelected = selectedRowIds
-          ? selectedRowIds.includes(row.id)
-          : selectedRowId === row.id;
+        const effectiveSelectedRowIds = resolveSelectedRowIds();
+        const isSelected = isMultipleSelection
+          ? effectiveSelectedRowIds.includes(row.id)
+          : (Array.isArray(selectedRowIds) ? selectedRowIds.includes(row.id) : selectedRowId === row.id);
         const isDragging = draggingRowId === row.id;
         return (
           <div

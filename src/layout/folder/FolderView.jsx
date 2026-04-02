@@ -16,6 +16,7 @@ const FolderView = observer(({
   allowColumnReorder = false,
   onRowInteraction,
   selectedRowIds,
+  onSelectedRowIdsChange,
   selectionMode = 'single',
   dataStore,
   getRowData,
@@ -66,6 +67,7 @@ const FolderView = observer(({
         getComponent={getBodyComponent}
         onRowInteraction={onRowInteraction}
         selectedRowIds={selectedRowIds}
+        onSelectedRowIdsChange={onSelectedRowIdsChange}
         selectionMode={selectionMode}
         dataStore={dataStore}
         getRowData={getRowData}

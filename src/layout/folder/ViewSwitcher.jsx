@@ -14,9 +14,7 @@ const ViewSwitcher = observer(({
   view: controlledView,
   onViewChange,
   defaultView = 'list',
-
   bodyHeight,
-
   columns,
   columnsOrder,
   columnsSizeInit,
@@ -24,13 +22,12 @@ const ViewSwitcher = observer(({
   getHeaderComponent,
   onColumnWidthChange,
   allowColumnReorder = false,
-
   getIconData,
-
   rows,
   getComponent,
   onRowInteraction,
   selectedRowIds,
+  onSelectedRowIdsChange,
   selectionMode = 'single',
   dataStore,
   getRowData,
@@ -55,6 +52,7 @@ const ViewSwitcher = observer(({
     rows,
     onRowInteraction,
     selectedRowIds,
+    onSelectedRowIdsChange,
     selectionMode,
     dataStore,
     getRowData,
