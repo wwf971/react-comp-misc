@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import FolderIcon from '../../icon/FolderIcon';
 import FileIcon from '../../icon/FileIcon';
@@ -12,6 +12,7 @@ const ItemsIconView = observer(({
   getIconData,
   onRowInteraction,
   selectedRowIds,
+  onSelectedRowIdsChange,
   selectionMode = 'single',
   onRowClick,
   onRowDoubleClick,
@@ -25,16 +26,92 @@ const ItemsIconView = observer(({
   const [draggingId, setDraggingId] = useState(null);
   const [insertBeforeIndex, setInsertBeforeIndex] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
+  const [internalSelectedRowIds, setInternalSelectedRowIds] = useState(() => selectedRowIds || []);
+  const [lastClickedRowId, setLastClickedRowId] = useState(null);
+
+  const isMultipleSelection = selectionMode === 'multiple';
+  const isSelectionControlled = isMultipleSelection
+    && Array.isArray(selectedRowIds)
+    && typeof onSelectedRowIdsChange === 'function';
+
+  useEffect(() => {
+    if (isSelectionControlled) {
+      setInternalSelectedRowIds(selectedRowIds);
+    }
+  }, [isSelectionControlled, selectedRowIds]);
+
+  const resolveSelectedRowIds = () => {
+    if (isSelectionControlled) return selectedRowIds;
+    return internalSelectedRowIds;
+  };
+
+  const emitSelectionChange = (nextSelectedRowIds) => {
+    if (!isMultipleSelection) return;
+    if (!isSelectionControlled) {
+      setInternalSelectedRowIds(nextSelectedRowIds);
+    }
+    if (onSelectedRowIdsChange) {
+      onSelectedRowIdsChange(nextSelectedRowIds);
+    }
+  };
+
+  const getRowRangeById = (fromRowId, toRowId) => {
+    const fromIndex = rows.findIndex(row => row.id === fromRowId);
+    const toIndex = rows.findIndex(row => row.id === toRowId);
+    if (fromIndex < 0 || toIndex < 0) return [];
+    const startIndex = Math.min(fromIndex, toIndex);
+    const endIndex = Math.max(fromIndex, toIndex);
+    return rows.slice(startIndex, endIndex + 1).map(row => row.id);
+  };
+
+  const handleSelectionForClick = (e, rowId) => {
+    if (selectionMode === 'none') return;
+    if (!isMultipleSelection) {
+      return;
+    }
+    const isShiftPressed = e.shiftKey;
+    const isCtrlPressed = e.ctrlKey || e.metaKey;
+    const currentSelectedRowIds = resolveSelectedRowIds();
+    if (isCtrlPressed && isShiftPressed && lastClickedRowId) {
+      const range = getRowRangeById(lastClickedRowId, rowId);
+      const mergedSelection = [...new Set([...currentSelectedRowIds, ...range])];
+      emitSelectionChange(mergedSelection);
+      setLastClickedRowId(rowId);
+      return;
+    }
+    if (isShiftPressed && lastClickedRowId) {
+      const range = getRowRangeById(lastClickedRowId, rowId);
+      emitSelectionChange(range);
+      setLastClickedRowId(rowId);
+      return;
+    }
+    if (isCtrlPressed) {
+      const isAlreadySelected = currentSelectedRowIds.includes(rowId);
+      const nextSelectedRowIds = isAlreadySelected
+        ? currentSelectedRowIds.filter(id => id !== rowId)
+        : [...currentSelectedRowIds, rowId];
+      emitSelectionChange(nextSelectedRowIds);
+      if (!isAlreadySelected) {
+        setLastClickedRowId(rowId);
+      }
+      return;
+    }
+    emitSelectionChange([rowId]);
+    setLastClickedRowId(rowId);
+  };
 
   const handleInteraction = (e, type, rowId, rowIndex) => {
+    if (type === 'click') {
+      handleSelectionForClick(e, rowId);
+      if (onRowClick) onRowClick(rowId);
+    }
+    if (type === 'double-click' && onRowDoubleClick) onRowDoubleClick(rowId);
     if (onRowInteraction) {
       onRowInteraction({
         type, rowId, rowIndex, nativeEvent: e,
         modifiers: { ctrl: e.ctrlKey, shift: e.shiftKey, meta: e.metaKey, alt: e.altKey },
       });
     }
-    if (type === 'click' && onRowClick) onRowClick(rowId);
-    if (type === 'double-click' && onRowDoubleClick) onRowDoubleClick(rowId);
   };
 
   const handleContextMenu = (e, rowId, rowIndex) => {
@@ -126,9 +203,10 @@ const ItemsIconView = observer(({
       onDragLeave={handleContainerDragLeave}
     >
       {rows.map((row, index) => {
-        const isSelected = selectedRowIds
-          ? selectedRowIds.includes(row.id)
-          : selectedRowId === row.id;
+        const effectiveSelectedRowIds = resolveSelectedRowIds();
+        const isSelected = isMultipleSelection
+          ? effectiveSelectedRowIds.includes(row.id)
+          : (Array.isArray(selectedRowIds) ? selectedRowIds.includes(row.id) : selectedRowId === row.id);
         const isDragging = draggingId === row.id;
         const isInsertBefore = allowRowReorder && insertBeforeIndex === index;
         const isInsertAfter = allowRowReorder && insertBeforeIndex === rows.length && index === rows.length - 1;
