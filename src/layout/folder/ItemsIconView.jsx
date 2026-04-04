@@ -24,12 +24,14 @@ const ItemsIconView = observer(({
 }) => {
   const containerRef = useRef(null);
   const [draggingId, setDraggingId] = useState(null);
+  const [draggingIds, setDraggingIds] = useState([]);
   const [insertBeforeIndex, setInsertBeforeIndex] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
   const [internalSelectedRowIds, setInternalSelectedRowIds] = useState(() => selectedRowIds || []);
   const [lastClickedRowId, setLastClickedRowId] = useState(null);
 
   const isMultipleSelection = selectionMode === 'multiple';
+  const canRowReorder = allowRowReorder;
   const isSelectionControlled = isMultipleSelection
     && Array.isArray(selectedRowIds)
     && typeof onSelectedRowIdsChange === 'function';
@@ -135,9 +137,16 @@ const ItemsIconView = observer(({
   };
 
   const handleDragStart = (e, rowId) => {
-    if (!allowRowReorder) return;
+    if (!canRowReorder) return;
     e.stopPropagation();
+    const currentSelectedRowIds = resolveSelectedRowIds();
+    const isDraggingSelectedRow = isMultipleSelection && currentSelectedRowIds.includes(rowId);
+    const shouldDragMultipleRows = isDraggingSelectedRow && currentSelectedRowIds.length > 1;
+    const nextDraggingIds = shouldDragMultipleRows
+      ? rows.filter(row => currentSelectedRowIds.includes(row.id)).map(row => row.id)
+      : [rowId];
     setDraggingId(rowId);
+    setDraggingIds(nextDraggingIds);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', String(rowId));
     const ghost = e.currentTarget.cloneNode(true);
@@ -149,7 +158,8 @@ const ItemsIconView = observer(({
   };
 
   const handleContainerDragOver = (e) => {
-    if (!draggingId) return;
+    if (!canRowReorder) return;
+    if (draggingIds.length === 0) return;
     e.preventDefault();
     const container = containerRef.current;
     if (!container) return;
@@ -173,21 +183,47 @@ const ItemsIconView = observer(({
   };
 
   const handleDragEnd = async () => {
-    const fromIndex = rows.findIndex(r => r.id === draggingId);
+    const rowOrder = rows.map(r => r.id);
+    const fromIndex = rowOrder.findIndex(id => id === draggingId);
     const capturedInsertIndex = insertBeforeIndex;
     setDraggingId(null);
+    setDraggingIds([]);
     setInsertBeforeIndex(null);
 
-    if (capturedInsertIndex === null || !onDataChangeRequest) return;
+    if (capturedInsertIndex === null || !onDataChangeRequest || draggingIds.length === 0) return;
+    if (draggingIds.length > 1) {
+      const draggingSet = new Set(draggingIds);
+      const draggedIndexes = draggingIds
+        .map(rowId => rowOrder.indexOf(rowId))
+        .filter(index => index >= 0);
+      if (draggedIndexes.length === 0) return;
+      const draggedCountBeforeInsert = draggedIndexes.filter(index => index < capturedInsertIndex).length;
+      const toIndex = capturedInsertIndex - draggedCountBeforeInsert;
+      const remainingOrder = rowOrder.filter(rowId => !draggingSet.has(rowId));
+      const newOrder = [...remainingOrder];
+      newOrder.splice(toIndex, 0, ...draggingIds);
+      const isSameOrder = newOrder.length === rowOrder.length && newOrder.every((id, idx) => id === rowOrder[idx]);
+      if (isSameOrder) return;
+      try {
+        await onDataChangeRequest('reorder-multiple', {
+          rowIds: draggingIds,
+          fromIndexes: draggedIndexes,
+          toIndex,
+          newOrder,
+        });
+      } catch {}
+      return;
+    }
+    if (fromIndex < 0) return;
     const toIndex = capturedInsertIndex > fromIndex ? capturedInsertIndex - 1 : capturedInsertIndex;
     if (toIndex === fromIndex) return;
 
-    const newOrder = rows.map(r => r.id);
+    const newOrder = [...rowOrder];
     newOrder.splice(fromIndex, 1);
-    newOrder.splice(toIndex, 0, rows[fromIndex].id);
+    newOrder.splice(toIndex, 0, rowOrder[fromIndex]);
     try {
       await onDataChangeRequest('reorder', {
-        rowId: rows[fromIndex].id,
+        rowId: rowOrder[fromIndex],
         fromIndex,
         toIndex,
         newOrder,
@@ -207,9 +243,9 @@ const ItemsIconView = observer(({
         const isSelected = isMultipleSelection
           ? effectiveSelectedRowIds.includes(row.id)
           : (Array.isArray(selectedRowIds) ? selectedRowIds.includes(row.id) : selectedRowId === row.id);
-        const isDragging = draggingId === row.id;
-        const isInsertBefore = allowRowReorder && insertBeforeIndex === index;
-        const isInsertAfter = allowRowReorder && insertBeforeIndex === rows.length && index === rows.length - 1;
+        const isDragging = draggingIds.includes(row.id);
+        const isInsertBefore = canRowReorder && insertBeforeIndex === index;
+        const isInsertAfter = canRowReorder && insertBeforeIndex === rows.length && index === rows.length - 1;
         const { label, kind } = getIconData
           ? getIconData(row.id)
           : { label: String(row.id), kind: 'file' };
@@ -221,7 +257,7 @@ const ItemsIconView = observer(({
               'folder-icon-tile',
               isSelected ? 'selected' : '',
               isDragging ? 'dragging' : '',
-              allowRowReorder ? 'reorderable' : '',
+              canRowReorder ? 'reorderable' : '',
               isInsertBefore ? 'insert-before' : '',
               isInsertAfter ? 'insert-after' : '',
             ].filter(Boolean).join(' ')}
@@ -229,7 +265,7 @@ const ItemsIconView = observer(({
             onClick={(e) => handleInteraction(e, 'click', row.id, index)}
             onDoubleClick={(e) => handleInteraction(e, 'double-click', row.id, index)}
             onContextMenu={(e) => handleContextMenu(e, row.id, index)}
-            draggable={allowRowReorder}
+            draggable={canRowReorder}
             onDragStart={(e) => handleDragStart(e, row.id)}
             onDragEnd={handleDragEnd}
           >

@@ -43,6 +43,7 @@ const ItemsListView = observer(({
 }) => {
   const bodyRef = useRef(null);
   const [draggingRowId, setDraggingRowId] = useState(null);
+  const [draggingRowIds, setDraggingRowIds] = useState([]);
   const [dragOverSeparatorIndex, setDragOverSeparatorIndex] = useState(null);
   const dragOffsetX = useRef(0);
   const dragOffsetY = useRef(0);
@@ -55,6 +56,7 @@ const ItemsListView = observer(({
   if (!columnsOrder || !rows) return null;
 
   const isMultipleSelection = selectionMode === 'multiple';
+  const canRowReorder = allowRowReorder;
   const isSelectionControlled = isMultipleSelection
     && Array.isArray(selectedRowIds)
     && typeof onSelectedRowIdsChange === 'function';
@@ -190,12 +192,19 @@ const ItemsListView = observer(({
   };
 
   const handleRowDragStart = (e, rowId, index) => {
-    if (!allowRowReorder) return;
+    if (!canRowReorder) return;
     e.stopPropagation();
+    const currentSelectedRowIds = resolveSelectedRowIds();
+    const isDraggingSelectedRow = isMultipleSelection && currentSelectedRowIds.includes(rowId);
+    const shouldDragMultipleRows = isDraggingSelectedRow && currentSelectedRowIds.length > 1;
+    const nextDraggingRowIds = shouldDragMultipleRows
+      ? rows.filter(row => currentSelectedRowIds.includes(row.id)).map(row => row.id)
+      : [rowId];
     const rowRect = e.currentTarget.getBoundingClientRect();
     dragOffsetX.current = e.clientX - rowRect.left;
     dragOffsetY.current = e.clientY - rowRect.top;
     setDraggingRowId(rowId);
+    setDraggingRowIds(nextDraggingRowIds);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', String(rowId));
     const ghost = e.currentTarget.cloneNode(true);
@@ -208,7 +217,7 @@ const ItemsListView = observer(({
   };
 
   const handleRowDrag = (e) => {
-    if (!draggingRowId || !bodyRef.current) return;
+    if (draggingRowIds.length === 0 || !bodyRef.current) return;
     e.preventDefault();
     if (e.clientX === 0 && e.clientY === 0) return;
     const bodyRect = bodyRef.current.getBoundingClientRect();
@@ -234,20 +243,72 @@ const ItemsListView = observer(({
   };
 
   const handleRowDragEnd = async () => {
-    if (!draggingRowId || !onDataChangeRequest) {
+    if (draggingRowIds.length === 0) {
       setDraggingRowId(null);
+      setDraggingRowIds([]);
       setDragOverSeparatorIndex(null);
       return;
     }
-    const draggedIndex = rows.findIndex(row => row.id === draggingRowId);
+    if (dragOverSeparatorIndex === null) {
+      setDraggingRowId(null);
+      setDraggingRowIds([]);
+      setDragOverSeparatorIndex(null);
+      return;
+    }
+    const rowOrder = rows.map(row => row.id);
+    if (draggingRowIds.length > 1) {
+      if (!onDataChangeRequest) {
+        setDraggingRowId(null);
+        setDraggingRowIds([]);
+        setDragOverSeparatorIndex(null);
+        return;
+      }
+      const draggingSet = new Set(draggingRowIds);
+      const draggedIndexes = draggingRowIds
+        .map(rowId => rowOrder.indexOf(rowId))
+        .filter(index => index >= 0);
+      if (draggedIndexes.length === 0) {
+        setDraggingRowId(null);
+        setDraggingRowIds([]);
+        setDragOverSeparatorIndex(null);
+        return;
+      }
+      const draggedCountBeforeSeparator = draggedIndexes.filter(index => index < dragOverSeparatorIndex).length;
+      const insertIndex = dragOverSeparatorIndex - draggedCountBeforeSeparator;
+      const remainingOrder = rowOrder.filter(rowId => !draggingSet.has(rowId));
+      const newOrder = [...remainingOrder];
+      newOrder.splice(insertIndex, 0, ...draggingRowIds);
+      const isSameOrder = newOrder.length === rowOrder.length && newOrder.every((id, idx) => id === rowOrder[idx]);
+      if (!isSameOrder) {
+        try {
+          await onDataChangeRequest('reorder-multiple', {
+            rowIds: draggingRowIds,
+            fromIndexes: draggedIndexes,
+            toIndex: insertIndex,
+            newOrder,
+          });
+        } catch {}
+      }
+      setDraggingRowId(null);
+      setDraggingRowIds([]);
+      setDragOverSeparatorIndex(null);
+      return;
+    }
+    if (!onDataChangeRequest || !draggingRowId) {
+      setDraggingRowId(null);
+      setDraggingRowIds([]);
+      setDragOverSeparatorIndex(null);
+      return;
+    }
+    const draggedIndex = rowOrder.indexOf(draggingRowId);
     if (
-      dragOverSeparatorIndex !== null &&
+      draggedIndex >= 0 &&
       dragOverSeparatorIndex !== draggedIndex &&
       dragOverSeparatorIndex !== draggedIndex + 1
     ) {
       let newIndex = dragOverSeparatorIndex;
       if (dragOverSeparatorIndex > draggedIndex) newIndex = dragOverSeparatorIndex - 1;
-      const newOrder = rows.map(row => row.id);
+      const newOrder = [...rowOrder];
       newOrder.splice(draggedIndex, 1);
       newOrder.splice(newIndex, 0, draggingRowId);
       try {
@@ -260,11 +321,12 @@ const ItemsListView = observer(({
       } catch {}
     }
     setDraggingRowId(null);
+    setDraggingRowIds([]);
     setDragOverSeparatorIndex(null);
   };
 
   const handleRowDragOver = (e) => {
-    if (draggingRowId) e.preventDefault();
+    if (draggingRowIds.length > 0) e.preventDefault();
   };
 
   const getSeparatorPos = (sepIndex) => {
@@ -290,17 +352,17 @@ const ItemsListView = observer(({
         const isSelected = isMultipleSelection
           ? effectiveSelectedRowIds.includes(row.id)
           : (Array.isArray(selectedRowIds) ? selectedRowIds.includes(row.id) : selectedRowId === row.id);
-        const isDragging = draggingRowId === row.id;
+        const isDragging = draggingRowIds.includes(row.id);
         return (
           <div
             key={row.id}
             data-row-id={row.id}
-            className={`folder-body-row ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${allowRowReorder ? 'reorderable' : ''}`}
+            className={`folder-body-row ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${canRowReorder ? 'reorderable' : ''}`}
             style={{ opacity: isDragging ? 0.3 : 1 }}
             onClick={(e) => handleRowInteraction(e, 'click', row.id, index)}
             onDoubleClick={(e) => handleRowInteraction(e, 'double-click', row.id, index)}
             onContextMenu={(e) => handleRowContextMenu(e, row.id, index)}
-            draggable={allowRowReorder}
+            draggable={canRowReorder}
             onDragStart={(e) => handleRowDragStart(e, row.id, index)}
             onDrag={handleRowDrag}
             onDragEnd={handleRowDragEnd}

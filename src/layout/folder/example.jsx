@@ -122,6 +122,7 @@ const FolderExamplesPanel = observer(() => {
       { id: 'c', data: { label: 'Charlie' } },
       { id: 'd', data: { label: 'Delta' } },
     ],
+    selectedRowIds: [],
     lastReorderNote: '',
   }));
 
@@ -210,7 +211,9 @@ const FolderExamplesPanel = observer(() => {
   };
 
   const handleViewSwitchDataChangeRequest = async (type, params) => {
-    if (type !== 'reorder' || params.rowId === undefined) return { code: 0 };
+    if (type !== 'reorder' && type !== 'reorder-multiple') return { code: 0 };
+    if (type === 'reorder' && params.rowId === undefined) return { code: 0 };
+    if (type === 'reorder-multiple' && (!Array.isArray(params.rowIds) || params.rowIds.length === 0)) return { code: 0 };
     setViewSwitchLoading(true);
     await new Promise(r => setTimeout(r, 600));
     const isSuccess = Math.random() > 0.3;
@@ -218,7 +221,7 @@ const FolderExamplesPanel = observer(() => {
     if (isSuccess) {
       const byId = new Map(viewSwitchStore.rowsOrder.map(id => [id, id]));
       viewSwitchStore.rowsOrder.replace(params.newOrder.map(id => byId.get(id)).filter(id => id !== undefined));
-      showViewSwitchFeedback({ ok: true, text: 'Reordered.' });
+      showViewSwitchFeedback({ ok: true, text: type === 'reorder-multiple' ? 'Multiple rows reordered.' : 'Reordered.' });
       return { code: 0 };
     }
     showViewSwitchFeedback({ ok: false, text: 'Reorder rejected.' });
@@ -337,16 +340,22 @@ const FolderExamplesPanel = observer(() => {
   };
 
   const handleRowReorderDemoRequest = async (type, params) => {
-    if (type !== 'reorder' || params.rowId === undefined) return { code: 0, message: 'noop' };
+    if (type !== 'reorder' && type !== 'reorder-multiple') return { code: 0, message: 'noop' };
     await new Promise(resolve => setTimeout(resolve, 120));
     if (params.newOrder && Array.isArray(params.newOrder)) {
       const byId = new Map(rowReorderDemo.rows.map(r => [r.id, r]));
       rowReorderDemo.rows.replace(params.newOrder.map(id => byId.get(id)).filter(Boolean));
     } else {
+      if (type !== 'reorder' || params.rowId === undefined) return { code: 0, message: 'noop' };
       const next = [...rowReorderDemo.rows];
       const [moved] = next.splice(params.fromIndex, 1);
       next.splice(params.toIndex, 0, moved);
       rowReorderDemo.rows.replace(next);
+    }
+    rowReorderDemo.selectedRowIds = rowReorderDemo.selectedRowIds.filter(id => rowReorderDemo.rows.some(r => r.id === id));
+    if (type === 'reorder-multiple') {
+      rowReorderDemo.lastReorderNote = `rowIds=${(params.rowIds || []).join(',')} toIndex=${params.toIndex}`;
+      return { code: 0, message: 'Rows reordered' };
     }
     rowReorderDemo.lastReorderNote = `rowId=${params.rowId} toIndex=${params.toIndex}`;
     return { code: 0, message: 'Row reordered' };
@@ -442,12 +451,15 @@ const FolderExamplesPanel = observer(() => {
       </div>
 
       <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Row reorder only</div>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Multiple selection with row reorder</div>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          Drag rows to change order. Parent receives onDataChangeRequest(&apos;reorder&apos;, {'{'} rowId, fromIndex, toIndex, newOrder {'}'}). Blue line shows drop position.
+          Click to select, Ctrl+Click to toggle, Shift+Click for range. Drag selected rows to reorder as a group. Parent receives onDataChangeRequest(&apos;reorder&apos; | &apos;reorder-multiple&apos;, params).
         </div>
         <div style={{ fontSize: '12px', color: '#444', marginBottom: '6px' }}>
           Order: {rowReorderDemo.rows.map(r => r.data.label).join(' → ')}
+        </div>
+        <div style={{ fontSize: '12px', color: '#444', marginBottom: '6px' }}>
+          Selected: {rowReorderDemo.selectedRowIds.length > 0 ? rowReorderDemo.selectedRowIds.join(', ') : 'None'}
         </div>
         {rowReorderDemo.lastReorderNote ? (
           <div style={{ fontSize: '11px', color: '#888', marginBottom: '6px' }}>
@@ -461,7 +473,9 @@ const FolderExamplesPanel = observer(() => {
           rows={rowReorderDemo.rows}
           allowColumnReorder={false}
           allowRowReorder={true}
-          selectionMode="none"
+          selectionMode="multiple"
+          selectedRowIds={rowReorderDemo.selectedRowIds}
+          onSelectedRowIdsChange={(nextIds) => rowReorderDemo.selectedRowIds.replace(nextIds)}
           onDataChangeRequest={handleRowReorderDemoRequest}
           bodyHeight={200}
           showStatusBar={false}
@@ -498,7 +512,7 @@ const FolderExamplesPanel = observer(() => {
       </div>
 
       <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Multiple Selection with Ctrl/Shift</div>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Multiple Selection with Ctrl/Shift Click</div>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
           Click to select. Ctrl+Click to toggle. Shift+Click for range selection. Notice the blue indicator on selected items.
         </div>
@@ -579,7 +593,7 @@ const FolderExamplesPanel = observer(() => {
       <div style={{ marginBottom: '30px' }}>
         <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>View Switching via FolderView</div>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          Toggle between List and Icons views. Drag to reorder — requests have a 30% chance of rejection. The view locks while the request is in flight.
+          Toggle between List and Icons views. Ctrl/Shift select multiple rows, then drag selected rows to reorder as a group.
         </div>
         <div style={{ marginBottom: '6px', fontSize: '12px' }}>
           <strong>Selected:</strong> {viewSwitchStore.selectedRowIds.length > 0
@@ -613,8 +627,8 @@ const FolderExamplesPanel = observer(() => {
             return { label: item?.name ?? '', kind: item?.type ?? 'file' };
           }}
           selectedRowIds={viewSwitchStore.selectedRowIds}
-          selectionMode="single"
-          onRowInteraction={event => viewSwitchStore.handleRowInteraction(event)}
+          onSelectedRowIdsChange={(nextIds) => viewSwitchStore.selectedRowIds.replace(nextIds)}
+          selectionMode="multiple"
           allowRowReorder={true}
           onDataChangeRequest={handleViewSwitchDataChangeRequest}
           loading={viewSwitchLoading}
