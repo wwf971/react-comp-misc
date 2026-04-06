@@ -3,9 +3,11 @@ import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import Header from './Header';
 import FolderView from './FolderView';
+import TreeView from './TreeView';
 import PathBar from '../../path/PathBar.jsx';
 import { createFolderExplorerDemoStore } from './folderExplorerDemoModel';
 import InfoIconWithTooltip from '../../icon/InfoIconWithTooltip';
+import InfoIcon from '../../icon/InfoIcon';
 import FolderIcon from '../../icon/FolderIcon';
 import FileIcon from '../../icon/FileIcon';
 import './folder.css';
@@ -71,6 +73,119 @@ const FileNameCell = observer(({ data }) => {
   );
 });
 
+const TREE_NODE_CATALOG = {
+  workspace: { id: 'workspace', text: 'workspace', kind: 'folder', isLeaf: false, childrenIds: ['src', 'public', 'package-json', 'readme-md'] },
+  src: { id: 'src', text: 'src', kind: 'folder', isLeaf: false, childrenIds: ['layout', 'components', 'index-js'] },
+  layout: { id: 'layout', text: 'layout', kind: 'folder', isLeaf: false, childrenIds: ['folder', 'tab', 'json'] },
+  folder: { id: 'folder', text: 'folder', kind: 'folder', isLeaf: false, childrenIds: ['FolderView.jsx', 'TreeView.jsx', 'example.jsx'] },
+  tab: { id: 'tab', text: 'tab', kind: 'folder', isLeaf: false, childrenIds: ['TabsOnTop.jsx'] },
+  json: { id: 'json', text: 'json', kind: 'folder', isLeaf: false, childrenIds: ['JsonComp.jsx'] },
+  components: { id: 'components', text: 'components', kind: 'folder', isLeaf: false, childrenIds: ['ExplorerPanel.jsx', 'NodeLabel.jsx'] },
+  'index-js': { id: 'index-js', text: 'index.js', kind: 'file', isLeaf: true, childrenIds: [] },
+  public: { id: 'public', text: 'public', kind: 'folder', isLeaf: false, childrenIds: ['favicon-ico', 'robots-txt'] },
+  'favicon-ico': { id: 'favicon-ico', text: 'favicon.ico', kind: 'file', isLeaf: true, childrenIds: [] },
+  'robots-txt': { id: 'robots-txt', text: 'robots.txt', kind: 'file', isLeaf: true, childrenIds: [] },
+  'package-json': { id: 'package-json', text: 'package.json', kind: 'file', isLeaf: true, childrenIds: [] },
+  'readme-md': { id: 'readme-md', text: 'README.md', kind: 'file', type: 'comp', compKey: 'with-info-icon', infoText: 'project guide', isLeaf: true, childrenIds: [] },
+  'FolderView.jsx': { id: 'FolderView.jsx', text: 'FolderView.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
+  'TreeView.jsx': { id: 'TreeView.jsx', text: 'TreeView.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
+  'example.jsx': { id: 'example.jsx', text: 'example.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
+  'TabsOnTop.jsx': { id: 'TabsOnTop.jsx', text: 'TabsOnTop.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
+  'JsonComp.jsx': { id: 'JsonComp.jsx', text: 'JsonComp.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
+  'ExplorerPanel.jsx': { id: 'ExplorerPanel.jsx', text: 'ExplorerPanel.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
+  'NodeLabel.jsx': { id: 'NodeLabel.jsx', text: 'NodeLabel.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
+};
+
+const TREE_LOAD_FAIL_ONCE_COUNT = {
+  components: 1,
+};
+
+function createTreeViewDemoStore() {
+  const store = {
+    rootItemIds: ['workspace'],
+    selectedItemId: 'workspace',
+    itemDataById: {},
+    loadFailCountByItemId: { ...TREE_LOAD_FAIL_ONCE_COUNT },
+    init() {
+      this.ensureItemDataExists('workspace');
+      const workspaceItemData = this.itemDataById.workspace;
+      workspaceItemData.childrenIds = [...TREE_NODE_CATALOG.workspace.childrenIds];
+      workspaceItemData.childrenLoadState = 'loaded';
+      workspaceItemData.isChildrenLoaded = true;
+      workspaceItemData.isExpanded = true;
+      workspaceItemData.childrenIds.forEach(childId => this.ensureItemDataExists(childId));
+    },
+    ensureItemDataExists(itemId) {
+      if (this.itemDataById[itemId]) return this.itemDataById[itemId];
+      const source = TREE_NODE_CATALOG[itemId];
+      if (!source) return null;
+      const itemData = {
+        ...source,
+        isExpanded: false,
+        childrenIds: [],
+        childrenLoadState: 'loaded',
+        childrenErrorMessage: '',
+        isChildrenLoaded: false,
+      };
+      if (source.isLeaf) {
+        itemData.isChildrenLoaded = true;
+      }
+      this.itemDataById[itemId] = itemData;
+      return itemData;
+    },
+    getItemDataById(itemId) {
+      return this.itemDataById[itemId] || null;
+    },
+    setSelectedItem(itemId) {
+      this.selectedItemId = itemId;
+    },
+    async loadChildrenForItem(itemId, isForceReload) {
+      const itemData = this.getItemDataById(itemId);
+      if (!itemData || itemData.isLeaf) return { code: 0 };
+      if (itemData.isChildrenLoaded && !isForceReload) return { code: 0 };
+
+      itemData.childrenLoadState = 'loading';
+      itemData.childrenErrorMessage = '';
+      await new Promise(resolve => setTimeout(resolve, 700));
+
+      if ((this.loadFailCountByItemId[itemId] || 0) > 0) {
+        this.loadFailCountByItemId[itemId] -= 1;
+        itemData.childrenLoadState = 'load-failed';
+        itemData.childrenErrorMessage = 'Load failed. Retry';
+        return { code: -1 };
+      }
+
+      const source = TREE_NODE_CATALOG[itemId];
+      const childIds = source?.childrenIds || [];
+      childIds.forEach(childId => this.ensureItemDataExists(childId));
+      itemData.childrenIds = [...childIds];
+      itemData.childrenLoadState = 'loaded';
+      itemData.childrenErrorMessage = '';
+      itemData.isChildrenLoaded = true;
+      return { code: 0 };
+    },
+    async onTreeDataChangeRequest(type, params) {
+      const itemData = this.getItemDataById(params.itemId);
+      if (!itemData) return { code: -1 };
+
+      if (type === 'toggle-expand') {
+        itemData.isExpanded = params.nextIsExpanded;
+        if (itemData.isExpanded) {
+          return this.loadChildrenForItem(itemData.id, false);
+        }
+        return { code: 0 };
+      }
+      if (type === 'reload-children') {
+        return this.loadChildrenForItem(itemData.id, true);
+      }
+      return { code: 0 };
+    },
+  };
+  const observableStore = makeAutoObservable(store, {}, { autoBind: true });
+  observableStore.init();
+  return observableStore;
+}
+
 const FolderExamplesPanel = observer(() => {
   const [basicData] = useState(() => makeAutoObservable({
     columns: {
@@ -103,6 +218,7 @@ const FolderExamplesPanel = observer(() => {
   }));
 
   const [fileExplorerStore] = useState(() => createFolderExplorerDemoStore());
+  const [treeViewStore] = useState(() => createTreeViewDemoStore());
 
   const [basicColWidths, setBasicColWidths] = useState(() =>
     Object.fromEntries(basicData.columnsOrder.map(id => [id, basicData.columnsSize[id]?.width ?? 40]))
@@ -233,6 +349,19 @@ const FolderExamplesPanel = observer(() => {
   const getComponent = () => TextWithInfoIconComp;
 
   const getBodyComponent = (columnId) => columnId === 'name' ? FileNameCell : undefined;
+
+  const TreeInfoItemComp = ({ itemData }) => (
+    <span className="folder-tree-item-label">
+      <span className="folder-tree-item-text">{itemData.text}</span>
+      <span className="folder-tree-item-icon">
+        <InfoIcon width={12} height={12} />
+      </span>
+    </span>
+  );
+  const getTreeItemComp = (itemData) => {
+    if (itemData.compKey === 'with-info-icon') return TreeInfoItemComp;
+    return null;
+  };
 
   const handleBasicDataChangeRequest = async (type, params) => {
     if (type === 'reorder') {
@@ -635,6 +764,26 @@ const FolderExamplesPanel = observer(() => {
           bodyHeight={260}
           showStatusBar={false}
         />
+      </div>
+
+      <div className="folder-tree-example-block">
+        <div className="folder-tree-example-title">Tree View with Lazy Loading</div>
+        <div className="folder-tree-example-desc">
+          Expand/collapse requests are sent upward, store decides state changes, and MobX triggers re-render. Expanding components fails once to show load-failed with retry.
+        </div>
+        <div className="folder-tree-example-meta">
+          Selected: {treeViewStore.getItemDataById(treeViewStore.selectedItemId)?.text || '(none)'}
+        </div>
+        <div className="folder-tree-example-box">
+          <TreeView
+            rootItemIds={treeViewStore.rootItemIds}
+            getItemDataById={treeViewStore.getItemDataById}
+            onDataChangeRequest={treeViewStore.onTreeDataChangeRequest}
+            selectedItemId={treeViewStore.selectedItemId}
+            onItemClick={(itemId) => treeViewStore.setSelectedItem(itemId)}
+            getItemComp={getTreeItemComp}
+          />
+        </div>
       </div>
 
 
