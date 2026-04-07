@@ -29,6 +29,7 @@ export {
 export { default as PdfIcon } from "./icon/PdfIcon.jsx";
 export { default as RefreshIcon } from "./icon/RefreshIcon.jsx";
 export { default as CheckIcon } from "./icon/CheckIcon.jsx";
+export { default as CalendarIcon } from "./icon/CalendarIcon.jsx";
 
 export {
     get_local_timezone_int,
@@ -110,6 +111,8 @@ export { default as FolderBody } from "./layout/folder/ItemsListView.jsx";
 export { default as TreeView } from "./layout/folder/TreeView.jsx";
 
 export { default as HtmlRender } from "./dev/HtmlRender.jsx";
+export { default as DateSelector } from "./calendar/DateSelector.jsx";
+export { default as DateView } from "./calendar/DateView.jsx";
 
 export {
     parsePathToSegments,

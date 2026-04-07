@@ -25,6 +25,7 @@ import Refresh from './RefreshIcon';
 import PlusIcon from './PlusIcon';
 import MinusIcon from './MinusIcon';
 import CheckIcon from './CheckIcon';
+import CalendarIcon from './CalendarIcon';
 
 export {
 	FileIcon,
@@ -53,5 +54,6 @@ export {
 	Refresh,
 	PlusIcon,
 	MinusIcon,
-	CheckIcon
+	CheckIcon,
+	CalendarIcon
 }
