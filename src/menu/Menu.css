@@ -34,8 +34,18 @@
 }
 
 .context-menu-item.disabled {
-  opacity: 0.4;
+  opacity: 1;
+  color: #9aa1ad;
+  background-color: #f4f6f8;
   cursor: not-allowed;
+  pointer-events: none;
+}
+
+.context-menu-item[aria-disabled='true'] {
+  color: #9aa1ad;
+  background-color: #f4f6f8;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .context-menu-item.has-submenu {

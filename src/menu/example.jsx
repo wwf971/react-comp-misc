@@ -181,6 +181,80 @@ const MenuMultiLevel = () => {
   )
 }
 
+// Example: Disabled items
+const MenuWithDisabledItems = () => {
+  const [menuPos, setMenuPos] = useState(null)
+  const [clickedItem, setClickedItem] = useState('')
+
+  const menuItems = [
+    {
+      type: 'item',
+      name: 'Open',
+      data: { action: 'open' }
+    },
+    {
+      type: 'item',
+      name: 'Delete (disabled)',
+      disabled: true,
+      data: { action: 'delete' }
+    },
+    {
+      type: 'item',
+      name: 'Approve (disabled)',
+      disabled: true,
+      data: { action: 'approve' }
+    },
+    {
+      type: 'item',
+      name: 'Edit',
+      data: { action: 'edit' }
+    }
+  ]
+
+  const handleContextMenu = (e) => {
+    e.preventDefault()
+    setMenuPos({ x: e.clientX, y: e.clientY })
+  }
+
+  const handleItemClick = (item) => {
+    setClickedItem(`${item.name} (${item.data?.action})`)
+  }
+
+  const handleClose = () => {
+    setMenuPos(null)
+  }
+
+  return (
+    <div>
+      <div
+        style={{
+          border: '2px dashed #ccc',
+          textAlign: 'center',
+          cursor: 'context-menu',
+          userSelect: 'none'
+        }}
+        onContextMenu={handleContextMenu}
+      >
+        Right-click here to test disabled menu items.
+      </div>
+      {clickedItem && (
+        <div style={{ marginTop: '10px', color: '#007bff' }}>
+          Clicked: {clickedItem}
+        </div>
+      )}
+      {menuPos && (
+        <Menu
+          items={menuItems}
+          position={menuPos}
+          onClose={handleClose}
+          onItemClick={handleItemClick}
+          onContextMenu={handleContextMenu}
+        />
+      )}
+    </div>
+  )
+}
+
 // Combined Menu Examples
 const MenuExamplesAll = () => {
   return (
@@ -199,6 +273,14 @@ const MenuExamplesAll = () => {
       <MenuMultiLevel />
 
       <h4 style={{ marginTop: '24px', marginBottom: '8px' }}>
+        Disabled Items
+        <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
+          Disabled items are greyed out and not clickable
+        </span>
+      </h4>
+      <MenuWithDisabledItems />
+
+      <h4 style={{ marginTop: '24px', marginBottom: '8px' }}>
         Right-Click Repositioning Pattern
         <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
           Demonstrates correct implementation
@@ -213,6 +295,7 @@ const MenuExamplesAll = () => {
           <li>Right-click again (anywhere) to reposition menu</li>
           <li>Left-click outside or on items to close</li>
           <li>Supports single-level and multi-level (nested) menus</li>
+          <li>Supports disabled items via <code>disabled: true</code></li>
           <li>Hover over submenu items to reveal nested options</li>
           <li>Pass <code>onContextMenu</code> to Menu component for repositioning support</li>
           <li>Use requestAnimationFrame pattern for clean state updates</li>

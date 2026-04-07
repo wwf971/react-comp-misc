@@ -1,7 +1,8 @@
 import React from 'react'
 
 export interface MenuItemBase {
-  name: string
+  name: React.ReactNode
+  disabled?: boolean
   data?: any
 }
 

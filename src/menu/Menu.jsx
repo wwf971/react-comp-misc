@@ -24,9 +24,12 @@ const Menu = ({ items, position, onClose, onItemClick, onContextMenu }) => {
     setSubmenuPosition(null)
   }, [position.x, position.y])
 
+  const isItemDisabled = (item) => item.disabled === true || item.isEnabled === false
+
   const handleItemClick = (item, e) => {
     // Only handle left clicks
     if (e.button !== 0) return
+    if (isItemDisabled(item)) return
     
     if (item.type === 'item') {
       onItemClick(item)
@@ -83,18 +86,22 @@ const Menu = ({ items, position, onClose, onItemClick, onContextMenu }) => {
         style={{ left: position.x, top: position.y }}
         onMouseLeave={handleMenuMouseLeave}
       >
-        {items.map((item, index) => (
-          <div
-            key={index}
-            className={`context-menu-item ${item.type === 'menu' ? 'has-submenu' : ''}`}
-            onClick={(e) => handleItemClick(item, e)}
-            onMouseEnter={(e) => handleItemMouseEnter(item, index, e)}
-            onContextMenu={handleItemContextMenu}
-          >
-            <span>{item.name}</span>
-            {item.type === 'menu' && <span className="submenu-arrow">▶</span>}
-          </div>
-        ))}
+        {items.map((item, index) => {
+          const isDisabled = isItemDisabled(item)
+          return (
+            <div
+              key={index}
+              aria-disabled={isDisabled ? 'true' : 'false'}
+              className={`context-menu-item ${item.type === 'menu' ? 'has-submenu' : ''} ${isDisabled ? 'disabled' : ''}`}
+              onClick={(e) => handleItemClick(item, e)}
+              onMouseEnter={(e) => handleItemMouseEnter(item, index, e)}
+              onContextMenu={handleItemContextMenu}
+            >
+              <span>{item.name}</span>
+              {item.type === 'menu' && <span className="submenu-arrow">▶</span>}
+            </div>
+          )
+        })}
       </div>
 
       {/* Submenu */}
