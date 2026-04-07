@@ -9,7 +9,7 @@
     ".": "./src/index.js",
     "./MasterDetail": "./src/layout/MasterDetail.tsx",
     "./MasterDetail.css": "./src/layout/MasterDetail.css",
-    "./TabsOnTop": "./src/layout/tab/TabsOnTop.tsx",
+    "./TabsOnTop": "./src/layout/tab/TabsOnTop.jsx",
     "./TabsOnTop.css": "./src/layout/tab/TabsOnTop.css",
     "./folder.css": "./src/layout/folder/folder.css",
     "./PathBar": "./src/path/PathBar.jsx",

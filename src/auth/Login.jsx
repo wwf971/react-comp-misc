@@ -1,232 +1,148 @@
-import { useState, useEffect, useRef } from 'react'
+import { observer } from 'mobx-react-lite'
 import './Login.css'
-import { EyeIcon, EyeOffIcon } from '../icon/Icon'
+import { EyeIcon, EyeOffIcon, CheckIcon } from '../icon/Icon'
 
 /**
- * Login Component - Reusable login form with timeout error handling
+ * Login Component - Render-only login view.
  * 
  * @param {Object} props
  * @param {string} props.title - Title to display (default: 'Login')
- * @param {string} props.loginEndpoint - API endpoint for login (default: 'login')
- * @param {number} props.timeout - Request timeout in milliseconds (default: 5000)
- * @param {Function} props.onSuccess - Callback when login succeeds (receives response data)
+ * @param {Object} props.data - Render data from data-management layer
+ * @param {Function} props.onDataChangeRequest - Upward callback for change attempts
  * @param {boolean} props.useAuthToken - Enable auth token storage and retrieval (default: true)
- * @param {string} props.authTokenKey - localStorage key for auth token (default: 'authToken')
  * @param {boolean} props.showTokenAtLogin - Show token login panel (default: true)
- * @param {boolean} props.autoLoginWithToken - Auto-login with saved token on mount (default: true)
  */
-function Login({
+const Login = observer(function Login({
+  data,
   title = 'Login',
-  loginEndpoint = 'login',
-  timeout = 5000,
-  onSuccess,
+  onDataChangeRequest,
   useAuthToken = true,
-  authTokenKey = 'authToken',
   showTokenAtLogin = true,
-  autoLoginWithToken = true,
 }) {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [token, setToken] = useState('')
-  const [message, setMessage] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [loginMode, setLoginMode] = useState('credentials') // 'credentials' or 'token'
-  const [showPassword, setShowPassword] = useState(false)
-  const hasAttemptedAutoLogin = useRef(false)
-
-  // Load existing token from localStorage on mount
-  useEffect(() => {
-    if (useAuthToken && typeof window !== 'undefined' && window.localStorage) {
-      const savedToken = localStorage.getItem(authTokenKey)
-      if (savedToken) {
-        setToken(savedToken)
-      }
-    }
-  }, [useAuthToken, authTokenKey])
-
-  // Auto-login with saved token if enabled
-  useEffect(() => {
-    if (autoLoginWithToken && token && onSuccess && !hasAttemptedAutoLogin.current) {
-      hasAttemptedAutoLogin.current = true
-      setLoading(true)
-      setMessage('✓ Auto-logging in with saved token...')
-      
-      // Small delay to show the message
-      setTimeout(() => {
-        onSuccess({ token })
-        setLoading(false)
-      }, 300)
-    }
-  }, [autoLoginWithToken, token, onSuccess])  // Only run when token becomes available
+  const handleDataChangeRequest = async (type, params = {}) => {
+    if (!onDataChangeRequest) return { code: 0 }
+    return onDataChangeRequest(type, params)
+  }
 
   const handleCredentialsLogin = async (e) => {
     e.preventDefault()
-    setLoading(true)
-    setMessage('')
-
-    try {
-      // Create an AbortController for timeout
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), timeout)
-
-      const response = await fetch(loginEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-        signal: controller.signal,
-      })
-
-      clearTimeout(timeoutId)
-
-      const data = await response.json()
-
-      if (data.code === 0) {
-        setMessage('✓ Login successful!')
-
-        // Store token if useAuthToken is enabled
-        if (useAuthToken && data.data.token && typeof window !== 'undefined' && window.localStorage) {
-          localStorage.setItem(authTokenKey, data.data.token)
-          setToken(data.data.token)
-        }
-
-        // Call onSuccess callback if provided
-        if (onSuccess) {
-          onSuccess(data.data)
-        }
-      } else {
-        setMessage(`✗ ${data.message}`)
-      }
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        setMessage('✗ Server not responding. Please check if the server is running.')
-      } else {
-        setMessage(`✗ Error: ${error.message}`)
-      }
-    } finally {
-      setLoading(false)
-    }
+    await handleDataChangeRequest('submit-credentials')
   }
 
   const handleTokenLogin = async (e) => {
     e.preventDefault()
-    setLoading(true)
-    setMessage('')
-
-    if (!token) {
-      setMessage('✗ Please enter an auth token')
-      setLoading(false)
-      return
-    }
-
-    try {
-      // Call onSuccess with token directly
-      // Assuming the token validation is done by the parent component
-      setMessage('✓ Using saved token!')
-      
-      if (onSuccess) {
-        onSuccess({ token })
-      }
-    } catch (error) {
-      setMessage(`✗ Error: ${error.message}`)
-    } finally {
-      setLoading(false)
-    }
+    await handleDataChangeRequest('submit-token')
   }
 
   return (
-    <>
-      <div className="login-box">
-        <h1>{title}</h1>
-        
-        {/* Mode Switcher */}
-        {useAuthToken && showTokenAtLogin && token && (
-          <div className="login-mode-switcher">
-            <button
-              type="button"
-              className={`mode-button ${loginMode === 'credentials' ? 'active' : ''}`}
-              onClick={() => setLoginMode('credentials')}
-            >
-              Username & Password
-            </button>
-            <button
-              type="button"
-              className={`mode-button ${loginMode === 'token' ? 'active' : ''}`}
-              onClick={() => setLoginMode('token')}
-            >
-              Use Saved Token
-            </button>
-          </div>
-        )}
-
-        {/* Credentials Login Form */}
-        {loginMode === 'credentials' && (
-          <form onSubmit={handleCredentialsLogin}>
-            <div className="form-group">
-              <label htmlFor="username">Username:</label>
-              <input
-                type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                disabled={loading}
-              />
+    <div className="login-box">
+      <div className="login-title">{title}</div>
+      <div className="login-body">
+        {data?.isLoggedIn ? (
+          <div className="login-success-state">
+            <div className="login-success-icon-wrap" aria-hidden="true">
+              <CheckIcon width={36} height={36} />
             </div>
-            <div className="form-group">
-              <label htmlFor="password">Password:</label>
-              <div className="password-input-wrapper">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                />
+            <div className="login-success-text">You have logged in.</div>
+            <div className="login-success-subtext">{data.loginStatus || 'Logged in successfully.'}</div>
+          </div>
+        ) : (
+          <>
+            {useAuthToken && showTokenAtLogin && data?.token && (
+              <div className="login-mode-switcher">
                 <button
                   type="button"
-                  className="password-toggle-btn"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className={`mode-button ${data.loginMode === 'credentials' ? 'active' : ''}`}
+                  onClick={() => handleDataChangeRequest('set-login-mode', { loginMode: 'credentials' })}
                 >
-                  {showPassword ? <EyeOffIcon width={20} height={20} /> : <EyeIcon width={20} height={20} />}
+                  Username and Password
+                </button>
+                <button
+                  type="button"
+                  className={`mode-button ${data.loginMode === 'token' ? 'active' : ''}`}
+                  onClick={() => handleDataChangeRequest('set-login-mode', { loginMode: 'token' })}
+                >
+                  Use Saved Token
                 </button>
               </div>
-            </div>
-            <button type="submit" disabled={loading} style={{ marginTop: '8px' }}>
-              {loading ? 'Logging in...' : 'Login'}
-            </button>
-          </form>
+            )}
+
+            {data?.loginMode === 'credentials' && (
+              <form onSubmit={handleCredentialsLogin}>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="username">Username</label>
+                  <input
+                    type="text"
+                    id="username"
+                    className="login-input-field"
+                    value={data?.username || ''}
+                    onChange={(e) => handleDataChangeRequest('set-username', { username: e.target.value })}
+                    required
+                    disabled={data?.isLoading}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="password">Password</label>
+                  <div className="password-input-wrapper">
+                    <input
+                      type={data?.isPasswordVisible ? 'text' : 'password'}
+                      id="password"
+                      className="login-input-field login-password-input"
+                      value={data?.password || ''}
+                      onChange={(e) => handleDataChangeRequest('set-password', { password: e.target.value })}
+                      required
+                      disabled={data?.isLoading}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => handleDataChangeRequest('toggle-password-visible')}
+                      disabled={data?.isLoading}
+                      aria-label={data?.isPasswordVisible ? 'Hide password' : 'Show password'}
+                    >
+                      {data?.isPasswordVisible ? <EyeOffIcon width={20} height={20} /> : <EyeIcon width={20} height={20} />}
+                    </button>
+                  </div>
+                </div>
+                <button type="submit" disabled={data?.isLoading} className="login-submit-button">
+                  {data?.isLoading ? 'Logging in...' : 'Login'}
+                </button>
+              </form>
+            )}
+
+            {data?.loginMode === 'token' && useAuthToken && (
+              <form onSubmit={handleTokenLogin}>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="token">Auth Token</label>
+                  <textarea
+                    id="token"
+                    className="login-token-input"
+                    value={data?.token || ''}
+                    onChange={(e) => handleDataChangeRequest('set-token', { token: e.target.value })}
+                    required
+                    disabled={data?.isLoading}
+                    rows="4"
+                    placeholder="Paste your auth token here..."
+                  />
+                </div>
+                <button type="submit" disabled={data?.isLoading} className="login-submit-button">
+                  {data?.isLoading ? 'Logging in...' : 'Login with Token'}
+                </button>
+              </form>
+            )}
+          </>
         )}
 
-        {/* Token Login Form */}
-        {loginMode === 'token' && useAuthToken && (
-          <form onSubmit={handleTokenLogin}>
-            <div className="form-group">
-              <label htmlFor="token">Auth Token:</label>
-              <textarea
-                id="token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                required
-                disabled={loading}
-                rows="4"
-                placeholder="Paste your auth token here..."
-              />
-            </div>
-            <button type="submit" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login with Token'}
-            </button>
-          </form>
+        {data?.message ? (
+          <div className={`message ${data.messageType === 'success' ? 'success' : 'error'}`}>
+            {data.message}
+          </div>
+        ) : (
+          <div className="message-placeholder" />
         )}
-
-        {message && <div className={`message ${message.startsWith('✓') ? 'success' : 'error'}`}>{message}</div>}
       </div>
-    </>
+    </div>
   )
-}
+})
 
 export default Login

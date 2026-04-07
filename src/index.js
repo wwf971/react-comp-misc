@@ -28,6 +28,7 @@ export {
 
 export { default as PdfIcon } from "./icon/PdfIcon.jsx";
 export { default as RefreshIcon } from "./icon/RefreshIcon.jsx";
+export { default as CheckIcon } from "./icon/CheckIcon.jsx";
 
 export {
     get_local_timezone_int,

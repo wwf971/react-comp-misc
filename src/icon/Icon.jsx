@@ -24,6 +24,7 @@ import EditIconPen from './EditIconPen';
 import Refresh from './RefreshIcon';
 import PlusIcon from './PlusIcon';
 import MinusIcon from './MinusIcon';
+import CheckIcon from './CheckIcon';
 
 export {
 	FileIcon,
@@ -51,5 +52,6 @@ export {
 	EditIconPen,
 	Refresh,
 	PlusIcon,
-	MinusIcon
+	MinusIcon,
+	CheckIcon
 }
