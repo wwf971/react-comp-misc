@@ -75,6 +75,27 @@ function createCalendarDemoStore() {
         this.inputText = formatSelectionForInput(this.selectionMode, this.selectedDates, this.rangeBeginDate, this.rangeEndDate);
         return { code: 0 };
       }
+      if (type === 'commit-parsed-input') {
+        this.selectedDates = Array.isArray(params.selectedDates) ? params.selectedDates : [];
+        this.rangeBeginDate = params.rangeBeginDate || null;
+        this.rangeEndDate = params.rangeEndDate || null;
+        this.rangeAnchorDate = this.rangeBeginDate || this.rangeEndDate || null;
+        this.inputText = params.normalizedInputText || '';
+        const firstDate = this.selectedDates[0] || this.rangeBeginDate || this.rangeEndDate;
+        if (firstDate) {
+          this.visibleYear = firstDate.year;
+          this.visibleMonth = firstDate.month;
+        }
+        return { code: 0 };
+      }
+      if (type === 'clear-input') {
+        this.inputText = '';
+        this.selectedDates = [];
+        this.rangeBeginDate = null;
+        this.rangeEndDate = null;
+        this.rangeAnchorDate = null;
+        return { code: 0 };
+      }
       if (type === 'toggle-dropdown') {
         this.isDropdownOpen = !this.isDropdownOpen;
         return { code: 0 };

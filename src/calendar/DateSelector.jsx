@@ -1,7 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { CalendarIcon } from '../icon/Icon';
+import { CalendarIcon, CrossIcon } from '../icon/Icon';
 import DateView from './DateView';
+import {
+  parseSingleSelectionInput,
+  parseMultipleSelectionInput,
+  parseRangeSelectionInput,
+} from './dateInputParse';
 import './calendar.css';
 
 function normalizeDateObj(dateObj) {
@@ -17,9 +22,11 @@ const DateSelector = observer(({
   data,
   onDataChangeRequest,
   onSelectionChange,
-  placeholder = 'YYYY-MM-DD',
+  placeholder,
 }) => {
   const selectorRef = useRef(null);
+  const parseErrorTimerRef = useRef(null);
+  const [parseErrorText, setParseErrorText] = useState('');
   const isDropdownOpen = !!data?.isDropdownOpen;
   const inputText = data?.inputText || '';
   const isDisabled = !!data?.isDisabled;
@@ -31,20 +38,65 @@ const DateSelector = observer(({
   const rangeBeginDate = normalizeDateObj(data?.rangeBeginDate);
   const rangeEndDate = normalizeDateObj(data?.rangeEndDate);
   const isRangeAllowSameDay = data?.isRangeAllowSameDay !== false;
+  const defaultPlaceholder = selectionMode === 'multiple'
+    ? 'YYYY-MM-DD, YYYY-MM-DD'
+    : (selectionMode === 'range' ? 'YYYY-MM-DD ~ YYYY-MM-DD' : 'YYYY-MM-DD');
+  const effectivePlaceholder = placeholder || defaultPlaceholder;
 
   const handleInputTextChange = async (nextInputText) => {
     if (!onDataChangeRequest) return;
     await onDataChangeRequest('set-input-text', { inputText: nextInputText });
   };
 
+  const clearParseErrorWithDelay = () => {
+    if (parseErrorTimerRef.current) {
+      clearTimeout(parseErrorTimerRef.current);
+    }
+    parseErrorTimerRef.current = setTimeout(() => {
+      parseErrorTimerRef.current = null;
+      setParseErrorText('');
+    }, 2200);
+  };
+
+  const parseInputByMode = (rawInputText, mode, allowSameDay) => {
+    if (mode === 'multiple') {
+      return parseMultipleSelectionInput(rawInputText);
+    }
+    if (mode === 'range') {
+      return parseRangeSelectionInput(rawInputText, { isRangeAllowSameDay: allowSameDay });
+    }
+    return parseSingleSelectionInput(rawInputText);
+  };
+
   const handleInputCommit = async () => {
     if (!onDataChangeRequest) return;
-    await onDataChangeRequest('commit-input-text');
+    const currentInputText = data?.inputText || '';
+    const currentSelectionMode = data?.selectionMode || 'single';
+    const currentIsRangeAllowSameDay = data?.isRangeAllowSameDay !== false;
+    const parsedResult = parseInputByMode(currentInputText, currentSelectionMode, currentIsRangeAllowSameDay);
+    if (!parsedResult.isValid) {
+      setParseErrorText(parsedResult.errorText || 'Invalid date input.');
+      clearParseErrorWithDelay();
+      return;
+    }
+    setParseErrorText('');
+    await onDataChangeRequest('commit-parsed-input', {
+      normalizedInputText: parsedResult.normalizedInputText,
+      selectedDates: parsedResult.selectedDates,
+      rangeBeginDate: parsedResult.rangeBeginDate,
+      rangeEndDate: parsedResult.rangeEndDate,
+    });
   };
 
   const handleToggleDropdown = async () => {
     if (!onDataChangeRequest) return;
     await onDataChangeRequest('toggle-dropdown');
+  };
+
+  const handleClearInput = async () => {
+    if (!onDataChangeRequest) return;
+    setParseErrorText('');
+    await onDataChangeRequest('clear-input');
   };
 
   useEffect(() => {
@@ -53,6 +105,7 @@ const DateSelector = observer(({
       const selectorElement = selectorRef.current;
       if (!selectorElement) return;
       if (selectorElement.contains(event.target)) return;
+      handleInputCommit();
       onDataChangeRequest('set-dropdown-open', { isDropdownOpen: false });
     };
     document.addEventListener('mousedown', handleDocumentPointerDown, true);
@@ -60,6 +113,14 @@ const DateSelector = observer(({
       document.removeEventListener('mousedown', handleDocumentPointerDown, true);
     };
   }, [isDropdownOpen, onDataChangeRequest]);
+
+  useEffect(() => {
+    return () => {
+      if (parseErrorTimerRef.current) {
+        clearTimeout(parseErrorTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleDateViewChange = (type, params) => {
     if (!onDataChangeRequest) return;
@@ -86,9 +147,18 @@ const DateSelector = observer(({
               handleInputCommit();
             }
           }}
-          placeholder={placeholder}
+          placeholder={effectivePlaceholder}
           disabled={isDisabled}
         />
+        <button
+          type="button"
+          className="calendar-date-selector-clear-button"
+          onClick={handleClearInput}
+          disabled={isDisabled}
+          aria-label="Clear date input"
+        >
+          <CrossIcon size={12} color="#777" strokeWidth={2} />
+        </button>
         <button
           type="button"
           className="calendar-date-selector-calendar-button"
@@ -119,6 +189,11 @@ const DateSelector = observer(({
           />
         </div>
       ) : null}
+      {parseErrorText ? (
+        <div className="calendar-date-selector-error-text">{parseErrorText}</div>
+      ) : (
+        <div className="calendar-date-selector-error-placeholder" />
+      )}
     </div>
   );
 });
