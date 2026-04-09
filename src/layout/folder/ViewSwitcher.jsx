@@ -39,9 +39,10 @@ const ViewSwitcher = observer(({
   onDataChangeRequest,
   locked = false,
   contextMenuItems = null,
+  listOnly = false,
 }) => {
   const [internalView, setInternalView] = useState(defaultView);
-  const activeView = controlledView !== undefined ? controlledView : internalView;
+  const activeView = listOnly ? 'list' : (controlledView !== undefined ? controlledView : internalView);
 
   const handleViewChange = (v) => {
     if (controlledView === undefined) setInternalView(v);
@@ -68,52 +69,59 @@ const ViewSwitcher = observer(({
 
   return (
     <div className="folder-view-switcher">
-      <div className="folder-view-switcher-toolbar">
-        {VIEWS.map(v => (
-          <button
-            key={v.id}
-            className={`folder-view-switcher-btn${activeView === v.id ? ' active' : ''}`}
-            onClick={() => handleViewChange(v.id)}
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
-      {activeView === 'list' && columns && (
-        <Header
-          columns={columns}
-          columnsOrder={columnsOrder}
-          columnsSizeInit={columnsSizeInit}
-          columnWidths={columnWidths}
-          getComponent={getHeaderComponent}
-          onColumnWidthChange={onColumnWidthChange}
-          onDataChangeRequest={onDataChangeRequest}
-          allowColumnReorder={allowColumnReorder}
-        />
+      {!listOnly && (
+        <div className="folder-view-switcher-toolbar">
+          {VIEWS.map(v => (
+            <button
+              key={v.id}
+              className={`folder-view-switcher-btn${activeView === v.id ? ' active' : ''}`}
+              onClick={() => handleViewChange(v.id)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
       )}
-      <div
-        className="folder-view-switcher-content"
-        style={{
-          height: bodyHeight ? `${bodyHeight}px` : undefined,
-          overflowY: bodyHeight ? 'auto' : undefined,
-        }}
-      >
-        {activeView === 'list' && (
-          <ItemsListView
-            columns={columns}
-            columnsOrder={columnsOrder}
-            columnsSizeInit={columnsSizeInit}
-            columnWidths={columnWidths}
-            getComponent={getComponent}
-            {...sharedProps}
-          />
+      <div className="folder-view-switcher-scroll">
+        {activeView === 'list' && columns && (
+          <div className="folder-header-wrapper">
+            <Header
+              columns={columns}
+              columnsOrder={columnsOrder}
+              columnsSizeInit={columnsSizeInit}
+              columnWidths={columnWidths}
+              getComponent={getHeaderComponent}
+              onColumnWidthChange={onColumnWidthChange}
+              onDataChangeRequest={onDataChangeRequest}
+              allowColumnReorder={allowColumnReorder}
+            />
+          </div>
         )}
-        {activeView === 'icon' && (
-          <ItemsIconView
-            getIconData={getIconData}
-            {...sharedProps}
-          />
-        )}
+        <div
+          className="folder-view-switcher-content"
+          style={{
+            height: bodyHeight ? `${bodyHeight}px` : undefined,
+            overflowX: 'hidden',
+            overflowY: bodyHeight ? 'auto' : undefined,
+          }}
+        >
+          {activeView === 'list' && (
+            <ItemsListView
+              columns={columns}
+              columnsOrder={columnsOrder}
+              columnsSizeInit={columnsSizeInit}
+              columnWidths={columnWidths}
+              getComponent={getComponent}
+              {...sharedProps}
+            />
+          )}
+          {activeView === 'icon' && (
+            <ItemsIconView
+              getIconData={getIconData}
+              {...sharedProps}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

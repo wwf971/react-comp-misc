@@ -1,6 +1,7 @@
 .folder-header {
   display: flex;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   background: #f5f5f5;
   border-bottom: 1px solid #d0d0d0;
   font-size: 13px;
@@ -15,6 +16,7 @@
   overflow: hidden;
   flex-shrink: 0;
   border-right: 1px solid #e0e0e0;
+  box-sizing: border-box;
 }
 
 .folder-header-cell.reorderable {
@@ -70,8 +72,7 @@
 }
 
 .folder-header-wrapper {
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: visible;
 }
 
 .folder-header-wrapper::-webkit-scrollbar {
@@ -92,15 +93,18 @@
 .folder-body {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   font-size: 13px;
   position: relative;
 }
 
 .folder-body-row {
   display: flex;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-bottom: 1px solid #e8e8e8;
+  border-right: 1px solid #f0f0f0;
   cursor: pointer;
   user-select: none;
 }
@@ -173,6 +177,7 @@
   border-right: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
+  box-sizing: border-box;
 }
 
 .folder-body-cell-content {
@@ -234,6 +239,11 @@
   flex-direction: column;
 }
 
+.folder-view-switcher-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .folder-view-switcher-toolbar {
   display: flex;
   align-items: center;
@@ -267,7 +277,9 @@
 }
 
 .folder-view-switcher-content {
-  overflow-x: auto;
+  width: max-content;
+  min-width: 100%;
+  overflow-x: hidden;
 }
 
 .folder-icon-view {
