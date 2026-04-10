@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import Header from './Header';
 import FolderView from './FolderView';
 import TreeView from './TreeView';
+import CellDropdown from './CellEditable.jsx';
 import PathBar from '../../path/PathBar.jsx';
 import { createFolderExplorerDemoStore } from './folderExplorerDemoModel';
 import InfoIconWithTooltip from '../../icon/InfoIconWithTooltip';
@@ -242,6 +243,46 @@ const FolderExamplesPanel = observer(() => {
     lastReorderNote: '',
   }));
 
+  const [cellDropdownDemo] = useState(() => makeAutoObservable({
+    columns: {
+      room: { data: 'Room', align: 'left' },
+      lockState: { data: 'is_locked', align: 'left' },
+    },
+    columnsOrder: ['room', 'lockState'],
+    columnsSize: {
+      room: { width: 220, minWidth: 120, resizable: true },
+      lockState: { width: 150, minWidth: 100, resizable: true },
+    },
+    rowsById: new Map([
+      ['room-a', { id: 'room-a', room: 'Tokyo-101', is_locked: false }],
+      ['room-b', { id: 'room-b', room: 'Osaka-203', is_locked: true }],
+      ['room-c', { id: 'room-c', room: 'Naha-08', is_locked: false }],
+    ]),
+    rowsOrder: ['room-a', 'room-b', 'room-c'],
+    isEditable: true,
+    isBusyByRowId: {},
+    get rows() {
+      return this.rowsOrder.map((rowId) => {
+        const row = this.rowsById.get(rowId);
+        return {
+          id: rowId,
+          data: {
+            room: row?.room || '',
+            lockState: {
+              value: row?.is_locked ? 'locked' : 'unlocked',
+              isEditable: this.isEditable,
+              isBusy: Boolean(this.isBusyByRowId[rowId]),
+              options: [
+                { value: 'locked', label: 'locked' },
+                { value: 'unlocked', label: 'unlocked' },
+              ],
+            },
+          },
+        };
+      });
+    },
+  }));
+
   const [singleSelectStore] = useState(() => {
     const store = makeCatalogBase([1, 2, 7, 8, 3]);
     store.allowedTypes = ['folder'];
@@ -349,6 +390,7 @@ const FolderExamplesPanel = observer(() => {
   const getComponent = () => TextWithInfoIconComp;
 
   const getBodyComponent = (columnId) => columnId === 'name' ? FileNameCell : undefined;
+  const getCellDropdownBodyComponent = (columnId) => columnId === 'lockState' ? CellDropdown : undefined;
 
   const TreeInfoItemComp = ({ itemData }) => (
     <span className="folder-tree-item-label">
@@ -372,6 +414,33 @@ const FolderExamplesPanel = observer(() => {
       }
       return { code: -1, message: 'Failed to reorder column' };
     }
+  };
+
+  const handleCellDropdownDataChangeRequest = async (type, params) => {
+    if (type !== 'update-lock-state') return { code: 0 };
+    const rowId = params?.rowId;
+    const nextLockState = params?.nextLockState;
+    if (!rowId || (nextLockState !== 'locked' && nextLockState !== 'unlocked')) {
+      return { code: -1, message: 'invalid params' };
+    }
+    const targetRow = cellDropdownDemo.rowsById.get(rowId);
+    if (!targetRow) {
+      return { code: -1, message: 'row not found' };
+    }
+    cellDropdownDemo.isBusyByRowId = {
+      ...cellDropdownDemo.isBusyByRowId,
+      [rowId]: true,
+    };
+    await new Promise((resolve) => setTimeout(resolve, 240));
+    cellDropdownDemo.rowsById.set(rowId, {
+      ...targetRow,
+      is_locked: nextLockState === 'locked',
+    });
+    cellDropdownDemo.isBusyByRowId = {
+      ...cellDropdownDemo.isBusyByRowId,
+      [rowId]: false,
+    };
+    return { code: 0 };
   };
 
   const handleExplorerFolderDataChangeRequest = async (type, params) => {
@@ -608,6 +677,55 @@ const FolderExamplesPanel = observer(() => {
           onDataChangeRequest={handleRowReorderDemoRequest}
           bodyHeight={200}
           showStatusBar={false}
+        />
+      </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>CellDropdown</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          Left icon opens dropdown only when editable. Updates go through parent onDataChangeRequest and are applied only after accepted.
+        </div>
+        <div style={{ marginBottom: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <button
+            type="button"
+            onClick={() => {
+              cellDropdownDemo.isEditable = !cellDropdownDemo.isEditable;
+            }}
+            style={{
+              minHeight: '24px',
+              padding: '2px 8px',
+              border: '1px solid #d0d0d0',
+              borderRadius: '2px',
+              background: '#ffffff',
+              fontSize: '12px',
+              cursor: 'pointer',
+            }}
+          >
+            {cellDropdownDemo.isEditable ? 'editable' : 'readonly'}
+          </button>
+        </div>
+        <FolderView
+          columns={cellDropdownDemo.columns}
+          columnsOrder={cellDropdownDemo.columnsOrder}
+          columnsSizeInit={cellDropdownDemo.columnsSize}
+          rows={cellDropdownDemo.rows.map((row) => ({
+            ...row,
+            data: {
+              ...row.data,
+              lockState: {
+                ...row.data.lockState,
+                onChange: async (nextValue, meta) => handleCellDropdownDataChangeRequest('update-lock-state', {
+                  rowId: meta?.rowId,
+                  nextLockState: nextValue,
+                }),
+              },
+            },
+          }))}
+          getBodyComponent={getCellDropdownBodyComponent}
+          onDataChangeRequest={handleCellDropdownDataChangeRequest}
+          bodyHeight={140}
+          showStatusBar={false}
+          listOnly={true}
         />
       </div>
 

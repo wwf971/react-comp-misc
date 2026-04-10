@@ -1,4 +1,5 @@
 export * from './index.js';
+export { default as CellDropdown } from './layout/folder/CellEditable.jsx';
 
 export type PathSegment = {
   name: string;
