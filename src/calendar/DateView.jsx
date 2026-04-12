@@ -91,8 +91,26 @@ function buildNextSelection({
     const endDate = rangeEndDate || null;
     const clickedDateKey = dateObjToKey(clickedDate);
     const beginDateKey = beginDate ? dateObjToKey(beginDate) : null;
+    const endDateKey = endDate ? dateObjToKey(endDate) : null;
 
     if (!beginDate) {
+      if (endDate) {
+        if (endDateKey === clickedDateKey && !isRangeAllowSameDay) {
+          return {
+            nextSelectedDates: [],
+            nextRangeAnchorDate: null,
+            nextRangeBeginDate: null,
+            nextRangeEndDate: null,
+          };
+        }
+        const normalized = normalizeRangeBoundaries(clickedDate, endDate);
+        return {
+          nextSelectedDates: buildDateRange(normalized.beginDate, normalized.endDate),
+          nextRangeAnchorDate: normalized.beginDate,
+          nextRangeBeginDate: normalized.beginDate,
+          nextRangeEndDate: normalized.endDate,
+        };
+      }
       return {
         nextSelectedDates: [clickedDate],
         nextRangeAnchorDate: clickedDate,
@@ -119,11 +137,56 @@ function buildNextSelection({
       };
     }
 
+    if (clickedDateKey === endDateKey) {
+      if (isRangeAllowSameDay) {
+        return {
+          nextSelectedDates: [clickedDate],
+          nextRangeAnchorDate: clickedDate,
+          nextRangeBeginDate: clickedDate,
+          nextRangeEndDate: clickedDate,
+        };
+      }
+      return {
+        nextSelectedDates: [clickedDate],
+        nextRangeAnchorDate: clickedDate,
+        nextRangeBeginDate: null,
+        nextRangeEndDate: clickedDate,
+      };
+    }
+
+    const compareToBeginDate = compareDateObj(clickedDate, beginDate);
+    if (compareToBeginDate < 0) {
+      const normalized = normalizeRangeBoundaries(clickedDate, beginDate);
+      return {
+        nextSelectedDates: buildDateRange(normalized.beginDate, normalized.endDate),
+        nextRangeAnchorDate: normalized.beginDate,
+        nextRangeBeginDate: normalized.beginDate,
+        nextRangeEndDate: normalized.endDate,
+      };
+    }
+    if (compareToBeginDate === 0) {
+      if (isRangeAllowSameDay) {
+        return {
+          nextSelectedDates: [clickedDate],
+          nextRangeAnchorDate: clickedDate,
+          nextRangeBeginDate: clickedDate,
+          nextRangeEndDate: clickedDate,
+        };
+      }
+      return {
+        nextSelectedDates: [clickedDate],
+        nextRangeAnchorDate: clickedDate,
+        nextRangeBeginDate: clickedDate,
+        nextRangeEndDate: null,
+      };
+    }
+
+    const normalized = normalizeRangeBoundaries(beginDate, clickedDate);
     return {
-      nextSelectedDates: [clickedDate],
-      nextRangeAnchorDate: clickedDate,
-      nextRangeBeginDate: clickedDate,
-      nextRangeEndDate: null,
+      nextSelectedDates: buildDateRange(normalized.beginDate, normalized.endDate),
+      nextRangeAnchorDate: normalized.beginDate,
+      nextRangeBeginDate: normalized.beginDate,
+      nextRangeEndDate: normalized.endDate,
     };
   }
 

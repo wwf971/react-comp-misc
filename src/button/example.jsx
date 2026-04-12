@@ -74,6 +74,7 @@ const SegmentedControlExample = () => {
   const [preset, setPreset] = useState('b');
   const [view, setView] = useState('grid');
   const [section, setSection] = useState('inbox');
+  const [autoWidthMode, setAutoWidthMode] = useState('both');
 
   const notificationCounts = {
     inbox: 5,
@@ -173,6 +174,23 @@ const SegmentedControlExample = () => {
         />
         <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
           Section: {section}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <SegmentedControl
+          data={autoWidthMode}
+          onChange={setAutoWidthMode}
+          options={[
+            { value: 'request', label: 'Requests' },
+            { value: 'plan', label: 'Plans' },
+            { value: 'both', label: 'Show Both' },
+          ]}
+          widthMode="auto"
+          color="#2d579e"
+        />
+        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
+          widthMode="auto": text-driven natural width
         </div>
       </div>
 
