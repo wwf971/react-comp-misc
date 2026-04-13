@@ -1,0 +1,55 @@
+.radar-root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radar-svg {
+  display: block;
+}
+
+.radar-ring {
+  fill: transparent;
+  stroke: #d0d7e2;
+  stroke-width: 1;
+}
+
+.radar-axis-line {
+  stroke: #d0d7e2;
+  stroke-width: 1;
+}
+
+.radar-value-shape {
+  fill: rgba(70, 118, 255, 0.2);
+  stroke: #4676ff;
+  stroke-width: 1;
+}
+
+.radar-value-dot {
+  fill: #4676ff;
+}
+
+.radar-corner-wrap {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 8px;
+  min-height: 8px;
+}
+
+.radar-corner-text {
+  font-size: 12px;
+  color: #2b3342;
+  padding: 1px 3px;
+  border-radius: 2px;
+  background: #f8f9fb;
+  border: 1px solid #dbe1eb;
+}
+
+.radar-empty {
+  font-size: 12px;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  padding: 4px 6px;
+}

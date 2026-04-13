@@ -114,6 +114,7 @@ export { default as TreeView } from "./layout/folder/TreeView.jsx";
 export { default as HtmlRender } from "./dev/HtmlRender.jsx";
 export { default as DateSelector } from "./calendar/DateSelector.jsx";
 export { default as DateView } from "./calendar/DateView.jsx";
+export { default as Radar } from "./stat/Radar.jsx";
 
 export {
     parsePathToSegments,

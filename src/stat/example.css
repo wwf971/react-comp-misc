@@ -1,0 +1,141 @@
+.radar-demo-root {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.radar-demo-block {
+  border: 1px solid #d0d7e2;
+  border-radius: 2px;
+  padding: 6px;
+  min-width: 280px;
+  max-width: 560px;
+}
+
+.radar-demo-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2632;
+}
+
+.radar-demo-desc {
+  font-size: 12px;
+  color: #5a6373;
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+
+.radar-demo-chart-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #e0e5ed;
+  border-radius: 2px;
+  padding: 4px;
+  background: #fcfdff;
+}
+
+.radar-demo-feedback {
+  font-size: 12px;
+  color: #4b5565;
+  margin-top: 4px;
+}
+
+.radar-demo-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.radar-demo-label {
+  font-size: 12px;
+  color: #334155;
+}
+
+.radar-demo-input {
+  width: 100%;
+  min-height: 22px;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 2px;
+  font-size: 12px;
+  padding: 1px 4px;
+  color: #1f2937;
+  background: #fff;
+}
+
+.radar-demo-axis-list {
+  margin-top: 6px;
+  display: grid;
+  gap: 5px;
+}
+
+.radar-demo-axis-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 2px;
+  padding: 4px;
+}
+
+.radar-demo-axis-head {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 3px;
+}
+
+.radar-demo-grid {
+  display: grid;
+  grid-template-columns: 1.2fr .8fr .7fr .7fr .7fr;
+  gap: 4px;
+}
+
+.radar-demo-axis-meta {
+  font-size: 11px;
+  color: #4b5563;
+  margin-top: 3px;
+}
+
+.radar-demo-corner-tag {
+  font-size: 11px;
+  color: #2b3342;
+  border: 1px solid #b8c3d6;
+  border-radius: 2px;
+  background: #eef2f8;
+  padding: 1px 3px;
+  white-space: nowrap;
+}
+
+.radar-demo-corner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid #b8c3d6;
+  border-radius: 2px;
+  background: #edf2ff;
+  padding: 1px 3px;
+  white-space: nowrap;
+}
+
+.radar-demo-corner-badge-text {
+  font-size: 11px;
+  color: #233455;
+}
+
+.radar-demo-corner-badge-value {
+  min-width: 12px;
+  border-radius: 2px;
+  background: #4667ca;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+  padding: 0 2px;
+}
+
+.radar-demo-corner-plain {
+  font-size: 11px;
+  color: #2e3848;
+  white-space: nowrap;
+}
