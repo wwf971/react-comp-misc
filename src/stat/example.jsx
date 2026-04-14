@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import Radar from './Radar.jsx';
+import BoolSlider from '../button/BoolSlider.jsx';
 import './example.css';
 
 const DEFAULT_AXIS_ITEMS = [
@@ -34,6 +35,13 @@ function keepAxisCount(list, count) {
   return [...list, ...extra];
 }
 
+function formatAxisNumber(input) {
+  const numeric = Number(input);
+  if (!Number.isFinite(numeric)) return String(input ?? '');
+  if (Number.isInteger(numeric)) return String(numeric);
+  return numeric.toFixed(2);
+}
+
 const CornerTag = ({ axis }) => (
   <div className="radar-demo-corner-tag">{axis.label}</div>
 );
@@ -41,7 +49,7 @@ const CornerTag = ({ axis }) => (
 const CornerBadge = ({ axis }) => (
   <div className="radar-demo-corner-badge">
     <span className="radar-demo-corner-badge-text">{axis.label}</span>
-    <span className="radar-demo-corner-badge-value">{axis.value}</span>
+    <span className="radar-demo-corner-badge-value">{formatAxisNumber(axis.value)}</span>
   </div>
 );
 
@@ -52,6 +60,8 @@ const CornerPlain = ({ axis }) => (
 const RadarExamplesPanel = () => {
   const [axisCount, setAxisCount] = useState(5);
   const [rotationOffsetDeg, setRotationOffsetDeg] = useState(0);
+  const [isShowValues, setIsShowValues] = useState(true);
+  const [isValueEditable, setIsValueEditable] = useState(true);
   const [axisItems, setAxisItems] = useState(() => keepAxisCount(DEFAULT_AXIS_ITEMS, 5));
   const [isApplying, setIsApplying] = useState(false);
   const [lastFeedback, setLastFeedback] = useState('');
@@ -117,6 +127,29 @@ const RadarExamplesPanel = () => {
       return { code: 0 };
     }
 
+    if (type === 'update-axis-value') {
+      const targetIndex = params?.index;
+      const nextValueInput = params?.nextValue;
+      if (targetIndex === undefined || targetIndex < 0 || targetIndex >= axisItems.length) {
+        return { code: -1, message: 'invalid axis index' };
+      }
+      const targetAxis = axisItems[targetIndex];
+      const nextValue = toSafeNumber(nextValueInput, targetAxis.value);
+      if (nextValue < targetAxis.min || nextValue > targetAxis.max) {
+        return { code: -1, message: 'value must be in range' };
+      }
+      setAxisItems((list) => {
+        const nextList = [...list];
+        const currentAxis = nextList[targetIndex];
+        nextList[targetIndex] = {
+          ...currentAxis,
+          value: nextValue,
+        };
+        return nextList;
+      });
+      return { code: 0 };
+    }
+
     return { code: 0 };
   };
 
@@ -133,6 +166,9 @@ const RadarExamplesPanel = () => {
             rotationOffsetDeg={rotationOffsetDeg}
             ringCount={5}
             size={280}
+            showValues={isShowValues}
+            isValueEditable={isValueEditable}
+            onDataChangeRequest={onDataChangeRequest}
             getComp={getCornerComp}
           />
         </div>
@@ -165,6 +201,20 @@ const RadarExamplesPanel = () => {
               await onDataChangeRequest('rotation-offset', { nextOffsetDeg: event.target.value });
             }}
           />
+        </div>
+        <div className="radar-demo-row">
+          <div className="radar-demo-label">Show Axis Values</div>
+          <div className="radar-demo-toggle-wrap">
+            <BoolSlider checked={isShowValues} onChange={setIsShowValues} />
+            <div className="radar-demo-toggle-text">{isShowValues ? 'on' : 'off'}</div>
+          </div>
+        </div>
+        <div className="radar-demo-row">
+          <div className="radar-demo-label">Value Editable</div>
+          <div className="radar-demo-toggle-wrap">
+            <BoolSlider checked={isValueEditable} onChange={setIsValueEditable} />
+            <div className="radar-demo-toggle-text">{isValueEditable ? 'on' : 'off'}</div>
+          </div>
         </div>
 
         <div className="radar-demo-axis-list">
@@ -235,7 +285,7 @@ const RadarExamplesPanel = () => {
                 />
               </div>
               <div className="radar-demo-axis-meta">
-                Range [{axis.min}, {axis.max}] | Value {axis.value}
+                Range [{formatAxisNumber(axis.min)}, {formatAxisNumber(axis.max)}] | Value {formatAxisNumber(axis.value)}
               </div>
             </div>
           ))}

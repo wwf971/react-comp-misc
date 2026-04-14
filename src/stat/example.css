@@ -54,6 +54,18 @@
   color: #334155;
 }
 
+.radar-demo-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.radar-demo-toggle-text {
+  font-size: 12px;
+  color: #334155;
+  min-width: 18px;
+}
+
 .radar-demo-input {
   width: 100%;
   min-height: 22px;

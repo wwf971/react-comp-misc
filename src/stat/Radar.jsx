@@ -1,5 +1,5 @@
-import React from 'react';
-import './Radar.css';
+import React, { useRef, useState } from 'react';
+import './radar.css';
 
 const DEFAULT_AXIS_MIN = 0;
 const DEFAULT_AXIS_MAX = 100;
@@ -13,6 +13,14 @@ function clampValue(value, min, max) {
   if (value < min) return min;
   if (value > max) return max;
   return value;
+}
+
+function formatNumericLabel(input) {
+  const numeric = Number(input);
+  if (!Number.isFinite(numeric)) return '';
+  if (Math.abs(numeric) >= 1000) return String(Math.round(numeric));
+  if (Number.isInteger(numeric)) return String(numeric);
+  return numeric.toFixed(2).replace(/\.?0+$/, '');
 }
 
 function normalizeAxis(axis, index) {
@@ -59,9 +67,15 @@ const Radar = ({
   ringCount = 5,
   rotationOffsetDeg = 0,
   labelOffset = 18,
+  showValues = true,
+  isValueEditable = false,
+  onDataChangeRequest,
   getComp = null,
   style = {},
 }) => {
+  const svgRef = useRef(null);
+  const draggingAxisIndexRef = useRef(-1);
+  const [isDragging, setIsDragging] = useState(false);
   const normalizedSize = Math.max(120, toSafeNumber(size, 260));
   const normalizedRingCount = Math.max(1, Math.floor(toSafeNumber(ringCount, 5)));
   const axisList = Array.isArray(axisItems) ? axisItems.map(normalizeAxis) : [];
@@ -76,6 +90,68 @@ const Radar = ({
   const valuePolygon = axisGeometry.map((axis) => `${center + axis.valueX},${center + axis.valueY}`).join(' ');
   const containerSize = normalizedSize + labelOffset * 2 + 48;
   const centerInContainer = containerSize / 2;
+  const canEditValues = isValueEditable && typeof onDataChangeRequest === 'function';
+
+  const requestAxisValueUpdate = (axisIndex, ratio) => {
+    const axis = axisGeometry[axisIndex];
+    if (!axis) return;
+    const nextRatio = clampValue(ratio, 0, 1);
+    const nextValue = axis.min + (axis.max - axis.min) * nextRatio;
+    onDataChangeRequest('update-axis-value', {
+      index: axisIndex,
+      axisId: axis.id,
+      nextRatio,
+      nextValue,
+    });
+  };
+
+  const updateDraggedAxisByPointerEvent = (event) => {
+    if (!canEditValues) return;
+    const axisIndex = draggingAxisIndexRef.current;
+    if (axisIndex < 0 || axisIndex >= axisGeometry.length) return;
+    const svgElement = svgRef.current;
+    if (!svgElement) return;
+    const rect = svgElement.getBoundingClientRect();
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+    const axis = axisGeometry[axisIndex];
+    const vectorX = pointerX - center;
+    const vectorY = pointerY - center;
+    const axisLengthSquared = axis.edgeX * axis.edgeX + axis.edgeY * axis.edgeY;
+    if (axisLengthSquared <= 0) return;
+    const projection = (vectorX * axis.edgeX + vectorY * axis.edgeY) / axisLengthSquared;
+    requestAxisValueUpdate(axisIndex, projection);
+  };
+
+  const handlePointerMove = (event) => {
+    if (!isDragging) return;
+    event.preventDefault();
+    updateDraggedAxisByPointerEvent(event);
+  };
+
+  const stopDragging = () => {
+    draggingAxisIndexRef.current = -1;
+    setIsDragging(false);
+  };
+
+  const handlePointerUp = (event) => {
+    if (!isDragging) return;
+    event.preventDefault();
+    stopDragging();
+  };
+
+  const handlePointerLeave = () => {
+    if (!isDragging) return;
+    stopDragging();
+  };
+
+  const startDraggingAxis = (event, axisIndex) => {
+    if (!canEditValues) return;
+    event.preventDefault();
+    draggingAxisIndexRef.current = axisIndex;
+    setIsDragging(true);
+    updateDraggedAxisByPointerEvent(event);
+  };
 
   return (
     <div className="radar-root" style={{ ...style, width: `${containerSize}px`, height: `${containerSize}px` }}>
@@ -83,7 +159,17 @@ const Radar = ({
         <div className="radar-empty">Radar requires at least 3 axes.</div>
       ) : (
         <>
-          <svg className="radar-svg" viewBox={`0 0 ${normalizedSize} ${normalizedSize}`} width={normalizedSize} height={normalizedSize}>
+          <svg
+            ref={svgRef}
+            className="radar-svg"
+            viewBox={`0 0 ${normalizedSize} ${normalizedSize}`}
+            width={normalizedSize}
+            height={normalizedSize}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onPointerLeave={handlePointerLeave}
+          >
             <g>
               {ringPolygons.map((points, index) => (
                 <polygon key={`ring-${index}`} points={points} className="radar-ring" />
@@ -99,15 +185,45 @@ const Radar = ({
                 />
               ))}
               <polygon points={valuePolygon} className="radar-value-shape" />
-              {axisGeometry.map((axis) => (
+              {axisGeometry.map((axis, axisIndex) => (
                 <circle
                   key={`${axis.id}-dot`}
                   cx={center + axis.valueX}
                   cy={center + axis.valueY}
-                  r="3"
-                  className="radar-value-dot"
+                  r={canEditValues ? '5' : '3'}
+                  className={canEditValues ? 'radar-value-dot radar-value-dot-editable' : 'radar-value-dot'}
+                  onPointerDown={(event) => startDraggingAxis(event, axisIndex)}
                 />
               ))}
+              {showValues ? axisGeometry.flatMap((axis) => {
+                const tickTexts = Array.from({ length: normalizedRingCount }, (_, index) => {
+                  const ratio = (index + 1) / normalizedRingCount;
+                  const tickValue = axis.min + (axis.max - axis.min) * ratio;
+                  const shiftRatio = ratio + (ratio < 0.6 ? -0.03 : 0.03);
+                  return (
+                    <text
+                      key={`${axis.id}-tick-${index}`}
+                      x={center + axis.edgeX * shiftRatio}
+                      y={center + axis.edgeY * shiftRatio}
+                      className="radar-tick-text"
+                    >
+                      {formatNumericLabel(tickValue)}
+                    </text>
+                  );
+                });
+                const valueLabelRatio = axis.ratio + 0.06;
+                const valueText = (
+                  <text
+                    key={`${axis.id}-value-text`}
+                    x={center + axis.edgeX * valueLabelRatio}
+                    y={center + axis.edgeY * valueLabelRatio}
+                    className="radar-value-text"
+                  >
+                    {formatNumericLabel(axis.value)}
+                  </text>
+                );
+                return [...tickTexts, valueText];
+              }) : null}
             </g>
           </svg>
           {axisGeometry.map((axis) => {
