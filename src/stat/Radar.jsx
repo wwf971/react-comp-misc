@@ -69,6 +69,7 @@ const Radar = ({
   labelOffset = 18,
   showValues = true,
   isValueEditable = false,
+  dragOutsideTolerancePx = 16,
   onDataChangeRequest,
   getComp = null,
   style = {},
@@ -91,6 +92,7 @@ const Radar = ({
   const containerSize = normalizedSize + labelOffset * 2 + 48;
   const centerInContainer = containerSize / 2;
   const canEditValues = isValueEditable && typeof onDataChangeRequest === 'function';
+  const labelAnchorGap = 4;
 
   const requestAxisValueUpdate = (axisIndex, ratio) => {
     const axis = axisGeometry[axisIndex];
@@ -117,6 +119,9 @@ const Radar = ({
     const axis = axisGeometry[axisIndex];
     const vectorX = pointerX - center;
     const vectorY = pointerY - center;
+    const radialDistance = Math.sqrt(vectorX * vectorX + vectorY * vectorY);
+    const outsideTolerance = Math.max(0, toSafeNumber(dragOutsideTolerancePx, 16));
+    if (radialDistance > radius + outsideTolerance) return;
     const axisLengthSquared = axis.edgeX * axis.edgeX + axis.edgeY * axis.edgeY;
     if (axisLengthSquared <= 0) return;
     const projection = (vectorX * axis.edgeX + vectorY * axis.edgeY) / axisLengthSquared;
@@ -140,14 +145,12 @@ const Radar = ({
     stopDragging();
   };
 
-  const handlePointerLeave = () => {
-    if (!isDragging) return;
-    stopDragging();
-  };
-
   const startDraggingAxis = (event, axisIndex) => {
     if (!canEditValues) return;
     event.preventDefault();
+    if (event.currentTarget?.setPointerCapture) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     draggingAxisIndexRef.current = axisIndex;
     setIsDragging(true);
     updateDraggedAxisByPointerEvent(event);
@@ -168,7 +171,6 @@ const Radar = ({
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            onPointerLeave={handlePointerLeave}
           >
             <g>
               {ringPolygons.map((points, index) => (
@@ -199,7 +201,7 @@ const Radar = ({
                 const tickTexts = Array.from({ length: normalizedRingCount }, (_, index) => {
                   const ratio = (index + 1) / normalizedRingCount;
                   const tickValue = axis.min + (axis.max - axis.min) * ratio;
-                  const shiftRatio = ratio + (ratio < 0.6 ? -0.03 : 0.03);
+                  const shiftRatio = ratio < 0.6 ? ratio - 0.03 : ratio + 0.03;
                   return (
                     <text
                       key={`${axis.id}-tick-${index}`}
@@ -211,13 +213,23 @@ const Radar = ({
                     </text>
                   );
                 });
-                const valueLabelRatio = axis.ratio + 0.06;
+                const valueLabelOffsetPx = 8;
+                const unitX = axis.edgeX / radius;
+                const unitY = axis.edgeY / radius;
+                const valueLabelX = center + axis.valueX + unitX * valueLabelOffsetPx;
+                const valueLabelY = center + axis.valueY + unitY * valueLabelOffsetPx;
+                const valueTextAnchor = unitX > 0.2 ? 'start' : (unitX < -0.2 ? 'end' : 'middle');
+                const valueDominantBaseline = unitY > 0.2
+                  ? 'text-before-edge'
+                  : (unitY < -0.2 ? 'text-after-edge' : 'middle');
                 const valueText = (
                   <text
                     key={`${axis.id}-value-text`}
-                    x={center + axis.edgeX * valueLabelRatio}
-                    y={center + axis.edgeY * valueLabelRatio}
+                    x={valueLabelX}
+                    y={valueLabelY}
                     className="radar-value-text"
+                    textAnchor={valueTextAnchor}
+                    dominantBaseline={valueDominantBaseline}
                   >
                     {formatNumericLabel(axis.value)}
                   </text>
@@ -228,13 +240,20 @@ const Radar = ({
           </svg>
           {axisGeometry.map((axis) => {
             const CornerComp = getComp ? getComp(axis.component, axis) : null;
-            const left = centerInContainer + axis.edgeX * ((radius + labelOffset) / radius);
-            const top = centerInContainer + axis.edgeY * ((radius + labelOffset) / radius);
+            const anchorRatio = (radius + labelOffset + labelAnchorGap) / radius;
+            const left = centerInContainer + axis.edgeX * anchorRatio;
+            const top = centerInContainer + axis.edgeY * anchorRatio;
+            const translateXPercent = axis.edgeX >= 0 ? 0 : -100;
+            const translateYPercent = axis.edgeY >= 0 ? 0 : -100;
             return (
               <div
                 key={`${axis.id}-label`}
                 className="radar-corner-wrap"
-                style={{ left: `${left}px`, top: `${top}px` }}
+                style={{
+                  left: `${left}px`,
+                  top: `${top}px`,
+                  transform: `translate(${translateXPercent}%, ${translateYPercent}%)`,
+                }}
               >
                 {CornerComp
                   ? (typeof CornerComp === 'function'

@@ -7,6 +7,7 @@
 
 .radar-svg {
   display: block;
+  overflow: visible;
 }
 
 .radar-ring {
@@ -49,19 +50,17 @@
 
 .radar-value-text {
   fill: #2748a4;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
-  text-anchor: middle;
-  dominant-baseline: middle;
   user-select: none;
   pointer-events: none;
 }
 
 .radar-corner-wrap {
   position: absolute;
-  transform: translate(-50%, -50%);
   min-width: 8px;
   min-height: 8px;
+  pointer-events: auto;
 }
 
 .radar-corner-text {
