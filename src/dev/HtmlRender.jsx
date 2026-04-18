@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import PanelDual from '../panel/PanelDual.jsx';
+import PanelDual from '../layout/panel/PanelDual.jsx';
 import './HtmlRender.css';
 
 const validateHtml = (rawHtml) => {

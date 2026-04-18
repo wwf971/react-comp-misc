@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import DownIcon from '../../icon/DownIcon.jsx';
+import { DownIcon } from '../../icon/DirectionIcons.jsx';
 import SpinningCircle from '../../icon/SpinningCircle.jsx';
 import './folder.css';
 

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import './MasterDetail.css';
 import MasterDetailInfiLevel from './MasterDetailInfiLevel';
-import PanelDual from '../../panel/PanelDual';
+import PanelDual from '../panel/PanelDual';
+import { RightIcon } from '../../icon/DirectionIcons';
 
 const renderPanels = (
   panels,
@@ -179,7 +180,7 @@ const Tab = ({ tabKey, label, isActive, isExpanded, onClick, onToggleExpand }) =
         className="tab-expand-btn"
       >
         <span className={`tab-expand-icon ${isExpanded ? 'expanded' : ''}`}>
-          ▶
+          <RightIcon width={12} height={12} />
         </span>
       </button>
 

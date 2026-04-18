@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import SpinningCircle from '../icon/SpinningCircle.jsx';
+import SpinningCircle from '../../icon/SpinningCircle.jsx';
 import './PathBar.css';
 
 export function defaultParsePathStrToPathData(raw) {

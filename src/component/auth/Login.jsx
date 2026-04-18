@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite'
 import './Login.css'
-import { EyeIcon, EyeOffIcon, CheckIcon } from '../icon/Icon'
+import { EyeIcon, EyeOffIcon, CheckIcon } from '../../icon/Icon'
 
 /**
  * Login Component - Render-only login view.

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import JsonCompMobx from './JsonCompMobx';
-import BoolSlider from '../../button/BoolSlider';
+import BoolSlider from '../../component/button/BoolSlider';
 import { createHandleChange } from './exampleHandleChange';
 
 /**

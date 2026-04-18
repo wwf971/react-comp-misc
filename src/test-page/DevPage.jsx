@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { components } from './examples.jsx';
-import PanelDual from '../panel/PanelDual.jsx';
+import PanelDual from '../layout/panel/PanelDual.jsx';
 import ItemsListVert from '../layout/list/ItemsListVert.jsx';
 import './DevPage.css';
 

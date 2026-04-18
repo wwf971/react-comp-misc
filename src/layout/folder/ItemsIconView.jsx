@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import FolderIcon from '../../icon/FolderIcon';
 import FileIcon from '../../icon/FileIcon';
-import Menu from '../../menu/Menu.jsx';
+import Menu from '../../component/menu/Menu.jsx';
 import './folder.css';
 
 const ICON_SIZE = 40;

@@ -3,9 +3,9 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import KeyValues from './KeyValues.jsx';
 import KeyValuesComp from './KeyValuesComp.jsx';
-import EditableValueWithInfo from '../layout/value-comp/EditableValueWithInfo.jsx';
-import EditableValueComp from '../layout/value-comp/EditableValueComp.jsx';
-import PlusIcon from '../icon/PlusIcon.jsx';
+import EditableValueWithInfo from '../../layout/value-comp/EditableValueWithInfo.jsx';
+import EditableValueComp from '../../layout/value-comp/EditableValueComp.jsx';
+import PlusIcon from '../../icon/PlusIcon.jsx';
 
 const DictExamplesPanel = observer(() => {
   const [store] = useState(() => {

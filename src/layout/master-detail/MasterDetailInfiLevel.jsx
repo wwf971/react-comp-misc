@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './MasterDetail.css';
-import PanelDual from '../../panel/PanelDual';
+import PanelDual from '../panel/PanelDual';
 
 const MasterDetailInfiLevel = ({
   title,

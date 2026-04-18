@@ -5,7 +5,7 @@ import Header from './Header';
 import FolderView from './FolderView';
 import TreeView from './TreeView';
 import CellDropdown from './CellEditable.jsx';
-import PathBar from '../../path/PathBar.jsx';
+import PathBar from '../../component/path/PathBar.jsx';
 import { createFolderExplorerDemoStore } from './folderExplorerDemoModel';
 import InfoIconWithTooltip from '../../icon/InfoIconWithTooltip';
 import InfoIcon from '../../icon/InfoIcon';

@@ -11,6 +11,8 @@ export {
     UploadIcon,
     BackIcon,
     ForwardIcon,
+    LeftIcon,
+    RightIcon,
     UpIcon,
     DownIcon,
     EyeIcon,
@@ -53,21 +55,21 @@ export {
 
 export { default as TabsOnTop, Tab as TabsOnTopTab, TabLabel as TabsOnTopTabLabel } from "./layout/tab/TabsOnTop.jsx";
 
-export { default as Login } from "./auth/Login.jsx";
+export { default as Login } from "./component/auth/Login.jsx";
 
-export { default as ConfigPanel } from "./config/Config.jsx";
-export { default as ConfigPanelWithTabs } from "./config/ConfigTab.jsx";
-export { default as ConfigPanelWithTabGroups } from "./config/ConfigTabGroup.jsx";
-export { default as ConfigPanelWithSubtabs } from "./config/ConfigSubtab.jsx";
+export { default as ConfigPanel } from "./component/config/Config.jsx";
+export { default as ConfigPanelWithTabs } from "./component/config/ConfigTab.jsx";
+export { default as ConfigPanelWithTabGroups } from "./component/config/ConfigTabGroup.jsx";
+export { default as ConfigPanelWithSubtabs } from "./component/config/ConfigSubtab.jsx";
 
 export {
   default as PathBar,
   defaultParsePathStrToPathData,
   buildCanonicalPathStrFromSegs
-} from "./path/PathBar.jsx";
+} from "./component/path/PathBar.jsx";
 
-export { default as KeyValues } from "./key-value/KeyValues.jsx";
-export { default as KeyValuesComp } from "./key-value/KeyValuesComp.jsx";
+export { default as KeyValues } from "./component/key-value/KeyValues.jsx";
+export { default as KeyValuesComp } from "./component/key-value/KeyValuesComp.jsx";
 
 export { default as EditableValueComp } from "./layout/value-comp/EditableValueComp.jsx";
 export { default as EditableValueWithInfo } from "./layout/value-comp/EditableValueWithInfo.jsx";
@@ -75,9 +77,9 @@ export { default as SelectableValue } from "./layout/value-comp/SelectableValue.
 export { default as SelectableValueComp } from "./layout/value-comp/SelectableValueComp.jsx";
 export { default as SearchableValue } from "./layout/value-comp/SearchableValue.jsx";
 export { default as SearchableValueComp } from "./layout/value-comp/SearchableValueComp.jsx";
-export { default as PanelToggle } from "./panel/PanelToggle.jsx";
-export { default as PanelDual } from "./panel/PanelDual.jsx";
-export { default as PanelPopup } from "./panel/PanelPopup.jsx";
+export { default as PanelToggle } from "./layout/panel/PanelToggle.jsx";
+export { default as PanelDual } from "./layout/panel/PanelDual.jsx";
+export { default as PanelPopup } from "./component/popup/PanelPopup.jsx";
 
 export { default as JsonComp } from "./layout/json/JsonComp.jsx";
 export { default as JsonKeyValueComp } from "./layout/json/JsonKeyValueComp.jsx";
@@ -95,15 +97,15 @@ export { default as JsonCompMobx } from "./layout/json-mobx/JsonCompMobx.jsx";
 
 export { parseYamlToJson, parseJsonString, parseStringToJson, formatJson } from "./utils/parseString";
 
-export { default as Menu } from "./menu/Menu";
+export { default as Menu } from "./component/menu/Menu";
 
-export { default as MenuComp } from "./menu/MenuComp";
+export { default as MenuComp } from "./component/menu/MenuComp";
 
 export { default as DatabaseSetup } from "./database/DatabaseSetup";
 export { default as TableManage } from "./database/TableManage";
 
-export { default as BoolSlider } from "./button/BoolSlider.jsx";
-export { default as SegmentedControl } from "./button/SegmentedControl.jsx";
+export { default as BoolSlider } from "./component/button/BoolSlider.jsx";
+export { default as SegmentedControl } from "./component/button/SegmentedControl.jsx";
 
 export { default as FolderView } from "./layout/folder/FolderView.jsx";
 export { default as FolderHeader } from "./layout/folder/Header.jsx";
@@ -112,9 +114,9 @@ export { default as CellDropdown } from "./layout/folder/CellEditable.jsx";
 export { default as TreeView } from "./layout/folder/TreeView.jsx";
 
 export { default as HtmlRender } from "./dev/HtmlRender.jsx";
-export { default as DateSelector } from "./calendar/DateSelector.jsx";
-export { default as DateView } from "./calendar/DateView.jsx";
-export { default as Radar } from "./stat/Radar.jsx";
+export { default as DateSelector } from "./component/calendar/DateSelector.jsx";
+export { default as DateView } from "./component/calendar/DateView.jsx";
+export { default as Radar } from "./component/stat/Radar.jsx";
 
 export {
     parsePathToSegments,

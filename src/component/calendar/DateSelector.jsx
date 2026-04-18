@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { CalendarIcon, CrossIcon } from '../icon/Icon';
+import { CalendarIcon, CrossIcon } from '../../icon/Icon';
 import DateView from './DateView';
 import {
   parseSingleSelectionInput,

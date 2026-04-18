@@ -10,7 +10,7 @@ import ItemWrapperArray from './ItemWrapperArray';
 import ItemWrapperObject from './ItemWrapperObject';
 import { usePathRef } from './pathRef';
 import { JsonContextProvider } from './JsonContext';
-import MenuComp from '../../menu/MenuComp';
+import MenuComp from '../../component/menu/MenuComp';
 import { handleMenuItemClick as handleMenuItemClickImpl } from './menuClick';
 import { getMenuItems } from './menuItems';
 import './JsonComp.css';

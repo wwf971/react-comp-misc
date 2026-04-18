@@ -9,10 +9,14 @@ import InfoIconWithTooltip from './InfoIconWithTooltip';
 import SuccessIcon from './SuccessIcon';
 import ErrorIcon from './ErrorIcon';
 import UploadIcon from './UploadIcon';
-import BackIcon from './BackIcon';
-import ForwardIcon from './ForwardIcon';
-import UpIcon from './UpIcon';
-import DownIcon from './DownIcon';
+import {
+  BackIcon,
+  ForwardIcon,
+  UpIcon,
+  DownIcon,
+  RightIcon,
+  LeftIcon,
+} from './DirectionIcons';
 import EyeIcon from './EyeIcon';
 import EyeOffIcon from './EyeOffIcon';
 import CrossIcon from './CrossIcon';
@@ -40,6 +44,8 @@ export {
 	UploadIcon,
 	BackIcon,
 	ForwardIcon,
+	LeftIcon,
+	RightIcon,
 	UpIcon,
 	DownIcon,
 	EyeIcon,
