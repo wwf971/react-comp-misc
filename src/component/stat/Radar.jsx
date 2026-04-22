@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import './radar.css';
+import './Radar.css';
 
 const DEFAULT_AXIS_MIN = 0;
 const DEFAULT_AXIS_MAX = 100;

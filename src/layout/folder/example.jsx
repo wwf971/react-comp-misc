@@ -229,6 +229,25 @@ const FolderExamplesPanel = observer(() => {
     Object.fromEntries(customData.columnsOrder.map(id => [id, customData.columnsSize[id]?.width ?? 40]))
   );
 
+  const [lastColumnFillDemo] = useState(() => makeAutoObservable({
+    columns: {
+      name: { data: 'Name', align: 'left' },
+      owner: { data: 'Owner', align: 'left' },
+      modified: { data: 'Modified', align: 'left' },
+    },
+    columnsOrder: ['name', 'owner', 'modified'],
+    columnsSize: {
+      name: { width: 180, minWidth: 120, resizable: true },
+      owner: { width: 120, minWidth: 80, resizable: true },
+      modified: { width: 130, minWidth: 100, resizable: true },
+    },
+    rows: [
+      { id: 'r1', data: { name: 'orders', owner: 'db-team', modified: '2026-03-19' } },
+      { id: 'r2', data: { name: 'users', owner: 'backend', modified: '2026-03-17' } },
+      { id: 'r3', data: { name: 'payments', owner: 'infra', modified: '2026-03-16' } },
+    ],
+  }));
+
   const [rowReorderDemo] = useState(() => makeAutoObservable({
     columns: { label: { data: 'Item', align: 'left' } },
     columnsOrder: ['label'],
@@ -646,6 +665,23 @@ const FolderExamplesPanel = observer(() => {
             contextMenuItems={[{ type: 'item', name: 'Delete' }]}
           />
         </div>
+      </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Last Column Fill Mode</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          Enable isLastColumnFilled to let the final column consume remaining horizontal space.
+        </div>
+        <FolderView
+          columns={lastColumnFillDemo.columns}
+          columnsOrder={lastColumnFillDemo.columnsOrder}
+          columnsSizeInit={lastColumnFillDemo.columnsSize}
+          rows={lastColumnFillDemo.rows}
+          isLastColumnFilled={true}
+          bodyHeight={140}
+          showStatusBar={false}
+          listOnly={true}
+        />
       </div>
 
       <div style={{ marginBottom: '30px' }}>

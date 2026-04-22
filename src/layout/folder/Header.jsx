@@ -22,7 +22,8 @@ const Header = observer(({
   getComponent, 
   onColumnWidthChange,
   allowColumnReorder = false, 
-  onDataChangeRequest 
+  onDataChangeRequest,
+  isLastColumnFilled = true,
 }) => {
   
   const headerRef = useRef(null);
@@ -275,6 +276,8 @@ const Header = observer(({
         const isResizable = columnsSizeInit?.[colId]?.resizable !== false;
         const align = column.align || 'left';
         const width = columnWidths?.[colId];
+        const isLastColumn = index === columnsOrder.length - 1;
+        const isLastColumnFillApplied = isLastColumnFilled && isLastColumn;
         const isDragging = draggingColId === colId;
         
         // Get custom component via callback or use default text component
@@ -286,7 +289,9 @@ const Header = observer(({
             key={colId}
             className={`folder-header-cell ${isDragging ? 'dragging' : ''} ${allowColumnReorder ? 'reorderable' : ''}`}
             style={{ 
-              width: width ? `${width}px` : undefined,
+              width: isLastColumnFillApplied ? undefined : (width ? `${width}px` : undefined),
+              minWidth: isLastColumnFillApplied && width ? `${width}px` : undefined,
+              flexGrow: isLastColumnFillApplied ? 1 : undefined,
               textAlign: align,
               opacity: isDragging ? 0.3 : 1
             }}

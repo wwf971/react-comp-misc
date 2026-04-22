@@ -40,6 +40,7 @@ const ItemsListView = observer(({
   onDataChangeRequest,
   locked = false,
   contextMenuItems = null,
+  isLastColumnFilled = true,
 }) => {
   const bodyRef = useRef(null);
   const [draggingRowId, setDraggingRowId] = useState(null);
@@ -367,9 +368,11 @@ const ItemsListView = observer(({
             onDrag={handleRowDrag}
             onDragEnd={handleRowDragEnd}
           >
-            {columnsOrder.map(colId => {
+            {columnsOrder.map((colId, columnIndex) => {
               const column = columns[colId];
               if (!column) return null;
+              const isLastColumn = columnIndex === columnsOrder.length - 1;
+              const isLastColumnFillApplied = isLastColumnFilled && isLastColumn;
               const align = column.align || 'left';
               const width = columnWidths?.[colId];
               const CustomComp = getComponent ? getComponent(colId, row.id) : undefined;
@@ -378,7 +381,12 @@ const ItemsListView = observer(({
                 <div
                   key={colId}
                   className="folder-body-cell"
-                  style={{ width: width ? `${width}px` : undefined, textAlign: align }}
+                  style={{
+                    width: isLastColumnFillApplied ? undefined : (width ? `${width}px` : undefined),
+                    minWidth: isLastColumnFillApplied && width ? `${width}px` : undefined,
+                    flexGrow: isLastColumnFillApplied ? 1 : undefined,
+                    textAlign: align,
+                  }}
                 >
                   <div className="folder-body-cell-content">
                     {useObservableCell ? (
