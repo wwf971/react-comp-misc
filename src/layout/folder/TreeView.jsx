@@ -7,6 +7,11 @@ import CrossIcon from '../../icon/CrossIcon';
 import RefreshIcon from '../../icon/RefreshIcon';
 import './folder.css';
 
+const TreeTextItemComp = ({ itemData }) => {
+  const itemText = itemData?.text || itemData?.name || String(itemData?.id || '');
+  return <span className="tree-view-text-item">{itemText}</span>;
+};
+
 const TreeItemNode = observer(({
   itemId,
   getItemDataById,
@@ -27,8 +32,7 @@ const TreeItemNode = observer(({
   const childrenIds = Array.isArray(itemData.childrenIds) ? itemData.childrenIds : [];
   const isSelected = selectedItemId !== undefined && selectedItemId === itemId;
   const canRenderChildren = !isLeaf && isExpanded;
-  const itemText = itemData.text || itemData.name || String(itemId);
-  const ItemComp = itemData.type === 'comp' ? getItemComp?.(itemData) : null;
+  const ItemComp = getItemComp?.(itemData) || TreeTextItemComp;
 
   const handleToggleClick = async (event) => {
     event.stopPropagation();
@@ -71,7 +75,7 @@ const TreeItemNode = observer(({
           ) : null}
         </button>
         <div className="tree-view-label">
-          {ItemComp ? <ItemComp itemData={itemData} /> : itemText}
+          <ItemComp itemData={itemData} />
         </div>
       </div>
 
@@ -139,4 +143,5 @@ const TreeView = observer(({
   );
 });
 
+export { TreeTextItemComp };
 export default TreeView;

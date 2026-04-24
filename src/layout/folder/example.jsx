@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import Header from './Header';
 import FolderView from './FolderView';
-import TreeView from './TreeView';
+import TreeView, { TreeTextItemComp } from './TreeView';
 import CellDropdown from './CellEditable.jsx';
 import PathBar from '../../component/path/PathBar.jsx';
 import { createFolderExplorerDemoStore } from './folderExplorerDemoModel';
@@ -100,6 +100,60 @@ const TREE_NODE_CATALOG = {
 const TREE_LOAD_FAIL_ONCE_COUNT = {
   components: 1,
 };
+
+const TREE_FILTER_ROOT_ITEM_IDS = ['workspace'];
+
+function createTreeParentIdById(nodeCatalog) {
+  const parentIdById = {};
+  Object.values(nodeCatalog).forEach((node) => {
+    const childrenIds = Array.isArray(node.childrenIds) ? node.childrenIds : [];
+    childrenIds.forEach((childId) => {
+      parentIdById[childId] = node.id;
+    });
+  });
+  return parentIdById;
+}
+
+const TREE_PARENT_ID_BY_ID = createTreeParentIdById(TREE_NODE_CATALOG);
+
+function createLeafFilteredTreeData(filterText) {
+  const normalizedFilterText = filterText.trim().toLowerCase();
+  const nodeIds = Object.keys(TREE_NODE_CATALOG);
+  const visibleItemIds = new Set();
+  const matchedLeafItemIds = [];
+  nodeIds.forEach((nodeId) => {
+    const node = TREE_NODE_CATALOG[nodeId];
+    if (!node || node.isLeaf !== true) return;
+    const text = (node.text || '').toLowerCase();
+    const isMatched = normalizedFilterText.length === 0 || text.includes(normalizedFilterText);
+    if (!isMatched) return;
+    matchedLeafItemIds.push(nodeId);
+    let currentItemId = nodeId;
+    while (currentItemId) {
+      visibleItemIds.add(currentItemId);
+      currentItemId = TREE_PARENT_ID_BY_ID[currentItemId];
+    }
+  });
+  const rootItemIds = TREE_FILTER_ROOT_ITEM_IDS.filter((rootId) => visibleItemIds.has(rootId));
+  const itemDataById = {};
+  visibleItemIds.forEach((nodeId) => {
+    const source = TREE_NODE_CATALOG[nodeId];
+    if (!source) return;
+    itemDataById[nodeId] = {
+      ...source,
+      isExpanded: source.isLeaf !== true,
+      childrenIds: (source.childrenIds || []).filter((childId) => visibleItemIds.has(childId)),
+      childrenLoadState: 'loaded',
+      childrenErrorMessage: '',
+      isChildrenLoaded: true,
+    };
+  });
+  return {
+    rootItemIds,
+    itemDataById,
+    matchedLeafItemIds,
+  };
+}
 
 function createTreeViewDemoStore() {
   const store = {
@@ -220,6 +274,9 @@ const FolderExamplesPanel = observer(() => {
 
   const [fileExplorerStore] = useState(() => createFolderExplorerDemoStore());
   const [treeViewStore] = useState(() => createTreeViewDemoStore());
+  const [treeFilterText, setTreeFilterText] = useState('');
+  const [treeFilterSelectedItemId, setTreeFilterSelectedItemId] = useState('workspace');
+  const [treeFilterExpandedById, setTreeFilterExpandedById] = useState({});
 
   const [basicColWidths, setBasicColWidths] = useState(() =>
     Object.fromEntries(basicData.columnsOrder.map(id => [id, basicData.columnsSize[id]?.width ?? 40]))
@@ -405,6 +462,54 @@ const FolderExamplesPanel = observer(() => {
   };
 
   const [mixedSelectionSummary, setMixedSelectionSummary] = useState('');
+  const filteredTreeData = useMemo(
+    () => createLeafFilteredTreeData(treeFilterText),
+    [treeFilterText]
+  );
+  const filteredTreeRenderData = useMemo(() => {
+    const itemDataById = {};
+    Object.entries(filteredTreeData.itemDataById).forEach(([itemId, itemData]) => {
+      if (itemData.isLeaf === true) {
+        itemDataById[itemId] = itemData;
+        return;
+      }
+      const isExpanded = treeFilterExpandedById[itemId] !== undefined
+        ? treeFilterExpandedById[itemId]
+        : true;
+      itemDataById[itemId] = {
+        ...itemData,
+        isExpanded,
+      };
+    });
+    return {
+      rootItemIds: filteredTreeData.rootItemIds,
+      itemDataById,
+      matchedLeafItemIds: filteredTreeData.matchedLeafItemIds,
+    };
+  }, [filteredTreeData, treeFilterExpandedById]);
+  const normalizedTreeFilterText = treeFilterText.trim().toLowerCase();
+
+  useEffect(() => {
+    if (filteredTreeRenderData.itemDataById[treeFilterSelectedItemId]) return;
+    setTreeFilterSelectedItemId(filteredTreeRenderData.rootItemIds[0] || '');
+  }, [filteredTreeRenderData, treeFilterSelectedItemId]);
+
+  useEffect(() => {
+    setTreeFilterExpandedById((prev) => {
+      const next = {};
+      Object.entries(filteredTreeData.itemDataById).forEach(([itemId, itemData]) => {
+        if (itemData.isLeaf === true) return;
+        next[itemId] = prev[itemId] !== undefined ? prev[itemId] : true;
+      });
+      const prevKeys = Object.keys(prev);
+      const nextKeys = Object.keys(next);
+      if (prevKeys.length === nextKeys.length) {
+        const isSame = nextKeys.every((key) => prev[key] === next[key]);
+        if (isSame) return prev;
+      }
+      return next;
+    });
+  }, [filteredTreeData]);
 
   const getComponent = () => TextWithInfoIconComp;
 
@@ -421,7 +526,46 @@ const FolderExamplesPanel = observer(() => {
   );
   const getTreeItemComp = (itemData) => {
     if (itemData.compKey === 'with-info-icon') return TreeInfoItemComp;
-    return null;
+    return TreeTextItemComp;
+  };
+
+  const TreeFilterItemComp = ({ itemData }) => {
+    const itemText = itemData.text || itemData.name || String(itemData.id || '');
+    const matchedIndex = itemText.toLowerCase().indexOf(normalizedTreeFilterText);
+    if (matchedIndex < 0 || normalizedTreeFilterText.length === 0) {
+      return <span className="folder-tree-item-text">{itemText}</span>;
+    }
+    const beforeText = itemText.slice(0, matchedIndex);
+    const matchedText = itemText.slice(matchedIndex, matchedIndex + normalizedTreeFilterText.length);
+    const afterText = itemText.slice(matchedIndex + normalizedTreeFilterText.length);
+    return (
+      <span className="folder-tree-item-text">
+        {beforeText}
+        <span className="folder-tree-match-highlight">{matchedText}</span>
+        {afterText}
+      </span>
+    );
+  };
+
+  const getTreeFilterItemComp = (itemData) => {
+    if (itemData.isLeaf !== true || normalizedTreeFilterText.length === 0) return TreeTextItemComp;
+    const itemText = itemData.text || itemData.name || String(itemData.id || '');
+    if (!itemText.toLowerCase().includes(normalizedTreeFilterText)) return TreeTextItemComp;
+    return TreeFilterItemComp;
+  };
+
+  const handleTreeFilterDataChangeRequest = async (type, params) => {
+    if (type !== 'toggle-expand') return { code: 0 };
+    const itemId = params?.itemId;
+    if (!itemId) return { code: -1 };
+    const itemData = filteredTreeRenderData.itemDataById[itemId];
+    if (!itemData || itemData.isLeaf === true) return { code: -1 };
+    const isExpanded = params?.nextIsExpanded === true;
+    setTreeFilterExpandedById((prev) => ({
+      ...prev,
+      [itemId]: isExpanded,
+    }));
+    return { code: 0 };
   };
 
   const handleBasicDataChangeRequest = async (type, params) => {
@@ -936,6 +1080,38 @@ const FolderExamplesPanel = observer(() => {
             selectedItemId={treeViewStore.selectedItemId}
             onItemClick={(itemId) => treeViewStore.setSelectedItem(itemId)}
             getItemComp={getTreeItemComp}
+          />
+        </div>
+      </div>
+
+      <div className="folder-tree-example-block">
+        <div className="folder-tree-example-title">Tree View with Leaf Text Filter</div>
+        <div className="folder-tree-example-desc">
+          Filter matches only leaf items by substring. Ancestors of each matched leaf stay visible to preserve the path.
+        </div>
+        <div className="folder-tree-filter-toolbar">
+          <input
+            className="folder-tree-filter-input"
+            value={treeFilterText}
+            onChange={(event) => setTreeFilterText(event.target.value)}
+            placeholder="Filter leaf text, for example: jsx or readme"
+          />
+          <div className="folder-tree-filter-count">
+            Matched leaf count: {filteredTreeData.matchedLeafItemIds.length}
+          </div>
+        </div>
+        <div className="folder-tree-example-meta">
+          Selected: {filteredTreeRenderData.itemDataById[treeFilterSelectedItemId]?.text || '(none)'}
+        </div>
+        <div className="folder-tree-example-box">
+          <TreeView
+            className="folder-tree-view-fixed-height"
+            rootItemIds={filteredTreeRenderData.rootItemIds}
+            getItemDataById={(itemId) => filteredTreeRenderData.itemDataById[itemId] || null}
+            selectedItemId={treeFilterSelectedItemId}
+            onItemClick={(itemId) => setTreeFilterSelectedItemId(itemId)}
+            onDataChangeRequest={handleTreeFilterDataChangeRequest}
+            getItemComp={getTreeFilterItemComp}
           />
         </div>
       </div>

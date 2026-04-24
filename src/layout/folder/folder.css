@@ -1,3 +1,10 @@
+.folder-header-root {
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 100%;
+}
+
 .folder-header {
   display: flex;
   width: max-content;
@@ -8,6 +15,40 @@
   font-weight: 500;
   user-select: none;
   position: relative;
+}
+
+.folder-header-page-utils {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 22px;
+  padding: 1px 2px;
+  border-bottom: 1px solid #dcdcdc;
+  background: #fafafa;
+}
+
+.folder-header-page-util-btn {
+  min-height: 18px;
+  padding: 0 4px;
+  border: 1px solid #d0d0d0;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #333333;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.folder-header-page-util-btn:disabled {
+  color: #aaaaaa;
+  cursor: default;
+}
+
+.folder-header-page-util-sep {
+  width: 1px;
+  height: 12px;
+  background: #dddddd;
+  margin: 0 1px;
 }
 
 .folder-header-cell {
@@ -452,6 +493,12 @@
   flex: 1;
 }
 
+.tree-view-text-item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tree-view-children {
   padding-left: 14px;
 }
@@ -517,9 +564,37 @@
   margin-bottom: 6px;
 }
 
+.folder-tree-filter-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.folder-tree-filter-input {
+  width: 220px;
+  min-height: 22px;
+  padding: 0 6px;
+  border: 1px solid #d0d0d0;
+  border-radius: 2px;
+  font-size: 12px;
+  color: #222;
+  background: #fff;
+}
+
+.folder-tree-filter-count {
+  font-size: 12px;
+  color: #555;
+}
+
 .folder-tree-example-box {
   border: 1px solid #d0d0d0;
   border-radius: 2px;
+}
+
+.folder-tree-view-fixed-height {
+  height: 180px;
+  overflow-y: auto;
 }
 
 .folder-tree-item-label {
@@ -539,6 +614,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.folder-tree-match-highlight {
+  background: #fff176;
 }
 
 .folder-cell-dropdown-root {

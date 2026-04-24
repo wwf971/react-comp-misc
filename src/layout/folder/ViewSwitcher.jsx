@@ -41,6 +41,7 @@ const ViewSwitcher = observer(({
   contextMenuItems = null,
   listOnly = false,
   isLastColumnFilled = true,
+  headerPageUtils = null,
 }) => {
   const [internalView, setInternalView] = useState(defaultView);
   const activeView = listOnly ? 'list' : (controlledView !== undefined ? controlledView : internalView);
@@ -96,6 +97,7 @@ const ViewSwitcher = observer(({
               onDataChangeRequest={onDataChangeRequest}
               allowColumnReorder={allowColumnReorder}
               isLastColumnFilled={isLastColumnFilled}
+              pageUtils={headerPageUtils}
             />
           </div>
         )}

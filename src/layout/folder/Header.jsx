@@ -24,6 +24,7 @@ const Header = observer(({
   allowColumnReorder = false, 
   onDataChangeRequest,
   isLastColumnFilled = true,
+  pageUtils = null,
 }) => {
   
   const headerRef = useRef(null);
@@ -250,6 +251,27 @@ const Header = observer(({
     }
   };
 
+  const isPageUtilsVisible = Boolean(pageUtils?.isVisible);
+
+  const requestPageUtilAction = async (actionType) => {
+    if (!pageUtils) return;
+    if (actionType === 'create-before') {
+      await pageUtils.onCreatePageBefore?.();
+      return;
+    }
+    if (actionType === 'create-after') {
+      await pageUtils.onCreatePageAfter?.();
+      return;
+    }
+    if (actionType === 'move-prev') {
+      await pageUtils.onMoveCurrentPagePrev?.();
+      return;
+    }
+    if (actionType === 'move-next') {
+      await pageUtils.onMoveCurrentPageNext?.();
+    }
+  };
+
   if (!columnsOrder) return null;
 
   // Calculate separator positions for rendering
@@ -264,61 +286,102 @@ const Header = observer(({
   };
 
   return (
-    <div 
-      className="folder-header" 
-      ref={headerRef}
-      onDragOver={handleColumnDragOver}
-    >
-      {columnsOrder.map((colId, index) => {
-        const column = columns[colId];
-        if (!column) return null;
-        
-        const isResizable = columnsSizeInit?.[colId]?.resizable !== false;
-        const align = column.align || 'left';
-        const width = columnWidths?.[colId];
-        const isLastColumn = index === columnsOrder.length - 1;
-        const isLastColumnFillApplied = isLastColumnFilled && isLastColumn;
-        const isDragging = draggingColId === colId;
-        
-        // Get custom component via callback or use default text component
-        const CustomComp = getComponent ? getComponent(colId) : undefined;
-        const CellComp = CustomComp || MemoizedDefaultHeaderTextComp;
-        
-        return (
-          <div 
-            key={colId}
-            className={`folder-header-cell ${isDragging ? 'dragging' : ''} ${allowColumnReorder ? 'reorderable' : ''}`}
-            style={{ 
-              width: isLastColumnFillApplied ? undefined : (width ? `${width}px` : undefined),
-              minWidth: isLastColumnFillApplied && width ? `${width}px` : undefined,
-              flexGrow: isLastColumnFillApplied ? 1 : undefined,
-              textAlign: align,
-              opacity: isDragging ? 0.3 : 1
-            }}
-            draggable={allowColumnReorder}
-            onDragStart={(e) => handleColumnDragStart(e, colId, index)}
-            onDrag={handleColumnDrag}
-            onDragEnd={handleColumnDragEnd}
+    <div className="folder-header-root">
+      {isPageUtilsVisible ? (
+        <div className="folder-header-page-utils">
+          <button
+            type="button"
+            className="folder-header-page-util-btn"
+            disabled={pageUtils?.isLocked || pageUtils?.canCreatePageBefore === false}
+            onClick={() => requestPageUtilAction('create-before')}
           >
-            <div className="folder-header-content">
-              <CellComp 
-                data={column.data}
-                columnId={colId}
-                align={align}
-              />
-            </div>
-            {isResizable && (
-              <div 
-                className="folder-header-resize-handle"
-                onMouseDown={(e) => handleResizeStart(e, colId, index)}
-              />
-            )}
+            +Before
+          </button>
+          <div 
+            className="folder-header-page-util-sep"
+          >
           </div>
-        );
-      })}
-      
-      {/* Render separator indicator at calculated position */}
-      {dragOverSeparatorIndex !== null && (
+          <button
+            type="button"
+            className="folder-header-page-util-btn"
+            disabled={pageUtils?.isLocked || pageUtils?.canCreatePageAfter === false}
+            onClick={() => requestPageUtilAction('create-after')}
+          >
+            +After
+          </button>
+          <button
+            type="button"
+            className="folder-header-page-util-btn"
+            disabled={pageUtils?.isLocked || pageUtils?.canMoveCurrentPagePrev === false}
+            onClick={() => requestPageUtilAction('move-prev')}
+          >
+            Move Prev
+          </button>
+          <button
+            type="button"
+            className="folder-header-page-util-btn"
+            disabled={pageUtils?.isLocked || pageUtils?.canMoveCurrentPageNext === false}
+            onClick={() => requestPageUtilAction('move-next')}
+          >
+            Move Next
+          </button>
+        </div>
+      ) : null}
+      <div 
+        className="folder-header" 
+        ref={headerRef}
+        onDragOver={handleColumnDragOver}
+      >
+        {columnsOrder.map((colId, index) => {
+          const column = columns[colId];
+          if (!column) return null;
+          
+          const isResizable = columnsSizeInit?.[colId]?.resizable !== false;
+          const align = column.align || 'left';
+          const width = columnWidths?.[colId];
+          const isLastColumn = index === columnsOrder.length - 1;
+          const isLastColumnFillApplied = isLastColumnFilled && isLastColumn;
+          const isDragging = draggingColId === colId;
+          
+          // Get custom component via callback or use default text component
+          const CustomComp = getComponent ? getComponent(colId) : undefined;
+          const CellComp = CustomComp || MemoizedDefaultHeaderTextComp;
+          
+          return (
+            <div 
+              key={colId}
+              className={`folder-header-cell ${isDragging ? 'dragging' : ''} ${allowColumnReorder ? 'reorderable' : ''}`}
+              style={{ 
+                width: isLastColumnFillApplied ? undefined : (width ? `${width}px` : undefined),
+                minWidth: isLastColumnFillApplied && width ? `${width}px` : undefined,
+                flexGrow: isLastColumnFillApplied ? 1 : undefined,
+                textAlign: align,
+                opacity: isDragging ? 0.3 : 1
+              }}
+              draggable={allowColumnReorder}
+              onDragStart={(e) => handleColumnDragStart(e, colId, index)}
+              onDrag={handleColumnDrag}
+              onDragEnd={handleColumnDragEnd}
+            >
+              <div className="folder-header-content">
+                <CellComp 
+                  data={column.data}
+                  columnId={colId}
+                  align={align}
+                />
+              </div>
+              {isResizable && (
+                <div 
+                  className="folder-header-resize-handle"
+                  onMouseDown={(e) => handleResizeStart(e, colId, index)}
+                />
+              )}
+            </div>
+          );
+        })}
+        
+        {/* Render separator indicator at calculated position */}
+        {dragOverSeparatorIndex !== null && (
         <div 
           className="folder-header-separator-indicator" 
           style={{ 
@@ -328,7 +391,8 @@ const Header = observer(({
             bottom: 0
           }}
         />
-      )}
+        )}
+      </div>
     </div>
   );
 });

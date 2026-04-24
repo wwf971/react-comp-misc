@@ -34,6 +34,7 @@ const FolderView = observer(({
   showStatusItemCount = true,
   listOnly = false,
   isLastColumnFilled = true,
+  headerPageUtils = null,
 }) => {
   const [columnWidths, setColumnWidths] = useState({});
 
@@ -66,6 +67,7 @@ const FolderView = observer(({
         allowColumnReorder={allowColumnReorder && !loading}
         listOnly={listOnly}
         isLastColumnFilled={isLastColumnFilled}
+        headerPageUtils={headerPageUtils}
         getIconData={getIconData}
         rows={rows}
         getComponent={getBodyComponent}
