@@ -35,6 +35,7 @@ const FolderView = observer(({
   listOnly = false,
   isLastColumnFilled = true,
   headerPageUtils = null,
+  columnResizeDragMode = 'preview',
 }) => {
   const [columnWidths, setColumnWidths] = useState({});
 
@@ -68,6 +69,7 @@ const FolderView = observer(({
         listOnly={listOnly}
         isLastColumnFilled={isLastColumnFilled}
         headerPageUtils={headerPageUtils}
+        columnResizeDragMode={columnResizeDragMode}
         getIconData={getIconData}
         rows={rows}
         getComponent={getBodyComponent}

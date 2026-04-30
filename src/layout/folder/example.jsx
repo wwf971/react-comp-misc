@@ -432,6 +432,7 @@ const FolderExamplesPanel = observer(() => {
 
   const [viewSwitchLoading, setViewSwitchLoading] = useState(false);
   const [viewSwitchFeedback, setViewSwitchFeedback] = useState(null);
+  const [columnResizeDragMode, setColumnResizeDragMode] = useState('preview');
   const viewSwitchFeedbackTimer = useRef(null);
 
   const showViewSwitchFeedback = (feedback) => {
@@ -724,6 +725,23 @@ const FolderExamplesPanel = observer(() => {
 
   return (
     <div>
+      <div style={{ marginBottom: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+        <button
+          type="button"
+          onClick={() => setColumnResizeDragMode((prev) => (prev === 'preview' ? 'immediate' : 'preview'))}
+          style={{
+            minHeight: '24px',
+            padding: '2px 8px',
+            border: '1px solid #d0d0d0',
+            borderRadius: '2px',
+            background: '#ffffff',
+            fontSize: '12px',
+            cursor: 'pointer',
+          }}
+        >
+          {columnResizeDragMode === 'preview' ? 'resize mode: preview-on-release' : 'resize mode: immediate'}
+        </button>
+      </div>
       <div style={{ marginBottom: '30px' }}>
         <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Basic Header</div>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
@@ -738,6 +756,7 @@ const FolderExamplesPanel = observer(() => {
             allowColumnReorder={true}
             onColumnWidthChange={setBasicColWidths}
             onDataChangeRequest={handleBasicDataChangeRequest}
+            columnResizeDragMode={columnResizeDragMode}
           />
         </div>
       </div>
@@ -755,6 +774,7 @@ const FolderExamplesPanel = observer(() => {
             columnWidths={customColWidths}
             getComponent={getComponent}
             onColumnWidthChange={setCustomColWidths}
+            columnResizeDragMode={columnResizeDragMode}
           />
         </div>
       </div>
@@ -807,6 +827,7 @@ const FolderExamplesPanel = observer(() => {
             bodyHeight={300}
             showStatusItemCount={false}
             contextMenuItems={[{ type: 'item', name: 'Delete' }]}
+            columnResizeDragMode={columnResizeDragMode}
           />
         </div>
       </div>
@@ -825,6 +846,7 @@ const FolderExamplesPanel = observer(() => {
           bodyHeight={140}
           showStatusBar={false}
           listOnly={true}
+          columnResizeDragMode={columnResizeDragMode}
         />
       </div>
 
@@ -857,6 +879,7 @@ const FolderExamplesPanel = observer(() => {
           onDataChangeRequest={handleRowReorderDemoRequest}
           bodyHeight={200}
           showStatusBar={false}
+          columnResizeDragMode={columnResizeDragMode}
         />
       </div>
 
@@ -906,6 +929,7 @@ const FolderExamplesPanel = observer(() => {
           bodyHeight={140}
           showStatusBar={false}
           listOnly={true}
+          columnResizeDragMode={columnResizeDragMode}
         />
       </div>
 
@@ -935,6 +959,7 @@ const FolderExamplesPanel = observer(() => {
           onRowInteraction={event => singleSelectStore.handleRowInteraction(event)}
           bodyHeight={200}
           showStatusBar={false}
+          columnResizeDragMode={columnResizeDragMode}
         />
       </div>
 
@@ -962,6 +987,7 @@ const FolderExamplesPanel = observer(() => {
           onRowInteraction={event => multiSelectStore.handleRowInteraction(event)}
           bodyHeight={220}
           showStatusBar={false}
+          columnResizeDragMode={columnResizeDragMode}
         />
       </div>
 
@@ -1014,6 +1040,7 @@ const FolderExamplesPanel = observer(() => {
           onRowInteraction={event => mixedSelectStore.handleRowInteraction(event)}
           bodyHeight={200}
           showStatusBar={false}
+          columnResizeDragMode={columnResizeDragMode}
         />
       </div>
 
@@ -1061,6 +1088,7 @@ const FolderExamplesPanel = observer(() => {
           loading={viewSwitchLoading}
           bodyHeight={260}
           showStatusBar={false}
+          columnResizeDragMode={columnResizeDragMode}
         />
       </div>
 

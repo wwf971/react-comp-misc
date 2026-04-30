@@ -47,6 +47,12 @@ const TreeItemNode = observer(({
     if (onItemClick) {
       await onItemClick(itemId, itemData);
     }
+    if (!isLeaf && onDataChangeRequest) {
+      await onDataChangeRequest('toggle-expand', {
+        itemId,
+        nextIsExpanded: !isExpanded,
+      });
+    }
   };
 
   const handleReloadClick = async (event) => {

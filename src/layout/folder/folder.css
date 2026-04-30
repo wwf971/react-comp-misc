@@ -238,6 +238,16 @@
   pointer-events: none;
 }
 
+.folder-column-resize-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #2196f3;
+  z-index: 101;
+  pointer-events: none;
+}
+
 .folder-body.locked {
   pointer-events: none;
   opacity: 0.6;

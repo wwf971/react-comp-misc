@@ -403,7 +403,7 @@ const KeyValuesCompInner = ({
             return (
               <div 
                 key={index} 
-                className="keyvalues-row"
+                className={`keyvalues-row ${String(item?.rowClassName || '')}`}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',

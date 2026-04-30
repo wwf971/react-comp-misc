@@ -27,7 +27,8 @@ const KeyValues = ({
   keyColWidth = 'min',
   onChangeAttempt,
   isWrap = false,
-  isDividerDraggable = false
+  isDividerDraggable = false,
+  getComp
 }) => {
   return (
     <KeyValuesComp
@@ -40,6 +41,7 @@ const KeyValues = ({
       onChangeAttempt={onChangeAttempt}
       isWrap={isWrap}
       isDividerDraggable={isDividerDraggable}
+      getComp={getComp}
     />
   );
 };

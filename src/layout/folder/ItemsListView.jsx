@@ -41,6 +41,7 @@ const ItemsListView = observer(({
   locked = false,
   contextMenuItems = null,
   isLastColumnFilled = true,
+  columnResizeIndicatorLeft = null,
 }) => {
   const bodyRef = useRef(null);
   const [draggingRowId, setDraggingRowId] = useState(null);
@@ -417,6 +418,12 @@ const ItemsListView = observer(({
         <div
           className="folder-body-separator-indicator"
           style={{ position: 'absolute', top: `${getSeparatorPos(dragOverSeparatorIndex)}px`, left: 0, right: 0 }}
+        />
+      )}
+      {columnResizeIndicatorLeft !== null && (
+        <div
+          className="folder-column-resize-indicator"
+          style={{ left: `${columnResizeIndicatorLeft}px` }}
         />
       )}
       {contextMenu && contextMenuItems && (

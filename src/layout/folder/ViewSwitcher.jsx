@@ -42,8 +42,10 @@ const ViewSwitcher = observer(({
   listOnly = false,
   isLastColumnFilled = true,
   headerPageUtils = null,
+  columnResizeDragMode = 'preview',
 }) => {
   const [internalView, setInternalView] = useState(defaultView);
+  const [columnResizeIndicatorLeft, setColumnResizeIndicatorLeft] = useState(null);
   const activeView = listOnly ? 'list' : (controlledView !== undefined ? controlledView : internalView);
 
   const handleViewChange = (v) => {
@@ -98,6 +100,8 @@ const ViewSwitcher = observer(({
               allowColumnReorder={allowColumnReorder}
               isLastColumnFilled={isLastColumnFilled}
               pageUtils={headerPageUtils}
+              columnResizeDragMode={columnResizeDragMode}
+              onColumnResizeIndicatorLeftChange={setColumnResizeIndicatorLeft}
             />
           </div>
         )}
@@ -117,6 +121,7 @@ const ViewSwitcher = observer(({
               columnWidths={columnWidths}
               getComponent={getComponent}
               isLastColumnFilled={isLastColumnFilled}
+              columnResizeIndicatorLeft={columnResizeIndicatorLeft}
               {...sharedProps}
             />
           )}

@@ -25,6 +25,8 @@ const Header = observer(({
   onDataChangeRequest,
   isLastColumnFilled = true,
   pageUtils = null,
+  columnResizeDragMode = 'preview',
+  onColumnResizeIndicatorLeftChange,
 }) => {
   
   const headerRef = useRef(null);
@@ -33,12 +35,15 @@ const Header = observer(({
   const edgePosesInitial = useRef([]);
   const edgePosesCurrent = useRef([]);
   const resizingColIndex = useRef(-1);
+  const pendingColumnWidths = useRef(null);
+  const [columnResizeIndicatorLeft, setColumnResizeIndicatorLeft] = useState(null);
   
   // Column reordering state
   const [draggingColId, setDraggingColId] = useState(null);
   const [dragOverSeparatorIndex, setDragOverSeparatorIndex] = useState(null);
   const dragOffsetX = useRef(0);
   const dragOffsetY = useRef(0);
+  const isColumnResizePreview = columnResizeDragMode !== 'immediate';
 
   // Always use external columnWidths - FolderView manages all widths
   const columnWidths = externalColumnWidths || {}
@@ -64,6 +69,11 @@ const Header = observer(({
     edgePosesCurrent.current = [...edges];
     resizeStartX.current = e.clientX - headerRect.left;
     resizingColIndex.current = colIndex;
+    pendingColumnWidths.current = null;
+    setColumnResizeIndicatorLeft(edges[colIndex]);
+    if (onColumnResizeIndicatorLeftChange) {
+      onColumnResizeIndicatorLeftChange(edges[colIndex]);
+    }
     
     setResizing(columnId);
   };
@@ -112,18 +122,35 @@ const Header = observer(({
       newWidths[colId] = currentEdge - prevEdge;
       prevEdge = currentEdge;
     });
-    
-    // Update widths via callback
+
+    setColumnResizeIndicatorLeft(edgePosNew);
+    if (onColumnResizeIndicatorLeftChange) {
+      onColumnResizeIndicatorLeftChange(edgePosNew);
+    }
+
+    if (isColumnResizePreview) {
+      pendingColumnWidths.current = newWidths;
+      return;
+    }
+
     if (onColumnWidthChange) {
       onColumnWidthChange(newWidths);
     }
   };
 
   const handleResizeEnd = () => {
+    if (isColumnResizePreview && pendingColumnWidths.current && onColumnWidthChange) {
+      onColumnWidthChange(pendingColumnWidths.current);
+    }
     setResizing(null);
     resizingColIndex.current = -1;
     edgePosesInitial.current = [];
     edgePosesCurrent.current = [];
+    pendingColumnWidths.current = null;
+    setColumnResizeIndicatorLeft(null);
+    if (onColumnResizeIndicatorLeftChange) {
+      onColumnResizeIndicatorLeftChange(null);
+    }
   };
 
   // Add/remove mouse event listeners for column resizing
@@ -380,6 +407,12 @@ const Header = observer(({
           );
         })}
         
+        {columnResizeIndicatorLeft !== null && (
+        <div
+          className="folder-column-resize-indicator"
+          style={{ left: `${columnResizeIndicatorLeft}px` }}
+        />
+        )}
         {/* Render separator indicator at calculated position */}
         {dragOverSeparatorIndex !== null && (
         <div 
