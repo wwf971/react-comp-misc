@@ -41,9 +41,9 @@ const DictExamplesPanel = observer(() => {
         }
       ],
       dataWithActions: [
-        { key: 'field_1', value: 'value 1', valueCompName: 'editableWithActions' },
-        { key: 'field_2', value: 'value 2', valueCompName: 'editableWithActions' },
-        { key: 'field_3', value: 'value 3', valueCompName: 'editableWithActions' }
+        { id: 'action_1', key: 'field_1', value: 'value 1', valueCompName: 'editableWithActions' },
+        { id: 'action_2', key: 'field_2', value: 'value 2', valueCompName: 'editableWithActions' },
+        { id: 'action_3', key: 'field_3', value: 'value 3', valueCompName: 'editableWithActions' }
       ]
     };
     return makeAutoObservable(store, {}, { deep: true });
@@ -51,10 +51,22 @@ const DictExamplesPanel = observer(() => {
 
   const [isAutoUpdate, setIsAutoUpdate] = useState(false);
   const [autoUpdateCounter, setAutoUpdateCounter] = useState(0);
-  const [selectedActionRowIndex, setSelectedActionRowIndex] = useState(null);
+  const [selectedActionRowId, setSelectedActionRowId] = useState(null);
   const [actionButtonsTop, setActionButtonsTop] = useState(0);
   const actionPanelRef = useRef(null);
   const actionButtonsRef = useRef(null);
+  const nextActionRowIdRef = useRef(4);
+
+  const createActionRow = useCallback(() => {
+    const nextId = nextActionRowIdRef.current;
+    nextActionRowIdRef.current += 1;
+    return {
+      id: `action_${nextId}`,
+      key: `field_${nextId}`,
+      value: '',
+      valueCompName: 'editableWithActions'
+    };
+  }, []);
 
   const handleIncrementAge = () => {
     runInAction(() => {
@@ -98,40 +110,38 @@ const DictExamplesPanel = observer(() => {
 
   const handleAddEntry = () => {
     runInAction(() => {
-      store.dataWithActions.push({ 
-        key: `field_${store.dataWithActions.length + 1}`, 
-        value: '',
-        valueCompName: 'editableWithActions'
-      });
+      store.dataWithActions.push(createActionRow());
     });
   };
 
   const handleAction = async (action, actionData) => {
-    const { index } = actionData;
+    const { index, rowId } = actionData || {};
+    const targetIndex = rowId !== undefined && rowId !== null
+      ? store.dataWithActions.findIndex((item) => item.id === rowId)
+      : index;
     
     return runInAction(() => {
+      if (typeof targetIndex !== 'number' || targetIndex < 0 || targetIndex >= store.dataWithActions.length) {
+        return { code: -1, message: 'Invalid target row' };
+      }
       switch (action) {
-        case 'addEntryAbove':
-          store.dataWithActions.splice(index, 0, { 
-            key: `field_${Date.now()}`, 
-            value: '',
-            valueCompName: 'editableWithActions'
-          });
-          break;
+        case 'addEntryAbove': {
+          const createdRow = createActionRow();
+          store.dataWithActions.splice(targetIndex, 0, createdRow);
+          return { code: 0, message: 'Success', rowId: createdRow.id };
+        }
           
-        case 'addEntryBelow':
-          store.dataWithActions.splice(index + 1, 0, { 
-            key: `field_${Date.now()}`, 
-            value: '',
-            valueCompName: 'editableWithActions'
-          });
-          break;
+        case 'addEntryBelow': {
+          const createdRow = createActionRow();
+          store.dataWithActions.splice(targetIndex + 1, 0, createdRow);
+          return { code: 0, message: 'Success', rowId: createdRow.id };
+        }
           
         case 'deleteEntry':
           if (store.dataWithActions.length <= 1) {
             return { code: -1, message: 'Cannot delete the last entry' };
           }
-          store.dataWithActions.splice(index, 1);
+          store.dataWithActions.splice(targetIndex, 1);
           break;
           
         default:
@@ -143,7 +153,12 @@ const DictExamplesPanel = observer(() => {
   };
 
   const handleSelectedRowAction = async (action) => {
-    if (selectedActionRowIndex === null) return;
+    if (selectedActionRowId === null) return;
+    const selectedActionRowIndex = store.dataWithActions.findIndex((item) => item.id === selectedActionRowId);
+    if (selectedActionRowIndex < 0) {
+      setSelectedActionRowId(null);
+      return;
+    }
     if (action === 'moveUp') {
       if (selectedActionRowIndex <= 0) return;
       runInAction(() => {
@@ -164,22 +179,41 @@ const DictExamplesPanel = observer(() => {
       });
       return;
     }
+    if (action === 'addEntryAbove') {
+      const result = await handleAction('addEntryAbove', {
+        rowId: selectedActionRowId
+      });
+      if (result.code === 0 && result.rowId) {
+        setSelectedActionRowId(result.rowId);
+      }
+      return;
+    }
+    if (action === 'addEntryBelow') {
+      const result = await handleAction('addEntryBelow', {
+        rowId: selectedActionRowId
+      });
+      if (result.code === 0 && result.rowId) {
+        setSelectedActionRowId(result.rowId);
+      }
+      return;
+    }
     const result = await handleAction(action, {
-      index: selectedActionRowIndex,
-      field: 'value',
-      configKey: `value_${selectedActionRowIndex}`
+      rowId: selectedActionRowId
     });
     if (result.code === 0 && action === 'deleteEntry') {
-      setSelectedActionRowIndex(null);
+      setSelectedActionRowId(null);
     }
   };
 
-  const isMoveUpDisabled = selectedActionRowIndex === null || selectedActionRowIndex <= 0;
-  const isMoveDownDisabled = selectedActionRowIndex === null || selectedActionRowIndex >= store.dataWithActions.length - 1;
+  const selectedActionRowIndex = selectedActionRowId === null
+    ? -1
+    : store.dataWithActions.findIndex((item) => item.id === selectedActionRowId);
+  const isMoveUpDisabled = selectedActionRowIndex <= 0;
+  const isMoveDownDisabled = selectedActionRowIndex < 0 || selectedActionRowIndex >= store.dataWithActions.length - 1;
 
   const syncActionButtonsTop = useCallback(() => {
     const panelElement = actionPanelRef.current;
-    if (!panelElement || selectedActionRowIndex === null) return;
+    if (!panelElement || selectedActionRowIndex < 0) return;
     const selectedRowElement = panelElement.querySelector('.keyvalues-row.selected-row');
     if (!selectedRowElement) return;
     const panelRect = panelElement.getBoundingClientRect();
@@ -194,7 +228,7 @@ const DictExamplesPanel = observer(() => {
   }, [syncActionButtonsTop, selectedActionRowIndex, store.dataWithActions.length]);
 
   useEffect(() => {
-    if (selectedActionRowIndex === null) return undefined;
+    if (selectedActionRowIndex < 0) return undefined;
     const handleResize = () => {
       syncActionButtonsTop();
     };
@@ -317,16 +351,17 @@ const DictExamplesPanel = observer(() => {
         Select a row to show quick actions on the right, or right-click a value for the context menu
       </div>
       
-      <div ref={actionPanelRef} style={{ position: 'relative', paddingRight: '80px' }}>
+      <div ref={actionPanelRef} style={{ position: 'relative', paddingRight: '126px' }}>
         <KeyValuesComp 
           data={store.dataWithActions}
           isValueEditable={true}
           getComp={getComp}
           selectionMode="single"
-          onSelectionChange={setSelectedActionRowIndex}
+          onSelectionChange={setSelectedActionRowId}
+          selectedRowId={selectedActionRowId}
         />
 
-        {selectedActionRowIndex !== null && (
+        {selectedActionRowIndex >= 0 && (
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -344,6 +379,42 @@ const DictExamplesPanel = observer(() => {
               event.stopPropagation();
             }}
           >
+            <button
+              onClick={() => handleSelectedRowAction('addEntryAbove')}
+              title="Add entry above selected row"
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: 'pointer' }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.background = '#ededed';
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <span style={{ position: 'relative', display: 'inline-flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                <PlusIcon width={16} height={16} />
+                <span style={{ position: 'absolute', top: '-2px', right: '-5px', lineHeight: 0 }}>
+                  <UpIcon width={9} height={9} />
+                </span>
+              </span>
+            </button>
+            <button
+              onClick={() => handleSelectedRowAction('addEntryBelow')}
+              title="Add entry below selected row"
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: 'pointer' }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.background = '#ededed';
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <span style={{ position: 'relative', display: 'inline-flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                <PlusIcon width={16} height={16} />
+                <span style={{ position: 'absolute', top: '-2px', right: '-5px', lineHeight: 0 }}>
+                  <DownIcon width={9} height={9} />
+                </span>
+              </span>
+            </button>
             <button
               onClick={() => handleSelectedRowAction('moveUp')}
               title="Move selected row up"

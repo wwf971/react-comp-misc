@@ -11,7 +11,9 @@
   word-break: break-word;
   display: inline-block;
   outline: none;
-  min-height: 1em;
+  /* Keep empty and editing states same height to avoid row jitter.
+     Use fixed px so this stays stable across different parent typography contexts. */
+  min-height: 21px;
   line-height: 1.3;
   box-sizing: border-box;
   border: 1px solid transparent;

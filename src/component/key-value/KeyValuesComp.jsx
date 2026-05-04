@@ -167,7 +167,9 @@ const MemoizedDefaultTextComp = React.memo(DefaultTextComp, (prev, next) => {
  * @param {boolean} props.isDividerDraggable - Whether the key/value divider line can be dragged to resize columns (default: false)
  * @param {boolean} props.isWrap - Whether cell content wraps to the next line when it overflows; false clips with ellipsis (default: false)
  * @param {'none'|'single'} props.selectionMode - Row selection mode (default: 'none')
- * @param {Function} props.onSelectionChange - Callback when selected row changes: (rowIndex | null) => void
+ * @param {Function} props.onSelectionChange - Callback when selected row changes: (rowId | null) => void
+ * @param {string|number|null} props.selectedRowId - Optional controlled selected row id for single selection mode
+ * @param {Function} props.getRowId - Optional id resolver: (item) => rowId
  */
 const KeyValuesCompInner = ({ 
   data = [], 
@@ -182,11 +184,16 @@ const KeyValuesCompInner = ({
   getComp,
   selectionMode = 'none',
   onSelectionChange,
+  selectedRowId: controlledSelectedRowId,
+  getRowId,
 }) => {
   const [keyColWidthValue, setKeyColWidthValue] = useState(null);
   const [isDividerDragging, setIsDividerDragging] = useState(false);
-  const [selectedRowItem, setSelectedRowItem] = useState(null);
+  const [internalSelectedRowId, setInternalSelectedRowId] = useState(null);
   const containerRef = useRef(null);
+  const generatedRowIdMapRef = useRef(new WeakMap());
+  const generatedRowIdCounterRef = useRef(1);
+  const internalMouseDownRef = useRef(false);
   const keyRefs = useRef([]);
   const listRef = useRef(null);
   const resizeObserverRef = useRef(null);
@@ -200,13 +207,43 @@ const KeyValuesCompInner = ({
   const canEditValue = isEditable && isValueEditable;
   const cellOverflowClass = isWrap ? 'cell-wrap' : 'cell-clip';
   const isSelectionEnabled = selectionMode === 'single';
-  const selectedRowIndex = selectedRowItem ? data.findIndex((item) => item === selectedRowItem) : -1;
+  const isSelectionControlled = controlledSelectedRowId !== undefined;
+  const effectiveSelectedRowId = isSelectionControlled
+    ? (controlledSelectedRowId ?? null)
+    : internalSelectedRowId;
+  const resolveRowId = useCallback((item) => {
+    if (getRowId) {
+      const rowId = getRowId(item);
+      return rowId === undefined || rowId === null ? null : rowId;
+    }
+    if (item && typeof item === 'object' && item.id !== undefined && item.id !== null) {
+      return item.id;
+    }
+    if (item && typeof item === 'object') {
+      const generatedMap = generatedRowIdMapRef.current;
+      if (!generatedMap.has(item)) {
+        generatedMap.set(item, `generated_row_${generatedRowIdCounterRef.current}`);
+        generatedRowIdCounterRef.current += 1;
+      }
+      return generatedMap.get(item);
+    }
+    return null;
+  }, [getRowId]);
 
-  const handleRowMouseDownCapture = useCallback((item, event) => {
+  const handleRowMouseDownCapture = useCallback((rowId, event) => {
     if (!isSelectionEnabled) return;
+    if (rowId === null) return;
+    internalMouseDownRef.current = true;
+    setTimeout(() => {
+      internalMouseDownRef.current = false;
+    }, 0);
     const targetElement = event.target;
     if (!(targetElement instanceof Element)) {
-      setSelectedRowItem(item);
+      if (isSelectionControlled && onSelectionChange) {
+        onSelectionChange(rowId);
+      } else {
+        setInternalSelectedRowId(rowId);
+      }
       return;
     }
     if (
@@ -216,13 +253,26 @@ const KeyValuesCompInner = ({
     ) {
       return;
     }
-    setSelectedRowItem(item);
-  }, [isSelectionEnabled]);
+    if (isSelectionControlled && onSelectionChange) {
+      onSelectionChange(rowId);
+    } else {
+      setInternalSelectedRowId(rowId);
+    }
+  }, [isSelectionEnabled, isSelectionControlled, onSelectionChange]);
 
-  const handleRowContextMenuCapture = useCallback((item) => {
+  const handleRowContextMenuCapture = useCallback((rowId) => {
     if (!isSelectionEnabled) return;
-    setSelectedRowItem(item);
-  }, [isSelectionEnabled]);
+    if (rowId === null) return;
+    internalMouseDownRef.current = true;
+    setTimeout(() => {
+      internalMouseDownRef.current = false;
+    }, 0);
+    if (isSelectionControlled && onSelectionChange) {
+      onSelectionChange(rowId);
+    } else {
+      setInternalSelectedRowId(rowId);
+    }
+  }, [isSelectionEnabled, isSelectionControlled, onSelectionChange]);
 
   const startDividerDrag = useCallback((event) => {
     event.preventDefault();
@@ -261,34 +311,45 @@ const KeyValuesCompInner = ({
 
   useEffect(() => {
     if (!isSelectionEnabled) {
-      setSelectedRowItem(null);
+      setInternalSelectedRowId(null);
       return;
     }
     const handleDocumentMouseDown = (event) => {
+      if (internalMouseDownRef.current) return;
       const container = containerRef.current;
       if (!container) return;
-      const targetElement = event.target;
-      if (targetElement instanceof Node && container.contains(targetElement)) return;
-      setSelectedRowItem(null);
+      if (typeof event.composedPath === 'function') {
+        const path = event.composedPath();
+        if (Array.isArray(path) && path.includes(container)) return;
+      } else {
+        const targetElement = event.target;
+        if (targetElement instanceof Node && container.contains(targetElement)) return;
+      }
+      if (isSelectionControlled && onSelectionChange) {
+        onSelectionChange(null);
+      } else {
+        setInternalSelectedRowId(null);
+      }
     };
     document.addEventListener('mousedown', handleDocumentMouseDown);
     return () => {
       document.removeEventListener('mousedown', handleDocumentMouseDown);
     };
-  }, [isSelectionEnabled]);
+  }, [isSelectionEnabled, isSelectionControlled, onSelectionChange]);
 
   useEffect(() => {
-    if (selectedRowItem === null) return;
-    if (!data.some((item) => item === selectedRowItem)) {
-      setSelectedRowItem(null);
+    if (effectiveSelectedRowId === null) return;
+    if (!data.some((item) => resolveRowId(item) === effectiveSelectedRowId) && !isSelectionControlled) {
+      setInternalSelectedRowId(null);
     }
-  }, [data, selectedRowItem]);
+  }, [data, effectiveSelectedRowId, resolveRowId, isSelectionControlled]);
 
   useEffect(() => {
+    if (isSelectionControlled) return;
     if (onSelectionChange) {
-      onSelectionChange(selectedRowIndex >= 0 ? selectedRowIndex : null);
+      onSelectionChange(internalSelectedRowId);
     }
-  }, [selectedRowIndex, onSelectionChange]);
+  }, [internalSelectedRowId, onSelectionChange, isSelectionControlled]);
 
   const resolveComp = useCallback((compName, context) => {
     if (!compName || !getComp) {
@@ -457,6 +518,7 @@ const KeyValuesCompInner = ({
             />
           )}
           {data.map((item, index) => {
+            const rowId = resolveRowId(item);
             const keyContext = { item, index, field: 'key' };
             const valueContext = { item, index, field: 'value' };
             const KeyComp = resolveComp(item.keyCompName, keyContext);
@@ -465,14 +527,14 @@ const KeyValuesCompInner = ({
             return (
               <div 
                 key={index} 
-                className={`keyvalues-row${alignColumn && keyColWidthValue ? ' show-divider' : ''}${isSelectionEnabled && item === selectedRowItem ? ' selected-row' : ''} ${String(item?.rowClassName || '')}`}
+                className={`keyvalues-row${alignColumn && keyColWidthValue ? ' show-divider' : ''}${isSelectionEnabled && rowId !== null && rowId === effectiveSelectedRowId ? ' selected-row' : ''} ${String(item?.rowClassName || '')}`}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
                   ...(alignColumn && keyColWidthValue ? { '--key-col-width': keyColWidthValue } : {})
                 }}
-                onMouseDownCapture={(event) => handleRowMouseDownCapture(item, event)}
-                onContextMenuCapture={() => handleRowContextMenuCapture(item)}
+                onMouseDownCapture={(event) => handleRowMouseDownCapture(rowId, event)}
+                onContextMenuCapture={() => handleRowContextMenuCapture(rowId)}
               >
                 <div 
                   className={`keyvalues-cell key-cell ${cellOverflowClass} ${canEditKey ? 'editable' : ''}`}

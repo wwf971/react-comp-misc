@@ -18,7 +18,9 @@ import KeyValuesComp from './KeyValuesComp.jsx';
  * @param {string} props.keyColWidth - Width of key column: 'min' for auto-calculated, or fixed like '200px' (default: 'min')
  * @param {Function} props.onChangeAttempt - Callback when user attempts to change a key or value: (index, field, newValue) => void
  * @param {'none'|'single'} props.selectionMode - Row selection mode (default: 'none')
- * @param {Function} props.onSelectionChange - Callback when selected row changes: (rowIndex | null) => void
+ * @param {Function} props.onSelectionChange - Callback when selected row changes: (rowId | null) => void
+ * @param {string|number|null} props.selectedRowId - Optional controlled selected row id for single selection mode
+ * @param {Function} props.getRowId - Optional id resolver: (item) => rowId
  */
 const KeyValues = ({
   data = [],
@@ -33,6 +35,8 @@ const KeyValues = ({
   getComp,
   selectionMode = 'none',
   onSelectionChange,
+  selectedRowId,
+  getRowId,
 }) => {
   return (
     <KeyValuesComp
@@ -48,6 +52,8 @@ const KeyValues = ({
       getComp={getComp}
       selectionMode={selectionMode}
       onSelectionChange={onSelectionChange}
+      selectedRowId={selectedRowId}
+      getRowId={getRowId}
     />
   );
 };
