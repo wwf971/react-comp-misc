@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import './MasterDetail.css';
 import MasterDetailInfiLevel from './MasterDetailInfiLevel';
 import PanelDual from '../panel/PanelDual';
-import { RightIcon } from '../../icon/DirectionIcons';
+import PlusIcon from '../../icon/PlusIcon';
+import MinusIcon from '../../icon/MinusIcon';
 
 const renderPanels = (
   panels,
@@ -27,7 +28,8 @@ const MasterDetail = ({
   title,
   initialSidebarRatio = 0.25,
   children,
-  lazyRender = true
+  lazyRender = true,
+  isToggleExpandOnItemClick = true,
 }) => {
   const maxDepth = detectMaxDepth(children);
   
@@ -37,6 +39,7 @@ const MasterDetail = ({
         title={title}
         initialSidebarRatio={initialSidebarRatio}
         lazyRender={lazyRender}
+        isToggleExpandOnItemClick={isToggleExpandOnItemClick}
       >
         {children}
       </MasterDetailInfiLevel>
@@ -101,13 +104,15 @@ const MasterDetail = ({
 
     const targetTab = tabs.find(tab => tab.key === tabKey);
     if (targetTab) {
-      setTabs(prevTabs => 
-        prevTabs.map(tab => 
-          tab.key === tabKey 
-            ? { ...tab, isExpanded: !tab.isExpanded }
-            : tab
-        )
-      );
+      if (isToggleExpandOnItemClick) {
+        setTabs(prevTabs => 
+          prevTabs.map(tab => 
+            tab.key === tabKey 
+              ? { ...tab, isExpanded: !tab.isExpanded }
+              : tab
+          )
+        );
+      }
 
       setActiveSubtabKey(getDefaultSubtabKeyForTab(targetTab));
     }
@@ -168,46 +173,55 @@ const MasterDetail = ({
 };
 
 const Tab = ({ tabKey, label, isActive, isExpanded, onClick, onToggleExpand }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
-    <div className="tab-container">
+    <div className="master-detail-tree-item">
+      <div className="master-detail-tree-row">
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onToggleExpand(tabKey);
         }}
-        className="tab-expand-btn"
+        className="master-detail-tree-toggle-btn"
+        aria-label={isExpanded ? 'Collapse' : 'Expand'}
       >
-        <span className={`tab-expand-icon ${isExpanded ? 'expanded' : ''}`}>
-          <RightIcon width={12} height={12} />
-        </span>
+        {isExpanded
+          ? <MinusIcon width={12} height={12} color="#666" />
+          : <PlusIcon width={12} height={12} color="#666" />
+        }
       </button>
 
       <button
+        type="button"
         onClick={() => onClick(tabKey)}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className={`tab-label-btn ${isActive ? 'active' : ''} ${isHovered ? 'hover' : ''}`}
+        className={`master-detail-tree-label-btn ${isActive ? 'is-in-path' : ''}`}
       >
         {label}
       </button>
+      </div>
     </div>
   );
 };
 
 const SubTab = ({ subtabKey, label, isActive, onClick }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
-    <button
-      onClick={() => onClick(subtabKey)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`subtab-btn ${isActive ? 'active' : ''} ${isHovered ? 'hover' : ''}`}
-    >
-      {label}
-    </button>
+    <div className="master-detail-tree-item">
+      <div className="master-detail-tree-row">
+        <button
+          type="button"
+          className="master-detail-tree-toggle-btn is-empty"
+          disabled
+          aria-label="No children"
+        />
+        <button
+          type="button"
+          onClick={() => onClick(subtabKey)}
+          className={`master-detail-tree-label-btn is-leaf ${isActive ? 'active' : ''}`}
+        >
+          {label}
+        </button>
+      </div>
+    </div>
   );
 };
 
@@ -227,9 +241,7 @@ const Tabs = ({
   return (
     <div className="tabs-sidebar">
       <div className="tabs-header">
-        <h3>
-          {title}
-        </h3>
+        <div className="tabs-header-title">{title}</div>
       </div>
 
       <div className="tabs-list">
@@ -246,13 +258,14 @@ const Tabs = ({
             {tab.isExpanded && tab.subtabKeys.map(subtabKey => {
               const subTab = subtabs[subtabKey];
               return subTab ? (
-                <SubTab
-                  key={subtabKey}
-                  subtabKey={subtabKey}
-                  label={subTab.label}
-                  isActive={activeSubtabKey === subtabKey}
-                  onClick={onSubtabClicked}
-                />
+                <div key={subtabKey} className="master-detail-subtab-children">
+                  <SubTab
+                    subtabKey={subtabKey}
+                    label={subTab.label}
+                    isActive={activeSubtabKey === subtabKey}
+                    onClick={onSubtabClicked}
+                  />
+                </div>
               ) : null;
             })}
           </div>

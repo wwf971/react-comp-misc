@@ -37,7 +37,7 @@ const ViewSwitcher = observer(({
   selectedRowId,
   allowRowReorder = false,
   onDataChangeRequest,
-  locked = false,
+  isLocked = false,
   contextMenuItems = null,
   listOnly = false,
   isLastColumnFilled = true,
@@ -67,7 +67,7 @@ const ViewSwitcher = observer(({
     selectedRowId,
     allowRowReorder,
     onDataChangeRequest,
-    locked,
+    isLocked,
     contextMenuItems,
   };
 

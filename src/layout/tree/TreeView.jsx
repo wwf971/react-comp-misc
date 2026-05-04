@@ -5,7 +5,7 @@ import MinusIcon from '../../icon/MinusIcon';
 import SpinningCircle from '../../icon/SpinningCircle';
 import CrossIcon from '../../icon/CrossIcon';
 import RefreshIcon from '../../icon/RefreshIcon';
-import './folder.css';
+import './tree.css';
 
 const TreeTextItemComp = ({ itemData }) => {
   const itemText = itemData?.text || itemData?.name || String(itemData?.id || '');
@@ -19,6 +19,7 @@ const TreeItemNode = observer(({
   selectedItemId,
   onItemClick,
   getItemComp,
+  isToggleExpandOnItemClick,
 }) => {
   const itemData = getItemDataById?.(itemId);
 
@@ -47,7 +48,7 @@ const TreeItemNode = observer(({
     if (onItemClick) {
       await onItemClick(itemId, itemData);
     }
-    if (!isLeaf && onDataChangeRequest) {
+    if (isToggleExpandOnItemClick && !isLeaf && onDataChangeRequest) {
       await onDataChangeRequest('toggle-expand', {
         itemId,
         nextIsExpanded: !isExpanded,
@@ -115,6 +116,7 @@ const TreeItemNode = observer(({
               selectedItemId={selectedItemId}
               onItemClick={onItemClick}
               getItemComp={getItemComp}
+              isToggleExpandOnItemClick={isToggleExpandOnItemClick}
             />
           ))}
         </div>
@@ -131,6 +133,7 @@ const TreeView = observer(({
   onItemClick,
   getItemComp,
   className = '',
+  isToggleExpandOnItemClick = true,
 }) => {
   return (
     <div className={`tree-view ${className}`}>
@@ -143,6 +146,7 @@ const TreeView = observer(({
           selectedItemId={selectedItemId}
           onItemClick={onItemClick}
           getItemComp={getItemComp}
+          isToggleExpandOnItemClick={isToggleExpandOnItemClick}
         />
       ))}
     </div>

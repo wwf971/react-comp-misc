@@ -74,7 +74,7 @@ const SegmentedControlExample = () => {
   const [preset, setPreset] = useState('b');
   const [view, setView] = useState('grid');
   const [section, setSection] = useState('inbox');
-  const [autoWidthMode, setAutoWidthMode] = useState('both');
+  const [widthModeDemo, setWidthModeDemo] = useState('both');
 
   const notificationCounts = {
     inbox: 5,
@@ -111,6 +111,7 @@ const SegmentedControlExample = () => {
           data={range}
           onChange={setRange}
           options={multiOptions}
+          widthMode="auto"
         />
         <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
           Selected: {range}
@@ -128,6 +129,7 @@ const SegmentedControlExample = () => {
             { value: 'xl', label: 'XL' },
           ]}
           color="#10b981"
+          widthMode="auto"
         />
       </div>
 
@@ -141,6 +143,7 @@ const SegmentedControlExample = () => {
             { value: 'c', label: 'C' },
           ]}
           color="#f59e0b"
+          widthMode="auto"
         />
       </div>
 
@@ -154,6 +157,7 @@ const SegmentedControlExample = () => {
             { value: 'table', component: 'TableIcon' },
           ]}
           getComp={getComponent}
+          widthMode="equal"
         />
         <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
           View mode: {view}
@@ -171,6 +175,7 @@ const SegmentedControlExample = () => {
           ]}
           getComp={getComponent}
           color="#8b5cf6"
+          widthMode="auto"
         />
         <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
           Section: {section}
@@ -179,8 +184,8 @@ const SegmentedControlExample = () => {
 
       <div style={{ marginBottom: '12px' }}>
         <SegmentedControl
-          data={autoWidthMode}
-          onChange={setAutoWidthMode}
+          data={widthModeDemo}
+          onChange={setWidthModeDemo}
           options={[
             { value: 'request', label: 'Requests' },
             { value: 'plan', label: 'Plans' },
@@ -190,7 +195,7 @@ const SegmentedControlExample = () => {
           color="#2d579e"
         />
         <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
-          widthMode="auto": text-driven natural width
+          widthMode="auto": text-driven width, widthMode="equal": equal segment width
         </div>
       </div>
 

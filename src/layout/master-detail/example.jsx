@@ -137,14 +137,21 @@ const MasterDetailExamplesPanel = () => {
       <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Master-Detail Layout Examples</h2>
       
       {/* Radio button group */}
-      <div style={{ marginBottom: '20px', padding: '12px', background: '#f5f5f5', borderRadius: '4px' }}>
+      <div style={{
+        marginBottom: '10px',
+        padding: '8px',
+        background: '#f5f5f5',
+        borderRadius: '4px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+      }}>
         {examples.map(example => (
           <label 
             key={example.id} 
             style={{ 
               display: 'flex', 
               alignItems: 'flex-start',
-              marginBottom: '8px',
               cursor: 'pointer',
               padding: '4px'
             }}
@@ -155,9 +162,9 @@ const MasterDetailExamplesPanel = () => {
               value={example.id}
               checked={selectedExample === example.id}
               onChange={(e) => setSelectedExample(e.target.value)}
-              style={{ marginRight: '8px', marginTop: '2px' }}
+              style={{ margin: '0 8px 0 0' }}
             />
-            <div>
+            <div style={{ lineHeight: 1.2 }}>
               <span style={{ fontWeight: selectedExample === example.id ? 'bold' : 'normal' }}>
                 {example.label}
               </span>

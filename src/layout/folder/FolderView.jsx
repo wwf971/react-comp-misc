@@ -85,7 +85,7 @@ const FolderView = observer(({
         selectedRowId={selectedRowId}
         allowRowReorder={allowRowReorder && !loading}
         onDataChangeRequest={onDataChangeRequest}
-        locked={loading}
+        isLocked={loading}
         contextMenuItems={contextMenuItems}
       />
       {showStatusBar && (

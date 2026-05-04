@@ -22,7 +22,6 @@ const StaticCell = ({ rowId, columnId, getRowData, CustomComp, align }) => {
 const ItemsListView = observer(({
   columns,
   columnsOrder,
-  columnsSizeInit = {},
   columnWidths: externalColumnWidths,
   rows = [],
   getComponent,
@@ -38,7 +37,7 @@ const ItemsListView = observer(({
   getRowData,
   allowRowReorder = false,
   onDataChangeRequest,
-  locked = false,
+  isLocked = false,
   contextMenuItems = null,
   isLastColumnFilled = true,
   columnResizeIndicatorLeft = null,
@@ -154,7 +153,7 @@ const ItemsListView = observer(({
   const handleRowContextMenu = (e, rowId, rowIndex) => {
     handleRowInteraction(e, 'context-menu', rowId, rowIndex);
     if (onRowContextMenu) return;
-    if (locked || !contextMenuItems || contextMenuItems.length === 0) return;
+    if (isLocked || !contextMenuItems || contextMenuItems.length === 0) return;
     e.preventDefault();
     e.stopPropagation();
     setContextMenu(null);
@@ -165,7 +164,7 @@ const ItemsListView = observer(({
 
   const handleBackdropContextMenu = (e) => {
     e.preventDefault();
-    if (locked || !contextMenuItems || contextMenuItems.length === 0) return;
+    if (isLocked || !contextMenuItems || contextMenuItems.length === 0) return;
     const backdrop = e.currentTarget;
     backdrop.style.pointerEvents = 'none';
     const clickedElement = document.elementFromPoint(e.clientX, e.clientY);
@@ -345,7 +344,7 @@ const ItemsListView = observer(({
 
   return (
     <div
-      className={`folder-body ${locked ? 'locked' : ''} ${selectionClassName}`}
+      className={`folder-body ${isLocked ? 'locked' : ''} ${selectionClassName}`}
       ref={bodyRef}
       onDragOver={handleRowDragOver}
     >

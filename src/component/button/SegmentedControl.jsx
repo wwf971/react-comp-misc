@@ -9,12 +9,13 @@ const SegmentedControl = ({
   style = {},
   getComp = null,
   transitionDurationMs = 250,
-  widthMode = 'fill',
+  widthMode = 'auto',
 }) => {
+  const normalizedWidthMode = widthMode === 'equal' ? 'equal' : 'auto';
   const count = options.length;
   const selectedIndex = options.findIndex((opt) => opt.value === data);
   const hasSelection = selectedIndex >= 0 && count > 0;
-  const isAutoWidthMode = widthMode === 'auto';
+  const isAutoWidthMode = normalizedWidthMode === 'auto';
   const trackRef = React.useRef(null);
   const itemRefs = React.useRef([]);
   const [highlightMetrics, setHighlightMetrics] = React.useState({ left: 2, width: 0 });

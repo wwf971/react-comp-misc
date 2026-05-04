@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import './MasterDetail.css';
 import PanelDual from '../panel/PanelDual';
+import PlusIcon from '../../icon/PlusIcon';
+import MinusIcon from '../../icon/MinusIcon';
 
 const MasterDetailInfiLevel = ({
   title,
   initialSidebarRatio = 0.25,
   children,
-  lazyRender = true
+  lazyRender = true,
+  isToggleExpandOnItemClick = true,
 }) => {
   const [tree] = useState(() => parseTreeStructure(children));
   const [panels] = useState(() => extractAllPanels(tree));
@@ -39,21 +42,10 @@ const MasterDetailInfiLevel = ({
         setDisplayedPanels(prev => new Set([...prev, nodeKey]));
       }
     } else {
-      const preferredLeaf = findDefaultNode([node]) || findFirstLeaf([node]);
-      if (preferredLeaf) {
-        const pathToLeaf = getPathToNode(treeWithExpansion, preferredLeaf.key);
-        const newTree = expandPath(treeWithExpansion, pathToLeaf);
-        treeWithExpansion.splice(0, treeWithExpansion.length, ...newTree);
-        
-        setActiveNodeKey(preferredLeaf.key);
-        setActivePath(pathToLeaf);
-        
-        if (lazyRender) {
-          setDisplayedPanels(prev => new Set([...prev, preferredLeaf.key]));
-        }
-      } else {
-        onToggleExpand(nodeKey);
+      if (!isToggleExpandOnItemClick) {
+        return;
       }
+      onToggleExpand(nodeKey);
     }
   };
   
@@ -79,7 +71,7 @@ const MasterDetailInfiLevel = ({
       <PanelDual orientation="vertical" initialRatio={initialSidebarRatio}>
         <div className="tabs-sidebar">
           <div className="tabs-header">
-            <h3>{title}</h3>
+            <div className="tabs-header-title">{title}</div>
           </div>
           <div className="tabs-list">
             {treeWithExpansion.map(node => (
@@ -89,6 +81,7 @@ const MasterDetailInfiLevel = ({
                 activePath={activePath}
                 onNodeClick={onNodeClick}
                 onToggleExpand={onToggleExpand}
+                isToggleExpandOnItemClick={isToggleExpandOnItemClick}
               />
             ))}
           </div>
@@ -111,52 +104,51 @@ const MasterDetailInfiLevel = ({
   );
 };
 
-const TreeItem = ({ node, activePath, onNodeClick, onToggleExpand }) => {
-  const [isHovered, setIsHovered] = useState(false);
+const TreeItem = ({ node, activePath, onNodeClick, onToggleExpand, isToggleExpandOnItemClick }) => {
   const isActive = activePath.includes(node.key);
   const isActiveLeaf = activePath[activePath.length - 1] === node.key;
   const hasChildren = node.children.length > 0;
   
   return (
-    <div>
-      <div className="tab-container" style={{ paddingLeft: `${node.level * 12}px` }}>
-        {hasChildren && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleExpand(node.key);
-            }}
-            className="tab-expand-btn"
-          >
-            <span className={`tab-expand-icon ${node.isExpanded ? 'expanded' : ''}`}>
-              ▶
-            </span>
-          </button>
-        )}
-        {!hasChildren && <span style={{ width: '5px', display: 'inline-block' }}></span>}
-        
+    <div className="master-detail-tree-item">
+      <div className="master-detail-tree-row">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!hasChildren) return;
+            onToggleExpand(node.key);
+          }}
+          className={`master-detail-tree-toggle-btn ${hasChildren ? '' : 'is-empty'}`}
+          disabled={!hasChildren}
+          aria-label={!hasChildren ? 'No children' : (node.isExpanded ? 'Collapse' : 'Expand')}
+        >
+          {hasChildren ? (
+            node.isExpanded
+              ? <MinusIcon width={12} height={12} color="#666" />
+              : <PlusIcon width={12} height={12} color="#666" />
+          ) : null}
+        </button>
+
         <button
           onClick={() => onNodeClick(node.key)}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          className={`tab-label-btn ${isActiveLeaf ? 'active' : ''} ${isHovered ? 'hover' : ''}`}
-          style={{ 
-            fontWeight: isActive ? 'bold' : 'normal',
-            opacity: node.isLeaf ? 1 : 0.8
-          }}
+          type="button"
+          className={`master-detail-tree-label-btn ${isActiveLeaf ? 'active' : ''} ${isActive ? 'is-in-path' : ''} ${node.isLeaf ? 'is-leaf' : 'is-branch'}`}
         >
           {node.label}
         </button>
       </div>
       
       {node.isExpanded && node.children.map(childNode => (
-        <TreeItem
-          key={childNode.key}
-          node={childNode}
-          activePath={activePath}
-          onNodeClick={onNodeClick}
-          onToggleExpand={onToggleExpand}
-        />
+        <div key={childNode.key} className="master-detail-tree-children">
+          <TreeItem
+            node={childNode}
+            activePath={activePath}
+            onNodeClick={onNodeClick}
+            onToggleExpand={onToggleExpand}
+            isToggleExpandOnItemClick={isToggleExpandOnItemClick}
+          />
+        </div>
       ))}
     </div>
   );

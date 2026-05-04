@@ -15,6 +15,7 @@ import { buttonExamples } from '../component/button/example.jsx';
 import { panelExamples } from '../layout/panel/example.jsx';
 import { popupExamples } from '../component/popup/example.jsx';
 import { folderExamples } from '../layout/folder/example.jsx';
+import { treeExamples } from '../layout/tree/example.jsx';
 import { htmlExamples } from '../dev/example.jsx';
 import { calendarExamples } from '../component/calendar/example.jsx';
 import { statExamples } from '../component/stat/example.jsx';
@@ -22,6 +23,7 @@ import { statExamples } from '../component/stat/example.jsx';
 // Combine all examples into a single object
 export const components = {
   ...folderExamples,
+  ...treeExamples,
   ...jsonExamples,
   // ...jsonJotaiExamples,
   ...jsonMobxExamples,

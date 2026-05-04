@@ -79,6 +79,7 @@
 .path-example-current-path {
   margin-top: 10px;
   font-size: 12px;
+  font-family: sans-serif;
   background: #f0f0f0;
   padding: 8px;
   border-radius: 4px;
@@ -89,6 +90,7 @@
 }
 
 .path-example-current-path-code {
+  font-family: inherit;
   white-space: pre-wrap;
   word-break: break-word;
 }

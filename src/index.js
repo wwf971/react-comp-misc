@@ -111,7 +111,7 @@ export { default as FolderView } from "./layout/folder/FolderView.jsx";
 export { default as FolderHeader } from "./layout/folder/Header.jsx";
 export { default as FolderBody } from "./layout/folder/ItemsListView.jsx";
 export { default as CellDropdown } from "./layout/folder/CellEditable.jsx";
-export { default as TreeView } from "./layout/folder/TreeView.jsx";
+export { default as TreeView } from "./layout/tree/TreeView.jsx";
 
 export { default as HtmlRender } from "./dev/HtmlRender.jsx";
 export { default as DateSelector } from "./component/calendar/DateSelector.jsx";

@@ -17,7 +17,7 @@ const ItemsIconView = observer(({
   onRowClick,
   onRowDoubleClick,
   selectedRowId,
-  locked = false,
+  isLocked = false,
   contextMenuItems = null,
   onDataChangeRequest,
   allowRowReorder = false,
@@ -118,7 +118,7 @@ const ItemsIconView = observer(({
 
   const handleContextMenu = (e, rowId, rowIndex) => {
     handleInteraction(e, 'context-menu', rowId, rowIndex);
-    if (locked || !contextMenuItems || contextMenuItems.length === 0) return;
+    if (isLocked || !contextMenuItems || contextMenuItems.length === 0) return;
     e.preventDefault();
     e.stopPropagation();
     setContextMenu(null);
@@ -233,7 +233,7 @@ const ItemsIconView = observer(({
 
   return (
     <div
-      className={`folder-icon-view ${locked ? 'locked' : ''}`}
+      className={`folder-icon-view ${isLocked ? 'locked' : ''}`}
       ref={containerRef}
       onDragOver={handleContainerDragOver}
       onDragLeave={handleContainerDragLeave}
@@ -279,7 +279,7 @@ const ItemsIconView = observer(({
           </div>
         );
       })}
-      {locked && <div className="folder-icon-view-overlay" />}
+      {isLocked && <div className="folder-icon-view-overlay" />}
       {contextMenu && contextMenuItems && (
         <Menu
           position={{ x: contextMenu.x, y: contextMenu.y }}
