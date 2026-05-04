@@ -23,6 +23,7 @@
     "./PdfIcon": "./src/icon/PdfIcon.jsx",
     "./CrossIcon": "./src/icon/CrossIcon.jsx",
     "./DragIcon": "./src/icon/DragIcon.jsx",
+    "./TreeView": "./src/layout/tree/TreeView.jsx",
     "./Login": "./src/component/auth/Login.jsx",
     "./Menu": "./src/component/menu/Menu.jsx",
     "./Menu.css": "./src/component/menu/Menu.css",

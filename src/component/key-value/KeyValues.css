@@ -52,7 +52,7 @@
 }
 
 /* Vertical separator between key and value */
-.keyvalues-row::after {
+.keyvalues-row.show-divider::after {
   content: '';
   position: absolute;
   top: 0;

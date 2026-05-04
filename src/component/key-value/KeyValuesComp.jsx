@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
 import { runInAction } from 'mobx';
 import './KeyValues.css';
@@ -303,7 +303,8 @@ const KeyValuesCompInner = ({
   }, []);
 
   // Calculate minimum key column width when keyColWidth is 'min'
-  useEffect(() => {
+  // useLayoutEffect prevents first-paint divider jitter for sync-measurable content.
+  useLayoutEffect(() => {
     // Clean up any pending measurements
     if (measureTimeoutRef.current) {
       clearTimeout(measureTimeoutRef.current);
@@ -330,10 +331,6 @@ const KeyValuesCompInner = ({
       return;
     }
 
-    // Set an initial estimated width immediately to avoid layout shift
-    // This will be refined by the measurement below
-    setKeyColWidthValue('150px');
-
     resizeObserverRef.current = new ResizeObserver(() => {
       if (isDraggingRef.current) return;
       if (measureTimeoutRef.current) {
@@ -353,6 +350,9 @@ const KeyValuesCompInner = ({
     // Then start adaptive measurement that retries until width stabilizes
     lastMeasuredWidthRef.current = 0;
     measureAttemptsRef.current = 0;
+
+    // First synchronous pass: this can run before paint and removes default-position flash.
+    measureMaxWidth(false);
     
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -403,7 +403,7 @@ const KeyValuesCompInner = ({
             return (
               <div 
                 key={index} 
-                className={`keyvalues-row ${String(item?.rowClassName || '')}`}
+                className={`keyvalues-row${alignColumn && keyColWidthValue ? ' show-divider' : ''} ${String(item?.rowClassName || '')}`}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
