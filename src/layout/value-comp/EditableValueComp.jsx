@@ -330,8 +330,7 @@ const EditableValueComp = ({
           onKeyDown={handleKeyDown}
           suppressContentEditableWarning={true}
           style={{
-            ...(isSubmitting ? { pointerEvents: 'none', opacity: 0.7 } : {}),
-            ...(isEditing ? { minWidth: '80px', display: 'inline-block' } : {})
+            ...(isSubmitting ? { pointerEvents: 'none', opacity: 0.7 } : {})
           }}
         >
           {data}

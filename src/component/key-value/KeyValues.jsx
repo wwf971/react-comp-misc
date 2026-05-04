@@ -17,6 +17,8 @@ import KeyValuesComp from './KeyValuesComp.jsx';
  * @param {boolean} props.alignColumn - Whether to align key/value columns (default: true)
  * @param {string} props.keyColWidth - Width of key column: 'min' for auto-calculated, or fixed like '200px' (default: 'min')
  * @param {Function} props.onChangeAttempt - Callback when user attempts to change a key or value: (index, field, newValue) => void
+ * @param {'none'|'single'} props.selectionMode - Row selection mode (default: 'none')
+ * @param {Function} props.onSelectionChange - Callback when selected row changes: (rowIndex | null) => void
  */
 const KeyValues = ({
   data = [],
@@ -28,7 +30,9 @@ const KeyValues = ({
   onChangeAttempt,
   isWrap = false,
   isDividerDraggable = false,
-  getComp
+  getComp,
+  selectionMode = 'none',
+  onSelectionChange,
 }) => {
   return (
     <KeyValuesComp
@@ -42,6 +46,8 @@ const KeyValues = ({
       isWrap={isWrap}
       isDividerDraggable={isDividerDraggable}
       getComp={getComp}
+      selectionMode={selectionMode}
+      onSelectionChange={onSelectionChange}
     />
   );
 };

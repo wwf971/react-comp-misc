@@ -166,6 +166,8 @@ const MemoizedDefaultTextComp = React.memo(DefaultTextComp, (prev, next) => {
  * @param {Function} props.getComp - Resolve component by name: (name, context) => React.Component | null
  * @param {boolean} props.isDividerDraggable - Whether the key/value divider line can be dragged to resize columns (default: false)
  * @param {boolean} props.isWrap - Whether cell content wraps to the next line when it overflows; false clips with ellipsis (default: false)
+ * @param {'none'|'single'} props.selectionMode - Row selection mode (default: 'none')
+ * @param {Function} props.onSelectionChange - Callback when selected row changes: (rowIndex | null) => void
  */
 const KeyValuesCompInner = ({ 
   data = [], 
@@ -178,9 +180,13 @@ const KeyValuesCompInner = ({
   keyColWidth = 'min',
   onChangeAttempt,
   getComp,
+  selectionMode = 'none',
+  onSelectionChange,
 }) => {
   const [keyColWidthValue, setKeyColWidthValue] = useState(null);
   const [isDividerDragging, setIsDividerDragging] = useState(false);
+  const [selectedRowItem, setSelectedRowItem] = useState(null);
+  const containerRef = useRef(null);
   const keyRefs = useRef([]);
   const listRef = useRef(null);
   const resizeObserverRef = useRef(null);
@@ -193,6 +199,31 @@ const KeyValuesCompInner = ({
   const canEditKey = isEditable && isKeyEditable;
   const canEditValue = isEditable && isValueEditable;
   const cellOverflowClass = isWrap ? 'cell-wrap' : 'cell-clip';
+  const isSelectionEnabled = selectionMode === 'single';
+  const selectedRowIndex = selectedRowItem ? data.findIndex((item) => item === selectedRowItem) : -1;
+
+  const handleRowMouseDownCapture = useCallback((item, event) => {
+    if (!isSelectionEnabled) return;
+    const targetElement = event.target;
+    if (!(targetElement instanceof Element)) {
+      setSelectedRowItem(item);
+      return;
+    }
+    if (
+      targetElement.closest(
+        '.edit-icon-button, .editable-value-icon, button, input, select, textarea, a, [role="button"], [contenteditable="true"]'
+      )
+    ) {
+      return;
+    }
+    setSelectedRowItem(item);
+  }, [isSelectionEnabled]);
+
+  const handleRowContextMenuCapture = useCallback((item) => {
+    if (!isSelectionEnabled) return;
+    setSelectedRowItem(item);
+  }, [isSelectionEnabled]);
+
   const startDividerDrag = useCallback((event) => {
     event.preventDefault();
     const list = listRef.current;
@@ -227,6 +258,37 @@ const KeyValuesCompInner = ({
       if (onUp) window.removeEventListener('mouseup', onUp);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isSelectionEnabled) {
+      setSelectedRowItem(null);
+      return;
+    }
+    const handleDocumentMouseDown = (event) => {
+      const container = containerRef.current;
+      if (!container) return;
+      const targetElement = event.target;
+      if (targetElement instanceof Node && container.contains(targetElement)) return;
+      setSelectedRowItem(null);
+    };
+    document.addEventListener('mousedown', handleDocumentMouseDown);
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentMouseDown);
+    };
+  }, [isSelectionEnabled]);
+
+  useEffect(() => {
+    if (selectedRowItem === null) return;
+    if (!data.some((item) => item === selectedRowItem)) {
+      setSelectedRowItem(null);
+    }
+  }, [data, selectedRowItem]);
+
+  useEffect(() => {
+    if (onSelectionChange) {
+      onSelectionChange(selectedRowIndex >= 0 ? selectedRowIndex : null);
+    }
+  }, [selectedRowIndex, onSelectionChange]);
 
   const resolveComp = useCallback((compName, context) => {
     if (!compName || !getComp) {
@@ -379,7 +441,7 @@ const KeyValuesCompInner = ({
   }, [data, alignColumn, keyColWidth, measureMaxWidth]); // Watch data directly, not just data.length
 
   return (
-    <div className="keyvalues-container">
+    <div className="keyvalues-container" ref={containerRef}>
       {data.length === 0 ? (
         <div className="keyvalues-empty">No data</div>
       ) : (
@@ -403,12 +465,14 @@ const KeyValuesCompInner = ({
             return (
               <div 
                 key={index} 
-                className={`keyvalues-row${alignColumn && keyColWidthValue ? ' show-divider' : ''} ${String(item?.rowClassName || '')}`}
+                className={`keyvalues-row${alignColumn && keyColWidthValue ? ' show-divider' : ''}${isSelectionEnabled && item === selectedRowItem ? ' selected-row' : ''} ${String(item?.rowClassName || '')}`}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
                   ...(alignColumn && keyColWidthValue ? { '--key-col-width': keyColWidthValue } : {})
                 }}
+                onMouseDownCapture={(event) => handleRowMouseDownCapture(item, event)}
+                onContextMenuCapture={() => handleRowContextMenuCapture(item)}
               >
                 <div 
                   className={`keyvalues-cell key-cell ${cellOverflowClass} ${canEditKey ? 'editable' : ''}`}

@@ -47,6 +47,10 @@
   position: relative;
 }
 
+.keyvalues-row.selected-row {
+  background-color: #e8e8e8;
+}
+
 .keyvalues-row:last-child {
   border-bottom: none;
 }
@@ -76,6 +80,10 @@
 
 .keyvalues-cell.editable:hover {
   background-color: #f8f8f8;
+}
+
+.keyvalues-row.selected-row .keyvalues-cell.editable:hover {
+  background-color: transparent;
 }
 
 .key-cell {

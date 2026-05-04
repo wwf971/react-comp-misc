@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import KeyValues from './KeyValues.jsx';
@@ -6,6 +6,8 @@ import KeyValuesComp from './KeyValuesComp.jsx';
 import EditableValueWithInfo from '../../layout/value-comp/EditableValueWithInfo.jsx';
 import EditableValueComp from '../../layout/value-comp/EditableValueComp.jsx';
 import PlusIcon from '../../icon/PlusIcon.jsx';
+import DeleteIcon from '../../icon/DeleteIcon.jsx';
+import { UpIcon, DownIcon } from '../../icon/DirectionIcons.jsx';
 
 const DictExamplesPanel = observer(() => {
   const [store] = useState(() => {
@@ -49,6 +51,10 @@ const DictExamplesPanel = observer(() => {
 
   const [isAutoUpdate, setIsAutoUpdate] = useState(false);
   const [autoUpdateCounter, setAutoUpdateCounter] = useState(0);
+  const [selectedActionRowIndex, setSelectedActionRowIndex] = useState(null);
+  const [actionButtonsTop, setActionButtonsTop] = useState(0);
+  const actionPanelRef = useRef(null);
+  const actionButtonsRef = useRef(null);
 
   const handleIncrementAge = () => {
     runInAction(() => {
@@ -136,6 +142,68 @@ const DictExamplesPanel = observer(() => {
     });
   };
 
+  const handleSelectedRowAction = async (action) => {
+    if (selectedActionRowIndex === null) return;
+    if (action === 'moveUp') {
+      if (selectedActionRowIndex <= 0) return;
+      runInAction(() => {
+        const targetIndex = selectedActionRowIndex - 1;
+        const currentItem = store.dataWithActions[selectedActionRowIndex];
+        store.dataWithActions[selectedActionRowIndex] = store.dataWithActions[targetIndex];
+        store.dataWithActions[targetIndex] = currentItem;
+      });
+      return;
+    }
+    if (action === 'moveDown') {
+      if (selectedActionRowIndex >= store.dataWithActions.length - 1) return;
+      runInAction(() => {
+        const targetIndex = selectedActionRowIndex + 1;
+        const currentItem = store.dataWithActions[selectedActionRowIndex];
+        store.dataWithActions[selectedActionRowIndex] = store.dataWithActions[targetIndex];
+        store.dataWithActions[targetIndex] = currentItem;
+      });
+      return;
+    }
+    const result = await handleAction(action, {
+      index: selectedActionRowIndex,
+      field: 'value',
+      configKey: `value_${selectedActionRowIndex}`
+    });
+    if (result.code === 0 && action === 'deleteEntry') {
+      setSelectedActionRowIndex(null);
+    }
+  };
+
+  const isMoveUpDisabled = selectedActionRowIndex === null || selectedActionRowIndex <= 0;
+  const isMoveDownDisabled = selectedActionRowIndex === null || selectedActionRowIndex >= store.dataWithActions.length - 1;
+
+  const syncActionButtonsTop = useCallback(() => {
+    const panelElement = actionPanelRef.current;
+    if (!panelElement || selectedActionRowIndex === null) return;
+    const selectedRowElement = panelElement.querySelector('.keyvalues-row.selected-row');
+    if (!selectedRowElement) return;
+    const panelRect = panelElement.getBoundingClientRect();
+    const rowRect = selectedRowElement.getBoundingClientRect();
+    const actionGroupHeight = actionButtonsRef.current?.offsetHeight || 30;
+    const centeredTop = rowRect.top - panelRect.top + Math.max(0, (rowRect.height - actionGroupHeight) / 2);
+    setActionButtonsTop(centeredTop);
+  }, [selectedActionRowIndex]);
+
+  useLayoutEffect(() => {
+    syncActionButtonsTop();
+  }, [syncActionButtonsTop, selectedActionRowIndex, store.dataWithActions.length]);
+
+  useEffect(() => {
+    if (selectedActionRowIndex === null) return undefined;
+    const handleResize = () => {
+      syncActionButtonsTop();
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [selectedActionRowIndex, syncActionButtonsTop]);
+
   const EditableValueWithActionsComp = ({ data, field, index, itemRef }) => (
     <EditableValueComp
       data={data}
@@ -166,7 +234,7 @@ const DictExamplesPanel = observer(() => {
 
   return (
     <div style={{ maxWidth: '900px', padding: '12px' }}>
-      <div style={{ marginBottom: '16px', fontSize: '14px', fontWeight: 'bold' }}>
+      <div style={{ marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
         KeyValues - Basic
       </div>
       
@@ -200,7 +268,7 @@ const DictExamplesPanel = observer(() => {
         isKeyEditable={true}
       />
 
-      <div style={{ marginTop: '20px', marginBottom: '8px', fontSize: '14px', fontWeight: 'bold' }}>
+      <div style={{ marginTop: '20px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
         KeyValues - Column Alignment Options
       </div>
       
@@ -228,7 +296,7 @@ const DictExamplesPanel = observer(() => {
         alignColumn={false}
       />
 
-      <div style={{ marginTop: '24px', marginBottom: '16px', fontSize: '14px', fontWeight: 'bold' }}>
+      <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
         KeyValuesComp - With Custom Components
       </div>
 
@@ -241,20 +309,86 @@ const DictExamplesPanel = observer(() => {
         getComp={getComp}
       />
 
-      <div style={{ marginTop: '24px', marginBottom: '16px', fontSize: '14px', fontWeight: 'bold' }}>
-        KeyValuesComp - With EditableValueComp and Actions
+      <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
+        KeyValuesComp - Row Selection and Quick Actions
       </div>
 
       <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        Right-click values for context menu
+        Select a row to show quick actions on the right, or right-click a value for the context menu
       </div>
       
-      <div>
+      <div ref={actionPanelRef} style={{ position: 'relative', paddingRight: '80px' }}>
         <KeyValuesComp 
           data={store.dataWithActions}
           isValueEditable={true}
           getComp={getComp}
+          selectionMode="single"
+          onSelectionChange={setSelectedActionRowIndex}
         />
+
+        {selectedActionRowIndex !== null && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0px',
+            position: 'absolute',
+            right: '0px',
+            top: `${actionButtonsTop}px`,
+            padding: '1px 2px',
+            border: '1px solid #ccc',
+            borderRadius: '3px',
+            background: '#fff'
+          }}
+            ref={actionButtonsRef}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <button
+              onClick={() => handleSelectedRowAction('moveUp')}
+              title="Move selected row up"
+              disabled={isMoveUpDisabled}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: isMoveUpDisabled ? 'default' : 'pointer', opacity: isMoveUpDisabled ? 0.45 : 1 }}
+              onMouseEnter={(event) => {
+                if (isMoveUpDisabled) return;
+                event.currentTarget.style.background = '#ededed';
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <UpIcon width={16} height={16} />
+            </button>
+            <button
+              onClick={() => handleSelectedRowAction('moveDown')}
+              title="Move selected row down"
+              disabled={isMoveDownDisabled}
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: isMoveDownDisabled ? 'default' : 'pointer', opacity: isMoveDownDisabled ? 0.45 : 1 }}
+              onMouseEnter={(event) => {
+                if (isMoveDownDisabled) return;
+                event.currentTarget.style.background = '#ededed';
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <DownIcon width={16} height={16} />
+            </button>
+            <button
+              onClick={() => handleSelectedRowAction('deleteEntry')}
+              title="Delete selected row"
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#a33', cursor: 'pointer' }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.background = '#f3e6e6';
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <DeleteIcon width={16} height={16} />
+            </button>
+          </div>
+        )}
         
         <div style={{ 
           display: 'inline-flex', 
@@ -284,7 +418,7 @@ const DictExamplesPanel = observer(() => {
         </div>
       </div>
 
-      <div style={{ marginTop: '24px', marginBottom: '8px', fontSize: '14px', fontWeight: 'bold' }}>
+      <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
         KeyValues - Content Overflow: wrap vs clip
       </div>
 
@@ -311,7 +445,7 @@ const DictExamplesPanel = observer(() => {
         isWrap={true}
       />
 
-      <div style={{ marginTop: '24px', marginBottom: '8px', fontSize: '14px', fontWeight: 'bold' }}>
+      <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
         KeyValuesComp - Draggable Divider
       </div>
 
