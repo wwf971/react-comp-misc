@@ -7,6 +7,11 @@
   min-width: 0;
 }
 
+.editable-value-container.is-submitting {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
 .editable-value-text {
   word-break: break-word;
   display: inline-block;
@@ -34,6 +39,11 @@
 
 .editable-value-text.editing:focus {
   outline: none;
+}
+
+.editable-value-text.is-submitting {
+  background: #f3f3f3;
+  border-color: #cfcfcf;
 }
 
 .editable-value-icon {
@@ -68,6 +78,10 @@
   align-items: center;
 }
 
+.editable-value-boolean.is-submitting {
+  pointer-events: none;
+}
+
 .editable-value-text.disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -97,5 +111,11 @@
 
 .radio-label span {
   user-select: none;
+}
+
+.editable-value-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 

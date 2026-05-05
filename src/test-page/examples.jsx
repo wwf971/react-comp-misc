@@ -19,6 +19,7 @@ import { treeExamples } from '../layout/tree/example.jsx';
 import { htmlExamples } from '../dev/example.jsx';
 import { calendarExamples } from '../component/calendar/example.jsx';
 import { statExamples } from '../component/stat/example.jsx';
+import { databaseExamples } from '../database/example.jsx';
 
 // Combine all examples into a single object
 export const components = {
@@ -41,5 +42,6 @@ export const components = {
   ...authExamples,
   ...calendarExamples,
   ...statExamples,
+  ...databaseExamples,
   ...htmlExamples,
 };

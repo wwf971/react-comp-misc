@@ -526,7 +526,7 @@ const KeyValuesCompInner = ({
 
             return (
               <div 
-                key={index} 
+                key={rowId === null ? `row_${index}` : `row_${String(rowId)}`} 
                 className={`keyvalues-row${alignColumn && keyColWidthValue ? ' show-divider' : ''}${isSelectionEnabled && rowId !== null && rowId === effectiveSelectedRowId ? ' selected-row' : ''} ${String(item?.rowClassName || '')}`}
                 style={{
                   display: 'flex',
@@ -547,6 +547,7 @@ const KeyValuesCompInner = ({
                       isEditable={canEditKey}
                       field="key"
                       index={index}
+                      rowId={rowId}
                       itemRef={item}
                     />
                   </span>
@@ -561,6 +562,7 @@ const KeyValuesCompInner = ({
                     isEditable={canEditValue}
                     field="value"
                     index={index}
+                    rowId={rowId}
                     itemRef={item}
                   />
                 </div>

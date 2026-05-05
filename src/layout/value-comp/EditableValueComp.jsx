@@ -15,6 +15,7 @@ import './EditableValue.css';
 const EditableValueComp = ({ 
   data, 
   index, 
+  rowId,
   field, 
   category, 
   valueType = 'text', 
@@ -65,6 +66,7 @@ const EditableValueComp = ({
     try {
       const result = await onAction(item.data.action, {
         index,
+        rowId,
         field,
         configKey
       });
@@ -257,8 +259,8 @@ const EditableValueComp = ({
     
     return (
       <>
-        <span className="editable-value-container" onContextMenu={handleContextMenu}>
-          <span className="editable-value-boolean" style={isSubmitting ? { opacity: 0.7, pointerEvents: 'none' } : {}}>
+        <span className={`editable-value-container ${isSubmitting ? 'is-submitting' : ''}`} onContextMenu={handleContextMenu}>
+          <span className={`editable-value-boolean ${isSubmitting ? 'is-submitting' : ''}`}>
             <label className={`radio-label ${!isEditing ? 'disabled' : ''}`}>
               <input 
                 type="radio" 
@@ -281,7 +283,7 @@ const EditableValueComp = ({
           
           <span className="editable-value-icon">
             {isSubmitting ? (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="editable-value-loading">
                 <SpinningCircle width={16} height={16} color="#666" />
                 <span style={{ fontSize: '13px', color: '#666' }}>Saving...</span>
               </span>
@@ -321,24 +323,21 @@ const EditableValueComp = ({
   // Render text editing (default)
   return (
     <>
-      <span className="editable-value-container" onContextMenu={handleContextMenu}>
+      <span className={`editable-value-container ${isSubmitting ? 'is-submitting' : ''}`} onContextMenu={handleContextMenu}>
         <span 
           ref={editRef}
-          className={`editable-value-text ${isEditing ? 'editing' : ''} ${isNotSet && !isEditing ? 'not-set' : ''}`}
+          className={`editable-value-text ${isEditing ? 'editing' : ''} ${isNotSet && !isEditing ? 'not-set' : ''} ${isSubmitting ? 'is-submitting' : ''}`}
           contentEditable={isEditing && !isSubmitting}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           suppressContentEditableWarning={true}
-          style={{
-            ...(isSubmitting ? { pointerEvents: 'none', opacity: 0.7 } : {})
-          }}
         >
           {data}
         </span>
         
         <span className="editable-value-icon">
           {isSubmitting ? (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="editable-value-loading">
               <SpinningCircle width={16} height={16} color="#666" />
               <span style={{ fontSize: '13px', color: '#666' }}>Saving...</span>
             </span>

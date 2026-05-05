@@ -10,6 +10,10 @@ import DeleteIcon from '../../icon/DeleteIcon.jsx';
 import { UpIcon, DownIcon } from '../../icon/DirectionIcons.jsx';
 
 const DictExamplesPanel = observer(() => {
+  const wait = (ms) => new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
   const [store] = useState(() => {
     const store = {
       basicData: [
@@ -41,9 +45,9 @@ const DictExamplesPanel = observer(() => {
         }
       ],
       dataWithActions: [
-        { id: 'action_1', key: 'field_1', value: 'value 1', valueCompName: 'editableWithActions' },
-        { id: 'action_2', key: 'field_2', value: 'value 2', valueCompName: 'editableWithActions' },
-        { id: 'action_3', key: 'field_3', value: 'value 3', valueCompName: 'editableWithActions' }
+        { id: 'action_1', key: 'field_1', value: 'value 1', keyCompName: 'editableWithActions', valueCompName: 'editableWithActions' },
+        { id: 'action_2', key: 'field_2', value: 'value 2', keyCompName: 'editableWithActions', valueCompName: 'editableWithActions' },
+        { id: 'action_3', key: 'field_3', value: 'value 3', keyCompName: 'editableWithActions', valueCompName: 'editableWithActions' }
       ]
     };
     return makeAutoObservable(store, {}, { deep: true });
@@ -64,6 +68,7 @@ const DictExamplesPanel = observer(() => {
       id: `action_${nextId}`,
       key: `field_${nextId}`,
       value: '',
+      keyCompName: 'editableWithActions',
       valueCompName: 'editableWithActions'
     };
   }, []);
@@ -241,8 +246,9 @@ const DictExamplesPanel = observer(() => {
   const EditableValueWithActionsComp = ({ data, field, index, itemRef }) => (
     <EditableValueComp
       data={data}
-      configKey={`${field}_${index}`}
+      configKey={`${field}_${String(itemRef?.id || index)}`}
       onUpdate={async (key, val) => {
+        await wait(500);
         runInAction(() => {
           itemRef[field] = val;
         });

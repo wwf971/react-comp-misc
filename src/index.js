@@ -103,6 +103,7 @@ export { default as MenuComp } from "./component/menu/MenuComp";
 
 export { default as DatabaseSetup } from "./database/DatabaseSetup";
 export { default as TableManage } from "./database/TableManage";
+export { default as DbConnectionCard } from "./database/DbConnectionCard";
 
 export { default as BoolSlider } from "./component/button/BoolSlider.jsx";
 export { default as SegmentedControl } from "./component/button/SegmentedControl.jsx";
