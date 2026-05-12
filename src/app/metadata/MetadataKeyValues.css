@@ -1,0 +1,80 @@
+.metadata-kv-root {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metadata-kv-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f3761;
+}
+
+.metadata-kv-message {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  border: 1px solid #cfd8ea;
+  border-radius: 3px;
+  padding: 3px 5px;
+  font-size: 12px;
+}
+
+.metadata-kv-message.status-loading {
+  background: #edf3ff;
+  color: #1b4d96;
+}
+
+.metadata-kv-message.status-success {
+  background: #edf9ef;
+  border-color: #b8dfbf;
+  color: #1b7a2f;
+}
+
+.metadata-kv-message.status-error {
+  background: #fff2f2;
+  border-color: #f2c2c2;
+  color: #8c2a2a;
+}
+
+.metadata-kv-message-content {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.metadata-kv-dismiss-btn {
+  border: 1px solid #c7d3e8;
+  background: #f7faff;
+  color: #29446f;
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 12px;
+}
+
+.metadata-kv-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.metadata-kv-btn {
+  border: 1px solid #abc0e0;
+  background: #eaf1fd;
+  color: #17305f;
+  border-radius: 3px;
+  padding: 2px 7px;
+  font-size: 12px;
+  min-height: 24px;
+}
+
+.metadata-kv-btn.danger {
+  border-color: #efbebe;
+  background: #fff3f3;
+  color: #9e2f2f;
+}
+
+.metadata-kv-table.is-locked {
+  opacity: 0.9;
+}

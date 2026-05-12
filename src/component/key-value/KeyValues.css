@@ -78,11 +78,11 @@
   transition: background-color 0.1s;
 }
 
-.keyvalues-cell.editable:hover {
+.keyvalues-row.is-row-editable:hover .keyvalues-cell {
   background-color: #f8f8f8;
 }
 
-.keyvalues-row.selected-row .keyvalues-cell.editable:hover {
+.keyvalues-row.selected-row.is-row-editable:hover .keyvalues-cell {
   background-color: transparent;
 }
 

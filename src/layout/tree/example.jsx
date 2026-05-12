@@ -3,6 +3,7 @@ import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import TreeView, { TreeTextItemComp } from './TreeView';
 import InfoIcon from '../../icon/InfoIcon';
+import Menu from '../../component/menu/Menu';
 import './tree.css';
 
 const TREE_NODE_CATALOG = {
@@ -177,6 +178,7 @@ const TreeExamplesPanel = observer(() => {
   const [treeFilterText, setTreeFilterText] = useState('');
   const [treeFilterSelectedItemId, setTreeFilterSelectedItemId] = useState('workspace');
   const [treeFilterExpandedById, setTreeFilterExpandedById] = useState({});
+  const [treeContextMenuState, setTreeContextMenuState] = useState(null);
 
   const filteredTreeData = useMemo(
     () => createLeafFilteredTreeData(treeFilterText),
@@ -279,6 +281,30 @@ const TreeExamplesPanel = observer(() => {
     return { code: 0 };
   };
 
+  const openTreeContextMenuAt = (x, y, nextState) => {
+    setTreeContextMenuState(null);
+    requestAnimationFrame(() => {
+      setTreeContextMenuState({
+        x,
+        y,
+        ...nextState,
+      });
+    });
+  };
+
+  const openTreeContextMenuForItem = (itemIdRaw, x, y) => {
+    const itemId = `${itemIdRaw ?? ''}`.trim();
+    if (!itemId) return false;
+    const itemData = treeViewStore.getItemDataById(itemId);
+    if (!itemData) return false;
+    treeViewStore.setSelectedItem(itemId);
+    openTreeContextMenuAt(x, y, {
+      menuType: 'item',
+      itemId,
+    });
+    return true;
+  };
+
   return (
     <div>
       <div className="tree-example-block">
@@ -298,6 +324,92 @@ const TreeExamplesPanel = observer(() => {
             onItemClick={(itemId) => treeViewStore.setSelectedItem(itemId)}
             getItemComp={getTreeItemComp}
           />
+        </div>
+      </div>
+
+      <div className="tree-example-block">
+        <div className="tree-example-title">Tree View with Context Menus</div>
+        <div className="tree-example-desc">
+          Right click on row for item menu. Right click on empty area for panel menu. Right click again while menu is open repositions and retargets correctly.
+        </div>
+        <div className="tree-example-meta">
+          Context target: {`${treeContextMenuState?.menuType ?? '-'}`}{treeContextMenuState?.itemId ? ` (${treeContextMenuState.itemId})` : ''}
+        </div>
+        <div
+          className="tree-example-box tree-context-wrap"
+          data-tree-context-wrap="true"
+          onContextMenu={(event) => {
+            const isOnTreeRow = Boolean(event.target?.closest?.('.tree-view-row'));
+            if (isOnTreeRow) return;
+            event.preventDefault();
+            event.stopPropagation();
+            openTreeContextMenuAt(event.clientX, event.clientY, {
+              menuType: 'empty',
+            });
+          }}
+        >
+          <TreeView
+            className="tree-view-fixed-height"
+            rootItemIds={treeViewStore.rootItemIds}
+            getItemDataById={treeViewStore.getItemDataById}
+            onDataChangeRequest={treeViewStore.onTreeDataChangeRequest}
+            selectedItemId={treeViewStore.selectedItemId}
+            onItemClick={(itemId) => treeViewStore.setSelectedItem(itemId)}
+            onItemContextMenu={async (itemId, _itemData, event) => {
+              openTreeContextMenuForItem(itemId, event.clientX, event.clientY);
+            }}
+            getItemComp={getTreeItemComp}
+          />
+        </div>
+        {treeContextMenuState ? (
+          <Menu
+            items={(() => {
+              if (treeContextMenuState.menuType === 'empty') {
+                return [
+                  { type: 'item', name: 'Create Root Folder', data: { action: 'create-root-folder' } },
+                  { type: 'item', name: 'Refresh Tree', data: { action: 'refresh-tree' } },
+                ];
+              }
+              const itemData = treeViewStore.getItemDataById(treeContextMenuState.itemId);
+              if (!itemData) return [];
+              const typeText = itemData.isLeaf ? 'File' : 'Folder';
+              return [
+                { type: 'item', name: `${typeText} Info`, data: { action: 'info', itemId: itemData.id } },
+                { type: 'item', name: `Rename ${typeText}`, data: { action: 'rename', itemId: itemData.id } },
+                { type: 'item', name: `Delete ${typeText}`, data: { action: 'delete', itemId: itemData.id } },
+              ];
+            })()}
+            position={{ x: treeContextMenuState.x, y: treeContextMenuState.y }}
+            onClose={() => setTreeContextMenuState(null)}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              const backdropElement = event.currentTarget;
+              backdropElement.style.pointerEvents = 'none';
+              const clickedElement = document.elementFromPoint(event.clientX, event.clientY);
+              backdropElement.style.pointerEvents = '';
+
+              const rowElement = clickedElement?.closest?.('.tree-view-row[data-tree-item-id]');
+              if (rowElement) {
+                const rowItemId = `${rowElement.getAttribute('data-tree-item-id') ?? ''}`.trim();
+                if (openTreeContextMenuForItem(rowItemId, event.clientX, event.clientY)) return;
+              }
+              const isInContextWrap = Boolean(clickedElement?.closest?.('[data-tree-context-wrap="true"]'));
+              if (isInContextWrap) {
+                openTreeContextMenuAt(event.clientX, event.clientY, {
+                  menuType: 'empty',
+                });
+                return;
+              }
+              setTreeContextMenuState(null);
+            }}
+            onItemClick={(item) => {
+              setTreeContextMenuState((prevState) => prevState ? { ...prevState, lastAction: item?.data?.action ?? '' } : null);
+            }}
+          />
+        ) : null}
+        <div className="tree-example-desc">
+          Gap-safe behavior: avoid external row margins, keep spacing inside row hit area, and bind row-level onContextMenu.
         </div>
       </div>
 

@@ -6,9 +6,11 @@ import './DbConnectionCard.css'
 const DbConnectionCard = ({
   titleText = '',
   statusTagText = '',
+  statusMessage = null,
   keyValuesData = [],
   actionItems = [],
   isLocked = false,
+  onDismissStatusMessage,
   onAction,
 }) => {
   const [pendingActionId, setPendingActionId] = React.useState('')
@@ -38,7 +40,7 @@ const DbConnectionCard = ({
     <div className={`database-conn-card ${statusTagText ? 'has-status' : ''} ${isCardLocked ? 'is-locked' : ''}`}>
       {isCardLocked ? (
         <div className="database-conn-card-lock-overlay">
-          <SpinningCircle width={14} height={14} color="#4d4d4d" />
+          <SpinningCircle width={28} height={28} color="#4d4d4d" />
         </div>
       ) : null}
       <div className="database-conn-card-header">
@@ -65,6 +67,25 @@ const DbConnectionCard = ({
           })}
         </div>
       </div>
+      {statusMessage && statusMessage.messageText ? (
+        <div className={`database-conn-card-message status-${statusMessage.status || 'idle'}`}>
+          <div className="database-conn-card-message-text-wrap">
+            {statusMessage.status === 'loading' ? <SpinningCircle width={10} height={10} color="#324259" /> : null}
+            <span className="database-conn-card-message-text">{statusMessage.messageText}</span>
+          </div>
+          <button
+            type="button"
+            className="database-conn-card-message-dismiss-btn"
+            onClick={() => {
+              if (onDismissStatusMessage) {
+                onDismissStatusMessage()
+              }
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
       <div className="database-conn-card-kv">
         <KeyValues
           data={keyValuesData}

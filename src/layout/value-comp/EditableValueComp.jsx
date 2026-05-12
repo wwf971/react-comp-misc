@@ -16,6 +16,8 @@ const EditableValueComp = ({
   data, 
   index, 
   rowId,
+  isEditable = true,
+  isExternalSubmitting = false,
   field, 
   category, 
   valueType = 'text', 
@@ -24,6 +26,23 @@ const EditableValueComp = ({
   onUpdate, // Callback for handling updates
   onAction // Callback for handling menu actions
 }) => {
+  const getDisplayData = () => {
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      const hasTextField = Object.prototype.hasOwnProperty.call(data, 'text');
+      const hasValueField = Object.prototype.hasOwnProperty.call(data, 'value');
+      const textValue = hasTextField ? data.text : (hasValueField ? data.value : data);
+      const styleValue = data.style && typeof data.style === 'object' ? data.style : {};
+      return {
+        text: String(textValue ?? ''),
+        style: styleValue,
+      };
+    }
+    return {
+      text: String(data ?? ''),
+      style: {},
+    };
+  };
+  const displayData = getDisplayData();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -32,15 +51,15 @@ const EditableValueComp = ({
   const originalValueRef = useRef('');
 
   const handleEditClick = () => {
-    if (isSubmitting) return;
+    if (isSubmitting || isExternalSubmitting || !isEditable) return;
     // If NOT SET, treat original value as empty string
-    originalValueRef.current = isNotSet ? '' : String(data);
+    originalValueRef.current = isNotSet ? '' : displayData.text;
     setIsEditing(true);
   };
 
   const handleContextMenu = (e) => {
     // Only show menu if onAction callback is provided
-    if (!onAction) return;
+    if (!onAction || !isEditable || isExternalSubmitting) return;
     
     e.preventDefault();
     e.stopPropagation();
@@ -132,12 +151,12 @@ const EditableValueComp = ({
   useEffect(() => {
     if (!isEditing && editRef.current) {
       const currentText = editRef.current.textContent;
-      const newText = String(data);
+      const newText = displayData.text;
       if (currentText !== newText) {
         editRef.current.textContent = newText;
       }
     }
-  }, [data, isEditing, configKey]);
+  }, [displayData.text, isEditing, configKey]);
 
   const handleSubmit = async () => {
     if (!editRef.current) return;
@@ -216,7 +235,7 @@ const EditableValueComp = ({
     if (!isEditing) return;
     
     setIsSubmitting(true);
-    originalValueRef.current = String(data);
+    originalValueRef.current = displayData.text;
     
     try {
       if (!configKey) {
@@ -255,26 +274,26 @@ const EditableValueComp = ({
 
   // Render boolean radio buttons
   if (valueType === 'boolean') {
-    const boolValue = data === 'true' || data === true;
+    const boolValue = displayData.text === 'true';
     
     return (
       <>
-        <span className={`editable-value-container ${isSubmitting ? 'is-submitting' : ''}`} onContextMenu={handleContextMenu}>
-          <span className={`editable-value-boolean ${isSubmitting ? 'is-submitting' : ''}`}>
-            <label className={`radio-label ${!isEditing ? 'disabled' : ''}`}>
+        <span className={`editable-value-container ${isSubmitting || isExternalSubmitting ? 'is-submitting' : ''}`} onContextMenu={handleContextMenu}>
+          <span className={`editable-value-boolean ${isSubmitting || isExternalSubmitting ? 'is-submitting' : ''}`}>
+            <label className={`radio-label ${!isEditing || !isEditable || isExternalSubmitting ? 'disabled' : ''}`}>
               <input 
                 type="radio" 
                 checked={boolValue === true}
-                disabled={!isEditing || isSubmitting}
+                disabled={!isEditing || isSubmitting || isExternalSubmitting || !isEditable}
                 onChange={() => handleRadioChange('true')}
               />
               <span>True</span>
             </label>
-            <label className={`radio-label ${!isEditing ? 'disabled' : ''}`}>
+            <label className={`radio-label ${!isEditing || !isEditable || isExternalSubmitting ? 'disabled' : ''}`}>
               <input 
                 type="radio" 
                 checked={boolValue === false}
-                disabled={!isEditing || isSubmitting}
+                disabled={!isEditing || isSubmitting || isExternalSubmitting || !isEditable}
                 onChange={() => handleRadioChange('false')}
               />
               <span>False</span>
@@ -282,7 +301,7 @@ const EditableValueComp = ({
           </span>
           
           <span className="editable-value-icon">
-            {isSubmitting ? (
+            {isSubmitting || isExternalSubmitting ? (
               <span className="editable-value-loading">
                 <SpinningCircle width={16} height={16} color="#666" />
                 <span style={{ fontSize: '13px', color: '#666' }}>Saving...</span>
@@ -294,6 +313,10 @@ const EditableValueComp = ({
                 title={errorMessage}
               >
                 {errorMessage}
+              </span>
+            ) : !isEditable ? (
+              <span className="edit-icon-button disabled" title="Editing is locked">
+                <EditIcon width={13} height={13} />
               </span>
             ) : (
               <span 
@@ -323,20 +346,23 @@ const EditableValueComp = ({
   // Render text editing (default)
   return (
     <>
-      <span className={`editable-value-container ${isSubmitting ? 'is-submitting' : ''}`} onContextMenu={handleContextMenu}>
+      <span className={`editable-value-container ${isSubmitting || isExternalSubmitting ? 'is-submitting' : ''}`} onContextMenu={handleContextMenu}>
         <span 
           ref={editRef}
-          className={`editable-value-text ${isEditing ? 'editing' : ''} ${isNotSet && !isEditing ? 'not-set' : ''} ${isSubmitting ? 'is-submitting' : ''}`}
-          contentEditable={isEditing && !isSubmitting}
+          className={`editable-value-text ${isEditing ? 'editing' : ''} ${isNotSet && !isEditing ? 'not-set' : ''} ${isSubmitting || isExternalSubmitting ? 'is-submitting' : ''}`}
+          contentEditable={isEditing && !isSubmitting && !isExternalSubmitting && isEditable}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           suppressContentEditableWarning={true}
+          style={{
+            ...(displayData.style ?? {}),
+          }}
         >
-          {data}
+          {displayData.text}
         </span>
         
         <span className="editable-value-icon">
-          {isSubmitting ? (
+          {isSubmitting || isExternalSubmitting ? (
             <span className="editable-value-loading">
               <SpinningCircle width={16} height={16} color="#666" />
               <span style={{ fontSize: '13px', color: '#666' }}>Saving...</span>
@@ -348,6 +374,10 @@ const EditableValueComp = ({
               title={errorMessage}
             >
               {errorMessage}
+            </span>
+          ) : !isEditable ? (
+            <span className="edit-icon-button disabled" title="Editing is locked">
+              <EditIcon width={13} height={13} />
             </span>
           ) : (
             <span 

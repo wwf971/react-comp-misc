@@ -20,6 +20,7 @@ import { htmlExamples } from '../dev/example.jsx';
 import { calendarExamples } from '../component/calendar/example.jsx';
 import { statExamples } from '../component/stat/example.jsx';
 import { databaseExamples } from '../database/example.jsx';
+import { metadataExamples } from '../app/metadata/example.jsx';
 
 // Combine all examples into a single object
 export const components = {
@@ -43,5 +44,6 @@ export const components = {
   ...calendarExamples,
   ...statExamples,
   ...databaseExamples,
+  ...metadataExamples,
   ...htmlExamples,
 };

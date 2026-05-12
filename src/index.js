@@ -70,6 +70,7 @@ export {
 
 export { default as KeyValues } from "./component/key-value/KeyValues.jsx";
 export { default as KeyValuesComp } from "./component/key-value/KeyValuesComp.jsx";
+export { default as MetadataKeyValues } from "./app/metadata/MetadataKeyValues.jsx";
 
 export { default as EditableValueComp } from "./layout/value-comp/EditableValueComp.jsx";
 export { default as EditableValueWithInfo } from "./layout/value-comp/EditableValueWithInfo.jsx";

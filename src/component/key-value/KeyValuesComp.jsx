@@ -527,7 +527,7 @@ const KeyValuesCompInner = ({
             return (
               <div 
                 key={rowId === null ? `row_${index}` : `row_${String(rowId)}`} 
-                className={`keyvalues-row${alignColumn && keyColWidthValue ? ' show-divider' : ''}${isSelectionEnabled && rowId !== null && rowId === effectiveSelectedRowId ? ' selected-row' : ''} ${String(item?.rowClassName || '')}`}
+                className={`keyvalues-row${alignColumn && keyColWidthValue ? ' show-divider' : ''}${isSelectionEnabled && rowId !== null && rowId === effectiveSelectedRowId ? ' selected-row' : ''}${canEditKey || canEditValue ? ' is-row-editable' : ''} ${String(item?.rowClassName || '')}`}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',

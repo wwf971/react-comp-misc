@@ -18,6 +18,7 @@ const TreeItemNode = observer(({
   onDataChangeRequest,
   selectedItemId,
   onItemClick,
+  onItemContextMenu,
   getItemComp,
   isToggleExpandOnItemClick,
 }) => {
@@ -56,6 +57,13 @@ const TreeItemNode = observer(({
     }
   };
 
+  const handleRowContextMenu = async (event) => {
+    if (!onItemContextMenu) return;
+    event.preventDefault();
+    event.stopPropagation();
+    await onItemContextMenu(itemId, itemData, event);
+  };
+
   const handleReloadClick = async (event) => {
     event.stopPropagation();
     if (!onDataChangeRequest) return;
@@ -66,7 +74,9 @@ const TreeItemNode = observer(({
     <div className="tree-view-node-block">
       <div
         className={`tree-view-row ${isSelected ? 'selected' : ''}`}
+        data-tree-item-id={itemId}
         onClick={handleRowClick}
+        onContextMenu={handleRowContextMenu}
       >
         <button
           type="button"
@@ -115,6 +125,7 @@ const TreeItemNode = observer(({
               onDataChangeRequest={onDataChangeRequest}
               selectedItemId={selectedItemId}
               onItemClick={onItemClick}
+              onItemContextMenu={onItemContextMenu}
               getItemComp={getItemComp}
               isToggleExpandOnItemClick={isToggleExpandOnItemClick}
             />
@@ -131,6 +142,7 @@ const TreeView = observer(({
   onDataChangeRequest,
   selectedItemId,
   onItemClick,
+  onItemContextMenu,
   getItemComp,
   className = '',
   isToggleExpandOnItemClick = true,
@@ -145,6 +157,7 @@ const TreeView = observer(({
           onDataChangeRequest={onDataChangeRequest}
           selectedItemId={selectedItemId}
           onItemClick={onItemClick}
+          onItemContextMenu={onItemContextMenu}
           getItemComp={getItemComp}
           isToggleExpandOnItemClick={isToggleExpandOnItemClick}
         />

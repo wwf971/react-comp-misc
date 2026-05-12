@@ -64,6 +64,11 @@
   line-height: 1;
 }
 
+.edit-icon-button.disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .edit-icon-button:hover {
   background: #f0f0f0;
 }

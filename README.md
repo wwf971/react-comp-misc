@@ -22,9 +22,9 @@ Most components in this project are designed based on a rendering pipeline that 
 │  │ e.g. HTTP API                              │     │
 │  └────────────────────────────────────────────┘     │
 └─────────────────────────────────────────────────────┘
-                         ▲
-                         │ network (e.g. HTTP)
-                         │
+          ▲                        │
+          │ network (e.g. HTTP)    │ websocket(optional)
+          │                        ▼
 ┌─────────────────────────────────────────────────────┐
 │             Data-Management Components              │
 │  ┌────────────────────────────────────────────┐     │
@@ -61,3 +61,9 @@ import {
   KeyValues
 } from '@wwf971/react-comp-misc';
 ```
+
+## Design Preference
+
+- Render components might emit multiple types of events to parent and mobx store. Try to avoid having one callback for each type of 
+
+- In a clean render component design, the render component receives only three major props: data, config, and onEvent. data is the object containing the content to be rendered. config contains variables that records component's current operation status, such as selected rows' id for a table component, and things like isLocked/isEditable. onEvent is a unified callback function through which the component notifies about edit request. data and config can be deeply nested objects, since mobx observer will automatically trace change of subscribed properties and trigger re-render correctly.
