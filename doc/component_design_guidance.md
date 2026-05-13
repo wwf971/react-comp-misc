@@ -3,7 +3,7 @@
 this is a project for miscellaneous react components.
 
 
-## test examples for components.
+## Test Example(s) Design
 
 for each component series, their examples will be imported by ./src/test-page/examples.jsx, which will be shown in test page.
 
@@ -35,7 +35,7 @@ export const folderExamples = {
 ```
 
 
-## export components from the prject.
+## Export Components from This Project
 
 DO NOT CREATE a separate index.js or index.ts to export the component.
 

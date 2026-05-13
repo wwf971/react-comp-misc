@@ -6,7 +6,11 @@
   "module": "./src/index.js",
   "types": "./src/index.d.ts",
   "exports": {
-    ".": "./src/index.js",
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
     "./MasterDetail": "./src/layout/MasterDetail.tsx",
     "./MasterDetail.css": "./src/layout/MasterDetail.css",
     "./TabsOnTop": "./src/layout/tab/TabsOnTop.jsx",
