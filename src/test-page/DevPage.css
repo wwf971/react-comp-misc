@@ -24,7 +24,7 @@ body {
   height: 100%;
 }
 
-.dev-header h1 {
+.dev-header-title {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
@@ -122,13 +122,13 @@ body {
   border-bottom: 1px solid #d0d0d0;
 }
 
-.content-header h2 {
+.content-title {
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 5px;
 }
 
-.content-header p {
+.content-description {
   font-size: 14px;
   color: #666666;
 }

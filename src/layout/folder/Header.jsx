@@ -26,6 +26,7 @@ const Header = observer(({
   isLastColumnFilled = true,
   pageUtils = null,
   columnResizeDragMode = 'preview',
+  columnResizeWidthMode = 'natural',
   onColumnResizeIndicatorLeftChange,
 }) => {
   
@@ -36,6 +37,7 @@ const Header = observer(({
   const edgePosesCurrent = useRef([]);
   const resizingColIndex = useRef(-1);
   const pendingColumnWidths = useRef(null);
+  const widthByColumnIdInitial = useRef({});
   const [columnResizeIndicatorLeft, setColumnResizeIndicatorLeft] = useState(null);
   
   // Column reordering state
@@ -44,6 +46,7 @@ const Header = observer(({
   const dragOffsetX = useRef(0);
   const dragOffsetY = useRef(0);
   const isColumnResizePreview = columnResizeDragMode !== 'immediate';
+  const isColumnResizeNaturalMode = columnResizeWidthMode !== 'local';
 
   // Always use external columnWidths - FolderView manages all widths
   const columnWidths = externalColumnWidths || {}
@@ -67,6 +70,10 @@ const Header = observer(({
     
     edgePosesInitial.current = [...edges];
     edgePosesCurrent.current = [...edges];
+    widthByColumnIdInitial.current = columnsOrder.reduce((acc, currentColId) => {
+      acc[currentColId] = columnWidths[currentColId] || 0;
+      return acc;
+    }, {});
     resizeStartX.current = e.clientX - headerRect.left;
     resizingColIndex.current = colIndex;
     pendingColumnWidths.current = null;
@@ -94,19 +101,22 @@ const Header = observer(({
     const DEFAULT_MIN_WIDTH = 40;
     const minWidth = columnsSizeInit?.[colId]?.minWidth ?? DEFAULT_MIN_WIDTH;
     
-    // Get adjacent edge positions to prevent crossing
     const leftEdge = colIdx > 0 ? edgePosesInitial.current[colIdx - 1] : 0;
-    const rightEdge = colIdx < edgePosesInitial.current.length - 1 
-      ? edgePosesInitial.current[colIdx + 1] 
-      : headerRect.width;
-    
-    // Get minWidth of next column (if exists) to prevent it from becoming too small
-    const nextColId = colIdx < columnsOrder.length - 1 ? columnsOrder[colIdx + 1] : null;
-    const nextMinWidth = nextColId ? (columnsSizeInit?.[nextColId]?.minWidth ?? DEFAULT_MIN_WIDTH) : 0;
-    
-    // Constrain to prevent crossing edges
+    let maxPos;
+    if (isColumnResizeNaturalMode && colIdx < columnsOrder.length - 1) {
+      const lastColId = columnsOrder[columnsOrder.length - 1];
+      const lastMinWidth = columnsSizeInit?.[lastColId]?.minWidth ?? DEFAULT_MIN_WIDTH;
+      const lastWidthInitial = widthByColumnIdInitial.current[lastColId] || 0;
+      maxPos = edgePosInitial + Math.max(0, lastWidthInitial - lastMinWidth);
+    } else {
+      const rightEdge = colIdx < edgePosesInitial.current.length - 1
+        ? edgePosesInitial.current[colIdx + 1]
+        : headerRect.width;
+      const nextColId = colIdx < columnsOrder.length - 1 ? columnsOrder[colIdx + 1] : null;
+      const nextMinWidth = nextColId ? (columnsSizeInit?.[nextColId]?.minWidth ?? DEFAULT_MIN_WIDTH) : 0;
+      maxPos = colIdx < columnsOrder.length - 1 ? rightEdge - nextMinWidth : rightEdge;
+    }
     const minPos = leftEdge + minWidth;
-    const maxPos = colIdx < columnsOrder.length - 1 ? rightEdge - nextMinWidth : rightEdge;
     edgePosNew = Math.max(minPos, Math.min(maxPos, edgePosNew));
     
     // Update current edge positions
@@ -114,14 +124,24 @@ const Header = observer(({
     newEdges[colIdx] = edgePosNew;
     edgePosesCurrent.current = newEdges;
     
-    // Calculate new widths from edge positions
-    const newWidths = {};
-    let prevEdge = 0;
-    columnsOrder.forEach((colId, index) => {
-      const currentEdge = newEdges[index];
-      newWidths[colId] = currentEdge - prevEdge;
-      prevEdge = currentEdge;
-    });
+    let newWidths = {};
+    if (isColumnResizeNaturalMode && colIdx < columnsOrder.length - 1) {
+      const colIdCurrent = columnsOrder[colIdx];
+      const colIdLast = columnsOrder[columnsOrder.length - 1];
+      const deltaWidth = edgePosNew - edgePosInitial;
+      columnsOrder.forEach((currentColId) => {
+        newWidths[currentColId] = widthByColumnIdInitial.current[currentColId] || 0;
+      });
+      newWidths[colIdCurrent] = (widthByColumnIdInitial.current[colIdCurrent] || 0) + deltaWidth;
+      newWidths[colIdLast] = (widthByColumnIdInitial.current[colIdLast] || 0) - deltaWidth;
+    } else {
+      let prevEdge = 0;
+      columnsOrder.forEach((colIdItem, index) => {
+        const currentEdge = newEdges[index];
+        newWidths[colIdItem] = currentEdge - prevEdge;
+        prevEdge = currentEdge;
+      });
+    }
 
     setColumnResizeIndicatorLeft(edgePosNew);
     if (onColumnResizeIndicatorLeftChange) {
@@ -146,6 +166,7 @@ const Header = observer(({
     resizingColIndex.current = -1;
     edgePosesInitial.current = [];
     edgePosesCurrent.current = [];
+    widthByColumnIdInitial.current = {};
     pendingColumnWidths.current = null;
     setColumnResizeIndicatorLeft(null);
     if (onColumnResizeIndicatorLeftChange) {

@@ -36,6 +36,7 @@ const FolderView = observer(({
   isLastColumnFilled = true,
   headerPageUtils = null,
   columnResizeDragMode = 'preview',
+  columnResizeWidthMode = 'natural',
 }) => {
   const [columnWidths, setColumnWidths] = useState({});
 
@@ -70,6 +71,7 @@ const FolderView = observer(({
         isLastColumnFilled={isLastColumnFilled}
         headerPageUtils={headerPageUtils}
         columnResizeDragMode={columnResizeDragMode}
+        columnResizeWidthMode={columnResizeWidthMode}
         getIconData={getIconData}
         rows={rows}
         getComponent={getBodyComponent}

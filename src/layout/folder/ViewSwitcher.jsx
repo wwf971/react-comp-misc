@@ -43,6 +43,7 @@ const ViewSwitcher = observer(({
   isLastColumnFilled = true,
   headerPageUtils = null,
   columnResizeDragMode = 'preview',
+  columnResizeWidthMode = 'natural',
 }) => {
   const [internalView, setInternalView] = useState(defaultView);
   const [columnResizeIndicatorLeft, setColumnResizeIndicatorLeft] = useState(null);
@@ -101,6 +102,7 @@ const ViewSwitcher = observer(({
               isLastColumnFilled={isLastColumnFilled}
               pageUtils={headerPageUtils}
               columnResizeDragMode={columnResizeDragMode}
+              columnResizeWidthMode={columnResizeWidthMode}
               onColumnResizeIndicatorLeftChange={setColumnResizeIndicatorLeft}
             />
           </div>

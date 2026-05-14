@@ -114,6 +114,8 @@ export const SegmentedControl: ComponentType<any>;
 export const FolderBody: ComponentType<any>;
 export const CellDropdown: ComponentType<any>;
 export const TreeView: ComponentType<any>;
+export const ItemList: ComponentType<ItemListProps>;
+export const ItemTree: ComponentType<ItemTreeProps>;
 export const HtmlRender: ComponentType<any>;
 export const DateSelector: ComponentType<any>;
 export const DateView: ComponentType<any>;
@@ -138,6 +140,8 @@ export type FolderHeaderProps = {
   columnsSizeInit?: Record<string, { width?: number; minWidth?: number; resizable?: boolean }>;
   allowColumnReorder?: boolean;
   isLastColumnFilled?: boolean;
+  columnResizeDragMode?: 'preview' | 'immediate';
+  columnResizeWidthMode?: 'natural' | 'local';
 };
 export type FolderViewProps = {
   columns?: Record<string, { data: unknown; align?: 'left' | 'center' | 'right' }>;
@@ -163,7 +167,45 @@ export type FolderViewProps = {
   contextMenuItems?: unknown[];
   onRowInteraction?: (event: unknown) => void;
   isLocked?: boolean;
+  columnResizeDragMode?: 'preview' | 'immediate';
+  columnResizeWidthMode?: 'natural' | 'local';
 };
+export type SideListItemData = {
+  key?: string;
+  id?: string;
+  label?: string;
+  name?: string;
+  description?: string;
+  parentKey?: string | null;
+  parentId?: string | null;
+  [key: string]: unknown;
+};
+export type ItemListProps = {
+  data?: {
+    items?: SideListItemData[];
+    selectedItemKey?: string;
+  };
+  config?: {
+    titleText?: string;
+    searchPlaceholder?: string;
+    isSearchEnabled?: boolean;
+    isHeaderVisible?: boolean;
+  };
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
+  items?: SideListItemData[];
+  selectedItemKey?: string;
+  onItemSelect?: (itemData: SideListItemData, itemKey: string) => Promise<void> | void;
+  titleText?: string;
+  headerExtraContent?: unknown;
+  searchPlaceholder?: string;
+  isSearchEnabled?: boolean;
+  isHeaderVisible?: boolean;
+  getItemKey?: (itemData: SideListItemData) => string;
+  getItemLabel?: (itemData: SideListItemData) => string;
+  getItemDescription?: (itemData: SideListItemData) => string;
+  className?: string;
+};
+export type ItemTreeProps = ItemListProps;
 export type DbConnectionCardActionItem = {
   id: string;
   labelText?: string;

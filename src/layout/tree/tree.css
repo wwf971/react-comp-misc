@@ -10,6 +10,10 @@
   width: 100%;
 }
 
+.tree-view-node-content {
+  width: 100%;
+}
+
 .tree-view-row {
   height: 22px;
   display: flex;
@@ -66,7 +70,7 @@
 }
 
 .tree-view-children {
-  padding-left: 10px;
+  padding-left: 0;
 }
 
 .tree-view-status-row {

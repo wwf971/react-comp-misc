@@ -260,6 +260,7 @@ const FolderExamplesPanel = observer(() => {
   const [viewSwitchLoading, setViewSwitchLoading] = useState(false);
   const [viewSwitchFeedback, setViewSwitchFeedback] = useState(null);
   const [columnResizeDragMode, setColumnResizeDragMode] = useState('preview');
+  const [columnResizeWidthMode, setColumnResizeWidthMode] = useState('natural');
   const viewSwitchFeedbackTimer = useRef(null);
 
   const showViewSwitchFeedback = (feedback) => {
@@ -466,6 +467,21 @@ const FolderExamplesPanel = observer(() => {
         >
           {columnResizeDragMode === 'preview' ? 'resize mode: preview-on-release' : 'resize mode: immediate'}
         </button>
+        <button
+          type="button"
+          onClick={() => setColumnResizeWidthMode((prev) => (prev === 'natural' ? 'local' : 'natural'))}
+          style={{
+            minHeight: '24px',
+            padding: '2px 8px',
+            border: '1px solid #d0d0d0',
+            borderRadius: '2px',
+            background: '#ffffff',
+            fontSize: '12px',
+            cursor: 'pointer',
+          }}
+        >
+          {columnResizeWidthMode === 'natural' ? 'width mode: natural' : 'width mode: local'}
+        </button>
       </div>
       <div style={{ marginBottom: '30px' }}>
         <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Basic Header</div>
@@ -482,6 +498,7 @@ const FolderExamplesPanel = observer(() => {
             onColumnWidthChange={setBasicColWidths}
             onDataChangeRequest={handleBasicDataChangeRequest}
             columnResizeDragMode={columnResizeDragMode}
+            columnResizeWidthMode={columnResizeWidthMode}
           />
         </div>
       </div>
@@ -500,6 +517,7 @@ const FolderExamplesPanel = observer(() => {
             getComponent={getComponent}
             onColumnWidthChange={setCustomColWidths}
             columnResizeDragMode={columnResizeDragMode}
+            columnResizeWidthMode={columnResizeWidthMode}
           />
         </div>
       </div>
@@ -553,6 +571,7 @@ const FolderExamplesPanel = observer(() => {
             showStatusItemCount={false}
             contextMenuItems={[{ type: 'item', name: 'Delete' }]}
             columnResizeDragMode={columnResizeDragMode}
+            columnResizeWidthMode={columnResizeWidthMode}
           />
         </div>
       </div>
@@ -572,6 +591,7 @@ const FolderExamplesPanel = observer(() => {
           showStatusBar={false}
           listOnly={true}
           columnResizeDragMode={columnResizeDragMode}
+            columnResizeWidthMode={columnResizeWidthMode}
         />
       </div>
 
@@ -605,6 +625,7 @@ const FolderExamplesPanel = observer(() => {
           bodyHeight={200}
           showStatusBar={false}
           columnResizeDragMode={columnResizeDragMode}
+            columnResizeWidthMode={columnResizeWidthMode}
         />
       </div>
 
@@ -655,6 +676,7 @@ const FolderExamplesPanel = observer(() => {
           showStatusBar={false}
           listOnly={true}
           columnResizeDragMode={columnResizeDragMode}
+            columnResizeWidthMode={columnResizeWidthMode}
         />
       </div>
 
@@ -685,6 +707,7 @@ const FolderExamplesPanel = observer(() => {
           bodyHeight={200}
           showStatusBar={false}
           columnResizeDragMode={columnResizeDragMode}
+            columnResizeWidthMode={columnResizeWidthMode}
         />
       </div>
 
@@ -713,13 +736,14 @@ const FolderExamplesPanel = observer(() => {
           bodyHeight={220}
           showStatusBar={false}
           columnResizeDragMode={columnResizeDragMode}
+            columnResizeWidthMode={columnResizeWidthMode}
         />
       </div>
 
       <div style={{ marginBottom: '30px' }}>
         <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Multiple Selection with Type Validation</div>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          Multiple selection but all selected must be same type. Try selecting a folder then a file with Ctrl+Click.
+          Multiple selection but all selected must be same type. Try selecting a folder then a file with Ctrl/Cmd+Click.
         </div>
         <div style={{ marginBottom: '8px', fontSize: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div>
@@ -762,10 +786,21 @@ const FolderExamplesPanel = observer(() => {
           getRowData={(rowId, colId) => mixedSelectStore.getRowData(rowId, colId)}
           selectedRowIds={mixedSelectStore.selectedRowIds}
           selectionMode="multiple"
-          onRowInteraction={event => mixedSelectStore.handleRowInteraction(event)}
+          onSelectedRowIdsChange={(nextIds) => {
+            if (mixedSelectStore.allowMixed || nextIds.length <= 1) {
+              mixedSelectStore.selectedRowIds.replace(nextIds);
+              return;
+            }
+            const firstType = mixedSelectStore.rowsById.get(nextIds[0])?.type;
+            const isSameTypeOnly = nextIds.every((rowId) => mixedSelectStore.rowsById.get(rowId)?.type === firstType);
+            if (isSameTypeOnly) {
+              mixedSelectStore.selectedRowIds.replace(nextIds);
+            }
+          }}
           bodyHeight={200}
           showStatusBar={false}
           columnResizeDragMode={columnResizeDragMode}
+            columnResizeWidthMode={columnResizeWidthMode}
         />
       </div>
 
@@ -814,6 +849,7 @@ const FolderExamplesPanel = observer(() => {
           bodyHeight={260}
           showStatusBar={false}
           columnResizeDragMode={columnResizeDragMode}
+            columnResizeWidthMode={columnResizeWidthMode}
         />
       </div>
 

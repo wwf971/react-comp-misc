@@ -14,6 +14,8 @@ const TreeTextItemComp = ({ itemData }) => {
 
 const TreeItemNode = observer(({
   itemId,
+  depth = 0,
+  indentPx = 10,
   getItemDataById,
   onDataChangeRequest,
   selectedItemId,
@@ -72,48 +74,50 @@ const TreeItemNode = observer(({
 
   return (
     <div className="tree-view-node-block">
-      <div
-        className={`tree-view-row ${isSelected ? 'selected' : ''}`}
-        data-tree-item-id={itemId}
-        onClick={handleRowClick}
-        onContextMenu={handleRowContextMenu}
-      >
-        <button
-          type="button"
-          className={`tree-view-toggle-btn ${isLeaf ? 'is-empty' : ''}`}
-          onClick={handleToggleClick}
-          disabled={isLeaf}
-          aria-label={isLeaf ? 'No children' : (isExpanded ? 'Collapse' : 'Expand')}
+      <div className="tree-view-node-content" style={{ paddingLeft: `${depth * indentPx}px` }}>
+        <div
+          className={`tree-view-row ${isSelected ? 'selected' : ''}`}
+          data-tree-item-id={itemId}
+          onClick={handleRowClick}
+          onContextMenu={handleRowContextMenu}
         >
-          {!isLeaf ? (
-            isExpanded
-              ? <MinusIcon width={12} height={12} color="#666" />
-              : <PlusIcon width={12} height={12} color="#666" />
-          ) : null}
-        </button>
-        <div className="tree-view-label">
-          <ItemComp itemData={itemData} />
-        </div>
-      </div>
-
-      {canRenderChildren && childrenLoadState === 'loading' ? (
-        <div className="tree-view-status-row">
-          <SpinningCircle width={14} height={14} color="#666" />
-          <span className="tree-view-status-text">Loading</span>
-        </div>
-      ) : null}
-
-      {canRenderChildren && childrenLoadState === 'load-failed' ? (
-        <div className="tree-view-status-row">
-          <CrossIcon size={12} color="#c62828" />
-          <span className="tree-view-status-text tree-view-status-error">
-            {itemData.childrenErrorMessage || 'Failed to load'}
-          </span>
-          <button type="button" className="tree-view-refresh-btn" onClick={handleReloadClick} aria-label="Retry loading">
-            <RefreshIcon width={12} height={12} />
+          <button
+            type="button"
+            className={`tree-view-toggle-btn ${isLeaf ? 'is-empty' : ''}`}
+            onClick={handleToggleClick}
+            disabled={isLeaf}
+            aria-label={isLeaf ? 'No children' : (isExpanded ? 'Collapse' : 'Expand')}
+          >
+            {!isLeaf ? (
+              isExpanded
+                ? <MinusIcon width={12} height={12} color="#666" />
+                : <PlusIcon width={12} height={12} color="#666" />
+            ) : null}
           </button>
+          <div className="tree-view-label">
+            <ItemComp itemData={itemData} />
+          </div>
         </div>
-      ) : null}
+
+        {canRenderChildren && childrenLoadState === 'loading' ? (
+          <div className="tree-view-status-row">
+            <SpinningCircle width={14} height={14} color="#666" />
+            <span className="tree-view-status-text">Loading</span>
+          </div>
+        ) : null}
+
+        {canRenderChildren && childrenLoadState === 'load-failed' ? (
+          <div className="tree-view-status-row">
+            <CrossIcon size={12} color="#c62828" />
+            <span className="tree-view-status-text tree-view-status-error">
+              {itemData.childrenErrorMessage || 'Failed to load'}
+            </span>
+            <button type="button" className="tree-view-refresh-btn" onClick={handleReloadClick} aria-label="Retry loading">
+              <RefreshIcon width={12} height={12} />
+            </button>
+          </div>
+        ) : null}
+      </div>
 
       {canRenderChildren && childrenLoadState === 'loaded' ? (
         <div className="tree-view-children">
@@ -121,6 +125,8 @@ const TreeItemNode = observer(({
             <TreeItemNode
               key={childId}
               itemId={childId}
+              depth={depth + 1}
+              indentPx={indentPx}
               getItemDataById={getItemDataById}
               onDataChangeRequest={onDataChangeRequest}
               selectedItemId={selectedItemId}
@@ -146,6 +152,7 @@ const TreeView = observer(({
   getItemComp,
   className = '',
   isToggleExpandOnItemClick = true,
+  indentPx = 10,
 }) => {
   return (
     <div className={`tree-view ${className}`}>
@@ -153,6 +160,8 @@ const TreeView = observer(({
         <TreeItemNode
           key={itemId}
           itemId={itemId}
+          depth={0}
+          indentPx={indentPx}
           getItemDataById={getItemDataById}
           onDataChangeRequest={onDataChangeRequest}
           selectedItemId={selectedItemId}

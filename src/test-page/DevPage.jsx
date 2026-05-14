@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { components } from './examples.jsx';
 import PanelDual from '../layout/panel/PanelDual.jsx';
-import ItemsListVert from '../layout/list/ItemsListVert.jsx';
+import ItemTree from '../app/side-list/ItemTree.jsx';
 import './DevPage.css';
 
 const devPageItems = Object.keys(components).map((name) => ({
@@ -10,40 +10,96 @@ const devPageItems = Object.keys(components).map((name) => ({
   description: components[name].description,
 }));
 
+const CATEGORY_ORDER = [
+  'layout',
+  'data-structure',
+  'application',
+  'visualization',
+  'dev',
+  'ui-basics',
+];
+
+const CATEGORY_LABEL_BY_KEY = {
+  layout: 'Layout',
+  'data-structure': 'Data Structure',
+  application: 'Application',
+  visualization: 'Visualization',
+  dev: 'Developement',
+  'ui-basics': 'UI Basics',
+};
+
+const resolveCategoryKey = (itemKeyRaw) => {
+  const itemKey = String(itemKeyRaw || '').toLowerCase();
+  if (itemKey === 'html' || itemKey === 'database' || itemKey === 'metadata') return 'dev';
+  if (itemKey === 'stat' || itemKey === 'radar') return 'visualization';
+  if (itemKey.includes('config') || itemKey.includes('calendar') || itemKey.includes('auth') || itemKey.includes('login') || itemKey.includes('path')) {
+    return 'application';
+  }
+  if (itemKey.includes('keyvalue') || itemKey.includes('key-value') || itemKey.includes('json') || itemKey.includes('tree') || itemKey.includes('itemlist') || itemKey.includes('itemtree') || itemKey.includes('mobx')) {
+    return 'data-structure';
+  }
+  if (itemKey.includes('folder') || itemKey.includes('masterdetail') || itemKey.includes('tab') || itemKey.includes('panel')) {
+    return 'layout';
+  }
+  return 'ui-basics';
+};
+
+const sideTreeItems = (() => {
+  const categoryItems = CATEGORY_ORDER.map((categoryKey) => ({
+    key: `cat-${categoryKey}`,
+    label: CATEGORY_LABEL_BY_KEY[categoryKey],
+    description: '',
+    nodeType: 'group',
+  }));
+  const leafItems = devPageItems.map((itemData) => {
+    const categoryKey = resolveCategoryKey(itemData.key);
+    return {
+      ...itemData,
+      parentKey: `cat-${categoryKey}`,
+      nodeType: 'item',
+    };
+  });
+  return [...categoryItems, ...leafItems];
+})();
+
 function DevPage() {
   const [CompSelectedStr, setCompSelectedStr] = useState('Login');
 
   const CompSelected = components[CompSelectedStr]?.example;
+  const selectedCompDescription = components[CompSelectedStr]?.description;
 
   return (
     <div className="dev-page">
       <PanelDual orientation="vertical" initialWidth={300}>
         <div className="dev-header">
-          <div className="dev-header-flex">
-            <h1>React Components Assortment</h1>
-            <a 
-              href="https://github.com/wwf971/react-comp-misc" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="github-link"
-            >
-              view source code
-            </a>
-          </div>
-          <ItemsListVert
-            items={devPageItems}
-            searchEnabled
+          <ItemTree
+            items={sideTreeItems}
             searchPlaceholder="Search components..."
-            getItemKey={(item) => item.key}
-            onItemSelect={(data) => setCompSelectedStr(data.key)}
-            itemSelectedKey={CompSelectedStr}
+            selectedItemKey={CompSelectedStr}
+            titleText="React Components Assortment"
+            headerExtraContent={(
+              <a
+                href="https://github.com/wwf971/react-comp-misc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="github-link"
+              >
+                view source code
+              </a>
+            )}
+            onItemSelect={(itemData) => {
+              const itemKey = String(itemData?.key || '').trim();
+              if (!itemKey) return;
+              if (!components[itemKey]) return;
+              setCompSelectedStr(itemKey);
+            }}
           />
         </div>
         
         <div className="dev-content">
           <div className="content-header">
-            <h2>{CompSelectedStr}</h2>
-            <p>{components[CompSelectedStr]?.description}</p>
+            <div className="content-title">{CompSelectedStr}</div>
+            <div className="content-description">{selectedCompDescription}</div>
           </div>
           <div className="comp-demo">
             {CompSelected ? <CompSelected /> : <div>No example available</div>}
