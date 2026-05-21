@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SpinningCircle, EditIcon } from '@wwf971/react-comp-misc';
 import Menu from '../../component/menu/Menu.jsx';
 import './EditableValue.css';
@@ -47,8 +47,41 @@ const EditableValueComp = ({
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [menuPosition, setMenuPosition] = useState(null);
+  const containerRef = useRef(null);
+  const contentRowRef = useRef(null);
+  const booleanRef = useRef(null);
+  const iconMeasureRef = useRef(null);
   const editRef = useRef(null);
   const originalValueRef = useRef('');
+  const [isIconPinned, setIsIconPinned] = useState(false);
+
+  const measureIconPlacement = useCallback(() => {
+    const container = containerRef.current;
+    const iconEl = iconMeasureRef.current;
+    const contentEl = editRef.current || booleanRef.current;
+    if (!container || !iconEl || !contentEl) {
+      setIsIconPinned(false);
+      return;
+    }
+    const gap = 4;
+    const neededWidth = contentEl.scrollWidth + gap + iconEl.offsetWidth;
+    setIsIconPinned(neededWidth > container.clientWidth + 0.5);
+  }, []);
+
+  useEffect(() => {
+    measureIconPlacement();
+    const container = containerRef.current;
+    if (!container) {
+      return undefined;
+    }
+    const observer = new ResizeObserver(() => {
+      measureIconPlacement();
+    });
+    observer.observe(container);
+    return () => {
+      observer.disconnect();
+    };
+  }, [measureIconPlacement, displayData.text, isEditing, isSubmitting, isExternalSubmitting, errorMessage]);
 
   const handleEditClick = () => {
     if (isSubmitting || isExternalSubmitting || !isEditable) return;
@@ -272,62 +305,105 @@ const EditableValueComp = ({
     }
   };
 
+  const isIconStatusMode = isSubmitting || isExternalSubmitting || Boolean(errorMessage) || !isEditable;
+  const hasTrailingIcon = isIconPinned || isIconStatusMode;
+  const containerClassName = [
+    'editable-value-container',
+    isSubmitting || isExternalSubmitting ? 'is-submitting' : '',
+    hasTrailingIcon ? 'has-trailing-icon' : '',
+    isIconPinned ? 'is-icon-pinned' : '',
+  ].filter(Boolean).join(' ');
+
+  const renderEditIconButton = (isClickable) => (
+    <span
+      onClick={isClickable ? handleEditClick : undefined}
+      className={`edit-icon-button${isClickable ? '' : ' disabled'}`}
+      title="Click to edit"
+    >
+      <EditIcon width={13} height={13} />
+    </span>
+  );
+
+  const renderContentEditIcon = () => (
+    <span
+      ref={iconMeasureRef}
+      className={`editable-value-icon editable-value-icon-at-content${isIconPinned ? ' is-inactive' : ''}`}
+    >
+      {renderEditIconButton(!isIconPinned)}
+    </span>
+  );
+
+  const renderPinnedOrStatusIcon = () => {
+    if (isSubmitting || isExternalSubmitting) {
+      return (
+        <span className="editable-value-icon editable-value-icon-status">
+          <span className="editable-value-loading">
+            <SpinningCircle width={16} height={16} color="#666" />
+            <span style={{ fontSize: '13px', color: '#666' }}>Saving...</span>
+          </span>
+        </span>
+      );
+    }
+    if (errorMessage) {
+      return (
+        <span className="editable-value-icon editable-value-icon-status">
+          <span
+            className="edit-icon-error"
+            style={{ color: '#d32f2f', fontSize: '13px', cursor: 'help' }}
+            title={errorMessage}
+          >
+            {errorMessage}
+          </span>
+        </span>
+      );
+    }
+    if (!isEditable) {
+      return (
+        <span className="editable-value-icon editable-value-icon-status">
+          <span className="edit-icon-button disabled" title="Editing is locked">
+            <EditIcon width={13} height={13} />
+          </span>
+        </span>
+      );
+    }
+    return (
+      <span className={`editable-value-icon editable-value-icon-at-cell-end${isIconPinned ? '' : ' is-inactive'}`}>
+        {renderEditIconButton(isIconPinned)}
+      </span>
+    );
+  };
+
   // Render boolean radio buttons
   if (valueType === 'boolean') {
     const boolValue = displayData.text === 'true';
     
     return (
       <>
-        <span className={`editable-value-container ${isSubmitting || isExternalSubmitting ? 'is-submitting' : ''}`} onContextMenu={handleContextMenu}>
-          <span className={`editable-value-boolean ${isSubmitting || isExternalSubmitting ? 'is-submitting' : ''}`}>
-            <label className={`radio-label ${!isEditing || !isEditable || isExternalSubmitting ? 'disabled' : ''}`}>
-              <input 
-                type="radio" 
-                checked={boolValue === true}
-                disabled={!isEditing || isSubmitting || isExternalSubmitting || !isEditable}
-                onChange={() => handleRadioChange('true')}
-              />
-              <span>True</span>
-            </label>
-            <label className={`radio-label ${!isEditing || !isEditable || isExternalSubmitting ? 'disabled' : ''}`}>
-              <input 
-                type="radio" 
-                checked={boolValue === false}
-                disabled={!isEditing || isSubmitting || isExternalSubmitting || !isEditable}
-                onChange={() => handleRadioChange('false')}
-              />
-              <span>False</span>
-            </label>
+        <span ref={containerRef} className={containerClassName} onContextMenu={handleContextMenu}>
+          <span ref={contentRowRef} className="editable-value-content-row">
+            <span ref={booleanRef} className={`editable-value-boolean ${isSubmitting || isExternalSubmitting ? 'is-submitting' : ''}`}>
+              <label className={`radio-label ${!isEditing || !isEditable || isExternalSubmitting ? 'disabled' : ''}`}>
+                <input 
+                  type="radio" 
+                  checked={boolValue === true}
+                  disabled={!isEditing || isSubmitting || isExternalSubmitting || !isEditable}
+                  onChange={() => handleRadioChange('true')}
+                />
+                <span>True</span>
+              </label>
+              <label className={`radio-label ${!isEditing || !isEditable || isExternalSubmitting ? 'disabled' : ''}`}>
+                <input 
+                  type="radio" 
+                  checked={boolValue === false}
+                  disabled={!isEditing || isSubmitting || isExternalSubmitting || !isEditable}
+                  onChange={() => handleRadioChange('false')}
+                />
+                <span>False</span>
+              </label>
+            </span>
+            {!isIconStatusMode ? renderContentEditIcon() : null}
           </span>
-          
-          <span className="editable-value-icon">
-            {isSubmitting || isExternalSubmitting ? (
-              <span className="editable-value-loading">
-                <SpinningCircle width={16} height={16} color="#666" />
-                <span style={{ fontSize: '13px', color: '#666' }}>Saving...</span>
-              </span>
-            ) : errorMessage ? (
-              <span 
-                className="edit-icon-error"
-                style={{ color: '#d32f2f', fontSize: '13px', cursor: 'help' }}
-                title={errorMessage}
-              >
-                {errorMessage}
-              </span>
-            ) : !isEditable ? (
-              <span className="edit-icon-button disabled" title="Editing is locked">
-                <EditIcon width={13} height={13} />
-              </span>
-            ) : (
-              <span 
-                onClick={handleEditClick}
-                className="edit-icon-button"
-                title="Click to edit"
-              >
-                <EditIcon width={13} height={13} />
-              </span>
-            )}
-          </span>
+          {renderPinnedOrStatusIcon()}
         </span>
         
         {menuPosition && (
@@ -346,49 +422,24 @@ const EditableValueComp = ({
   // Render text editing (default)
   return (
     <>
-      <span className={`editable-value-container ${isSubmitting || isExternalSubmitting ? 'is-submitting' : ''}`} onContextMenu={handleContextMenu}>
-        <span 
-          ref={editRef}
-          className={`editable-value-text ${isEditing ? 'editing' : ''} ${isNotSet && !isEditing ? 'not-set' : ''} ${isSubmitting || isExternalSubmitting ? 'is-submitting' : ''}`}
-          contentEditable={isEditing && !isSubmitting && !isExternalSubmitting && isEditable}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          suppressContentEditableWarning={true}
-          style={{
-            ...(displayData.style ?? {}),
-          }}
-        >
-          {displayData.text}
+      <span ref={containerRef} className={containerClassName} onContextMenu={handleContextMenu}>
+        <span ref={contentRowRef} className="editable-value-content-row">
+          <span 
+            ref={editRef}
+            className={`editable-value-text ${isEditing ? 'editing' : ''} ${isNotSet && !isEditing ? 'not-set' : ''} ${isSubmitting || isExternalSubmitting ? 'is-submitting' : ''}`}
+            contentEditable={isEditing && !isSubmitting && !isExternalSubmitting && isEditable}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            suppressContentEditableWarning={true}
+            style={{
+              ...(displayData.style ?? {}),
+            }}
+          >
+            {displayData.text}
+          </span>
+          {!isIconStatusMode ? renderContentEditIcon() : null}
         </span>
-        
-        <span className="editable-value-icon">
-          {isSubmitting || isExternalSubmitting ? (
-            <span className="editable-value-loading">
-              <SpinningCircle width={16} height={16} color="#666" />
-              <span style={{ fontSize: '13px', color: '#666' }}>Saving...</span>
-            </span>
-          ) : errorMessage ? (
-            <span 
-              className="edit-icon-error"
-              style={{ color: '#d32f2f', fontSize: '13px', cursor: 'help' }}
-              title={errorMessage}
-            >
-              {errorMessage}
-            </span>
-          ) : !isEditable ? (
-            <span className="edit-icon-button disabled" title="Editing is locked">
-              <EditIcon width={13} height={13} />
-            </span>
-          ) : (
-            <span 
-              onClick={handleEditClick}
-              className="edit-icon-button"
-              title="Click to edit"
-            >
-              <EditIcon width={13} height={13} />
-            </span>
-          )}
-        </span>
+        {renderPinnedOrStatusIcon()}
       </span>
       
       {menuPosition && (

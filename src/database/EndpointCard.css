@@ -1,0 +1,270 @@
+.endpoint-card {
+  border: 1px solid #c3d8f1;
+  border-radius: 2px;
+  background: #f8fbff;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.endpoint-card.is-selectable {
+  cursor: pointer;
+}
+
+.endpoint-card.is-selected {
+  background: #c8dcf4;
+  border-color: #5f88ba;
+}
+
+.endpoint-card.is-unavailable {
+  border-color: #b5bcc7;
+  background: #f1f3f6;
+}
+
+.endpoint-card.is-unavailable .endpoint-card-title {
+  color: #5f6774;
+}
+
+.endpoint-card.is-unavailable .endpoint-card-desc {
+  color: #6f7783;
+}
+
+.endpoint-card.is-disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.endpoint-card.is-locked {
+  opacity: 0.7;
+}
+
+.endpoint-card.is-error {
+  border-color: #e0b3b3;
+}
+
+.endpoint-card-lock-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(240, 242, 246, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  border-radius: 2px;
+  pointer-events: all;
+}
+
+.endpoint-card > :not(.endpoint-card-lock-overlay) {
+  position: relative;
+  z-index: 1;
+}
+
+.endpoint-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.endpoint-card-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.endpoint-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: sans-serif;
+  color: #1f3f66;
+}
+
+.endpoint-card-status-tag {
+  font-size: 10px;
+  line-height: 14px;
+  border: 1px solid #729ac8;
+  border-radius: 2px;
+  color: #2d5f9b;
+  padding: 0 4px;
+  font-family: sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.endpoint-card-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8a94a1;
+  flex-shrink: 0;
+}
+
+.endpoint-card-status-not-selected {
+  color: #667586;
+}
+
+.endpoint-card-status-not-selected .endpoint-card-status-dot {
+  background: #8a94a1;
+}
+
+.endpoint-card-status-normal {
+  color: #1f6a2b;
+}
+
+.endpoint-card-status-normal .endpoint-card-status-dot {
+  background: #2faa49;
+}
+
+.endpoint-card-status-testing {
+  color: #17589a;
+}
+
+.endpoint-card-status-testing .endpoint-card-status-dot {
+  background: #2d7fd7;
+}
+
+.endpoint-card-status-error {
+  color: #8d2b2b;
+}
+
+.endpoint-card-status-error .endpoint-card-status-dot {
+  background: #cf4b4b;
+}
+
+.endpoint-card-status-unknown {
+  color: #6a4f18;
+}
+
+.endpoint-card-status-unknown .endpoint-card-status-dot {
+  background: #bd8f31;
+}
+
+.endpoint-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.endpoint-card-action-btn {
+  height: 22px;
+  border: 1px solid #8fb2dc;
+  border-radius: 2px;
+  background: #ffffff;
+  color: #2d5f9b;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: sans-serif;
+  padding: 0 6px;
+}
+
+.endpoint-card-action-btn:hover {
+  background: #dbe8fb;
+}
+
+.endpoint-card-action-btn.is-danger {
+  border-color: #f1b9b9;
+  background: #fff3f3;
+  color: #a33;
+}
+
+.endpoint-card-action-btn:disabled {
+  border-color: #c5ccd8;
+  background: #eef1f5;
+  color: #7c8798;
+  opacity: 1;
+  cursor: default;
+  pointer-events: none;
+}
+
+.endpoint-card-desc {
+  font-size: 12px;
+  color: #4b5f76;
+  font-family: sans-serif;
+}
+
+.endpoint-card-selected-detail {
+  font-size: 11px;
+  color: #4b5f76;
+  font-family: sans-serif;
+}
+
+.endpoint-card-message {
+  border: 1px solid #cfd8e6;
+  border-radius: 2px;
+  background: #f7f9fc;
+  color: #243447;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 3px 6px;
+}
+
+.endpoint-card-message.status-success {
+  border-color: #b9d9bf;
+  background: #edf8ef;
+  color: #29543a;
+}
+
+.endpoint-card-message.status-error {
+  border-color: #e9bcbc;
+  background: #fff2f2;
+  color: #7b2a2a;
+}
+
+.endpoint-card-message.status-loading {
+  border-color: #bfcde1;
+  background: #eef4ff;
+  color: #1f3d69;
+}
+
+.endpoint-card-message-text-wrap {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.endpoint-card-message-text {
+  font-family: sans-serif;
+  font-size: 11px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.endpoint-card-message-dismiss-btn {
+  border: 1px solid #aab6c8;
+  border-radius: 2px;
+  background: #f3f6fa;
+  color: #2e4462;
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.endpoint-card-message-dismiss-btn:hover {
+  background: #e7edf6;
+}
+
+.endpoint-card-kv {
+  padding: 2px;
+}
+
+.endpoint-card-error {
+  margin-top: 2px;
+  font-size: 11px;
+  font-family: sans-serif;
+  color: #c22b2b;
+}

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import DbConnectionCard from './DbConnectionCard.jsx';
+import EndpointCard from './EndpointCard.jsx';
 
 const wait = (ms) => new Promise((resolve) => {
   setTimeout(resolve, ms);
@@ -58,32 +58,39 @@ const DbCardExamplesPanel = observer(() => {
       {store.items.map((item) => {
         const isCurrent = item.key === store.currentKey;
         return (
-          <DbConnectionCard
+          <EndpointCard
             key={item.key}
-            titleText={item.label}
-            statusTagText={isCurrent ? 'current' : ''}
-            keyValuesData={[
-              { key: 'key', value: item.key },
-              { key: 'host', value: item.host },
-              { key: 'port', value: String(item.port) },
-              { key: 'database', value: item.databaseName },
-              { key: 'user', value: item.username },
-            ]}
-            actionItems={[
-              {
-                id: 'switch',
-                labelText: 'Switch',
-                isDisabled: isCurrent,
-              },
-              {
-                id: 'test',
-                labelText: 'Test',
-                isDisabled: false,
-              },
-            ]}
-            isLocked={isGlobalLocked}
-            onAction={async (actionId) => {
-              await handleAction(item.key, actionId);
+            data={{
+              id: item.key,
+              titleText: item.label,
+              statusTagText: isCurrent ? 'current' : '',
+              keyValues: [
+                { key: 'key', value: item.key },
+                { key: 'host', value: item.host },
+                { key: 'port', value: String(item.port) },
+                { key: 'database', value: item.databaseName },
+                { key: 'user', value: item.username },
+              ],
+            }}
+            config={{
+              isLocked: isGlobalLocked,
+              actionItems: [
+                {
+                  id: 'switch',
+                  labelText: 'Switch',
+                  isDisabled: isCurrent,
+                },
+                {
+                  id: 'test',
+                  labelText: 'Test',
+                  isDisabled: false,
+                },
+              ],
+            }}
+            onEvent={async (eventType, eventData) => {
+              if (eventType === 'action') {
+                await handleAction(item.key, eventData.actionId);
+              }
             }}
           />
         );
@@ -95,7 +102,7 @@ const DbCardExamplesPanel = observer(() => {
 export const databaseExamples = {
   'Database': {
     component: null,
-    description: 'Database connection card with data-driven actions and parent callbacks',
+    description: 'Endpoint card with data/config/onEvent and header actions',
     example: () => <DbCardExamplesPanel />,
   },
 };

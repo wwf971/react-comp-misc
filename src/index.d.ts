@@ -129,13 +129,80 @@ export function navigateToParentArray(...args: any[]): any;
 export function isPathToArrayItem(...args: any[]): any;
 export function extractDocId(...args: any[]): any;
 
+export type Ms48IdParseOptions = {
+  form?: 'base36' | 'base36-low' | 'base36-high' | 'decimal';
+  timezoneHourOffset?: number;
+};
+
+export type Ms48IdBuildOptions = {
+  timeMs?: number;
+  offset?: number;
+};
+
+export type Ms48IdParts = {
+  idBigInt: bigint;
+  decimalText: string;
+  base36Text: string;
+  base36LowText: string;
+  base36HighText: string;
+  timeMs: number;
+  offset: number;
+  timestampText: string;
+};
+
+export type Ms48EncodingCandidate = {
+  encoding: string;
+  idBigInt: bigint;
+  timeMs: number | null;
+  offset: number | null;
+  timestampText: string;
+  isReasonable: boolean;
+  errorText: string;
+};
+
+export type Ms48EncodingDetection = {
+  encoding: string;
+  candidates: Ms48EncodingCandidate[];
+  errorText: string;
+};
+
+export function buildMs48IdBigInt(options?: Ms48IdBuildOptions): bigint;
+export function createMs48Id(options?: Ms48IdBuildOptions): string;
+export function createMs48IdBigInt(options?: Ms48IdBuildOptions): bigint;
+export function createMs48IdDecimal(options?: Ms48IdBuildOptions): string;
+export function convertMs48Id(id: string | number | bigint, options?: Ms48IdParseOptions): {
+  decimalText: string;
+  base36Text: string;
+  base36LowText: string;
+  base36HighText: string;
+};
+export function detectMs48StringEncoding(idText: string, options?: Ms48IdParseOptions): Ms48EncodingDetection;
+export function extractOffset(idBigInt: bigint): number;
+export function extractTimestampMs(idBigInt: bigint): number;
+export function formatIdInfo(idText: string, options?: Ms48IdParseOptions): any;
+export function formatTimestamp10Ms(timeMs: number, timezoneHourOffset?: number): string;
+export function formatTimezoneHourOffset(timezoneHourOffset?: number): string;
+export function genIdStr(offset?: number): string;
+export function generateSequentialId(): string;
+export function getIdInt(unixStampMs?: number, offset?: number): bigint;
+export function getRandomIdInt(): bigint;
+export function getUnixStampMs(): number;
+export function id09azToInt(idText: string): bigint;
+export function idIntTo09az(idBigInt: bigint): string;
+export function parseMs48Id(id: string | number | bigint, options?: Ms48IdParseOptions): Ms48IdParts;
+export function parseMs48IdBigInt(id: string | number | bigint, options?: Ms48IdParseOptions): bigint;
+
 export type { TypeConversionBehavior, ConversionMenuRequest } from './layout/json/JsonContext';
 export type { MenuItem, MenuItemSingle, MenuItemSubmenu } from './component/menu/Menu';
 export type { MenuCompItem, MenuCompItemSingle, MenuCompItemSubmenu } from './component/menu/MenuComp';
 export type { DatabaseSetupProps, TableConfig } from './database/DatabaseSetup';
 export type { TableManageProps } from './database/TableManage';
+export type FolderColumnDef = {
+  data: unknown;
+  align?: string;
+};
 export type FolderHeaderProps = {
-  columns: Record<string, { data: unknown; align?: 'left' | 'center' | 'right' }>;
+  columns: Record<string, FolderColumnDef>;
   columnsOrder: string[];
   columnsSizeInit?: Record<string, { width?: number; minWidth?: number; resizable?: boolean }>;
   allowColumnReorder?: boolean;
@@ -144,7 +211,7 @@ export type FolderHeaderProps = {
   columnResizeWidthMode?: 'natural' | 'local';
 };
 export type FolderViewProps = {
-  columns?: Record<string, { data: unknown; align?: 'left' | 'center' | 'right' }>;
+  columns?: Record<string, FolderColumnDef>;
   columnsOrder?: string[];
   columnsSizeInit?: Record<string, { width?: number; minWidth?: number; resizable?: boolean }>;
   rows?: Array<{ id: string; data?: Record<string, unknown> }>;
@@ -206,27 +273,43 @@ export type ItemListProps = {
   className?: string;
 };
 export type ItemTreeProps = ItemListProps;
-export type DbConnectionCardActionItem = {
+export type EndpointCardActionItem = {
   id: string;
   labelText?: string;
   isVisible?: boolean;
   isDisabled?: boolean;
   isDanger?: boolean;
 };
-export type DbConnectionCardProps = {
+export type EndpointCardData = {
+  id?: string;
   titleText?: string;
+  descriptionText?: string;
+  keyValues?: Array<{ key: string; value: string }>;
   statusTagText?: string;
   statusMessage?: {
     status?: 'idle' | 'loading' | 'success' | 'error';
     messageText: string;
   } | null;
-  keyValuesData?: Array<{ key: string; value: string }>;
-  actionItems?: DbConnectionCardActionItem[];
-  isLocked?: boolean;
-  onDismissStatusMessage?: () => void;
-  onAction?: (actionId: string, actionItem: DbConnectionCardActionItem) => Promise<void> | void;
+  errorMessage?: string;
 };
-export const DbConnectionCard: ComponentType<DbConnectionCardProps>;
+export type EndpointCardConfig = {
+  isSelected?: boolean;
+  isLocked?: boolean;
+  isUnavailable?: boolean;
+  isSelectable?: boolean;
+  isCardDisabled?: boolean;
+  actionItems?: EndpointCardActionItem[];
+  keyColWidth?: string;
+  statusTagClassName?: string;
+  showStatusDot?: boolean;
+  selectedDetailText?: string;
+};
+export type EndpointCardProps = {
+  data?: EndpointCardData;
+  config?: EndpointCardConfig;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<void> | void;
+};
+export const EndpointCard: ComponentType<EndpointCardProps>;
 export const FolderHeader: ComponentType<FolderHeaderProps>;
 export const FolderView: ComponentType<FolderViewProps>;
 export type MetadataKeyValuesData = {

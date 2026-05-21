@@ -31,9 +31,14 @@
     "./Login": "./src/component/auth/Login.jsx",
     "./Menu": "./src/component/menu/Menu.jsx",
     "./Menu.css": "./src/component/menu/Menu.css",
+    "./idUtils": {
+      "types": "./src/index.d.ts",
+      "import": "./src/app/id/idUtils.js",
+      "default": "./src/app/id/idUtils.js"
+    },
     "./DatabaseSetup.css": "./src/database/DatabaseSetup.css",
     "./TableManage.css": "./src/database/TableManage.css",
-    "./DbConnectionCard": "./src/database/DbConnectionCard.jsx"
+    "./EndpointCard": "./src/database/EndpointCard.jsx"
   },
   "scripts": {
     "dev": "vite",

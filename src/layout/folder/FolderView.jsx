@@ -1,8 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import ViewSwitcher from './ViewSwitcher';
 import StatusBar from './StatusBar';
 import './folder.css';
+
+const resolveColumnAlign = (align) => {
+  const value = `${align ?? ''}`.trim();
+  if (value === 'center' || value === 'right') {
+    return value;
+  }
+  return 'left';
+};
+
+const withResolvedColumnAlign = (columns) => {
+  if (!columns) {
+    return columns;
+  }
+  const next = {};
+  Object.entries(columns).forEach(([columnId, column]) => {
+    next[columnId] = {
+      ...column,
+      align: resolveColumnAlign(column?.align),
+    };
+  });
+  return next;
+};
 
 const FolderView = observer(({
   columns,
@@ -39,6 +61,7 @@ const FolderView = observer(({
   columnResizeWidthMode = 'natural',
 }) => {
   const [columnWidths, setColumnWidths] = useState({});
+  const resolvedColumns = useMemo(() => withResolvedColumnAlign(columns), [columns]);
 
   useEffect(() => {
     if (!columnsOrder || columnsOrder.length === 0) return;
@@ -60,7 +83,7 @@ const FolderView = observer(({
     <div className="folder-view-container">
       <ViewSwitcher
         bodyHeight={bodyHeight}
-        columns={columns}
+        columns={resolvedColumns}
         columnsOrder={columnsOrder}
         columnsSizeInit={columnsSizeInit}
         columnWidths={columnWidths}

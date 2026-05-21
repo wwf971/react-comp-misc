@@ -92,9 +92,7 @@
 }
 
 .key-cell.cell-clip {
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .key-cell.cell-wrap {
@@ -107,9 +105,7 @@
 }
 
 .value-cell.cell-clip {
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .value-cell.cell-wrap {

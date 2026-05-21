@@ -22,6 +22,7 @@ import { statExamples } from '../component/stat/example.jsx';
 import { databaseExamples } from '../database/example.jsx';
 import { metadataExamples } from '../app/metadata/example.jsx';
 import { sideListExamples } from '../app/side-list/example.jsx';
+import { idExamples } from '../app/id/example.jsx';
 
 // Combine all examples into a single object
 export const components = {
@@ -47,5 +48,6 @@ export const components = {
   ...databaseExamples,
   ...metadataExamples,
   ...sideListExamples,
+  ...idExamples,
   ...htmlExamples,
 };
