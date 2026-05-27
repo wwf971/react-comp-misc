@@ -22,6 +22,7 @@ const StaticCell = ({ rowId, columnId, getRowData, CustomComp, align }) => {
 const ItemsListView = observer(({
   columns,
   columnsOrder,
+  columnsSizeInit = {},
   columnWidths: externalColumnWidths,
   rows = [],
   getComponent,
@@ -375,6 +376,7 @@ const ItemsListView = observer(({
               const isLastColumnFillApplied = isLastColumnFilled && isLastColumn;
               const align = column.align || 'left';
               const width = columnWidths?.[colId];
+              const minWidth = columnsSizeInit?.[colId]?.minWidth ?? 40;
               const CustomComp = getComponent ? getComponent(colId, row.id) : undefined;
               const useObservableCell = !!dataStore;
               return (
@@ -382,8 +384,8 @@ const ItemsListView = observer(({
                   key={colId}
                   className="folder-body-cell"
                   style={{
-                    width: isLastColumnFillApplied ? undefined : (width ? `${width}px` : undefined),
-                    minWidth: isLastColumnFillApplied && width ? `${width}px` : undefined,
+                    width: width ? `${width}px` : undefined,
+                    minWidth: isLastColumnFillApplied ? `${minWidth}px` : undefined,
                     flexGrow: isLastColumnFillApplied ? 1 : undefined,
                     textAlign: align,
                   }}

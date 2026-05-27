@@ -63,6 +63,26 @@
   flex: 1;
 }
 
+.tree-view-row.is-leaf:hover {
+  background: transparent;
+}
+
+.tree-view-row.is-leaf.selected {
+  background: transparent;
+}
+
+.tree-view-row.is-leaf .tree-view-label {
+  padding-left: 2px;
+}
+
+.tree-view-row.is-leaf:hover .tree-view-label {
+  background: #f8f8f8;
+}
+
+.tree-view-row.is-leaf.selected .tree-view-label {
+  background: #e3f2fd;
+}
+
 .tree-view-text-item {
   overflow: hidden;
   text-overflow: ellipsis;

@@ -76,7 +76,7 @@ const TreeItemNode = observer(({
     <div className="tree-view-node-block">
       <div className="tree-view-node-content" style={{ paddingLeft: `${depth * indentPx}px` }}>
         <div
-          className={`tree-view-row ${isSelected ? 'selected' : ''}`}
+          className={`tree-view-row ${isSelected ? 'selected' : ''} ${isLeaf ? 'is-leaf' : ''}`}
           data-tree-item-id={itemId}
           onClick={handleRowClick}
           onContextMenu={handleRowContextMenu}

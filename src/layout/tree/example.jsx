@@ -13,7 +13,7 @@ const TREE_NODE_CATALOG = {
   folder: { id: 'folder', text: 'folder', kind: 'folder', isLeaf: false, childrenIds: ['FolderView.jsx', 'TreeView.jsx', 'example.jsx'] },
   tab: { id: 'tab', text: 'tab', kind: 'folder', isLeaf: false, childrenIds: ['TabsOnTop.jsx'] },
   json: { id: 'json', text: 'json', kind: 'folder', isLeaf: false, childrenIds: ['JsonComp.jsx'] },
-  components: { id: 'components', text: 'components', kind: 'folder', isLeaf: false, childrenIds: ['ExplorerPanel.jsx', 'NodeLabel.jsx'] },
+  components: { id: 'components', text: 'Components', kind: 'folder', isLeaf: false, childrenIds: ['ExplorerPanel.jsx', 'NodeLabel.jsx'] },
   'index-js': { id: 'index-js', text: 'index.js', kind: 'file', isLeaf: true, childrenIds: [] },
   public: { id: 'public', text: 'public', kind: 'folder', isLeaf: false, childrenIds: ['favicon-ico', 'robots-txt'] },
   'favicon-ico': { id: 'favicon-ico', text: 'favicon.ico', kind: 'file', isLeaf: true, childrenIds: [] },
@@ -174,7 +174,8 @@ function createTreeViewDemoStore() {
 }
 
 const TreeExamplesPanel = observer(() => {
-  const [treeViewStore] = useState(() => createTreeViewDemoStore());
+  const [lazyTreeStore] = useState(() => createTreeViewDemoStore());
+  const [contextTreeStore] = useState(() => createTreeViewDemoStore());
   const [treeFilterText, setTreeFilterText] = useState('');
   const [treeFilterSelectedItemId, setTreeFilterSelectedItemId] = useState('workspace');
   const [treeFilterExpandedById, setTreeFilterExpandedById] = useState({});
@@ -295,9 +296,9 @@ const TreeExamplesPanel = observer(() => {
   const openTreeContextMenuForItem = (itemIdRaw, x, y) => {
     const itemId = `${itemIdRaw ?? ''}`.trim();
     if (!itemId) return false;
-    const itemData = treeViewStore.getItemDataById(itemId);
+    const itemData = contextTreeStore.getItemDataById(itemId);
     if (!itemData) return false;
-    treeViewStore.setSelectedItem(itemId);
+    contextTreeStore.setSelectedItem(itemId);
     openTreeContextMenuAt(x, y, {
       menuType: 'item',
       itemId,
@@ -313,15 +314,18 @@ const TreeExamplesPanel = observer(() => {
           Expand/collapse requests are sent upward, store decides state changes, and MobX triggers re-render. Expanding components fails once to show load-failed with retry.
         </div>
         <div className="tree-example-meta">
-          Selected: {treeViewStore.getItemDataById(treeViewStore.selectedItemId)?.text || '(none)'}
+          Selected: {lazyTreeStore.getItemDataById(lazyTreeStore.selectedItemId)?.text || '(none)'}
         </div>
         <div className="tree-example-box">
+          {/* Fixed-height viewport avoids panel jitter while tree branches expand/collapse. */}
+          {/* Leaf rows keep the hidden toggle spacer for indentation, but visual highlight starts at the label area. */}
           <TreeView
-            rootItemIds={treeViewStore.rootItemIds}
-            getItemDataById={treeViewStore.getItemDataById}
-            onDataChangeRequest={treeViewStore.onTreeDataChangeRequest}
-            selectedItemId={treeViewStore.selectedItemId}
-            onItemClick={(itemId) => treeViewStore.setSelectedItem(itemId)}
+            className="tree-view-fixed-height"
+            rootItemIds={lazyTreeStore.rootItemIds}
+            getItemDataById={lazyTreeStore.getItemDataById}
+            onDataChangeRequest={lazyTreeStore.onTreeDataChangeRequest}
+            selectedItemId={lazyTreeStore.selectedItemId}
+            onItemClick={(itemId) => lazyTreeStore.setSelectedItem(itemId)}
             getItemComp={getTreeItemComp}
           />
         </div>
@@ -348,13 +352,14 @@ const TreeExamplesPanel = observer(() => {
             });
           }}
         >
+          {/* Same row-highlight rule here: child/leaf rows highlight from label edge, not from toggle spacer area. */}
           <TreeView
             className="tree-view-fixed-height"
-            rootItemIds={treeViewStore.rootItemIds}
-            getItemDataById={treeViewStore.getItemDataById}
-            onDataChangeRequest={treeViewStore.onTreeDataChangeRequest}
-            selectedItemId={treeViewStore.selectedItemId}
-            onItemClick={(itemId) => treeViewStore.setSelectedItem(itemId)}
+            rootItemIds={contextTreeStore.rootItemIds}
+            getItemDataById={contextTreeStore.getItemDataById}
+            onDataChangeRequest={contextTreeStore.onTreeDataChangeRequest}
+            selectedItemId={contextTreeStore.selectedItemId}
+            onItemClick={(itemId) => contextTreeStore.setSelectedItem(itemId)}
             onItemContextMenu={async (itemId, _itemData, event) => {
               openTreeContextMenuForItem(itemId, event.clientX, event.clientY);
             }}
@@ -370,7 +375,7 @@ const TreeExamplesPanel = observer(() => {
                   { type: 'item', name: 'Refresh Tree', data: { action: 'refresh-tree' } },
                 ];
               }
-              const itemData = treeViewStore.getItemDataById(treeContextMenuState.itemId);
+              const itemData = contextTreeStore.getItemDataById(treeContextMenuState.itemId);
               if (!itemData) return [];
               const typeText = itemData.isLeaf ? 'File' : 'Folder';
               return [
@@ -433,6 +438,7 @@ const TreeExamplesPanel = observer(() => {
           Selected: {filteredTreeRenderData.itemDataById[treeFilterSelectedItemId]?.text || '(none)'}
         </div>
         <div className="tree-example-box">
+          {/* Filter demo follows the same background-area rule so leaf highlight behavior stays consistent across examples. */}
           <TreeView
             className="tree-view-fixed-height"
             rootItemIds={filteredTreeRenderData.rootItemIds}

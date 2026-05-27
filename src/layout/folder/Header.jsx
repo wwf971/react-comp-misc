@@ -25,7 +25,7 @@ const Header = observer(({
   onDataChangeRequest,
   isLastColumnFilled = true,
   pageUtils = null,
-  columnResizeDragMode = 'preview',
+  columnResizeDragMode = 'preview', // 'preview' or 'immediate'
   columnResizeWidthMode = 'natural',
   onColumnResizeIndicatorLeftChange,
 }) => {
@@ -62,16 +62,22 @@ const Header = observer(({
     // This prevents jumps due to DOM rounding or layout differences
     const edges = [];
     let currentLeft = 0;
-    columnsOrder.forEach((colId) => {
+    columnsOrder.forEach((colId, index) => {
+      const isLastColumn = index === columnsOrder.length - 1;
       const width = columnWidths[colId] || 0;
       currentLeft += width;
-      edges.push(currentLeft);
+      edges.push(isLastColumnFilled && isLastColumn ? Math.max(currentLeft, headerRect.width) : currentLeft);
     });
     
     edgePosesInitial.current = [...edges];
     edgePosesCurrent.current = [...edges];
-    widthByColumnIdInitial.current = columnsOrder.reduce((acc, currentColId) => {
-      acc[currentColId] = columnWidths[currentColId] || 0;
+    widthByColumnIdInitial.current = columnsOrder.reduce((acc, currentColId, index) => {
+      const prevEdge = index > 0 ? edges[index - 1] : 0;
+      const currentEdge = edges[index] || 0;
+      const isLastColumn = index === columnsOrder.length - 1;
+      acc[currentColId] = isLastColumnFilled && isLastColumn
+        ? Math.max(0, currentEdge - prevEdge)
+        : (columnWidths[currentColId] || 0);
       return acc;
     }, {});
     resizeStartX.current = e.clientX - headerRect.left;
@@ -389,6 +395,7 @@ const Header = observer(({
           const width = columnWidths?.[colId];
           const isLastColumn = index === columnsOrder.length - 1;
           const isLastColumnFillApplied = isLastColumnFilled && isLastColumn;
+          const minWidth = columnsSizeInit?.[colId]?.minWidth ?? 40;
           const isDragging = draggingColId === colId;
           
           // Get custom component via callback or use default text component
@@ -400,8 +407,8 @@ const Header = observer(({
               key={colId}
               className={`folder-header-cell ${isDragging ? 'dragging' : ''} ${allowColumnReorder ? 'reorderable' : ''}`}
               style={{ 
-                width: isLastColumnFillApplied ? undefined : (width ? `${width}px` : undefined),
-                minWidth: isLastColumnFillApplied && width ? `${width}px` : undefined,
+                width: width ? `${width}px` : undefined,
+                minWidth: isLastColumnFillApplied ? `${minWidth}px` : undefined,
                 flexGrow: isLastColumnFillApplied ? 1 : undefined,
                 textAlign: align,
                 opacity: isDragging ? 0.3 : 1
