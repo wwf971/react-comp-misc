@@ -6,6 +6,8 @@ To open the test page in dev mode, run `pnpm run dev`.
 
 Components in the same group should share one example entry (one panel), not one registry row per tiny variant.
 
+For shared button helpers such as `ButtonWithDropDown`, put the demo in the button folder example panel, for example `src/component/button/example.jsx`.
+
 Wrong:
 
 ```javascript

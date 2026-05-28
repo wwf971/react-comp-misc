@@ -78,6 +78,7 @@ export const PathBar: ComponentType<any>;
 export const KeyValues: ComponentType<any>;
 export const KeyValuesComp: ComponentType<any>;
 export const MetadataKeyValues: ComponentType<MetadataKeyValuesProps>;
+export const ButtonWithDropDown: ComponentType<ButtonWithDropDownProps>;
 export const EditableValueComp: ComponentType<any>;
 export const EditableValueWithInfo: ComponentType<any>;
 export const SelectableValue: ComponentType<any>;
@@ -331,5 +332,25 @@ export type MetadataKeyValuesProps = {
   data?: MetadataKeyValuesData;
   config?: MetadataKeyValuesConfig;
   onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
+};
+
+export type ButtonWithDropDownItem = {
+  id: string;
+  label?: string;
+  isDisabled?: boolean;
+  [key: string]: unknown;
+};
+
+export type ButtonWithDropDownProps = {
+  data?: {
+    label?: string;
+    items?: ButtonWithDropDownItem[];
+    emptyText?: string;
+  };
+  config?: {
+    isDisabled?: boolean;
+    className?: string;
+  };
+  onEvent?: (eventType: string, eventData: any) => void;
 };
 export const MetadataKeyValues: ComponentType<MetadataKeyValuesProps>;

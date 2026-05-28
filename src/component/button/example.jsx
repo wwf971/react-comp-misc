@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ButtonWithDropDown from './ButtonWithDropDown.jsx';
 import BoolSlider from './BoolSlider.jsx';
 import SegmentedControl from './SegmentedControl.jsx';
 
@@ -214,9 +215,51 @@ const SegmentedControlExample = () => {
   );
 };
 
+const ButtonWithDropDownExample = () => {
+  const [selectedActionText, setSelectedActionText] = useState('No dropdown action selected');
+  const [isDeleteDisabled, setIsDeleteDisabled] = useState(true);
+
+  return (
+    <div className="button-with-dropdown-example-root">
+      <div className="button-with-dropdown-example-row">
+        <ButtonWithDropDown
+          data={{
+            label: 'Actions',
+            items: [
+              { id: 'create', label: 'Create' },
+              { id: 'rename', label: 'Rename' },
+              { id: 'delete', label: 'Delete', isDisabled: isDeleteDisabled },
+            ],
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType !== 'itemClick') return;
+            setSelectedActionText(`Selected: ${eventData.item?.label ?? eventData.itemId}`);
+            setIsDeleteDisabled(false);
+          }}
+        />
+        <ButtonWithDropDown
+          data={{
+            label: 'Empty',
+            items: [],
+            emptyText: 'No actions',
+          }}
+        />
+      </div>
+      <div className="button-with-dropdown-example-status">{selectedActionText}</div>
+    </div>
+  );
+};
+
 const ButtonExamplesPanel = () => {
   return (
     <div>
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>ButtonWithDropDown</div>
+        <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>
+          Data-driven dropdown button with disabled item and empty-list states
+        </div>
+        <ButtonWithDropDownExample />
+      </div>
       <div style={{ marginBottom: '30px' }}>
         <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>BoolSlider</div>
         <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>Toggle switch for boolean values</div>
