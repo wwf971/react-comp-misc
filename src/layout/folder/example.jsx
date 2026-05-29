@@ -569,7 +569,7 @@ const FolderExamplesPanel = observer(() => {
             error={fileExplorerStore.error}
             bodyHeight={300}
             showStatusItemCount={false}
-            contextMenuItems={[{ type: 'item', name: 'Delete' }]}
+            contextMenuItems={[{ id: 'delete', label: 'Delete' }]}
             columnResizeDragMode={columnResizeDragMode}
             columnResizeWidthMode={columnResizeWidthMode}
           />

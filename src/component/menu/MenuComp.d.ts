@@ -1,13 +1,16 @@
 import React from 'react'
 
 export interface MenuCompItemBase {
-  name: string
+  id?: string
+  label?: React.ReactNode
+  name?: React.ReactNode
   component?: React.ComponentType<any>
   componentProps?: any
   preferredWidth?: number
   preferredHeight?: number
   data?: any
   disabled?: boolean
+  isDisabled?: boolean
 }
 
 export interface MenuCompItemSingle extends MenuCompItemBase {
@@ -21,12 +24,17 @@ export interface MenuCompItemSubmenu extends MenuCompItemBase {
 
 export type MenuCompItem = MenuCompItemSingle | MenuCompItemSubmenu
 
-interface MenuCompProps {
-  items: MenuCompItem[]
-  position: { x: number; y: number }
-  onClose: () => void
-  onItemClick: (item: MenuCompItemSingle) => void
-  onContextMenu?: (e: React.MouseEvent) => void
+export interface MenuCompProps {
+  data?: {
+    items?: MenuCompItem[]
+    position?: { x: number; y: number }
+    emptyText?: string
+  }
+  config?: {
+    minWidth?: number
+    className?: string
+  }
+  onEvent?: (eventType: string, eventData: any) => void
 }
 
 declare const MenuComp: React.FC<MenuCompProps>

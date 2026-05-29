@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 export type PathSegment = {
   name: string;
@@ -107,7 +107,10 @@ export function parseStringToJson(...args: any[]): any;
 export function formatJson(...args: any[]): any;
 
 export const Menu: ComponentType<any>;
-export const MenuComp: ComponentType<any>;
+export const MenuContext: ComponentType<MenuContextProps>;
+export const MenuCore: ComponentType<MenuCoreProps>;
+export const MenuDropDown: ComponentType<MenuDropDownProps>;
+export const MenuComp: ComponentType<import('./component/menu/MenuComp').MenuCompProps>;
 export const DatabaseSetup: ComponentType<any>;
 export const TableManage: ComponentType<any>;
 export const BoolSlider: ComponentType<any>;
@@ -195,7 +198,7 @@ export function parseMs48IdBigInt(id: string | number | bigint, options?: Ms48Id
 
 export type { TypeConversionBehavior, ConversionMenuRequest } from './layout/json/JsonContext';
 export type { MenuItem, MenuItemSingle, MenuItemSubmenu } from './component/menu/Menu';
-export type { MenuCompItem, MenuCompItemSingle, MenuCompItemSubmenu } from './component/menu/MenuComp';
+export type { MenuCompItem, MenuCompItemSingle, MenuCompItemSubmenu, MenuCompProps } from './component/menu/MenuComp';
 export type { DatabaseSetupProps, TableConfig } from './database/DatabaseSetup';
 export type { TableManageProps } from './database/TableManage';
 export type FolderColumnDef = {
@@ -241,7 +244,7 @@ export type FolderViewProps = {
 export type SideListItemData = {
   key?: string;
   id?: string;
-  label?: string;
+  label?: ReactNode;
   name?: string;
   description?: string;
   parentKey?: string | null;
@@ -338,6 +341,7 @@ export type ButtonWithDropDownItem = {
   id: string;
   label?: string;
   isDisabled?: boolean;
+  children?: ButtonWithDropDownItem[];
   [key: string]: unknown;
 };
 
@@ -350,7 +354,53 @@ export type ButtonWithDropDownProps = {
   config?: {
     isDisabled?: boolean;
     className?: string;
+    menuClassName?: string;
+    minWidth?: number;
   };
   onEvent?: (eventType: string, eventData: any) => void;
 };
 export const MetadataKeyValues: ComponentType<MetadataKeyValuesProps>;
+
+export type MenuDataItem = {
+  id: string;
+  label?: string;
+  isDisabled?: boolean;
+  data?: unknown;
+  children?: MenuDataItem[];
+  component?: ComponentType<any>;
+  componentProps?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+
+export type MenuPosition = {
+  x: number;
+  y: number;
+};
+
+export type MenuCoreProps = {
+  data?: {
+    items?: MenuDataItem[];
+    position?: MenuPosition;
+    emptyText?: string;
+  };
+  config?: {
+    minWidth?: number;
+    className?: string;
+  };
+  onEvent?: (eventType: string, eventData: any) => void;
+};
+
+export type MenuContextProps = MenuCoreProps;
+
+export type MenuDropDownProps = {
+  data?: {
+    items?: MenuDataItem[];
+    position?: MenuPosition;
+    emptyText?: string;
+  };
+  config?: {
+    className?: string;
+    minWidth?: number;
+  };
+  onEvent?: (eventType: string, eventData: any) => void;
+};

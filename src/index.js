@@ -100,6 +100,9 @@ export { default as JsonCompMobx } from "./layout/json-mobx/JsonCompMobx.jsx";
 export { parseYamlToJson, parseJsonString, parseStringToJson, formatJson } from "./utils/parseString";
 
 export { default as Menu } from "./component/menu/Menu";
+export { default as MenuContext } from "./component/menu/MenuContext.jsx";
+export { default as MenuCore } from "./component/menu/MenuCore.jsx";
+export { default as MenuDropDown } from "./component/menu/MenuDropDown.jsx";
 
 export { default as MenuComp } from "./component/menu/MenuComp";
 

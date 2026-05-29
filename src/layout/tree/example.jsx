@@ -368,48 +368,57 @@ const TreeExamplesPanel = observer(() => {
         </div>
         {treeContextMenuState ? (
           <Menu
-            items={(() => {
-              if (treeContextMenuState.menuType === 'empty') {
+            data={{
+              items: (() => {
+                if (treeContextMenuState.menuType === 'empty') {
+                  return [
+                    { id: 'create-root-folder', label: 'Create Root Folder', data: { action: 'create-root-folder' } },
+                    { id: 'refresh-tree', label: 'Refresh Tree', data: { action: 'refresh-tree' } },
+                  ];
+                }
+                const itemData = contextTreeStore.getItemDataById(treeContextMenuState.itemId);
+                if (!itemData) return [];
+                const typeText = itemData.isLeaf ? 'File' : 'Folder';
                 return [
-                  { type: 'item', name: 'Create Root Folder', data: { action: 'create-root-folder' } },
-                  { type: 'item', name: 'Refresh Tree', data: { action: 'refresh-tree' } },
+                  { id: 'info', label: `${typeText} Info`, data: { action: 'info', itemId: itemData.id } },
+                  { id: 'rename', label: `Rename ${typeText}`, data: { action: 'rename', itemId: itemData.id } },
+                  { id: 'delete', label: `Delete ${typeText}`, data: { action: 'delete', itemId: itemData.id } },
                 ];
-              }
-              const itemData = contextTreeStore.getItemDataById(treeContextMenuState.itemId);
-              if (!itemData) return [];
-              const typeText = itemData.isLeaf ? 'File' : 'Folder';
-              return [
-                { type: 'item', name: `${typeText} Info`, data: { action: 'info', itemId: itemData.id } },
-                { type: 'item', name: `Rename ${typeText}`, data: { action: 'rename', itemId: itemData.id } },
-                { type: 'item', name: `Delete ${typeText}`, data: { action: 'delete', itemId: itemData.id } },
-              ];
-            })()}
-            position={{ x: treeContextMenuState.x, y: treeContextMenuState.y }}
-            onClose={() => setTreeContextMenuState(null)}
-            onContextMenu={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              const backdropElement = event.currentTarget;
-              backdropElement.style.pointerEvents = 'none';
-              const clickedElement = document.elementFromPoint(event.clientX, event.clientY);
-              backdropElement.style.pointerEvents = '';
-
-              const rowElement = clickedElement?.closest?.('.tree-view-row[data-tree-item-id]');
-              if (rowElement) {
-                const rowItemId = `${rowElement.getAttribute('data-tree-item-id') ?? ''}`.trim();
-                if (openTreeContextMenuForItem(rowItemId, event.clientX, event.clientY)) return;
-              }
-              const isInContextWrap = Boolean(clickedElement?.closest?.('[data-tree-context-wrap="true"]'));
-              if (isInContextWrap) {
-                openTreeContextMenuAt(event.clientX, event.clientY, {
-                  menuType: 'empty',
-                });
+              })(),
+              position: { x: treeContextMenuState.x, y: treeContextMenuState.y },
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'close') {
+                setTreeContextMenuState(null);
                 return;
               }
-              setTreeContextMenuState(null);
-            }}
-            onItemClick={(item) => {
-              setTreeContextMenuState((prevState) => prevState ? { ...prevState, lastAction: item?.data?.action ?? '' } : null);
+              if (eventType === 'itemClick') {
+                setTreeContextMenuState((prevState) => prevState ? { ...prevState, lastAction: eventData.item?.data?.action ?? '' } : null);
+                return;
+              }
+              if (eventType === 'backdropContextMenu') {
+                const event = eventData.event;
+                event.preventDefault();
+                event.stopPropagation();
+                const backdropElement = event.currentTarget;
+                backdropElement.style.pointerEvents = 'none';
+                const clickedElement = document.elementFromPoint(event.clientX, event.clientY);
+                backdropElement.style.pointerEvents = '';
+
+                const rowElement = clickedElement?.closest?.('.tree-view-row[data-tree-item-id]');
+                if (rowElement) {
+                  const rowItemId = `${rowElement.getAttribute('data-tree-item-id') ?? ''}`.trim();
+                  if (openTreeContextMenuForItem(rowItemId, event.clientX, event.clientY)) return;
+                }
+                const isInContextWrap = Boolean(clickedElement?.closest?.('[data-tree-context-wrap="true"]'));
+                if (isInContextWrap) {
+                  openTreeContextMenuAt(event.clientX, event.clientY, {
+                    menuType: 'empty',
+                  });
+                  return;
+                }
+                setTreeContextMenuState(null);
+              }
             }}
           />
         ) : null}

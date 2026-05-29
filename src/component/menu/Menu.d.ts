@@ -1,28 +1,33 @@
 import React from 'react'
 
 export interface MenuItemBase {
-  name: React.ReactNode
-  disabled?: boolean
+  id: string
+  label?: React.ReactNode
+  isDisabled?: boolean
   data?: any
 }
 
 export interface MenuItemSingle extends MenuItemBase {
-  type: 'item'
+  children?: never
 }
 
 export interface MenuItemSubmenu extends MenuItemBase {
-  type: 'menu'
   children: MenuItem[]
 }
 
 export type MenuItem = MenuItemSingle | MenuItemSubmenu
 
 interface MenuProps {
-  items: MenuItem[]
-  position: { x: number; y: number }
-  onClose: () => void
-  onItemClick: (item: MenuItemSingle) => void
-  onContextMenu?: (e: React.MouseEvent) => void
+  data?: {
+    items?: MenuItem[]
+    position?: { x: number; y: number }
+    emptyText?: string
+  }
+  config?: {
+    minWidth?: number
+    className?: string
+  }
+  onEvent?: (eventType: string, eventData: any) => void
 }
 
 declare const Menu: React.FC<MenuProps>

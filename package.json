@@ -30,6 +30,9 @@
     "./TreeView": "./src/layout/tree/TreeView.jsx",
     "./Login": "./src/component/auth/Login.jsx",
     "./Menu": "./src/component/menu/Menu.jsx",
+    "./MenuContext": "./src/component/menu/MenuContext.jsx",
+    "./MenuCore": "./src/component/menu/MenuCore.jsx",
+    "./MenuDropDown": "./src/component/menu/MenuDropDown.jsx",
     "./Menu.css": "./src/component/menu/Menu.css",
     "./idUtils": {
       "types": "./src/index.d.ts",

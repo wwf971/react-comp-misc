@@ -2,8 +2,60 @@
 use this exmample as reference, when you cannot implement the "right-click after right-click" behavior correctly.
 */
 
-import React, { useState } from 'react'
-import Menu from './Menu'
+import React, { useRef, useState } from 'react'
+import MenuContext from './MenuContext.jsx'
+
+const isPointInsideElement = (element, event) => {
+  if (!element) return false
+  const rect = element.getBoundingClientRect()
+  return event.clientX >= rect.left
+    && event.clientX <= rect.right
+    && event.clientY >= rect.top
+    && event.clientY <= rect.bottom
+}
+
+const getElementUnderMenu = (event) => {
+  const overlayElements = Array.from(document.querySelectorAll('.menu-backdrop, .menu-core-root'))
+  const previousValues = overlayElements.map((element) => ({
+    element,
+    pointerEvents: element.style.pointerEvents,
+  }))
+  overlayElements.forEach((element) => {
+    element.style.pointerEvents = 'none'
+  })
+  const targetElement = document.elementFromPoint(event.clientX, event.clientY)
+  previousValues.forEach(({ element, pointerEvents }) => {
+    element.style.pointerEvents = pointerEvents
+  })
+  return targetElement
+}
+
+const forwardContextMenuToAnotherRegion = (event) => {
+  const targetElement = getElementUnderMenu(event)
+  const targetRegion = targetElement?.closest?.('[data-menu-example-region]')
+  if (!targetRegion) return
+  requestAnimationFrame(() => {
+    const nextEvent = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      button: 2,
+    })
+    targetElement.dispatchEvent(nextEvent)
+  })
+}
+
+const handleScopedBackdropContextMenu = (event, regionRef, closeMenu, openMenu) => {
+  event.preventDefault()
+  if (isPointInsideElement(regionRef.current, event)) {
+    openMenu(event)
+    return
+  }
+  closeMenu()
+  forwardContextMenuToAnotherRegion(event)
+}
 
 /**
  * Example demonstrating correct right-click menu repositioning
@@ -23,6 +75,8 @@ import Menu from './Menu'
  * - Menu content doesn't update
  */
 const MenuRightClickExample = () => {
+  const simpleRegionRef = useRef(null)
+  const tagsRegionRef = useRef(null)
   // Example 1: Simple case - clickable area not covered by backdrop
   const [menuState, setMenuState] = useState({
     position: null,
@@ -41,34 +95,34 @@ const MenuRightClickExample = () => {
   // Generate menu items that change based on click count to demonstrate content updates
   const getMenuItems = (clickCount, position) => [
     {
-      type: 'item',
-      name: `X: ${position.x}, Y: ${position.y}`,
+      id: 'position',
+      label: `X: ${position.x}, Y: ${position.y}`,
       data: { action: 'position', count: clickCount }
     },
     {
-      type: 'item',
-      name: `Click #${clickCount}`,
+      id: 'click-count',
+      label: `Click #${clickCount}`,
       data: { action: 'clickCount', count: clickCount }
     },
     {
-      type: 'menu',
-      name: `Submenu (Click #${clickCount})`,
+      id: 'submenu',
+      label: `Submenu (Click #${clickCount})`,
       children: [
         {
-          type: 'item',
-          name: `Sub Action A`,
+          id: 'sub-a',
+          label: `Sub Action A`,
           data: { action: 'subA', count: clickCount }
         },
         {
-          type: 'item',
-          name: `Sub Action B`,
+          id: 'sub-b',
+          label: `Sub Action B`,
           data: { action: 'subB', count: clickCount }
         }
       ]
     },
     {
-      type: 'item',
-      name: 'Close Menu',
+      id: 'close',
+      label: 'Close Menu',
       data: { action: 'close' }
     }
   ]
@@ -107,7 +161,7 @@ const MenuRightClickExample = () => {
   }
 
   const handleItemClick = (item) => {
-    setClickedItem(`${item.name} - Action: ${item.data?.action}`)
+    setClickedItem(`${item.label} - Action: ${item.data?.action}`)
   }
 
   const handleClose = () => {
@@ -178,7 +232,7 @@ const MenuRightClickExample = () => {
   }
 
   const handleTagItemClick = (item) => {
-    setClickedItem(`Tag menu: ${item.name} on "${tagsMenuState.selectedTag}"`)
+    setClickedItem(`Tag menu: ${item.label} on "${tagsMenuState.selectedTag}"`)
   }
 
   return (
@@ -193,6 +247,8 @@ const MenuRightClickExample = () => {
           Scenario 1: Simple Case (Clickable area NOT covered by backdrop)
         </div>
         <div 
+          ref={simpleRegionRef}
+          data-menu-example-region="right-click-simple"
           style={{
             padding: '60px 40px',
             border: '2px dashed #2196F3',
@@ -225,7 +281,10 @@ const MenuRightClickExample = () => {
         }}>
           Scenario 2: Complex Case (Tags covered by backdrop when menu is open)
         </div>
-        <div style={{
+        <div
+          ref={tagsRegionRef}
+          data-menu-example-region="right-click-tags"
+          style={{
           padding: '20px',
           border: '2px dashed #ff9800',
           backgroundColor: '#f5f5f5',
@@ -301,7 +360,7 @@ const MenuRightClickExample = () => {
         lineHeight: '1.6'
       }}>
         <strong>Additional for Scenario 2 (backdrop covers clickables):</strong><br/>
-        1. Handle onContextMenu on Menu's backdrop<br/>
+        1. Handle onContextMenu on MenuContext's backdrop<br/>
         2. Temporarily set backdrop.style.pointerEvents = 'none'<br/>
         3. Use document.elementFromPoint() to find element underneath<br/>
         4. Restore backdrop.style.pointerEvents = ''<br/>
@@ -311,26 +370,55 @@ const MenuRightClickExample = () => {
       </div>
 
       {menuState.position && (
-        <Menu
-          items={getMenuItems(menuState.clickCount, menuState.position)}
-          position={menuState.position}
-          onClose={handleClose}
-          onItemClick={handleItemClick}
-          onContextMenu={handleContextMenu}
+        <MenuContext
+          data={{
+            items: getMenuItems(menuState.clickCount, menuState.position),
+            position: menuState.position,
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'close') {
+              handleClose()
+              return
+            }
+            if (eventType === 'itemClick') {
+              handleItemClick(eventData.item)
+              return
+            }
+            if (eventType === 'backdropContextMenu') {
+              handleScopedBackdropContextMenu(eventData.event, simpleRegionRef, handleClose, handleContextMenu)
+            }
+          }}
         />
       )}
 
       {tagsMenuState.position && (
-        <Menu
-          items={[
-            { type: 'item', name: 'Edit', data: { action: 'edit' } },
-            { type: 'item', name: 'Delete', data: { action: 'delete' } },
-            { type: 'item', name: 'Duplicate', data: { action: 'duplicate' } }
-          ]}
-          position={tagsMenuState.position}
-          onClose={() => setTagsMenuState({ position: null, selectedTag: null })}
-          onItemClick={handleTagItemClick}
-          onContextMenu={handleBackdropContextMenu}
+        <MenuContext
+          data={{
+            items: [
+              { id: 'edit', label: 'Edit', data: { action: 'edit' } },
+              { id: 'delete', label: 'Delete', data: { action: 'delete' } },
+              { id: 'duplicate', label: 'Duplicate', data: { action: 'duplicate' } }
+            ],
+            position: tagsMenuState.position,
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'close') {
+              setTagsMenuState({ position: null, selectedTag: null })
+              return
+            }
+            if (eventType === 'itemClick') {
+              handleTagItemClick(eventData.item)
+              return
+            }
+            if (eventType === 'backdropContextMenu') {
+              if (isPointInsideElement(tagsRegionRef.current, eventData.event)) {
+                handleBackdropContextMenu(eventData.event)
+                return
+              }
+              setTagsMenuState({ position: null, selectedTag: null })
+              forwardContextMenuToAnotherRegion(eventData.event)
+            }
+          }}
         />
       )}
     </div>

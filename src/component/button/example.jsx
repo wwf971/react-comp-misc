@@ -228,6 +228,14 @@ const ButtonWithDropDownExample = () => {
             items: [
               { id: 'create', label: 'Create' },
               { id: 'rename', label: 'Rename' },
+              {
+                id: 'export',
+                label: 'Export',
+                children: [
+                  { id: 'exportJson', label: 'Export JSON' },
+                  { id: 'exportCsv', label: 'Export CSV' },
+                ],
+              },
               { id: 'delete', label: 'Delete', isDisabled: isDeleteDisabled },
             ],
           }}

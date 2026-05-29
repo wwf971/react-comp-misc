@@ -1,26 +1,79 @@
-import React, { useState } from 'react'
-import Menu from './Menu'
+import React, { useRef, useState } from 'react'
+import MenuContext from './MenuContext.jsx'
 import MenuRightClickExample from './exampleRightClick'
+
+const isPointInsideElement = (element, event) => {
+  if (!element) return false
+  const rect = element.getBoundingClientRect()
+  return event.clientX >= rect.left
+    && event.clientX <= rect.right
+    && event.clientY >= rect.top
+    && event.clientY <= rect.bottom
+}
+
+const getElementUnderMenu = (event) => {
+  const overlayElements = Array.from(document.querySelectorAll('.menu-backdrop, .menu-core-root'))
+  const previousValues = overlayElements.map((element) => ({
+    element,
+    pointerEvents: element.style.pointerEvents,
+  }))
+  overlayElements.forEach((element) => {
+    element.style.pointerEvents = 'none'
+  })
+  const targetElement = document.elementFromPoint(event.clientX, event.clientY)
+  previousValues.forEach(({ element, pointerEvents }) => {
+    element.style.pointerEvents = pointerEvents
+  })
+  return targetElement
+}
+
+const forwardContextMenuToAnotherRegion = (event) => {
+  const targetElement = getElementUnderMenu(event)
+  const targetRegion = targetElement?.closest?.('[data-menu-example-region]')
+  if (!targetRegion) return
+  requestAnimationFrame(() => {
+    const nextEvent = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      button: 2,
+    })
+    targetElement.dispatchEvent(nextEvent)
+  })
+}
+
+const handleScopedBackdropContextMenu = (event, regionRef, closeMenu, openMenu) => {
+  event.preventDefault()
+  if (isPointInsideElement(regionRef.current, event)) {
+    openMenu(event)
+    return
+  }
+  closeMenu()
+  forwardContextMenuToAnotherRegion(event)
+}
 
 // Example: Single-level menu
 const MenuSingleLevel = () => {
+  const regionRef = useRef(null)
   const [menuPos, setMenuPos] = useState(null)
   const [clickedItem, setClickedItem] = useState('')
 
   const menuItems = [
     {
-      type: 'item',
-      name: 'Open',
+      id: 'open',
+      label: 'Open',
       data: { action: 'open' }
     },
     {
-      type: 'item',
-      name: 'Edit',
+      id: 'edit',
+      label: 'Edit',
       data: { action: 'edit' }
     },
     {
-      type: 'item',
-      name: 'Delete',
+      id: 'delete',
+      label: 'Delete',
       data: { action: 'delete' }
     }
   ]
@@ -32,7 +85,7 @@ const MenuSingleLevel = () => {
   }
 
   const handleItemClick = (item) => {
-    setClickedItem(`${item.name} (${item.data?.action})`)
+    setClickedItem(`${item.label} (${item.data?.action})`)
   }
 
   const handleClose = () => {
@@ -42,6 +95,8 @@ const MenuSingleLevel = () => {
   return (
     <div>
       <div 
+        ref={regionRef}
+        data-menu-example-region="single"
         style={{
           border: '2px dashed #ccc',
           textAlign: 'center',
@@ -58,12 +113,24 @@ const MenuSingleLevel = () => {
         </div>
       )}
       {menuPos && (
-        <Menu
-          items={menuItems}
-          position={menuPos}
-          onClose={handleClose}
-          onItemClick={handleItemClick}
-          onContextMenu={handleContextMenu}
+        <MenuContext
+          data={{
+            items: menuItems,
+            position: menuPos,
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'close') {
+              handleClose()
+              return
+            }
+            if (eventType === 'itemClick') {
+              handleItemClick(eventData.item)
+              return
+            }
+            if (eventType === 'backdropContextMenu') {
+              handleScopedBackdropContextMenu(eventData.event, regionRef, handleClose, handleContextMenu)
+            }
+          }}
         />
       )}
     </div>
@@ -72,41 +139,42 @@ const MenuSingleLevel = () => {
 
 // Example: Multi-level menu
 const MenuMultiLevel = () => {
+  const regionRef = useRef(null)
   const [menuPos, setMenuPos] = useState(null)
   const [clickedItem, setClickedItem] = useState('')
 
   const menuItems = [
     {
-      type: 'item',
-      name: 'New File',
+      id: 'new-file',
+      label: 'New File',
       data: { action: 'newFile' }
     },
     {
-      type: 'menu',
-      name: 'Export',
+      id: 'export',
+      label: 'Export',
       children: [
         {
-          type: 'item',
-          name: 'Export as PDF',
+          id: 'export-pdf',
+          label: 'Export as PDF',
           data: { action: 'exportPDF' }
         },
         {
-          type: 'item',
-          name: 'Export as PNG',
+          id: 'export-png',
+          label: 'Export as PNG',
           data: { action: 'exportPNG' }
         },
         {
-          type: 'menu',
-          name: 'More Formats',
+          id: 'more-formats',
+          label: 'More Formats',
           children: [
             {
-              type: 'item',
-              name: 'Export as SVG',
+              id: 'export-svg',
+              label: 'Export as SVG',
               data: { action: 'exportSVG' }
             },
             {
-              type: 'item',
-              name: 'Export as JPEG',
+              id: 'export-jpeg',
+              label: 'Export as JPEG',
               data: { action: 'exportJPEG' }
             }
           ]
@@ -114,24 +182,24 @@ const MenuMultiLevel = () => {
       ]
     },
     {
-      type: 'menu',
-      name: 'Settings',
+      id: 'settings',
+      label: 'Settings',
       children: [
         {
-          type: 'item',
-          name: 'Preferences',
+          id: 'preferences',
+          label: 'Preferences',
           data: { action: 'preferences' }
         },
         {
-          type: 'item',
-          name: 'Shortcuts',
+          id: 'shortcuts',
+          label: 'Shortcuts',
           data: { action: 'shortcuts' }
         }
       ]
     },
     {
-      type: 'item',
-      name: 'About',
+      id: 'about',
+      label: 'About',
       data: { action: 'about' }
     }
   ]
@@ -143,7 +211,7 @@ const MenuMultiLevel = () => {
   }
 
   const handleItemClick = (item) => {
-    setClickedItem(`${item.name} (${item.data?.action})`)
+    setClickedItem(`${item.label} (${item.data?.action})`)
   }
 
   const handleClose = () => {
@@ -153,6 +221,8 @@ const MenuMultiLevel = () => {
   return (
     <div>
       <div 
+        ref={regionRef}
+        data-menu-example-region="multi"
         style={{
           border: '2px dashed #ccc',
           textAlign: 'center',
@@ -169,12 +239,24 @@ const MenuMultiLevel = () => {
         </div>
       )}
       {menuPos && (
-        <Menu
-          items={menuItems}
-          position={menuPos}
-          onClose={handleClose}
-          onItemClick={handleItemClick}
-          onContextMenu={handleContextMenu}
+        <MenuContext
+          data={{
+            items: menuItems,
+            position: menuPos,
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'close') {
+              handleClose()
+              return
+            }
+            if (eventType === 'itemClick') {
+              handleItemClick(eventData.item)
+              return
+            }
+            if (eventType === 'backdropContextMenu') {
+              handleScopedBackdropContextMenu(eventData.event, regionRef, handleClose, handleContextMenu)
+            }
+          }}
         />
       )}
     </div>
@@ -183,30 +265,31 @@ const MenuMultiLevel = () => {
 
 // Example: Disabled items
 const MenuWithDisabledItems = () => {
+  const regionRef = useRef(null)
   const [menuPos, setMenuPos] = useState(null)
   const [clickedItem, setClickedItem] = useState('')
 
   const menuItems = [
     {
-      type: 'item',
-      name: 'Open',
+      id: 'open',
+      label: 'Open',
       data: { action: 'open' }
     },
     {
-      type: 'item',
-      name: 'Delete (disabled)',
-      disabled: true,
+      id: 'delete',
+      label: 'Delete (disabled)',
+      isDisabled: true,
       data: { action: 'delete' }
     },
     {
-      type: 'item',
-      name: 'Approve (disabled)',
-      disabled: true,
+      id: 'approve',
+      label: 'Approve (disabled)',
+      isDisabled: true,
       data: { action: 'approve' }
     },
     {
-      type: 'item',
-      name: 'Edit',
+      id: 'edit',
+      label: 'Edit',
       data: { action: 'edit' }
     }
   ]
@@ -217,7 +300,7 @@ const MenuWithDisabledItems = () => {
   }
 
   const handleItemClick = (item) => {
-    setClickedItem(`${item.name} (${item.data?.action})`)
+    setClickedItem(`${item.label} (${item.data?.action})`)
   }
 
   const handleClose = () => {
@@ -227,6 +310,8 @@ const MenuWithDisabledItems = () => {
   return (
     <div>
       <div
+        ref={regionRef}
+        data-menu-example-region="disabled"
         style={{
           border: '2px dashed #ccc',
           textAlign: 'center',
@@ -243,14 +328,113 @@ const MenuWithDisabledItems = () => {
         </div>
       )}
       {menuPos && (
-        <Menu
-          items={menuItems}
-          position={menuPos}
-          onClose={handleClose}
-          onItemClick={handleItemClick}
-          onContextMenu={handleContextMenu}
+        <MenuContext
+          data={{
+            items: menuItems,
+            position: menuPos,
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'close') {
+              handleClose()
+              return
+            }
+            if (eventType === 'itemClick') {
+              handleItemClick(eventData.item)
+              return
+            }
+            if (eventType === 'backdropContextMenu') {
+              handleScopedBackdropContextMenu(eventData.event, regionRef, handleClose, handleContextMenu)
+            }
+          }}
         />
       )}
+    </div>
+  )
+}
+
+const CustomMenuLabel = ({ title, detail }) => {
+  return (
+    <div className="menu-example-custom-item">
+      <span className="menu-example-custom-item-title">{title}</span>
+      <span className="menu-example-custom-item-detail">{detail}</span>
+    </div>
+  )
+}
+
+const MenuWithCustomComponents = () => {
+  const regionRef = useRef(null)
+  const [menuPos, setMenuPos] = useState(null)
+  const [clickedItem, setClickedItem] = useState('')
+
+  const menuItems = [
+    {
+      id: 'profile',
+      component: CustomMenuLabel,
+      componentProps: { title: 'Profile', detail: 'custom component item' },
+      data: { action: 'profile' },
+    },
+    {
+      id: 'export',
+      label: 'Export',
+      children: [
+        {
+          id: 'export-json',
+          component: CustomMenuLabel,
+          componentProps: { title: 'JSON', detail: 'nested custom item' },
+          data: { action: 'exportJson' },
+        },
+        {
+          id: 'export-csv',
+          label: 'CSV',
+          data: { action: 'exportCsv' },
+        },
+      ],
+    },
+  ]
+
+  const handleContextMenu = (event) => {
+    event.preventDefault()
+    setMenuPos({ x: event.clientX, y: event.clientY })
+  }
+
+  const handleClose = () => {
+    setMenuPos(null)
+  }
+
+  return (
+    <div>
+      <div
+        ref={regionRef}
+        data-menu-example-region="custom"
+        className="menu-example-region"
+        onContextMenu={handleContextMenu}
+      >
+        Right-click here to open a menu with custom component items.
+      </div>
+      {clickedItem ? (
+        <div className="menu-example-click-result">Clicked: {clickedItem}</div>
+      ) : null}
+      {menuPos ? (
+        <MenuContext
+          data={{
+            items: menuItems,
+            position: menuPos,
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'close') {
+              handleClose()
+              return
+            }
+            if (eventType === 'itemClick') {
+              setClickedItem(`${eventData.item.id} (${eventData.item.data?.action})`)
+              return
+            }
+            if (eventType === 'backdropContextMenu') {
+              handleScopedBackdropContextMenu(eventData.event, regionRef, handleClose, handleContextMenu)
+            }
+          }}
+        />
+      ) : null}
     </div>
   )
 }
@@ -259,56 +443,64 @@ const MenuWithDisabledItems = () => {
 const MenuExamplesAll = () => {
   return (
     <div style={{ maxWidth: '800px' }}>
-      <h4 style={{ marginTop: 0, marginBottom: '8px' }}>
+      <div className="menu-example-note">
+        These examples use <code>MenuContext</code>. The package still supports <code>Menu</code> as an alias for compatibility.
+      </div>
+      <div className="menu-example-section-title">
         Single-Level Menu
-      </h4>
+      </div>
       <MenuSingleLevel />
 
-      <h4 style={{ marginTop: '24px', marginBottom: '8px' }}>
+      <div className="menu-example-section-title">
         Multi-Level Menu
         <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
           Hover over items to see submenus
         </span>
-      </h4>
+      </div>
       <MenuMultiLevel />
 
-      <h4 style={{ marginTop: '24px', marginBottom: '8px' }}>
+      <div className="menu-example-section-title">
         Disabled Items
         <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
           Disabled items are greyed out and not clickable
         </span>
-      </h4>
+      </div>
       <MenuWithDisabledItems />
 
-      <h4 style={{ marginTop: '24px', marginBottom: '8px' }}>
+      <div className="menu-example-section-title">
+        Custom Component Items
+        <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
+          Menu items can render caller-provided components
+        </span>
+      </div>
+      <MenuWithCustomComponents />
+
+      <div className="menu-example-section-title">
         Right-Click Repositioning Pattern
         <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#666', marginLeft: '8px' }}>
           Demonstrates correct implementation
         </span>
-      </h4>
+      </div>
       <MenuRightClickExample />
 
       <div style={{ marginTop: '16px', padding: '8px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '2px', fontSize: '12px' }}>
         <strong>Features:</strong>
-        <ul style={{ margin: '4px 0', paddingLeft: '18px' }}>
-          <li>Right-click to open context menu</li>
-          <li>Right-click again (anywhere) to reposition menu</li>
-          <li>Left-click outside or on items to close</li>
-          <li>Supports single-level and multi-level (nested) menus</li>
-          <li>Supports disabled items via <code>disabled: true</code></li>
-          <li>Hover over submenu items to reveal nested options</li>
-          <li>Pass <code>onContextMenu</code> to Menu component for repositioning support</li>
-          <li>Use requestAnimationFrame pattern for clean state updates</li>
-        </ul>
+        <div className="menu-example-feature-list">
+          <div>Right-click to open context menu.</div>
+          <div>Right-click inside the same dashed region to reposition menu.</div>
+          <div>Right-click another dashed region to open that example menu.</div>
+          <div>Left-click outside or on items to close.</div>
+          <div>Supports single-level, multi-level, disabled, and custom component items.</div>
+        </div>
       </div>
     </div>
   )
 }
 
 export const menuExamples = {
-  'Menu': {
-    component: Menu,
-    description: 'Context menu with single-level, multi-level, and right-click repositioning examples',
+  'MenuContext': {
+    component: MenuContext,
+    description: 'MenuContext examples. Menu remains available as a compatibility alias.',
     example: MenuExamplesAll
   }
 }

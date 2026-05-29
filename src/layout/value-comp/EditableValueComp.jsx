@@ -144,20 +144,20 @@ const EditableValueComp = ({
     const items = [];
     
     items.push({
-      type: 'item',
-      name: 'Add Entry Above',
+      id: 'add-entry-above',
+      label: 'Add Entry Above',
       data: { action: 'addEntryAbove' }
     });
     
     items.push({
-      type: 'item',
-      name: 'Add Entry Below',
+      id: 'add-entry-below',
+      label: 'Add Entry Below',
       data: { action: 'addEntryBelow' }
     });
     
     items.push({
-      type: 'item',
-      name: 'Delete Entry',
+      id: 'delete-entry',
+      label: 'Delete Entry',
       data: { action: 'deleteEntry' }
     });
 
@@ -408,11 +408,23 @@ const EditableValueComp = ({
         
         {menuPosition && (
           <Menu
-            items={getMenuItems()}
-            position={menuPosition}
-            onClose={handleCloseMenu}
-            onItemClick={handleMenuItemClick}
-            onContextMenu={handleContextMenu}
+            data={{
+              items: getMenuItems(),
+              position: menuPosition,
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'close') {
+                handleCloseMenu();
+                return;
+              }
+              if (eventType === 'itemClick') {
+                handleMenuItemClick(eventData.item);
+                return;
+              }
+              if (eventType === 'backdropContextMenu') {
+                handleContextMenu(eventData.event);
+              }
+            }}
           />
         )}
       </>
@@ -444,11 +456,23 @@ const EditableValueComp = ({
       
       {menuPosition && (
         <Menu
-          items={getMenuItems()}
-          position={menuPosition}
-          onClose={handleCloseMenu}
-          onItemClick={handleMenuItemClick}
-          onContextMenu={handleContextMenu}
+          data={{
+            items: getMenuItems(),
+            position: menuPosition,
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'close') {
+              handleCloseMenu();
+              return;
+            }
+            if (eventType === 'itemClick') {
+              handleMenuItemClick(eventData.item);
+              return;
+            }
+            if (eventType === 'backdropContextMenu') {
+              handleContextMenu(eventData.event);
+            }
+          }}
         />
       )}
     </>

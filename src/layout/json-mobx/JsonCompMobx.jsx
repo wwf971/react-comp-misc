@@ -247,13 +247,18 @@ const JsonCompMobx = observer(({
         
         {conversionMenu && (
           <MenuComp
-            items={getMenuItems(conversionMenu)}
-            position={conversionMenu.position}
-            onClose={closeMenu}
-            onItemClick={handleMenuItemClick}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              // Keep menu open on backdrop right-click
+            data={{
+              items: getMenuItems(conversionMenu),
+              position: conversionMenu.position,
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'close') {
+                closeMenu();
+                return;
+              }
+              if (eventType === 'itemClick') {
+                handleMenuItemClick(eventData.item);
+              }
             }}
           />
         )}

@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
+import MenuDropDown from '../menu/MenuDropDown.jsx';
 import './ButtonWithDropDown.css';
 
 const ButtonWithDropDown = ({
@@ -7,30 +8,28 @@ const ButtonWithDropDown = ({
   onEvent,
 }) => {
   const rootRef = useRef(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const label = `${data?.label ?? ''}`.trim() || 'Menu';
   const items = Array.isArray(data?.items) ? data.items : [];
+  const emptyText = `${data?.emptyText ?? ''}` || 'No items';
   const isDisabled = Boolean(config?.isDisabled);
   const className = `${config?.className ?? ''}`.trim();
+  const menuClassName = `${config?.menuClassName ?? ''}`.trim();
 
-  useEffect(() => {
-    if (!isMenuOpen) return undefined;
-    const handleDocumentMouseDown = (event) => {
-      const rootElement = rootRef.current;
-      if (!rootElement) return;
-      if (rootElement.contains(event.target)) return;
-      setIsMenuOpen(false);
+  const getMenuPosition = () => {
+    const rootElement = rootRef.current;
+    if (!rootElement) return { x: 0, y: 0 };
+    const rect = rootElement.getBoundingClientRect();
+    return {
+      x: rect.left,
+      y: rect.bottom + 2,
     };
-    document.addEventListener('mousedown', handleDocumentMouseDown, true);
-    return () => {
-      document.removeEventListener('mousedown', handleDocumentMouseDown, true);
-    };
-  }, [isMenuOpen]);
+  };
 
-  const requestItemClick = (item) => {
-    if (item?.isDisabled) return;
-    setIsMenuOpen(false);
-    onEvent?.('itemClick', { itemId: item.id, item });
+  const requestMenuEvent = (eventType, eventData) => {
+    if (eventType !== 'itemClick') return;
+    setIsOpen(false);
+    onEvent?.(eventType, eventData);
   };
 
   return (
@@ -44,31 +43,34 @@ const ButtonWithDropDown = ({
         disabled={isDisabled}
         onClick={() => {
           if (isDisabled) return;
-          setIsMenuOpen((isOpen) => !isOpen);
+          setIsOpen((prevValue) => !prevValue);
         }}
       >
         {label}
       </button>
-      {isMenuOpen ? (
-        <div className="button-with-dropdown-list">
-          {items.length > 0 ? (
-            items.map((item) => (
-              <button
-                key={item.id}
-                className="button-with-dropdown-item"
-                type="button"
-                disabled={Boolean(item?.isDisabled)}
-                onClick={() => requestItemClick(item)}
-              >
-                {`${item?.label ?? item?.id ?? ''}`}
-              </button>
-            ))
-          ) : (
-            <div className="button-with-dropdown-empty">
-              {`${data?.emptyText ?? 'No items'}`}
-            </div>
-          )}
-        </div>
+      {isOpen ? (
+        <>
+          <div
+            className="button-with-dropdown-backdrop"
+            onClick={() => setIsOpen(false)}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              setIsOpen(false);
+            }}
+          />
+          <MenuDropDown
+            data={{
+              items,
+              position: getMenuPosition(),
+              emptyText,
+            }}
+            config={{
+              minWidth: config?.minWidth ?? 130,
+              className: menuClassName,
+            }}
+            onEvent={requestMenuEvent}
+          />
+        </>
       ) : null}
     </div>
   );

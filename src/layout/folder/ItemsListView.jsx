@@ -188,7 +188,7 @@ const ItemsListView = observer(({
     if (!contextMenu || !onDataChangeRequest) return;
     const rowId = contextMenu.rowId;
     setContextMenu(null);
-    if (item.name === 'Delete') {
+    if (item.id === 'delete') {
       await onDataChangeRequest('delete', { rowId });
     }
   };
@@ -429,11 +429,23 @@ const ItemsListView = observer(({
       )}
       {contextMenu && contextMenuItems && (
         <Menu
-          position={{ x: contextMenu.x, y: contextMenu.y }}
-          onClose={() => setContextMenu(null)}
-          onItemClick={handleMenuItemClick}
-          onContextMenu={handleBackdropContextMenu}
-          items={contextMenuItems}
+          data={{
+            items: contextMenuItems,
+            position: { x: contextMenu.x, y: contextMenu.y },
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'close') {
+              setContextMenu(null);
+              return;
+            }
+            if (eventType === 'itemClick') {
+              handleMenuItemClick(eventData.item);
+              return;
+            }
+            if (eventType === 'backdropContextMenu') {
+              handleBackdropContextMenu(eventData.event);
+            }
+          }}
         />
       )}
     </div>
