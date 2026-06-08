@@ -173,8 +173,122 @@ function createTreeViewDemoStore() {
   return observableStore;
 }
 
+function createTreeViewMoveDemoStore() {
+  const itemDataById = {};
+  Object.values(TREE_NODE_CATALOG).forEach((source) => {
+    itemDataById[source.id] = {
+      ...source,
+      isExpanded: source.isLeaf !== true,
+      childrenIds: [...(source.childrenIds || [])],
+      childrenLoadState: 'loaded',
+      childrenErrorMessage: '',
+      isChildrenLoaded: true,
+    };
+  });
+
+  const store = {
+    rootItemIds: ['workspace'],
+    selectedItemId: 'workspace',
+    itemDataById,
+    moveLastText: 'Drag non-root items to reorder the tree.',
+    getItemDataById(itemId) {
+      return this.itemDataById[itemId] || null;
+    },
+    setSelectedItem(itemId) {
+      this.selectedItemId = itemId;
+    },
+    getItemParentId(itemId) {
+      if (this.rootItemIds.includes(itemId)) return null;
+      let parentItemIdFound = null;
+      Object.values(this.itemDataById).forEach((itemData) => {
+        if (parentItemIdFound) return;
+        if ((itemData.childrenIds || []).includes(itemId)) {
+          parentItemIdFound = itemData.id;
+        }
+      });
+      return parentItemIdFound;
+    },
+    getItemChildrenIds(parentItemId) {
+      if (parentItemId === null || parentItemId === undefined) return this.rootItemIds;
+      const parentItemData = this.getItemDataById(parentItemId);
+      return parentItemData?.childrenIds || null;
+    },
+    getIsItemDescendantOfItem(itemId, ancestorItemId) {
+      const ancestorItemData = this.getItemDataById(ancestorItemId);
+      if (!ancestorItemData) return false;
+      const childrenIds = ancestorItemData.childrenIds || [];
+      if (childrenIds.includes(itemId)) return true;
+      return childrenIds.some((childId) => this.getIsItemDescendantOfItem(itemId, childId));
+    },
+    getIsTreeDropAllowed(itemId, drop) {
+      const itemData = this.getItemDataById(itemId);
+      if (!itemData || !drop?.type) return false;
+      if (itemId === 'workspace') return false;
+      if (drop.parentItemId === itemId) return false;
+      if (drop.parentItemId && this.getIsItemDescendantOfItem(drop.parentItemId, itemId)) return false;
+      if (drop.itemBeforeId === itemId || drop.itemAfterId === itemId) return false;
+      if (drop.type === 'under') {
+        const parentItemData = this.getItemDataById(drop.parentItemId);
+        return parentItemData?.isLeaf !== true;
+      }
+      return Boolean(this.getItemChildrenIds(drop.parentItemId));
+    },
+    removeItemFromParent(itemId) {
+      const parentItemId = this.getItemParentId(itemId);
+      const childrenIds = this.getItemChildrenIds(parentItemId);
+      if (!childrenIds) return false;
+      const itemIndex = childrenIds.indexOf(itemId);
+      if (itemIndex < 0) return false;
+      childrenIds.splice(itemIndex, 1);
+      return true;
+    },
+    insertItemAtDrop(itemId, drop) {
+      const childrenIds = this.getItemChildrenIds(drop.parentItemId);
+      if (!childrenIds) return false;
+      if (drop.type === 'under') {
+        childrenIds.push(itemId);
+        const parentItemData = this.getItemDataById(drop.parentItemId);
+        if (parentItemData) {
+          parentItemData.isExpanded = true;
+        }
+        return true;
+      }
+      let insertIndex = childrenIds.length;
+      if (drop.itemAfterId && childrenIds.includes(drop.itemAfterId)) {
+        insertIndex = childrenIds.indexOf(drop.itemAfterId);
+      } else if (drop.itemBeforeId && childrenIds.includes(drop.itemBeforeId)) {
+        insertIndex = childrenIds.indexOf(drop.itemBeforeId) + 1;
+      }
+      childrenIds.splice(insertIndex, 0, itemId);
+      return true;
+    },
+    async onTreeDataChangeRequest(type, params) {
+      if (type === 'toggle-expand') {
+        const itemData = this.getItemDataById(params.itemId);
+        if (!itemData || itemData.isLeaf === true) return { code: -1 };
+        itemData.isExpanded = params.nextIsExpanded;
+        return { code: 0 };
+      }
+      if (type !== 'move-item') return { code: 0 };
+      const itemId = params?.itemId;
+      const drop = params?.drop;
+      if (!this.getIsTreeDropAllowed(itemId, drop)) {
+        this.moveLastText = 'Move rejected.';
+        return { code: -1 };
+      }
+      if (!this.removeItemFromParent(itemId)) return { code: -1 };
+      if (!this.insertItemAtDrop(itemId, drop)) return { code: -1 };
+      this.selectedItemId = itemId;
+      this.moveLastText = `Moved ${this.getItemDataById(itemId)?.text || itemId} ${drop.type}.`;
+      return { code: 0 };
+    },
+  };
+  return makeAutoObservable(store, {}, { autoBind: true });
+}
+
 const TreeExamplesPanel = observer(() => {
   const [lazyTreeStore] = useState(() => createTreeViewDemoStore());
+  const [moveTreeStore] = useState(() => createTreeViewMoveDemoStore());
   const [contextTreeStore] = useState(() => createTreeViewDemoStore());
   const [treeFilterText, setTreeFilterText] = useState('');
   const [treeFilterSelectedItemId, setTreeFilterSelectedItemId] = useState('workspace');
@@ -327,6 +441,32 @@ const TreeExamplesPanel = observer(() => {
             selectedItemId={lazyTreeStore.selectedItemId}
             onItemClick={(itemId) => lazyTreeStore.setSelectedItem(itemId)}
             getItemComp={getTreeItemComp}
+          />
+        </div>
+      </div>
+
+      <div className="tree-example-block">
+        <div className="tree-example-title">Tree View with Drag Reorder</div>
+        <div className="tree-example-desc">
+          Drag non-root items to sibling positions or under folders. The render component only sends move requests; the store accepts or rejects them.
+        </div>
+        <div className="tree-example-meta">
+          {moveTreeStore.moveLastText}
+        </div>
+        <div className="tree-example-box">
+          <TreeView
+            className="tree-view-fixed-height"
+            rootItemIds={moveTreeStore.rootItemIds}
+            getItemDataById={moveTreeStore.getItemDataById}
+            onDataChangeRequest={moveTreeStore.onTreeDataChangeRequest}
+            selectedItemId={moveTreeStore.selectedItemId}
+            onItemClick={(itemId) => moveTreeStore.setSelectedItem(itemId)}
+            getItemComp={getTreeItemComp}
+            isItemDragEnabled={true}
+            getIsItemDraggable={(itemData) => itemData?.id !== 'workspace'}
+            getItemDropStatus={({ itemId, drop }) => ({
+              isDropAllowed: moveTreeStore.getIsTreeDropAllowed(itemId, drop),
+            })}
           />
         </div>
       </div>

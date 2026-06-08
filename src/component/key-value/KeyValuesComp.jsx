@@ -380,18 +380,29 @@ const KeyValuesCompInner = ({
       if (ref) {
         const cell = ref.closest('.keyvalues-cell');
         if (cell) {
-          // Temporarily remove width constraint to measure natural size
-          const originalWidth = cell.style.width;
-          const originalFlexShrink = cell.style.flexShrink;
-          cell.style.width = 'auto';
-          cell.style.flexShrink = '0';
-          
-          // Measure the natural width of the cell
-          const cellWidth = cell.offsetWidth;
-          
-          // Restore original styles
-          cell.style.width = originalWidth;
-          cell.style.flexShrink = originalFlexShrink;
+          const cellStyle = window.getComputedStyle(cell);
+          const paddingLeft = parseFloat(cellStyle.paddingLeft) || 0;
+          const paddingRight = parseFloat(cellStyle.paddingRight) || 0;
+          const clone = ref.cloneNode(true);
+          clone.style.position = 'fixed';
+          clone.style.left = '-10000px';
+          clone.style.top = '-10000px';
+          clone.style.visibility = 'hidden';
+          clone.style.width = 'auto';
+          clone.style.maxWidth = 'none';
+          clone.style.whiteSpace = 'nowrap';
+          clone.style.wordBreak = 'normal';
+          clone.style.display = 'inline-block';
+          clone.querySelectorAll('*').forEach((element) => {
+            element.style.width = 'auto';
+            element.style.maxWidth = 'none';
+            element.style.whiteSpace = 'nowrap';
+            element.style.wordBreak = 'normal';
+            element.style.display = 'inline-block';
+          });
+          document.body.appendChild(clone);
+          const cellWidth = Math.ceil(clone.getBoundingClientRect().width + paddingLeft + paddingRight);
+          document.body.removeChild(clone);
           
           if (cellWidth > maxWidth) {
             maxWidth = cellWidth;

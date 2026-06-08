@@ -73,7 +73,7 @@ const EndpointCard = ({
     isSelectable = false,
     isCardDisabled = false,
     actionItems = [],
-    keyColWidth = '80px',
+    keyColWidth = 'min',
     statusTagClassName = '',
     showStatusDot = false,
     selectedDetailText = '',
@@ -85,8 +85,8 @@ const EndpointCard = ({
   const isRootDisabled = isInteractionLocked || isUnavailable
 
   const emitEvent = (eventType, eventData = {}) => {
-    if (!onEvent) return
-    onEvent(eventType, { id, ...eventData })
+    if (!onEvent) return undefined
+    return onEvent(eventType, { id, ...eventData })
   }
 
   const handleActionClick = async (actionItem, event) => {

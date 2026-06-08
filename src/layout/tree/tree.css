@@ -22,20 +22,67 @@
   padding: 0 4px;
   cursor: pointer;
   user-select: none;
+  position: relative;
 }
 
 .tree-view-row:hover {
-  background: #f8f8f8;
+  background: transparent;
 }
 
 .tree-view-row.selected {
+  background: transparent;
+}
+
+.tree-view-row:hover .tree-view-toggle-btn:not(.is-empty),
+.tree-view-row:hover .tree-view-label {
+  background: #f8f8f8;
+}
+
+.tree-view-row.selected .tree-view-toggle-btn:not(.is-empty),
+.tree-view-row.selected .tree-view-label {
   background: #e3f2fd;
 }
 
+.tree-view-row.is-dragged {
+  opacity: 0.45;
+}
+
+.tree-view-row.is-insert-under .tree-view-label {
+  background: #e8f2ff;
+  outline: 1px solid #2196f3;
+}
+
+.tree-view-row.is-drop-blocked .tree-view-label {
+  background: #fff1f1;
+  outline: 1px solid #c62828;
+}
+
+.tree-view-drop-line {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background: #2196f3;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.tree-view-drop-line-before {
+  top: -1px;
+}
+
+.tree-view-drop-line-after {
+  bottom: -1px;
+}
+
+.tree-view-row.is-drop-blocked .tree-view-drop-line {
+  background: #c62828;
+}
+
 .tree-view-toggle-btn {
-  width: 14px;
+  width: auto;
   height: 14px;
-  min-width: 14px;
+  min-width: 0;
   border: none;
   padding: 0;
   margin: 0;
@@ -54,6 +101,7 @@
 
 .tree-view-toggle-btn.is-empty {
   cursor: default;
+  display: none;
 }
 
 .tree-view-label {
@@ -63,24 +111,8 @@
   flex: 1;
 }
 
-.tree-view-row.is-leaf:hover {
-  background: transparent;
-}
-
-.tree-view-row.is-leaf.selected {
-  background: transparent;
-}
-
 .tree-view-row.is-leaf .tree-view-label {
-  padding-left: 2px;
-}
-
-.tree-view-row.is-leaf:hover .tree-view-label {
-  background: #f8f8f8;
-}
-
-.tree-view-row.is-leaf.selected .tree-view-label {
-  background: #e3f2fd;
+  padding-left: 0;
 }
 
 .tree-view-text-item {

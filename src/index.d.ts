@@ -311,7 +311,7 @@ export type EndpointCardConfig = {
 export type EndpointCardProps = {
   data?: EndpointCardData;
   config?: EndpointCardConfig;
-  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<void> | void;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
 };
 export const EndpointCard: ComponentType<EndpointCardProps>;
 export const FolderHeader: ComponentType<FolderHeaderProps>;
@@ -347,15 +347,20 @@ export type ButtonWithDropDownItem = {
 
 export type ButtonWithDropDownProps = {
   data?: {
-    label?: string;
+    label?: ReactNode;
     items?: ButtonWithDropDownItem[];
     emptyText?: string;
   };
   config?: {
     isDisabled?: boolean;
     className?: string;
+    buttonClassName?: string;
     menuClassName?: string;
+    itemClassName?: string;
+    disabledItemClassName?: string;
     minWidth?: number;
+    menuAlign?: 'left' | 'right';
+    isClickPropagationStopped?: boolean;
   };
   onEvent?: (eventType: string, eventData: any) => void;
 };
@@ -386,6 +391,9 @@ export type MenuCoreProps = {
   config?: {
     minWidth?: number;
     className?: string;
+    itemClassName?: string;
+    disabledItemClassName?: string;
+    isClickPropagationStopped?: boolean;
   };
   onEvent?: (eventType: string, eventData: any) => void;
 };
@@ -401,6 +409,9 @@ export type MenuDropDownProps = {
   config?: {
     className?: string;
     minWidth?: number;
+    itemClassName?: string;
+    disabledItemClassName?: string;
+    isClickPropagationStopped?: boolean;
   };
   onEvent?: (eventType: string, eventData: any) => void;
 };

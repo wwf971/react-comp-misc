@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import MenuCore from './MenuCore.jsx';
 import './Menu.css';
 
@@ -24,7 +25,7 @@ const MenuContext = ({
     onEvent?.(eventType, eventData);
   };
 
-  return (
+  return createPortal((
     <>
       <div
         className="menu-backdrop"
@@ -41,7 +42,7 @@ const MenuContext = ({
         onEvent={requestMenuEvent}
       />
     </>
-  );
+  ), document.body);
 };
 
 export default MenuContext;

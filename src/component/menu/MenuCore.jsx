@@ -64,6 +64,9 @@ const MenuCore = ({
   const position = data?.position ?? { x: 0, y: 0 };
   const minWidth = config?.minWidth ?? 120;
   const className = `${config?.className ?? ''}`.trim();
+  const itemClassName = `${config?.itemClassName ?? ''}`.trim();
+  const disabledItemClassName = `${config?.disabledItemClassName ?? ''}`.trim();
+  const isClickPropagationStopped = Boolean(config?.isClickPropagationStopped);
 
   useEffect(() => {
     setHoveredItemId(null);
@@ -77,6 +80,9 @@ const MenuCore = ({
   }, [position.x, position.y, items.length]);
 
   const requestItemClick = (item, event) => {
+    if (isClickPropagationStopped) {
+      event.stopPropagation();
+    }
     if (event.button !== 0) return;
     if (isItemDisabled(item)) return;
     if (getItemChildren(item).length > 0) return;
@@ -122,7 +128,7 @@ const MenuCore = ({
           return (
             <React.Fragment key={itemId}>
               <button
-                className={`menu-core-item ${children.length > 0 ? 'has-submenu' : ''} ${isDisabled ? 'disabled' : ''}`}
+                className={`menu-core-item ${itemClassName} ${children.length > 0 ? 'has-submenu' : ''} ${isDisabled ? `disabled ${disabledItemClassName}` : ''}`}
                 type="button"
                 aria-disabled={isDisabled ? 'true' : 'false'}
                 onClick={(event) => requestItemClick(item, event)}
@@ -146,6 +152,9 @@ const MenuCore = ({
                   }}
                   config={{
                     minWidth,
+                    itemClassName,
+                    disabledItemClassName,
+                    isClickPropagationStopped,
                   }}
                   onEvent={onEvent}
                 />

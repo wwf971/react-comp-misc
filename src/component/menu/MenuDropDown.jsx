@@ -21,6 +21,9 @@ const MenuDropDown = ({
       config={{
         minWidth: config?.minWidth ?? 130,
         className: `menu-dropdown-panel ${className}`.trim(),
+        itemClassName: config?.itemClassName,
+        disabledItemClassName: config?.disabledItemClassName,
+        isClickPropagationStopped: config?.isClickPropagationStopped,
       }}
       onEvent={(eventType, eventData) => {
         if (eventType !== 'itemClick') return;
