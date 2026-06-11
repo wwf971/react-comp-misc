@@ -99,7 +99,27 @@ export const JsonRaw: ComponentType<any>;
 export const JsonContextProvider: ComponentType<any>;
 export function useJsonContext(...args: any[]): any;
 export * from './layout/json/typeConvert';
-export const JsonCompMobx: ComponentType<any>;
+export type JsonCompMobxValueCompContext = {
+  path: string;
+  value: unknown;
+  data: unknown;
+  itemKey: string | number;
+  valueType: string;
+};
+
+export type JsonCompMobxProps = {
+  data?: unknown;
+  isEditable?: boolean;
+  isKeyEditable?: boolean;
+  isValueEditable?: boolean;
+  onChange?: (path: string, changeData: unknown) => Promise<{ code: number; message?: string }>;
+  indent?: number;
+  typeConversionBehavior?: string;
+  isDebug?: boolean;
+  getValueComp?: (context: JsonCompMobxValueCompContext) => ReactNode;
+};
+
+export const JsonCompMobx: ComponentType<JsonCompMobxProps>;
 
 export function parseYamlToJson(...args: any[]): any;
 export function parseJsonString(...args: any[]): any;

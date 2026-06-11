@@ -22,6 +22,7 @@ const JsonKeyValueComp = observer(({
   isValueEditable,
   onChange,
   depth,
+  getValueComp,
   children 
 }) => {
   // Call all hooks first (before any conditional returns)
@@ -194,6 +195,17 @@ const JsonKeyValueComp = observer(({
     
     if (!isPrimitive) {
       return <span className="json-value-complex">{children}</span>;
+    }
+
+    if (getValueComp) {
+      const CustomValueComp = getValueComp({
+        path: resolvePath(),
+        value,
+        data,
+        itemKey,
+        valueType,
+      });
+      if (CustomValueComp) return CustomValueComp;
     }
 
     if (valueType === 'null') {

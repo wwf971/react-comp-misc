@@ -19,7 +19,8 @@ const ItemWrapperArray = observer(({
   onChange,
   indent,
   depth,
-  JsonCompMobx
+  JsonCompMobx,
+  getValueComp
 }) => {
   // Use itemData directly instead of data[index] to avoid MobX tracking
   const item = itemData !== undefined ? itemData : data[index];
@@ -62,6 +63,7 @@ const ItemWrapperArray = observer(({
         isEditable={isEditable && isValueEditable}
         onChange={onChange}
         depth={depth}
+        getValueComp={getValueComp}
       >
         <JsonCompMobx
           data={item}
@@ -73,6 +75,7 @@ const ItemWrapperArray = observer(({
           pathPrefix={getItemPath()}
           depth={depth + 1}
           isArrayItem={true}
+          getValueComp={getValueComp}
         />
       </JsonListItemComp>
       {!isLastItem && isPrimitive && <span className="json-comma">,</span>}

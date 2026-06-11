@@ -18,7 +18,8 @@ const ItemWrapperObject = observer(({
   indent,
   depth,
   isLastItem,
-  JsonCompMobx
+  JsonCompMobx,
+  getValueComp
 }) => {
   const keyPathRef = useDerivedPathRef(pathPrefixRef, itemKey);
   const keyPath = keyPathRef.current;
@@ -38,6 +39,7 @@ const ItemWrapperObject = observer(({
         isValueEditable={isValueEditable}
         onChange={onChange}
         depth={depth}
+        getValueComp={getValueComp}
       >
         <JsonCompMobx
           data={value}
@@ -49,6 +51,7 @@ const ItemWrapperObject = observer(({
           pathPrefix=""
           pathPrefixRef={keyPathRef}
           depth={depth + 1}
+          getValueComp={getValueComp}
         />
       </JsonKeyValueComp>
       {!isLastItem && isPrimitive && <span className="json-comma">,</span>}

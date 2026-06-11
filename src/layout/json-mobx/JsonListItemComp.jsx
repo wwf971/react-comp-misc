@@ -16,6 +16,7 @@ const JsonListItemComp = ({
   isEditable,
   onChange,
   depth,
+  getValueComp,
   children 
 }) => {
   const isPrimitive = itemData === null || itemData === undefined || typeof itemData !== 'object';
@@ -24,6 +25,17 @@ const JsonListItemComp = ({
   const renderComponent = () => {
     if (!isPrimitive) {
       return <span className="json-list-item-complex">{children}</span>;
+    }
+
+    if (getValueComp) {
+      const CustomValueComp = getValueComp({
+        path: getPath ? getPath() : '',
+        value: itemData,
+        data: parentData,
+        itemKey: index,
+        valueType: dataType,
+      });
+      if (CustomValueComp) return CustomValueComp;
     }
 
     if (dataType === 'null') {

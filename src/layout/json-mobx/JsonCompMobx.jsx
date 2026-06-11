@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { keys as mobxKeys } from 'mobx';
+import { keys as mobxKeys, isObservable, observable } from 'mobx';
 import JsonKeyValueComp from './JsonKeyValueComp';
 import { getKeyIdentity, getOrderedKeys } from './keyOrderStore';
 import PseudoKeyValueComp from './PseudoKeyValueComp';
@@ -35,7 +35,7 @@ import './JsonComp.css';
  * @param {boolean} isArrayItem - Internal: whether this object is an array item
  */
 const JsonCompMobx = observer(({ 
-  data, 
+  data: dataRaw, 
   isEditable = true,
   isKeyEditable = false,
   isValueEditable = true,
@@ -43,6 +43,7 @@ const JsonCompMobx = observer(({
   indent = 20,
   typeConversionBehavior = 'allow',
   isDebug = false,
+  getValueComp,
   pathPrefix = '',
   pathPrefixRef,
   depth = 0,
@@ -55,6 +56,12 @@ const JsonCompMobx = observer(({
   
   // Use state for root, prop for nested
   const isRoot = depth === 0;
+  const data = React.useMemo(() => {
+    if (!isRoot || dataRaw === null || typeof dataRaw !== 'object' || isObservable(dataRaw)) {
+      return dataRaw;
+    }
+    return observable(dataRaw);
+  }, [dataRaw, isRoot]);
 
   // Handle conversion menu request from value components
   const showConversionMenu = useCallback((request) => {
@@ -121,6 +128,7 @@ const JsonCompMobx = observer(({
               indent={indent}
               depth={depth}
               JsonCompMobx={JsonCompMobx}
+              getValueComp={getValueComp}
             />
           ))}
         </div>
@@ -205,6 +213,7 @@ const JsonCompMobx = observer(({
                   depth={depth}
                   isLastItem={isLastItem}
                   JsonCompMobx={JsonCompMobx}
+                  getValueComp={getValueComp}
                 />
               );
           } else {
