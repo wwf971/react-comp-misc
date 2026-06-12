@@ -1,9 +1,47 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import JsonCompMobx from './JsonCompMobx';
+import JsonCompMobx, { createJsonSelectionOperationStore } from './JsonCompMobx';
 import BoolSlider from '../../component/button/BoolSlider';
 import { createHandleChange } from './exampleHandleChange';
+
+const JsonMobxCustomValue = ({ path, value }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const valueText = String(value ?? '');
+  const previewText = valueText.length > 96 ? `${valueText.slice(0, 96)}...` : valueText;
+
+  return (
+    <span className="json-mobx-custom-value">
+      <span className="json-mobx-custom-value-text">
+        {isExpanded ? valueText : previewText}
+      </span>
+      {valueText.length > 96 ? (
+        <button
+          type="button"
+          className="json-mobx-custom-value-button"
+          onClick={() => setIsExpanded((valuePrevious) => !valuePrevious)}
+        >
+          {isExpanded ? 'Collapse' : 'Show full'}
+        </button>
+      ) : null}
+      <span className="json-mobx-custom-value-path">{path}</span>
+    </span>
+  );
+};
+
+const JsonMobxSelectionStatus = observer(({ selectionOperationStore }) => {
+  const { selectedItemMeta, isSelectionActive } = selectionOperationStore;
+  const statusText = isSelectionActive && selectedItemMeta
+    ? `${selectedItemMeta.itemKind}: ${selectedItemMeta.path || selectedItemMeta.label}`
+    : 'No selection';
+
+  return (
+    <div className="json-selection-status-line">
+      Shift click an item to select it. Shift click the selected item again to expand the selection.
+      <span> Current selection: {statusText}</span>
+    </div>
+  );
+});
 
 /**
  * Example demonstrating MobX-based JSON component with in-place mutations
@@ -39,9 +77,39 @@ const JsonMobxExample = observer(() => {
   const [isEditable, setIsEditable] = useState(true);
   const [isKeyEditable, setIsKeyEditable] = useState(true);
   const [isDebug, setIsDebug] = useState(false);
+  const selectionOperationStore = useMemo(() => createJsonSelectionOperationStore(), []);
+  const selectionExampleData = useMemo(() => makeAutoObservable({
+    account: {
+      name: 'Alice Smith',
+      teams: [
+        {
+          name: 'Product',
+          role: 'owner',
+        },
+        {
+          name: 'Support',
+          role: 'reviewer',
+        },
+      ],
+    },
+    tags: ['important', 'verified'],
+  }, {}, { deep: true }), []);
+  const customValueData = useMemo(() => ({
+    title: 'Tool Result',
+    status: 'success',
+    notes: {
+      longText: 'This custom renderer demonstrates getValueComp. The normal JSON tree still comes from JsonCompMobx, but this one primitive value is rendered with a custom component that can show an abbreviated preview and expand inline.',
+      shortText: 'Rendered by the default JsonCompMobx string value component.'
+    },
+    count: 3
+  }), []);
 
   // Create the onChange handler using the helper function
   const handleChange = useMemo(() => createHandleChange(observableData), [observableData]);
+  const getCustomValueComp = useCallback(({ path, value }) => {
+    if (path !== 'notes.longText') return null;
+    return <JsonMobxCustomValue path={path} value={value} />;
+  }, []);
 
   return (
     <div style={{ maxWidth: '900px', padding: '20px' }}>
@@ -85,6 +153,33 @@ const JsonMobxExample = observer(() => {
           isDebug={isDebug}
           onChange={handleChange}
         />
+      </div>
+
+      <div className="json-selection-demo-panel">
+        <JsonCompMobx
+          data={selectionExampleData}
+          isEditable={false}
+          isKeyEditable={false}
+          isValueEditable={false}
+          selectionOperationStore={selectionOperationStore}
+        />
+        <JsonMobxSelectionStatus selectionOperationStore={selectionOperationStore} />
+      </div>
+
+      <div className="json-mobx-example-section">
+        <strong>Custom primitive value renderer</strong>
+        <div className="json-mobx-example-note">
+          The path notes.longText is rendered by getValueComp. Other values use the default renderers.
+        </div>
+        <div className="json-mobx-example-panel">
+          <JsonCompMobx
+            data={customValueData}
+            isEditable={false}
+            isKeyEditable={false}
+            isValueEditable={false}
+            getValueComp={getCustomValueComp}
+          />
+        </div>
       </div>
 
       <div style={{ marginTop: '0', padding: '10px 12px', background: '#fff3e0', border: '1px solid #ff9800', borderRadius: '2px', fontSize: '12px' }}>

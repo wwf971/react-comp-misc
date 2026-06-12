@@ -199,18 +199,18 @@ function createTreeViewMoveDemoStore() {
     },
     getItemParentId(itemId) {
       if (this.rootItemIds.includes(itemId)) return null;
-      let parentItemIdFound = null;
+      let itemParentIdFound = null;
       Object.values(this.itemDataById).forEach((itemData) => {
-        if (parentItemIdFound) return;
+        if (itemParentIdFound) return;
         if ((itemData.childrenIds || []).includes(itemId)) {
-          parentItemIdFound = itemData.id;
+          itemParentIdFound = itemData.id;
         }
       });
-      return parentItemIdFound;
+      return itemParentIdFound;
     },
-    getItemChildrenIds(parentItemId) {
-      if (parentItemId === null || parentItemId === undefined) return this.rootItemIds;
-      const parentItemData = this.getItemDataById(parentItemId);
+    getItemChildrenIds(itemParentId) {
+      if (itemParentId === null || itemParentId === undefined) return this.rootItemIds;
+      const parentItemData = this.getItemDataById(itemParentId);
       return parentItemData?.childrenIds || null;
     },
     getIsItemDescendantOfItem(itemId, ancestorItemId) {
@@ -224,18 +224,18 @@ function createTreeViewMoveDemoStore() {
       const itemData = this.getItemDataById(itemId);
       if (!itemData || !drop?.type) return false;
       if (itemId === 'workspace') return false;
-      if (drop.parentItemId === itemId) return false;
-      if (drop.parentItemId && this.getIsItemDescendantOfItem(drop.parentItemId, itemId)) return false;
+      if (drop.itemParentId === itemId) return false;
+      if (drop.itemParentId && this.getIsItemDescendantOfItem(drop.itemParentId, itemId)) return false;
       if (drop.itemBeforeId === itemId || drop.itemAfterId === itemId) return false;
       if (drop.type === 'under') {
-        const parentItemData = this.getItemDataById(drop.parentItemId);
+        const parentItemData = this.getItemDataById(drop.itemParentId);
         return parentItemData?.isLeaf !== true;
       }
-      return Boolean(this.getItemChildrenIds(drop.parentItemId));
+      return Boolean(this.getItemChildrenIds(drop.itemParentId));
     },
     removeItemFromParent(itemId) {
-      const parentItemId = this.getItemParentId(itemId);
-      const childrenIds = this.getItemChildrenIds(parentItemId);
+      const itemParentId = this.getItemParentId(itemId);
+      const childrenIds = this.getItemChildrenIds(itemParentId);
       if (!childrenIds) return false;
       const itemIndex = childrenIds.indexOf(itemId);
       if (itemIndex < 0) return false;
@@ -243,11 +243,11 @@ function createTreeViewMoveDemoStore() {
       return true;
     },
     insertItemAtDrop(itemId, drop) {
-      const childrenIds = this.getItemChildrenIds(drop.parentItemId);
+      const childrenIds = this.getItemChildrenIds(drop.itemParentId);
       if (!childrenIds) return false;
       if (drop.type === 'under') {
         childrenIds.push(itemId);
-        const parentItemData = this.getItemDataById(drop.parentItemId);
+        const parentItemData = this.getItemDataById(drop.itemParentId);
         if (parentItemData) {
           parentItemData.isExpanded = true;
         }

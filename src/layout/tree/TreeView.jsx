@@ -77,7 +77,7 @@ const getTreeDropInfoFromEvent = ({
   event,
   itemId,
   itemData,
-  parentItemId,
+  itemParentId,
   itemPreviousId,
   itemNextId,
 }) => {
@@ -91,7 +91,7 @@ const getTreeDropInfoFromEvent = ({
       targetItemId: itemId,
       drop: {
         type: 'under',
-        parentItemId: itemId,
+        itemParentId: itemId,
         itemBeforeId: null,
         itemAfterId: null,
       },
@@ -103,7 +103,7 @@ const getTreeDropInfoFromEvent = ({
       targetItemId: itemId,
       drop: {
         type: 'before',
-        parentItemId,
+        itemParentId,
         itemBeforeId: itemPreviousId ?? null,
         itemAfterId: itemId,
       },
@@ -114,7 +114,7 @@ const getTreeDropInfoFromEvent = ({
     targetItemId: itemId,
     drop: {
       type: 'after',
-      parentItemId,
+      itemParentId,
       itemBeforeId: itemId,
       itemAfterId: itemNextId ?? null,
     },
@@ -128,7 +128,7 @@ const TreeTextItemComp = ({ itemData }) => {
 
 const TreeItemNode = observer(({
   itemId,
-  parentItemId = null,
+  itemParentId = null,
   itemPreviousId = null,
   itemNextId = null,
   depth = 0,
@@ -236,7 +236,7 @@ const TreeItemNode = observer(({
       event,
       itemId,
       itemData,
-      parentItemId,
+      itemParentId,
       itemPreviousId,
       itemNextId,
     });
@@ -339,7 +339,7 @@ const TreeItemNode = observer(({
             <TreeItemNode
               key={childId}
               itemId={childId}
-              parentItemId={itemId}
+              itemParentId={itemId}
               itemPreviousId={childrenIds[childIndex - 1] ?? null}
               itemNextId={childrenIds[childIndex + 1] ?? null}
               depth={depth + 1}
@@ -390,7 +390,7 @@ const TreeView = observer(({
         <TreeItemNode
           key={itemId}
           itemId={itemId}
-          parentItemId={null}
+          itemParentId={null}
           itemPreviousId={rootItemIds[itemIndex - 1] ?? null}
           itemNextId={rootItemIds[itemIndex + 1] ?? null}
           depth={0}

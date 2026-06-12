@@ -13,6 +13,10 @@ import { JsonContextProvider } from './JsonContext';
 import MenuComp from '../../component/menu/MenuComp';
 import { handleMenuItemClick as handleMenuItemClickImpl } from './menuClick';
 import { getMenuItems } from './menuItems';
+import {
+  JSON_ROOT_SELECTION_ITEM_ID,
+  createJsonSelectionOperationStore,
+} from './jsonSelectionOperationStore';
 import './JsonComp.css';
 
 /**
@@ -47,7 +51,9 @@ const JsonCompMobx = observer(({
   pathPrefix = '',
   pathPrefixRef,
   depth = 0,
-  isArrayItem = false
+  isArrayItem = false,
+  parentSelectionItemId = JSON_ROOT_SELECTION_ITEM_ID,
+  selectionOperationStore
 }) => {
   const [conversionMenu, setConversionMenu] = useState(null);
   const localPathPrefixRef = usePathRef(pathPrefix);
@@ -62,6 +68,19 @@ const JsonCompMobx = observer(({
     }
     return observable(dataRaw);
   }, [dataRaw, isRoot]);
+  const localSelectionOperationStore = React.useMemo(() => createJsonSelectionOperationStore(), []);
+  const activeSelectionOperationStore = selectionOperationStore || localSelectionOperationStore;
+
+  React.useEffect(() => {
+    if (!isRoot) return;
+    activeSelectionOperationStore.registerItem({
+      itemId: JSON_ROOT_SELECTION_ITEM_ID,
+      itemParentId: null,
+      path: '',
+      itemKind: 'root',
+      label: 'root',
+    });
+  }, [activeSelectionOperationStore, isRoot]);
 
   // Handle conversion menu request from value components
   const showConversionMenu = useCallback((request) => {
@@ -110,6 +129,7 @@ const JsonCompMobx = observer(({
     for (let i = 0; i < data.length; i++) {
       indices.push(i);
     }
+    const childParentSelectionItemId = isRoot ? JSON_ROOT_SELECTION_ITEM_ID : parentSelectionItemId;
 
     return (
       <div className={`json-array ${isArrayItem ? 'json-array-in-array' : ''}`} style={{ '--depth': depth, '--json-indent': `${indent}px` }}>
@@ -129,6 +149,7 @@ const JsonCompMobx = observer(({
               depth={depth}
               JsonCompMobx={JsonCompMobx}
               getValueComp={getValueComp}
+              parentSelectionItemId={childParentSelectionItemId}
             />
           ))}
         </div>
@@ -141,8 +162,6 @@ const JsonCompMobx = observer(({
   // MobX keys() tracks structural changes (add/remove/rename keys)
   const rawKeys = mobxKeys(data).filter(key => key !== '__mobxVersion');
   const allKeys = getOrderedKeys(data, rawKeys);
-  
-  // console.log('JsonCompMobx rendering OBJECT with keys:', allKeys, 'pathPrefix:', activePathPrefix);
   
   // Separate pseudo keys from regular keys
   const pseudoKeys = allKeys.filter(k => k.startsWith('__pseudo__'));
@@ -186,6 +205,7 @@ const JsonCompMobx = observer(({
       orderedItems.push({ type: 'pseudo', key: pseudoKey, pseudoData });
     }
   });
+  const childParentSelectionItemId = isRoot ? JSON_ROOT_SELECTION_ITEM_ID : parentSelectionItemId;
 
   return (
     <div className={`json-object ${isArrayItem ? 'json-object-in-array' : ''}`} style={{ '--depth': depth, '--json-indent': `${indent}px` }}>
@@ -214,6 +234,7 @@ const JsonCompMobx = observer(({
                   isLastItem={isLastItem}
                   JsonCompMobx={JsonCompMobx}
                   getValueComp={getValueComp}
+                  parentSelectionItemId={childParentSelectionItemId}
                 />
               );
           } else {
@@ -245,14 +266,45 @@ const JsonCompMobx = observer(({
 
   // Root component wraps with context provider and menu
   if (isRoot) {
+    const rootSelectionState = activeSelectionOperationStore.getItemSelectionState(JSON_ROOT_SELECTION_ITEM_ID);
+    const handleRootSelectionMouseDownCapture = (event) => {
+      if (!event.shiftKey && (event.button === 0 || event.button === 2)) {
+        activeSelectionOperationStore.clearSelection();
+        return;
+      }
+      if (!event.shiftKey || event.button !== 0) return;
+      if (event.target.closest('.json-selection-item')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      activeSelectionOperationStore.selectNextFromItem(JSON_ROOT_SELECTION_ITEM_ID);
+    };
+    const handleRootSelectionClickCapture = (event) => {
+      if (!event.shiftKey || event.button !== 0) return;
+      if (event.target.closest('.json-selection-item')) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    const rootSelectionClassName = [
+      'json-root-selection-item',
+      rootSelectionState.isSelected ? 'is-json-selected' : '',
+      rootSelectionState.isSelectionAncestor ? 'is-json-selection-ancestor' : '',
+    ].filter(Boolean).join(' ');
+
     return (
       <JsonContextProvider 
         typeConversionBehavior={typeConversionBehavior}
         showConversionMenu={showConversionMenu}
         rootData={data}
         isDebug={isDebug}
+        selectionOperationStore={activeSelectionOperationStore}
       >
-        {renderContent()}
+        <div
+          className={rootSelectionClassName}
+          onMouseDownCapture={handleRootSelectionMouseDownCapture}
+          onClickCapture={handleRootSelectionClickCapture}
+        >
+          {renderContent()}
+        </div>
         
         {conversionMenu && (
           <MenuComp
@@ -282,3 +334,4 @@ const JsonCompMobx = observer(({
 JsonCompMobx.displayName = 'JsonCompMobx';
 
 export default JsonCompMobx;
+export { createJsonSelectionOperationStore };

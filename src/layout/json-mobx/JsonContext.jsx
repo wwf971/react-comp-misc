@@ -3,12 +3,20 @@ import { getOrderedKeys } from './keyOrderStore';
 
 const JsonContext = createContext({
   typeConversionBehavior: 'allow',
-  isDebug: false
+  isDebug: false,
+  selectionOperationStore: null
 });
 
 export const useJsonContext = () => useContext(JsonContext);
 
-export const JsonContextProvider = ({ children, typeConversionBehavior = 'allow', showConversionMenu, rootData, isDebug = false }) => {
+export const JsonContextProvider = ({
+  children,
+  typeConversionBehavior = 'allow',
+  showConversionMenu,
+  rootData,
+  isDebug = false,
+  selectionOperationStore = null
+}) => {
   // Query function to check if a path is the only entry/item in its parent
   const queryParentInfo = useMemo(() => {
     if (!rootData) return undefined;
@@ -118,8 +126,8 @@ export const JsonContextProvider = ({ children, typeConversionBehavior = 'allow'
   }, [rootData]);
   
   const contextValue = useMemo(
-    () => ({ typeConversionBehavior, showConversionMenu, queryParentInfo, isDebug }),
-    [typeConversionBehavior, showConversionMenu, queryParentInfo, isDebug]
+    () => ({ typeConversionBehavior, showConversionMenu, queryParentInfo, isDebug, selectionOperationStore }),
+    [typeConversionBehavior, showConversionMenu, queryParentInfo, isDebug, selectionOperationStore]
   );
 
   return (
