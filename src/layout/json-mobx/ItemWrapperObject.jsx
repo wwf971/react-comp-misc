@@ -4,6 +4,7 @@ import { useDerivedPathRef } from './pathRef';
 import JsonKeyValueComp from './JsonKeyValueComp';
 import { useJsonContext } from './JsonContext';
 import { getJsonObjectSelectionItemId } from './jsonSelectionOperationStore';
+import { getIsJsonDropAllowedByDefault, getJsonDropInfoFromEvent } from './jsonDragMove';
 
 /**
  * ObjectItemWrapper - Isolated observer for each object key-value pair
@@ -20,35 +21,46 @@ const ItemWrapperObject = observer(({
   indent,
   depth,
   isLastItem,
-  JsonCompMobx,
+  renderNestedJsonValue,
   getValueComp,
-  parentSelectionItemId
+  parentSelectionItemId,
+  itemPreviousPath,
+  itemNextPath
 }) => {
   const keyPathRef = useDerivedPathRef(pathPrefixRef, itemKey);
   const keyPath = keyPathRef.current;
   const getPath = useCallback(() => keyPathRef.current, [keyPathRef]);
   const value = data[itemKey];
   const isPrimitive = value === null || value === undefined || typeof value !== 'object';
-  const { selectionOperationStore } = useJsonContext();
+  const { dragOperationStore, selectionOperationStore } = useJsonContext();
   const selectionItemId = getJsonObjectSelectionItemId(keyPath);
   const itemSelectionState = selectionOperationStore?.getItemSelectionState(selectionItemId);
+  const isDragMoveEnabled = Boolean(dragOperationStore);
+  const itemDragState = isDragMoveEnabled ? dragOperationStore?.getItemDragState(selectionItemId) : null;
+  const itemMeta = {
+    itemId: selectionItemId,
+    itemParentId: parentSelectionItemId,
+    path: keyPath,
+    itemKind: 'objectEntry',
+    label: itemKey,
+    containerKind: 'object',
+    containerPath: pathPrefixRef?.current || '',
+  };
 
   React.useEffect(() => {
-    selectionOperationStore?.registerItem({
-      itemId: selectionItemId,
-      itemParentId: parentSelectionItemId,
-      path: keyPath,
-      itemKind: 'objectEntry',
-      label: itemKey,
-    });
-  }, [itemKey, keyPath, parentSelectionItemId, selectionItemId, selectionOperationStore]);
+    selectionOperationStore?.registerItem(itemMeta);
+    if (isDragMoveEnabled) {
+      dragOperationStore.registerItem(itemMeta);
+    }
+  }, [dragOperationStore, isDragMoveEnabled, itemMeta, selectionOperationStore]);
 
   const handleSelectionMouseDownCapture = (event) => {
     if (!event.shiftKey || event.button !== 0) return;
     if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
-    event.preventDefault();
+    if (!itemSelectionState?.isSelected) {
+      event.preventDefault();
+    }
     event.stopPropagation();
-    selectionOperationStore?.selectNextFromItem(selectionItemId);
   };
 
   const handleSelectionClickCapture = (event) => {
@@ -56,6 +68,74 @@ const ItemWrapperObject = observer(({
     if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
     event.preventDefault();
     event.stopPropagation();
+    selectionOperationStore?.selectNextFromItem(selectionItemId);
+  };
+
+  const handleDragStart = (event) => {
+    if (!isDragMoveEnabled) return;
+    const isDragSelectedItem = selectionOperationStore?.selectedItemId === selectionItemId;
+    if (!event.shiftKey || !isDragSelectedItem) {
+      event.preventDefault();
+      return;
+    }
+    event.stopPropagation();
+    dragOperationStore?.startDrag(selectionItemId);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', selectionItemId);
+  };
+
+  const handleDragOver = (event) => {
+    if (!isDragMoveEnabled || !dragOperationStore?.isDragging) return;
+    const containerChildKind = value && typeof value === 'object'
+      ? (Array.isArray(value) ? 'array' : 'object')
+      : null;
+    event.preventDefault();
+    event.stopPropagation();
+    const dropInfo = getJsonDropInfoFromEvent({
+      event,
+      itemMeta,
+      itemPreviousMeta: itemPreviousPath ? { path: itemPreviousPath } : null,
+      itemNextMeta: itemNextPath ? { path: itemNextPath } : null,
+      containerChildKind,
+      containerPath: containerChildKind ? keyPath : null,
+    });
+    const isDropAllowed = getIsJsonDropAllowedByDefault({
+      dropInfo,
+      dragOperationStore,
+      selectionOperationStore,
+    });
+    dragOperationStore.previewDrop(dropInfo, isDropAllowed);
+  };
+
+  const handleDrop = async (event) => {
+    if (!isDragMoveEnabled || !dragOperationStore?.isDragging) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const itemDraggedMeta = dragOperationStore.itemDraggedMeta;
+    const dropInfoActive = dragOperationStore.dropInfoActive;
+    const itemDragStateActive = dropInfoActive?.targetItemId
+      ? dragOperationStore.getItemDragState(dropInfoActive.targetItemId)
+      : null;
+    if (itemDraggedMeta && dropInfoActive?.drop && itemDragStateActive?.isDropAllowed !== false && onChange) {
+      const result = await onChange(itemDraggedMeta.path, {
+        old: { type: itemDraggedMeta.itemKind },
+        new: { type: itemDraggedMeta.itemKind },
+        _action: 'moveJsonItem',
+        moveRequest: {
+          source: itemDraggedMeta,
+          drop: dropInfoActive.drop,
+        },
+      });
+      if (!result || result.code === 0) {
+        selectionOperationStore?.clearSelection();
+      }
+    }
+    dragOperationStore.clearAll();
+  };
+
+  const handleDragEnd = () => {
+    if (!isDragMoveEnabled) return;
+    dragOperationStore?.clearAll();
   };
 
   const selectionClassName = [
@@ -63,14 +143,27 @@ const ItemWrapperObject = observer(({
     'json-selection-item',
     itemSelectionState?.isSelected ? 'is-json-selected' : '',
     itemSelectionState?.isSelectionAncestor ? 'is-json-selection-ancestor' : '',
+    itemDragState?.isDragged ? 'is-json-dragged' : '',
+    itemDragState?.isDragHovered ? 'is-json-drag-hovered' : '',
+    itemDragState?.isInsertBefore ? 'is-json-insert-before' : '',
+    itemDragState?.isInsertAfter ? 'is-json-insert-after' : '',
+    itemDragState?.isInsertInside ? 'is-json-insert-inside' : '',
+    itemDragState?.isDropAllowed === false ? 'is-json-drop-blocked' : '',
   ].filter(Boolean).join(' ');
 
   return (
     <div
       className={selectionClassName}
+      draggable={isDragMoveEnabled}
       onMouseDownCapture={handleSelectionMouseDownCapture}
       onClickCapture={handleSelectionClickCapture}
+      onDragStart={isDragMoveEnabled ? handleDragStart : undefined}
+      onDragOver={isDragMoveEnabled ? handleDragOver : undefined}
+      onDrop={isDragMoveEnabled ? handleDrop : undefined}
+      onDragEnd={isDragMoveEnabled ? handleDragEnd : undefined}
     >
+      {itemDragState?.isInsertBefore ? <div className="json-drop-line json-drop-line-before" /> : null}
+      {itemDragState?.isInsertAfter ? <div className="json-drop-line json-drop-line-after" /> : null}
       <JsonKeyValueComp
         data={data}
         itemKey={itemKey}
@@ -83,19 +176,19 @@ const ItemWrapperObject = observer(({
         depth={depth}
         getValueComp={getValueComp}
       >
-        <JsonCompMobx
-          data={value}
-          isEditable={isEditable}
-          isKeyEditable={isKeyEditable}
-          isValueEditable={isValueEditable}
-          onChange={onChange}
-          indent={indent}
-          pathPrefix=""
-          pathPrefixRef={keyPathRef}
-          depth={depth + 1}
-          getValueComp={getValueComp}
-          parentSelectionItemId={selectionItemId}
-        />
+        {renderNestedJsonValue({
+          data: value,
+          isEditable,
+          isKeyEditable,
+          isValueEditable,
+          onChange,
+          indent,
+          pathPrefix: '',
+          pathPrefixRef: keyPathRef,
+          depth: depth + 1,
+          getValueComp,
+          parentSelectionItemId: selectionItemId,
+        })}
       </JsonKeyValueComp>
       {!isLastItem && isPrimitive && <span className="json-comma">,</span>}
     </div>

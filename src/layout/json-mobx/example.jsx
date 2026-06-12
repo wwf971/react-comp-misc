@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import JsonCompMobx, { createJsonSelectionOperationStore } from './JsonCompMobx';
+import JsonCompMobx, { createJsonDragOperationStore, createJsonSelectionOperationStore } from './JsonCompMobx';
 import BoolSlider from '../../component/button/BoolSlider';
 import { createHandleChange } from './exampleHandleChange';
 
@@ -29,16 +29,20 @@ const JsonMobxCustomValue = ({ path, value }) => {
   );
 };
 
-const JsonMobxSelectionStatus = observer(({ selectionOperationStore }) => {
+const JsonMobxSelectionStatus = observer(({ dragOperationStore, selectionOperationStore }) => {
   const { selectedItemMeta, isSelectionActive } = selectionOperationStore;
   const statusText = isSelectionActive && selectedItemMeta
     ? `${selectedItemMeta.itemKind}: ${selectedItemMeta.path || selectedItemMeta.label}`
     : 'No selection';
+  const dragText = dragOperationStore.isDragging && dragOperationStore.itemDraggedMeta
+    ? `${dragOperationStore.itemDraggedMeta.itemKind}: ${dragOperationStore.itemDraggedMeta.path}`
+    : 'No drag';
 
   return (
     <div className="json-selection-status-line">
-      Shift click an item to select it. Shift click the selected item again to expand the selection.
+      Shift click to select, then shift drag the selected item to move it.
       <span> Current selection: {statusText}</span>
+      <span> Drag: {dragText}</span>
     </div>
   );
 });
@@ -77,6 +81,8 @@ const JsonMobxExample = observer(() => {
   const [isEditable, setIsEditable] = useState(true);
   const [isKeyEditable, setIsKeyEditable] = useState(true);
   const [isDebug, setIsDebug] = useState(false);
+  const [isDragMoveEnabled, setIsDragMoveEnabled] = useState(false);
+  const dragOperationStore = useMemo(() => createJsonDragOperationStore(), []);
   const selectionOperationStore = useMemo(() => createJsonSelectionOperationStore(), []);
   const selectionExampleData = useMemo(() => makeAutoObservable({
     account: {
@@ -91,9 +97,12 @@ const JsonMobxExample = observer(() => {
           role: 'reviewer',
         },
       ],
+      emptyDict: {},
     },
     tags: ['important', 'verified'],
+    archive: [],
   }, {}, { deep: true }), []);
+  const handleSelectionExampleChange = useMemo(() => createHandleChange(selectionExampleData), [selectionExampleData]);
   const customValueData = useMemo(() => ({
     title: 'Tool Result',
     status: 'success',
@@ -109,6 +118,12 @@ const JsonMobxExample = observer(() => {
   const getCustomValueComp = useCallback(({ path, value }) => {
     if (path !== 'notes.longText') return null;
     return <JsonMobxCustomValue path={path} value={value} />;
+  }, []);
+  const handleEditableChange = useCallback((isEditableNext) => {
+    setIsEditable(isEditableNext);
+    if (!isEditableNext) {
+      setIsDragMoveEnabled(false);
+    }
   }, []);
 
   return (
@@ -126,7 +141,7 @@ const JsonMobxExample = observer(() => {
           <span style={{ fontSize: '13px' }}>Editable:</span>
           <BoolSlider 
             checked={isEditable}
-            onChange={setIsEditable}
+            onChange={handleEditableChange}
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -143,6 +158,14 @@ const JsonMobxExample = observer(() => {
             onChange={setIsDebug}
           />
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '13px' }}>Drag move:</span>
+          <BoolSlider
+            checked={isDragMoveEnabled}
+            disabled={!isEditable}
+            onChange={setIsDragMoveEnabled}
+          />
+        </div>
       </div>
 
       <div style={{ background: '#f9f9f9', padding: '12px', borderRadius: '3px', marginBottom: '16px' }}>
@@ -151,6 +174,7 @@ const JsonMobxExample = observer(() => {
           isEditable={isEditable}
           isKeyEditable={isKeyEditable}
           isDebug={isDebug}
+          isDragMoveEnabled={isDragMoveEnabled}
           onChange={handleChange}
         />
       </div>
@@ -161,9 +185,15 @@ const JsonMobxExample = observer(() => {
           isEditable={false}
           isKeyEditable={false}
           isValueEditable={false}
+          onChange={handleSelectionExampleChange}
+          dragOperationStore={dragOperationStore}
+          isDragMoveEnabled={isDragMoveEnabled}
           selectionOperationStore={selectionOperationStore}
         />
-        <JsonMobxSelectionStatus selectionOperationStore={selectionOperationStore} />
+        <JsonMobxSelectionStatus
+          dragOperationStore={dragOperationStore}
+          selectionOperationStore={selectionOperationStore}
+        />
       </div>
 
       <div className="json-mobx-example-section">
@@ -190,6 +220,8 @@ const JsonMobxExample = observer(() => {
           <li><strong>Right-click menu:</strong> Type conversion, add/delete entries/items, view raw JSON, and more</li>
           <li><strong>Pseudo items:</strong> Right-click and select "Add entry/item" for interactive creation</li>
           <li><strong>Debug mode:</strong> Shows render counts - only changed values increment (not siblings!)</li>
+          <li><strong>Selection:</strong> Shift-click a list item or object entry to select it; repeat shift-click to expand selection upward</li>
+          <li><strong>Drag move:</strong> Enable the Drag move slider, shift-click an item, then hold Shift and drag it to a valid list or object target</li>
           <li><strong>Stable keys:</strong> Array items maintain identity across operations</li>
         </ul>
       </div>

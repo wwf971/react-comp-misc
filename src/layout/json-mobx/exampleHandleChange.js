@@ -1,5 +1,6 @@
 import { runInAction } from 'mobx';
 import { parsePathToSegments, navigateToPath } from '../json/pathUtils';
+import { moveJsonItemByRequest } from './jsonDragMove';
 
 /**
  * Example handleChange implementation for JsonCompMobx
@@ -30,6 +31,15 @@ export function createHandleChange(observableData) {
       const segments = parsePathToSegments(path);
       
       switch (_action) {
+        case 'moveJsonItem': {
+          const result = moveJsonItemByRequest({
+            dataRoot: observableData,
+            moveRequest: changeData.moveRequest,
+          });
+          if (result.code !== 0) return result;
+          break;
+        }
+
         case 'deleteEntry': {
           runInAction(() => {
             const parent = segments.length === 0 ? observableData : navigateToPath(observableData, segments.slice(0, -1));

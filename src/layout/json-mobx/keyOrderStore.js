@@ -5,6 +5,15 @@ const keyIdMap = new WeakMap();
 const keyOrderVersionMap = new WeakMap(); // Track version for MobX reactivity
 let keyIdCounter = 1;
 
+const bumpKeyOrderVersion = (obj) => {
+  let versionObj = keyOrderVersionMap.get(obj);
+  if (!versionObj) {
+    versionObj = observable({ version: 0 });
+    keyOrderVersionMap.set(obj, versionObj);
+  }
+  versionObj.version++;
+};
+
 const normalizeKeyOrder = (keys) => {
   const unique = [];
   const seen = new Set();
@@ -58,6 +67,7 @@ export const renameKeyInOrder = (obj, oldKey, newKey) => {
   if (index === -1) return;
   order[index] = newKey;
   keyOrderMap.set(obj, order);
+  bumpKeyOrderVersion(obj);
 };
 
 export const addKeyInOrder = (obj, newKey, position, referenceKey) => {
@@ -85,6 +95,7 @@ export const addKeyInOrder = (obj, newKey, position, referenceKey) => {
   }
   
   keyOrderMap.set(obj, order);
+  bumpKeyOrderVersion(obj);
 };
 
 export const getKeyIdentity = (obj, key) => {
@@ -146,11 +157,5 @@ export const moveKeyInOrder = (obj, key, action) => {
   
   keyOrderMap.set(obj, newOrder);
   
-  // Increment version to trigger MobX reactivity
-  let versionObj = keyOrderVersionMap.get(obj);
-  if (!versionObj) {
-    versionObj = observable({ version: 0 });
-    keyOrderVersionMap.set(obj, versionObj);
-  }
-  versionObj.version++;
+  bumpKeyOrderVersion(obj);
 };

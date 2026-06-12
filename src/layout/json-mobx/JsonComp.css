@@ -75,6 +75,7 @@
 }
 
 .json-selection-item {
+  position: relative;
   outline: 1px solid transparent;
   outline-offset: 1px;
 }
@@ -83,11 +84,57 @@
 .json-selection-item.is-json-selected {
   background-color: #eef5ff;
   outline-color: #4a90e2;
+  user-select: none;
 }
 
 .json-root-selection-item.is-json-selection-ancestor,
 .json-selection-item.is-json-selection-ancestor {
   background-color: #f6f9ff;
+  user-select: none;
+}
+
+.json-selection-item.is-json-dragged {
+  opacity: 0.55;
+}
+
+.json-selection-item.is-json-drag-hovered {
+  background-color: #f8fbff;
+}
+
+.json-selection-item.is-json-insert-inside,
+.json-empty-object.is-json-insert-inside,
+.json-empty-array.is-json-insert-inside {
+  outline: 1px solid #4a90e2;
+  outline-offset: 1px;
+}
+
+.json-selection-item.is-json-drop-blocked,
+.json-empty-object.is-json-drop-blocked,
+.json-empty-array.is-json-drop-blocked {
+  outline-color: #c62828;
+  background-color: #fff5f5;
+}
+
+.json-drop-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #4a90e2;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.json-selection-item.is-json-drop-blocked .json-drop-line {
+  background: #c62828;
+}
+
+.json-drop-line-before {
+  top: -1px;
+}
+
+.json-drop-line-after {
+  bottom: -1px;
 }
 
 .json-selection-status-line {

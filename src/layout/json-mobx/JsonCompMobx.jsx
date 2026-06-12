@@ -17,6 +17,7 @@ import {
   JSON_ROOT_SELECTION_ITEM_ID,
   createJsonSelectionOperationStore,
 } from './jsonSelectionOperationStore';
+import { createJsonDragOperationStore } from './jsonDragOperationStore';
 import './JsonComp.css';
 
 /**
@@ -34,6 +35,7 @@ import './JsonComp.css';
  * @param {boolean} isValueEditable - Whether values are editable (default: true)
  * @param {Function} onChange - Callback: (path, changeData) => Promise<{code: number, message?: string}>
  * @param {number} indent - Indentation in pixels (default: 20)
+ * @param {boolean} isDragMoveEnabled - Whether shift-drag move is enabled (default: false)
  * @param {string} pathPrefix - Internal: path prefix for nested objects
  * @param {number} depth - Internal: current nesting depth
  * @param {boolean} isArrayItem - Internal: whether this object is an array item
@@ -48,12 +50,14 @@ const JsonCompMobx = observer(({
   typeConversionBehavior = 'allow',
   isDebug = false,
   getValueComp,
+  isDragMoveEnabled = false,
   pathPrefix = '',
   pathPrefixRef,
   depth = 0,
   isArrayItem = false,
   parentSelectionItemId = JSON_ROOT_SELECTION_ITEM_ID,
-  selectionOperationStore
+  selectionOperationStore,
+  dragOperationStore
 }) => {
   const [conversionMenu, setConversionMenu] = useState(null);
   const localPathPrefixRef = usePathRef(pathPrefix);
@@ -70,6 +74,17 @@ const JsonCompMobx = observer(({
   }, [dataRaw, isRoot]);
   const localSelectionOperationStore = React.useMemo(() => createJsonSelectionOperationStore(), []);
   const activeSelectionOperationStore = selectionOperationStore || localSelectionOperationStore;
+  const localDragOperationStore = React.useMemo(
+    () => (isDragMoveEnabled ? createJsonDragOperationStore() : null),
+    [isDragMoveEnabled]
+  );
+  const dragOperationStoreAvailable = dragOperationStore || localDragOperationStore;
+  const activeDragOperationStore = isDragMoveEnabled ? dragOperationStoreAvailable : null;
+
+  React.useEffect(() => {
+    if (isDragMoveEnabled) return;
+    dragOperationStoreAvailable?.clearAll();
+  }, [dragOperationStoreAvailable, isDragMoveEnabled]);
 
   React.useEffect(() => {
     if (!isRoot) return;
@@ -103,6 +118,9 @@ const JsonCompMobx = observer(({
     });
   }, [conversionMenu, onChange, closeMenu, data]);
 
+  const renderNestedJsonValue = useCallback((props) => (
+    <JsonCompMobx {...props} />
+  ), []);
 
   // Render function for the actual content
   const renderContent = () => {
@@ -120,7 +138,13 @@ const JsonCompMobx = observer(({
   if (Array.isArray(data)) {
     // Check if empty (this will track length, but it's ok for empty check)
     if (data.length === 0) {
-      return <EmptyList path={activePathPrefix || ''} />;
+      return (
+        <EmptyList
+          path={activePathPrefix || ''}
+          onChange={onChange}
+          containerOwnerSelectionItemId={isRoot ? JSON_ROOT_SELECTION_ITEM_ID : parentSelectionItemId}
+        />
+      );
     }
 
     // Generate indices array WITHOUT accessing array elements
@@ -130,6 +154,10 @@ const JsonCompMobx = observer(({
       indices.push(i);
     }
     const childParentSelectionItemId = isRoot ? JSON_ROOT_SELECTION_ITEM_ID : parentSelectionItemId;
+    const getArrayItemPath = (index) => {
+      const prefix = activePathPrefixRef?.current || '';
+      return prefix ? `${prefix}..${index}` : `..${index}`;
+    };
 
     return (
       <div className={`json-array ${isArrayItem ? 'json-array-in-array' : ''}`} style={{ '--depth': depth, '--json-indent': `${indent}px` }}>
@@ -147,9 +175,11 @@ const JsonCompMobx = observer(({
               onChange={onChange}
               indent={indent}
               depth={depth}
-              JsonCompMobx={JsonCompMobx}
+              renderNestedJsonValue={renderNestedJsonValue}
               getValueComp={getValueComp}
               parentSelectionItemId={childParentSelectionItemId}
+              itemPreviousPath={index > 0 ? getArrayItemPath(index - 1) : null}
+              itemNextPath={index < indices.length - 1 ? getArrayItemPath(index + 1) : null}
             />
           ))}
         </div>
@@ -168,7 +198,13 @@ const JsonCompMobx = observer(({
   const regularKeys = allKeys.filter(k => !k.startsWith('__pseudo__'));
   
   if (regularKeys.length === 0 && pseudoKeys.length === 0) {
-    return <EmptyDict path={activePathPrefix || ''} />;
+    return (
+      <EmptyDict
+        path={activePathPrefix || ''}
+        onChange={onChange}
+        containerOwnerSelectionItemId={isRoot ? JSON_ROOT_SELECTION_ITEM_ID : parentSelectionItemId}
+      />
+    );
   }
 
   // Build ordered list of items (keys + pseudo items in correct positions)
@@ -216,6 +252,12 @@ const JsonCompMobx = observer(({
             const key = item.key;
             const value = data[key];
             const isLastItem = itemIndex === orderedItems.length - 1;
+            const itemPreviousKey = regularKeys[item.index - 1] ?? null;
+            const itemNextKey = regularKeys[item.index + 1] ?? null;
+            const getObjectItemPath = (pathKey) => {
+              if (!pathKey) return null;
+              return activePathPrefix ? `${activePathPrefix}.${pathKey}` : pathKey;
+            };
 
             const keyIdentity = getKeyIdentity(data, key);
 
@@ -232,9 +274,11 @@ const JsonCompMobx = observer(({
                   indent={indent}
                   depth={depth}
                   isLastItem={isLastItem}
-                  JsonCompMobx={JsonCompMobx}
+                  renderNestedJsonValue={renderNestedJsonValue}
                   getValueComp={getValueComp}
                   parentSelectionItemId={childParentSelectionItemId}
+                  itemPreviousPath={getObjectItemPath(itemPreviousKey)}
+                  itemNextPath={getObjectItemPath(itemNextKey)}
                 />
               );
           } else {
@@ -276,13 +320,13 @@ const JsonCompMobx = observer(({
       if (event.target.closest('.json-selection-item')) return;
       event.preventDefault();
       event.stopPropagation();
-      activeSelectionOperationStore.selectNextFromItem(JSON_ROOT_SELECTION_ITEM_ID);
     };
     const handleRootSelectionClickCapture = (event) => {
       if (!event.shiftKey || event.button !== 0) return;
       if (event.target.closest('.json-selection-item')) return;
       event.preventDefault();
       event.stopPropagation();
+      activeSelectionOperationStore.selectNextFromItem(JSON_ROOT_SELECTION_ITEM_ID);
     };
     const rootSelectionClassName = [
       'json-root-selection-item',
@@ -297,6 +341,7 @@ const JsonCompMobx = observer(({
         rootData={data}
         isDebug={isDebug}
         selectionOperationStore={activeSelectionOperationStore}
+        dragOperationStore={activeDragOperationStore}
       >
         <div
           className={rootSelectionClassName}
@@ -334,4 +379,4 @@ const JsonCompMobx = observer(({
 JsonCompMobx.displayName = 'JsonCompMobx';
 
 export default JsonCompMobx;
-export { createJsonSelectionOperationStore };
+export { createJsonDragOperationStore, createJsonSelectionOperationStore };
