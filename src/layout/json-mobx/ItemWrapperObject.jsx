@@ -4,8 +4,7 @@ import { useDerivedPathRef } from './pathRef';
 import JsonKeyValueComp from './JsonKeyValueComp';
 import { useJsonContext } from './JsonContext';
 import { getJsonObjectSelectionItemId } from './jsonSelectionOperationStore';
-import { getIsJsonDropAllowedByDefault, getJsonDropInfoFromEvent } from './jsonDragMove';
-import { getJsonContextMenuTargetMeta } from './jsonContextMenu';
+import { useJsonItemInteractionHandlers } from './useJsonItemInteractionHandlers';
 
 /**
  * ObjectItemWrapper - Isolated observer for each object key-value pair
@@ -43,6 +42,9 @@ const ItemWrapperObject = observer(({
   const itemSelectionState = selectionOperationStore?.getItemSelectionState(selectionItemId);
   const isDragMoveEnabled = Boolean(dragOperationStore);
   const itemDragState = isDragMoveEnabled ? dragOperationStore?.getItemDragState(selectionItemId) : null;
+  const containerChildKind = value && typeof value === 'object'
+    ? (Array.isArray(value) ? 'array' : 'object')
+    : null;
   const itemMeta = {
     itemId: selectionItemId,
     itemParentId: parentSelectionItemId,
@@ -53,6 +55,10 @@ const ItemWrapperObject = observer(({
     value,
     containerKind: 'object',
     containerPath: pathPrefixRef?.current || '',
+    itemPreviousPath,
+    itemNextPath,
+    containerChildKind,
+    containerPathForInside: containerChildKind ? keyPath : null,
   };
 
   React.useEffect(() => {
@@ -62,110 +68,22 @@ const ItemWrapperObject = observer(({
     }
   }, [dragOperationStore, isDragMoveEnabled, itemMeta, selectionOperationStore]);
 
-  const handleSelectionMouseDownCapture = (event) => {
-    // Plain left click should leave selection mode immediately; shift-click is the only selection gesture.
-    if (!event.shiftKey && event.button === 0) {
-      selectionOperationStore?.clearSelection();
-      return;
-    }
-    if (!event.shiftKey || event.button !== 0) return;
-    if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
-    if (!itemSelectionState?.isSelected) {
-      event.preventDefault();
-    }
-    event.stopPropagation();
-  };
-
-  const handleSelectionClickCapture = (event) => {
-    if (!event.shiftKey || event.button !== 0) return;
-    if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
-    event.preventDefault();
-    event.stopPropagation();
-    selectionOperationStore?.selectNextFromItem(selectionItemId);
-  };
-
-  const handleContextMenuCapture = (event) => {
-    if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const itemMetaTarget = getJsonContextMenuTargetMeta({
-      itemIdClicked: selectionItemId,
-      itemMetaClicked: itemMeta,
-      selectionOperationStore,
-    });
-    requestJsonContextMenu?.({
-      itemMeta: itemMetaTarget,
-      position: { x: event.clientX, y: event.clientY },
-      queryParentInfo,
-    });
-  };
-
-  const handleDragStart = (event) => {
-    if (!isDragMoveEnabled) return;
-    const isDragSelectedItem = selectionOperationStore?.selectedItemId === selectionItemId;
-    if (!event.shiftKey || !isDragSelectedItem) {
-      event.preventDefault();
-      return;
-    }
-    event.stopPropagation();
-    dragOperationStore?.startDrag(selectionItemId);
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', selectionItemId);
-  };
-
-  const handleDragOver = (event) => {
-    if (!isDragMoveEnabled || !dragOperationStore?.isDragging) return;
-    const containerChildKind = value && typeof value === 'object'
-      ? (Array.isArray(value) ? 'array' : 'object')
-      : null;
-    event.preventDefault();
-    event.stopPropagation();
-    const dropInfo = getJsonDropInfoFromEvent({
-      event,
-      itemMeta,
-      itemPreviousMeta: itemPreviousPath ? { path: itemPreviousPath } : null,
-      itemNextMeta: itemNextPath ? { path: itemNextPath } : null,
-      containerChildKind,
-      containerPath: containerChildKind ? keyPath : null,
-    });
-    const isDropAllowed = getIsJsonDropAllowedByDefault({
-      dropInfo,
-      dragOperationStore,
-      selectionOperationStore,
-    });
-    dragOperationStore.previewDrop(dropInfo, isDropAllowed);
-  };
-
-  const handleDrop = async (event) => {
-    if (!isDragMoveEnabled || !dragOperationStore?.isDragging) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const itemDraggedMeta = dragOperationStore.itemDraggedMeta;
-    const dropInfoActive = dragOperationStore.dropInfoActive;
-    const itemDragStateActive = dropInfoActive?.targetItemId
-      ? dragOperationStore.getItemDragState(dropInfoActive.targetItemId)
-      : null;
-    if (itemDraggedMeta && dropInfoActive?.drop && itemDragStateActive?.isDropAllowed !== false && onChange) {
-      const result = await onChange(itemDraggedMeta.path, {
-        old: { type: itemDraggedMeta.itemKind },
-        new: { type: itemDraggedMeta.itemKind },
-        _action: 'moveJsonItem',
-        moveRequest: {
-          source: itemDraggedMeta,
-          drop: dropInfoActive.drop,
-        },
-      });
-      if (!result || result.code === 0) {
-        selectionOperationStore?.clearSelection();
-      }
-    }
-    dragOperationStore.clearAll();
-  };
-
-  const handleDragEnd = () => {
-    if (!isDragMoveEnabled) return;
-    dragOperationStore?.clearAll();
-  };
+  const {
+    handleContextMenuCapture,
+    handlePointerDownCapture,
+    handleSelectionClickCapture,
+    handleSelectionMouseDownCapture,
+  } = useJsonItemInteractionHandlers({
+    selectionItemId,
+    itemMeta,
+    itemSelectionState,
+    isDragMoveEnabled,
+    dragOperationStore,
+    selectionOperationStore,
+    requestJsonContextMenu,
+    queryParentInfo,
+    onChange,
+  });
 
   const selectionClassName = [
     'json-object-item',
@@ -183,14 +101,10 @@ const ItemWrapperObject = observer(({
   return (
     <div
       className={selectionClassName}
-      draggable={isDragMoveEnabled}
+      onPointerDownCapture={handlePointerDownCapture}
       onMouseDownCapture={handleSelectionMouseDownCapture}
       onClickCapture={handleSelectionClickCapture}
       onContextMenuCapture={handleContextMenuCapture}
-      onDragStart={isDragMoveEnabled ? handleDragStart : undefined}
-      onDragOver={isDragMoveEnabled ? handleDragOver : undefined}
-      onDrop={isDragMoveEnabled ? handleDrop : undefined}
-      onDragEnd={isDragMoveEnabled ? handleDragEnd : undefined}
       data-json-selection-item-id={selectionItemId}
     >
       {itemDragState?.isInsertBefore ? <div className="json-drop-line json-drop-line-before" /> : null}

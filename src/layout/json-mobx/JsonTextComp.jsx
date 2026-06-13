@@ -1,10 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { runInAction } from 'mobx';
+import { reaction, runInAction } from 'mobx';
 import { useJsonContext } from './JsonContext';
 import { getAvailableConversions } from './typeConvert.js';
 import { useRenderCount } from './renderCountStore';
 import './JsonComp.css';
+
+export const clearBrowserTextSelection = () => {
+  requestAnimationFrame(() => {
+    window.getSelection?.()?.removeAllRanges();
+  });
+};
 
 /**
  * JsonTextComp - MobX-based editable text component
@@ -16,7 +22,8 @@ const JsonTextComp = observer(({
   path,
   getPath,
   isEditable,
-  onChange
+  onChange,
+  renderCountKey
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,10 +31,9 @@ const JsonTextComp = observer(({
   
   const valueRef = useRef(null);
   const originalValueRef = useRef('');
-  const { showConversionMenu, queryParentInfo, isDebug } = useJsonContext();
+  const { showConversionMenu, queryParentInfo, isDebug, selectionOperationStore } = useJsonContext();
   
-  // Get persistent render count
-  const renderCount = useRenderCount(data, objKey);
+  const renderCount = useRenderCount(data, renderCountKey ?? objKey, isDebug);
   
   // Use propValue if provided (for avoiding array access), otherwise access data[objKey]
   const value = propValue !== undefined ? propValue : data[objKey];
@@ -43,7 +49,7 @@ const JsonTextComp = observer(({
     }
   }, [isEditing]);
 
-  const resolvePath = () => (getPath ? getPath() : path);
+  const resolvePath = useCallback(() => (getPath ? getPath() : path), [getPath, path]);
 
   const handleClick = () => {
     if (!isEditable || isSubmitting || error) return;
@@ -51,18 +57,19 @@ const JsonTextComp = observer(({
     setIsEditing(true);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!valueRef.current) return;
     
     const newValue = valueRef.current.textContent;
     
     if (newValue === originalValueRef.current) {
       setIsEditing(false);
+      clearBrowserTextSelection();
       return;
     }
 
-    // Exit edit mode immediately to reduce re-renders
     setIsEditing(false);
+    clearBrowserTextSelection();
     
     try {
       if (onChange) {
@@ -92,7 +99,17 @@ const JsonTextComp = observer(({
       }
       setTimeout(() => setError(null), 3000);
     }
-  };
+  }, [data, objKey, onChange, resolvePath]);
+
+  useEffect(() => {
+    if (!isEditing || !selectionOperationStore) return undefined;
+    return reaction(
+      () => selectionOperationStore.selectionRevision,
+      () => {
+        handleSubmit();
+      }
+    );
+  }, [handleSubmit, isEditing, selectionOperationStore]);
 
   const handleBlur = () => {
     handleSubmit();
@@ -108,6 +125,7 @@ const JsonTextComp = observer(({
         valueRef.current.textContent = originalValueRef.current;
       }
       setIsEditing(false);
+      clearBrowserTextSelection();
     }
   };
 
@@ -157,7 +175,7 @@ const JsonTextComp = observer(({
         {isEmpty && !isEditing ? 'EMPTY' : value}
       </span>
       {isDebug && (
-        <span style={{ color: '#999', fontSize: '11px', marginLeft: '6px' }}>
+        <span className="json-render-count">
           #{renderCount}
         </span>
       )}

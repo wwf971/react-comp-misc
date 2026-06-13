@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import JsonCompMobx, { createJsonDragOperationStore, createJsonSelectionOperationStore } from './JsonCompMobx';
 import BoolSlider from '../../component/button/BoolSlider';
@@ -47,6 +47,70 @@ const JsonMobxSelectionStatus = observer(({ dragOperationStore, selectionOperati
   );
 });
 
+const JsonMobxRenderDebugExample = observer(() => {
+  const dataExample = useMemo(() => makeAutoObservable({
+    config: {
+      isRenderDebugEnabled: true,
+    },
+    doc: {
+      editingTarget: {
+        title: 'Edit this title',
+        count: 12,
+        isPublished: true,
+      },
+      nearbySibling: {
+        title: 'Nearby branch',
+        count: 3,
+        isPublished: false,
+      },
+      farAwayBranch: {
+        owner: 'Render counter should stay still',
+        version: 7,
+        isLocked: false,
+      },
+      listBranch: [
+        'first item',
+        'second item',
+        42,
+      ],
+    },
+  }, {}, { deep: true }), []);
+  const handleChange = useMemo(() => createHandleChange(dataExample.doc), [dataExample]);
+  const handleRenderDebugChange = useCallback((isRenderDebugEnabledNext) => {
+    runInAction(() => {
+      dataExample.config.isRenderDebugEnabled = isRenderDebugEnabledNext;
+    });
+  }, [dataExample]);
+
+  return (
+    <div className="json-mobx-example-section">
+      <div className="json-mobx-example-title">Render isolation debug</div>
+      <div className="json-mobx-example-note">
+        Edit or rename editingTarget.title, then check that farAwayBranch values keep their render numbers.
+      </div>
+      <div className="json-mobx-debug-control">
+        <span className="json-mobx-debug-label">Render debug:</span>
+        <BoolSlider
+          checked={dataExample.config.isRenderDebugEnabled}
+          onChange={handleRenderDebugChange}
+        />
+      </div>
+      <div className="json-mobx-example-panel">
+        <JsonCompMobx
+          data={dataExample.doc}
+          isEditable
+          isKeyEditable
+          isDragMoveEnabled
+          isDebug={dataExample.config.isRenderDebugEnabled}
+          onChange={handleChange}
+        />
+      </div>
+    </div>
+  );
+});
+
+JsonMobxRenderDebugExample.displayName = 'JsonMobxRenderDebugExample';
+
 /**
  * Example demonstrating MobX-based JSON component with in-place mutations
  */
@@ -80,8 +144,8 @@ const JsonMobxExample = observer(() => {
 
   const [isEditable, setIsEditable] = useState(true);
   const [isKeyEditable, setIsKeyEditable] = useState(true);
-  const [isDebug, setIsDebug] = useState(false);
-  const [isDragMoveEnabled, setIsDragMoveEnabled] = useState(false);
+  const [isDebug, setIsDebug] = useState(true);
+  const [isDragMoveEnabled, setIsDragMoveEnabled] = useState(true);
   const dragOperationStore = useMemo(() => createJsonDragOperationStore(), []);
   const selectionOperationStore = useMemo(() => createJsonSelectionOperationStore(), []);
   const selectionExampleData = useMemo(() => makeAutoObservable({
@@ -211,6 +275,8 @@ const JsonMobxExample = observer(() => {
           />
         </div>
       </div>
+
+      <JsonMobxRenderDebugExample />
 
       <div style={{ marginTop: '0', padding: '10px 12px', background: '#fff3e0', border: '1px solid #ff9800', borderRadius: '2px', fontSize: '12px' }}>
         <strong>Features:</strong>

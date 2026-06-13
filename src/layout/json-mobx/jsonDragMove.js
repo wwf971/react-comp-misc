@@ -2,16 +2,16 @@ import { runInAction } from 'mobx';
 import { addKeyInOrder } from './keyOrderStore.js';
 import { navigateToPath, parsePathToSegments } from '../json/pathUtils.js';
 
-export const getJsonDropInfoFromEvent = ({
-  event,
+export const getJsonDropInfoFromClientY = ({
+  clientY,
   itemMeta,
   itemPreviousMeta,
   itemNextMeta,
   containerChildKind,
   containerPath,
+  rect,
 }) => {
-  const rect = event.currentTarget.getBoundingClientRect();
-  const yInRow = event.clientY - rect.top;
+  const yInRow = clientY - rect.top;
   const rowHeight = rect.height || 1;
   const canDropInside = Boolean(containerChildKind && containerPath !== undefined);
 

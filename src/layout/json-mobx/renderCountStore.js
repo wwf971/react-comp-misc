@@ -16,7 +16,10 @@ const renderCounts = new WeakMap();
  * @param {string|number} key - The key or index
  * @returns {number} - Current render count (after increment)
  */
-export function useRenderCount(parentData, key) {
+export function useRenderCount(parentData, key, isEnabled = true) {
+  if (!isEnabled) {
+    return 0;
+  }
   if (!renderCounts.has(parentData)) {
     renderCounts.set(parentData, new Map());
   }

@@ -39,7 +39,7 @@ export const createJsonDragOperationStore = () => {
     },
     clearItemDragState(itemId) {
       if (!itemId || !this.itemDragStateById[itemId]) return;
-      this.itemDragStateById[itemId] = createJsonItemDragState();
+      Object.assign(this.itemDragStateById[itemId], createJsonItemDragState());
     },
     clearDropPreview() {
       const dropInfoActive = this.dropInfoActive;
@@ -71,6 +71,9 @@ export const createJsonDragOperationStore = () => {
       itemDragState.isInsertInside = dropInfo.drop?.type === 'inside';
     },
     clearAll() {
+      Object.values(this.itemDragStateById).forEach((itemDragState) => {
+        Object.assign(itemDragState, createJsonItemDragState());
+      });
       this.isDragging = false;
       this.itemDraggedId = null;
       this.itemDraggedMeta = null;

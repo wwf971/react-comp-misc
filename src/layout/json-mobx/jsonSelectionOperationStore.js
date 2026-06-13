@@ -6,18 +6,27 @@ export const getJsonObjectSelectionItemId = (path) => `json-object-item:${path |
 
 export const getJsonArraySelectionItemId = (path) => `json-array-item:${path || '$root'}`;
 
+export const createJsonSelectionItemState = () => ({
+  isSelected: false,
+  isSelectionAncestor: false,
+});
+
 export const createJsonSelectionOperationStore = () => {
   const store = {
     isSelectionActive: false,
+    selectionRevision: 0,
     selectedItemId: null,
     selectedAncestorItemIds: [],
     selectedItemMeta: null,
     itemMetaById: {},
+    itemSelectionStateById: {},
+    isNextSelectionClickSuppressed: false,
     getItemSelectionState(itemId) {
-      return {
-        isSelected: Boolean(itemId && this.selectedItemId === itemId),
-        isSelectionAncestor: Boolean(itemId && this.selectedAncestorItemIds.includes(itemId)),
-      };
+      if (!itemId) return createJsonSelectionItemState();
+      if (!this.itemSelectionStateById[itemId]) {
+        this.itemSelectionStateById[itemId] = createJsonSelectionItemState();
+      }
+      return this.itemSelectionStateById[itemId];
     },
     registerItem(itemMeta) {
       if (!itemMeta?.itemId) return;
@@ -31,6 +40,16 @@ export const createJsonSelectionOperationStore = () => {
       if (this.selectedItemId === itemMeta.itemId) {
         this.selectedItemMeta = this.itemMetaById[itemMeta.itemId];
       }
+    },
+    clearItemSelectionState(itemId) {
+      if (!itemId || !this.itemSelectionStateById[itemId]) return;
+      Object.assign(this.itemSelectionStateById[itemId], createJsonSelectionItemState());
+    },
+    clearActiveItemSelectionStates() {
+      this.clearItemSelectionState(this.selectedItemId);
+      this.selectedAncestorItemIds.forEach((itemId) => {
+        this.clearItemSelectionState(itemId);
+      });
     },
     getAncestorItemIds(itemId) {
       const ancestorItemIds = [];
@@ -48,15 +67,36 @@ export const createJsonSelectionOperationStore = () => {
       if (itemId === this.selectedItemId) return true;
       return this.getAncestorItemIds(itemId).includes(this.selectedItemId);
     },
+    suppressNextSelectionClick() {
+      this.isNextSelectionClickSuppressed = true;
+    },
+    consumeNextSelectionClickSuppressed() {
+      if (!this.isNextSelectionClickSuppressed) return false;
+      this.isNextSelectionClickSuppressed = false;
+      return true;
+    },
+    clearNextSelectionClickSuppressed() {
+      this.isNextSelectionClickSuppressed = false;
+    },
     selectItem(itemId) {
       if (!itemId) {
         this.clearSelection();
         return;
       }
+      const itemIdPrevious = this.selectedItemId;
+      const isSelectionChanged = !this.isSelectionActive || itemIdPrevious !== itemId;
+      this.clearActiveItemSelectionStates();
       this.isSelectionActive = true;
       this.selectedItemId = itemId;
       this.selectedItemMeta = this.itemMetaById[itemId] ?? { itemId };
       this.selectedAncestorItemIds = this.getAncestorItemIds(itemId);
+      this.getItemSelectionState(itemId).isSelected = true;
+      this.selectedAncestorItemIds.forEach((itemIdAncestor) => {
+        this.getItemSelectionState(itemIdAncestor).isSelectionAncestor = true;
+      });
+      if (isSelectionChanged) {
+        this.selectionRevision += 1;
+      }
     },
     selectNextFromItem(itemId) {
       if (!itemId) return;
@@ -75,10 +115,15 @@ export const createJsonSelectionOperationStore = () => {
       this.clearSelection();
     },
     clearSelection() {
+      const isSelectionChanged = this.isSelectionActive || this.selectedItemId || this.selectedAncestorItemIds.length > 0;
+      this.clearActiveItemSelectionStates();
       this.isSelectionActive = false;
       this.selectedItemId = null;
       this.selectedAncestorItemIds = [];
       this.selectedItemMeta = null;
+      if (isSelectionChanged) {
+        this.selectionRevision += 1;
+      }
     },
   };
   return makeAutoObservable(store, {

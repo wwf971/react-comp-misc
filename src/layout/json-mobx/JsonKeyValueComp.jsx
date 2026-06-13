@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react-lite';
-import { runInAction, keys as mobxKeys, set as mobxSet, remove as mobxRemove } from 'mobx';
-import { renameKeyIdentity, renameKeyInOrder } from './keyOrderStore';
+import { reaction, runInAction, keys as mobxKeys, set as mobxSet, remove as mobxRemove } from 'mobx';
+import { getKeyIdentity, renameKeyIdentity, renameKeyInOrder } from './keyOrderStore';
 import { useJsonContext } from './JsonContext';
-import JsonTextComp from './JsonTextComp';
+import JsonTextComp, { clearBrowserTextSelection } from './JsonTextComp';
 import JsonNumberComp from './JsonNumberComp';
 import JsonBoolComp from './JsonBoolComp';
 import JsonNullComp from './JsonNullComp';
@@ -26,7 +26,7 @@ const JsonKeyValueComp = observer(({
   children 
 }) => {
   // Call all hooks first (before any conditional returns)
-  const { showConversionMenu, queryParentInfo } = useJsonContext();
+  const { showConversionMenu, queryParentInfo, isDebug, selectionOperationStore } = useJsonContext();
   const [isEditingKey, setIsEditingKey] = useState(false);
   const [error, setError] = useState(null);
   const keyRef = useRef(null);
@@ -45,12 +45,7 @@ const JsonKeyValueComp = observer(({
     }
   }, [isEditingKey]);
   
-  // If the key doesn't exist in data, don't render (likely mid-rename)
   const hasKey = mobxKeys(data).includes(itemKey);
-  if (!hasKey) {
-    // console.log('JsonKeyValueComp: key not in data, returning null', { itemKey });
-    return null;
-  }
   
   const value = data[itemKey];
   // Detect empty collections for special handling
@@ -63,16 +58,16 @@ const JsonKeyValueComp = observer(({
   
   const canEditKey = isEditable && isKeyEditable;
   const canEditValue = isEditable && isValueEditable;
+  const renderCountKey = isDebug ? getKeyIdentity(data, itemKey) : undefined;
 
   const handleKeyClick = () => {
     if (!canEditKey) return;
-    // Don't enter edit mode if key doesn't exist (mid-rename scenario)
     if (!hasKey) return;
     originalKeyRef.current = itemKey;
     setIsEditingKey(true);
   };
 
-  const handleKeySubmit = async () => {
+  const handleKeySubmit = useCallback(async () => {
     if (!keyRef.current) return;
     
     const newKey = keyRef.current.textContent.trim();
@@ -80,6 +75,7 @@ const JsonKeyValueComp = observer(({
     // Don't submit if value hasn't changed
     if (newKey === originalKeyRef.current) {
       setIsEditingKey(false);
+      clearBrowserTextSelection();
       if (keyRef.current) {
         keyRef.current.textContent = originalKeyRef.current;
       }
@@ -94,6 +90,7 @@ const JsonKeyValueComp = observer(({
       }
       setTimeout(() => setError(null), 3000);
       setIsEditingKey(false);
+      clearBrowserTextSelection();
       return;
     }
 
@@ -105,11 +102,12 @@ const JsonKeyValueComp = observer(({
       }
       setTimeout(() => setError(null), 3000);
       setIsEditingKey(false);
+      clearBrowserTextSelection();
       return;
     }
 
-    // Exit edit mode immediately to prevent re-renders with stale itemKey
     setIsEditingKey(false);
+    clearBrowserTextSelection();
     
     try {
       if (onChange) {
@@ -147,7 +145,17 @@ const JsonKeyValueComp = observer(({
       }
       setTimeout(() => setError(null), 3000);
     }
-  };
+  }, [data, itemKey, onChange, resolvePath]);
+
+  useEffect(() => {
+    if (!isEditingKey || !selectionOperationStore) return undefined;
+    return reaction(
+      () => selectionOperationStore.selectionRevision,
+      () => {
+        handleKeySubmit();
+      }
+    );
+  }, [handleKeySubmit, isEditingKey, selectionOperationStore]);
 
   const handleKeyBlur = () => {
     handleKeySubmit();
@@ -163,6 +171,7 @@ const JsonKeyValueComp = observer(({
         keyRef.current.textContent = originalKeyRef.current;
       }
       setIsEditingKey(false);
+      clearBrowserTextSelection();
     }
   };
 
@@ -218,6 +227,7 @@ const JsonKeyValueComp = observer(({
           getPath={resolvePath}
           isEditable={canEditValue}
           onChange={onChange}
+          renderCountKey={renderCountKey}
         />
       );
     } else if (valueType === 'number') {
@@ -228,6 +238,7 @@ const JsonKeyValueComp = observer(({
           getPath={resolvePath}
           isEditable={canEditValue}
           onChange={onChange}
+          renderCountKey={renderCountKey}
         />
       );
     } else {
@@ -239,10 +250,15 @@ const JsonKeyValueComp = observer(({
           getPath={resolvePath}
           isEditable={canEditValue}
           onChange={onChange}
+          renderCountKey={renderCountKey}
         />
       );
     }
   };
+
+  if (!hasKey) {
+    return null;
+  }
 
   return (
     <div className={`json-keyvalue ${!isPrimitive ? 'has-complex-value' : ''}`}>
@@ -256,6 +272,7 @@ const JsonKeyValueComp = observer(({
             onKeyDown={handleKeyDown}
             onClick={handleKeyClick}
             onContextMenu={handleKeyContextMenu}
+            draggable={false}
             suppressContentEditableWarning={true}
           >
             {itemKey}

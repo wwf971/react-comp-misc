@@ -16,14 +16,14 @@ const JsonBoolComp = observer(({
   path,
   getPath,
   isEditable,
-  onChange
+  onChange,
+  renderCountKey
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const { showConversionMenu, queryParentInfo, isDebug } = useJsonContext();
   
-  // Get persistent render count
-  const renderCount = useRenderCount(data, objKey);
+  const renderCount = useRenderCount(data, renderCountKey ?? objKey, isDebug);
   
   // Use propValue if provided (for avoiding array access), otherwise access data[objKey]
   const value = propValue !== undefined ? propValue : data[objKey];
@@ -97,7 +97,7 @@ const JsonBoolComp = observer(({
         {String(value)}
       </span>
       {isDebug && (
-        <span style={{ color: '#999', fontSize: '11px', marginLeft: '6px' }}>
+        <span className="json-render-count">
           #{renderCount}
         </span>
       )}

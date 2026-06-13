@@ -297,6 +297,11 @@
   background: #f9f9f9;
 }
 
+.json-mobx-example-title {
+  color: #333;
+  font-weight: 600;
+}
+
 .json-mobx-example-note {
   margin-top: 4px;
   margin-bottom: 8px;
@@ -306,6 +311,18 @@
 
 .json-mobx-example-panel {
   padding: 0;
+}
+
+.json-mobx-debug-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.json-mobx-debug-label {
+  color: #555;
+  font-size: 12px;
 }
 
 .json-mobx-custom-value {
