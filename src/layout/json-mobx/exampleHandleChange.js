@@ -1,6 +1,7 @@
 import { runInAction } from 'mobx';
 import { parsePathToSegments, navigateToPath } from '../json/pathUtils';
 import { moveJsonItemByRequest } from './jsonDragMove';
+import { moveKeyInOrder } from './keyOrderStore';
 
 /**
  * Example handleChange implementation for JsonCompMobx
@@ -159,38 +160,7 @@ export function createHandleChange(observableData) {
             const parentSegments = segments.slice(0, -1);
             const parent = parentSegments.length === 0 ? observableData : navigateToPath(observableData, parentSegments);
             const currentKey = segments[segments.length - 1].key;
-            
-            const keys = Object.keys(parent).filter(k => !k.startsWith('__pseudo__'));
-            const currentIndex = keys.indexOf(currentKey);
-            
-            let newIndex;
-            if (_action === 'moveEntryUp') {
-              newIndex = currentIndex - 1;
-            } else if (_action === 'moveEntryDown') {
-              newIndex = currentIndex + 1;
-            } else if (_action === 'moveEntryToTop') {
-              newIndex = 0;
-            } else {
-              newIndex = keys.length - 1;
-            }
-            
-            if (newIndex >= 0 && newIndex < keys.length && newIndex !== currentIndex) {
-              // Rebuild object with new key order
-              const newObj = {};
-              const newKeys = [...keys];
-              newKeys.splice(currentIndex, 1);
-              newKeys.splice(newIndex, 0, currentKey);
-              
-              newKeys.forEach(k => {
-                newObj[k] = parent[k];
-              });
-              
-              // Replace parent's contents
-              Object.keys(parent).forEach(k => delete parent[k]);
-              Object.keys(newObj).forEach(k => {
-                parent[k] = newObj[k];
-              });
-            }
+            moveKeyInOrder(parent, currentKey, _action);
           });
           break;
         }
@@ -220,11 +190,14 @@ export function createHandleChange(observableData) {
         case 'addEntryBelow': {
           // Add pseudo entry for interactive creation (UI-only, no backend call)
           runInAction(() => {
-            const targetObj = segments.length === 0 ? observableData : navigateToPath(observableData, segments);
+            const isAddNearEntry = _action === 'addEntryAbove' || _action === 'addEntryBelow';
+            const targetObj = isAddNearEntry
+              ? (segments.length <= 1 ? observableData : navigateToPath(observableData, segments.slice(0, -1)))
+              : (segments.length === 0 ? observableData : navigateToPath(observableData, segments));
             
             if (targetObj && typeof targetObj === 'object' && !Array.isArray(targetObj)) {
               const pseudoKey = `__pseudo__${Date.now()}`;
-              const lastKey = segments.length > 0 ? segments[segments.length - 1].key : null;
+              const lastKey = isAddNearEntry && segments.length > 0 ? segments[segments.length - 1].key : null;
               
               targetObj[pseudoKey] = {
                 __pseudo__: true,
@@ -241,7 +214,10 @@ export function createHandleChange(observableData) {
         case 'addItemBelow': {
           // Add pseudo item for interactive creation (UI-only, no backend call)
           runInAction(() => {
-            const targetArray = navigateToPath(observableData, segments);
+            const isAddNearItem = _action === 'addItemAbove' || _action === 'addItemBelow';
+            const targetArray = isAddNearItem
+              ? navigateToPath(observableData, segments.slice(0, -1))
+              : navigateToPath(observableData, segments);
             
             if (Array.isArray(targetArray)) {
               const pseudoItem = { isPseudo: true };

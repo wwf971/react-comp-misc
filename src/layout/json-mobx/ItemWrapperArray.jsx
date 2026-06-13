@@ -6,6 +6,7 @@ import { getStableKey } from './keysManage';
 import { useJsonContext } from './JsonContext';
 import { getJsonArraySelectionItemId } from './jsonSelectionOperationStore';
 import { getIsJsonDropAllowedByDefault, getJsonDropInfoFromEvent } from './jsonDragMove';
+import { getJsonContextMenuTargetMeta } from './jsonContextMenu';
 
 /**
  * ItemWrapperArray - Isolated observer for each array item
@@ -37,7 +38,12 @@ const ItemWrapperArray = observer(({
   const isLastItem = index === data.length - 1;
   const isPrimitive = item === null || item === undefined || typeof item !== 'object';
   const isPseudo = item && typeof item === 'object' && item.isPseudo;
-  const { dragOperationStore, selectionOperationStore } = useJsonContext();
+  const {
+    dragOperationStore,
+    queryParentInfo,
+    requestJsonContextMenu,
+    selectionOperationStore,
+  } = useJsonContext();
   
   // Use stable key - for objects use WeakMap, for primitives use value+index
   const stableKey = getStableKey(item, index);
@@ -55,7 +61,9 @@ const ItemWrapperArray = observer(({
     itemParentId: parentSelectionItemId,
     path: itemPath,
     itemKind: 'arrayItem',
+    itemKey: index,
     label: `[${index}]`,
+    value: item,
     containerKind: 'array',
     containerPath: pathPrefixRef?.current || '',
   };
@@ -87,6 +95,11 @@ const ItemWrapperArray = observer(({
   }
 
   const handleSelectionMouseDownCapture = (event) => {
+    // Plain left click should leave selection mode immediately; shift-click is the only selection gesture.
+    if (!event.shiftKey && event.button === 0) {
+      selectionOperationStore?.clearSelection();
+      return;
+    }
     if (!event.shiftKey || event.button !== 0) return;
     if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
     if (!itemSelectionState?.isSelected) {
@@ -101,6 +114,22 @@ const ItemWrapperArray = observer(({
     event.preventDefault();
     event.stopPropagation();
     selectionOperationStore?.selectNextFromItem(selectionItemId);
+  };
+
+  const handleContextMenuCapture = (event) => {
+    if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const itemMetaTarget = getJsonContextMenuTargetMeta({
+      itemIdClicked: selectionItemId,
+      itemMetaClicked: itemMeta,
+      selectionOperationStore,
+    });
+    requestJsonContextMenu?.({
+      itemMeta: itemMetaTarget,
+      position: { x: event.clientX, y: event.clientY },
+      queryParentInfo,
+    });
   };
 
   const handleDragStart = (event) => {
@@ -190,10 +219,12 @@ const ItemWrapperArray = observer(({
       draggable={isDragMoveEnabled}
       onMouseDownCapture={handleSelectionMouseDownCapture}
       onClickCapture={handleSelectionClickCapture}
+      onContextMenuCapture={handleContextMenuCapture}
       onDragStart={isDragMoveEnabled ? handleDragStart : undefined}
       onDragOver={isDragMoveEnabled ? handleDragOver : undefined}
       onDrop={isDragMoveEnabled ? handleDrop : undefined}
       onDragEnd={isDragMoveEnabled ? handleDragEnd : undefined}
+      data-json-selection-item-id={selectionItemId}
     >
       {itemDragState?.isInsertBefore ? <div className="json-drop-line json-drop-line-before" /> : null}
       {itemDragState?.isInsertAfter ? <div className="json-drop-line json-drop-line-after" /> : null}

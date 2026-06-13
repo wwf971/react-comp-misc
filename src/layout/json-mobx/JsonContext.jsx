@@ -5,7 +5,8 @@ const JsonContext = createContext({
   typeConversionBehavior: 'allow',
   isDebug: false,
   selectionOperationStore: null,
-  dragOperationStore: null
+  dragOperationStore: null,
+  requestJsonContextMenu: null
 });
 
 export const useJsonContext = () => useContext(JsonContext);
@@ -17,7 +18,8 @@ export const JsonContextProvider = ({
   rootData,
   isDebug = false,
   selectionOperationStore = null,
-  dragOperationStore = null
+  dragOperationStore = null,
+  requestJsonContextMenu = null
 }) => {
   // Query function to check if a path is the only entry/item in its parent
   const queryParentInfo = useMemo(() => {
@@ -128,8 +130,24 @@ export const JsonContextProvider = ({
   }, [rootData]);
   
   const contextValue = useMemo(
-    () => ({ typeConversionBehavior, showConversionMenu, queryParentInfo, isDebug, selectionOperationStore, dragOperationStore }),
-    [typeConversionBehavior, showConversionMenu, queryParentInfo, isDebug, selectionOperationStore, dragOperationStore]
+    () => ({
+      typeConversionBehavior,
+      showConversionMenu,
+      queryParentInfo,
+      isDebug,
+      selectionOperationStore,
+      dragOperationStore,
+      requestJsonContextMenu,
+    }),
+    [
+      typeConversionBehavior,
+      showConversionMenu,
+      queryParentInfo,
+      isDebug,
+      selectionOperationStore,
+      dragOperationStore,
+      requestJsonContextMenu,
+    ]
   );
 
   return (

@@ -18,6 +18,7 @@ import {
   createJsonSelectionOperationStore,
 } from './jsonSelectionOperationStore';
 import { createJsonDragOperationStore } from './jsonDragOperationStore';
+import { getJsonContextMenuRequestFromItemMeta } from './jsonContextMenu';
 import './JsonComp.css';
 
 /**
@@ -60,6 +61,7 @@ const JsonCompMobx = observer(({
   dragOperationStore
 }) => {
   const [conversionMenu, setConversionMenu] = useState(null);
+  const rootRef = React.useRef(null);
   const localPathPrefixRef = usePathRef(pathPrefix);
   const activePathPrefixRef = pathPrefixRef || localPathPrefixRef;
   const activePathPrefix = activePathPrefixRef.current;
@@ -97,9 +99,11 @@ const JsonCompMobx = observer(({
     });
   }, [activeSelectionOperationStore, isRoot]);
 
-  // Handle conversion menu request from value components
   const showConversionMenu = useCallback((request) => {
-    setConversionMenu(request);
+    setConversionMenu(null);
+    requestAnimationFrame(() => {
+      setConversionMenu(request);
+    });
   }, []);
 
   // Close menu
@@ -116,7 +120,52 @@ const JsonCompMobx = observer(({
       onChange,
       closeMenu
     });
-  }, [conversionMenu, onChange, closeMenu, data]);
+    activeSelectionOperationStore.clearSelection();
+  }, [activeSelectionOperationStore, conversionMenu, onChange, closeMenu, data]);
+
+  const requestJsonContextMenu = useCallback((request) => {
+    const menuRequest = getJsonContextMenuRequestFromItemMeta({
+      itemMeta: request.itemMeta,
+      position: request.position,
+      queryParentInfo: request.queryParentInfo,
+    });
+    if (!menuRequest) return;
+    showConversionMenu(menuRequest);
+  }, [showConversionMenu]);
+
+  const getElementUnderMenu = useCallback((event) => {
+    const overlayElements = Array.from(document.querySelectorAll('.menu-backdrop, .menu-core-root'));
+    const valuePreviousList = overlayElements.map((element) => ({
+      element,
+      pointerEvents: element.style.pointerEvents,
+    }));
+    overlayElements.forEach((element) => {
+      element.style.pointerEvents = 'none';
+    });
+    const elementTarget = document.elementFromPoint(event.clientX, event.clientY);
+    valuePreviousList.forEach(({ element, pointerEvents }) => {
+      element.style.pointerEvents = pointerEvents;
+    });
+    return elementTarget;
+  }, []);
+
+  const handleMenuBackdropContextMenu = useCallback((event) => {
+    event.preventDefault();
+    const elementTarget = getElementUnderMenu(event);
+    closeMenu();
+    if (!elementTarget) return;
+    requestAnimationFrame(() => {
+      const eventNext = new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        button: 2,
+      });
+      elementTarget.dispatchEvent(eventNext);
+    });
+  }, [closeMenu, getElementUnderMenu]);
 
   const renderNestedJsonValue = useCallback((props) => (
     <JsonCompMobx {...props} />
@@ -312,6 +361,7 @@ const JsonCompMobx = observer(({
   if (isRoot) {
     const rootSelectionState = activeSelectionOperationStore.getItemSelectionState(JSON_ROOT_SELECTION_ITEM_ID);
     const handleRootSelectionMouseDownCapture = (event) => {
+      if (event.target.closest('.json-selection-item')) return;
       if (!event.shiftKey && (event.button === 0 || event.button === 2)) {
         activeSelectionOperationStore.clearSelection();
         return;
@@ -342,8 +392,10 @@ const JsonCompMobx = observer(({
         isDebug={isDebug}
         selectionOperationStore={activeSelectionOperationStore}
         dragOperationStore={activeDragOperationStore}
+        requestJsonContextMenu={requestJsonContextMenu}
       >
         <div
+          ref={rootRef}
           className={rootSelectionClassName}
           onMouseDownCapture={handleRootSelectionMouseDownCapture}
           onClickCapture={handleRootSelectionClickCapture}
@@ -364,6 +416,10 @@ const JsonCompMobx = observer(({
               }
               if (eventType === 'itemClick') {
                 handleMenuItemClick(eventData.item);
+                return;
+              }
+              if (eventType === 'backdropContextMenu') {
+                handleMenuBackdropContextMenu(eventData.event);
               }
             }}
           />

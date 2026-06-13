@@ -5,6 +5,7 @@ import JsonKeyValueComp from './JsonKeyValueComp';
 import { useJsonContext } from './JsonContext';
 import { getJsonObjectSelectionItemId } from './jsonSelectionOperationStore';
 import { getIsJsonDropAllowedByDefault, getJsonDropInfoFromEvent } from './jsonDragMove';
+import { getJsonContextMenuTargetMeta } from './jsonContextMenu';
 
 /**
  * ObjectItemWrapper - Isolated observer for each object key-value pair
@@ -32,7 +33,12 @@ const ItemWrapperObject = observer(({
   const getPath = useCallback(() => keyPathRef.current, [keyPathRef]);
   const value = data[itemKey];
   const isPrimitive = value === null || value === undefined || typeof value !== 'object';
-  const { dragOperationStore, selectionOperationStore } = useJsonContext();
+  const {
+    dragOperationStore,
+    queryParentInfo,
+    requestJsonContextMenu,
+    selectionOperationStore,
+  } = useJsonContext();
   const selectionItemId = getJsonObjectSelectionItemId(keyPath);
   const itemSelectionState = selectionOperationStore?.getItemSelectionState(selectionItemId);
   const isDragMoveEnabled = Boolean(dragOperationStore);
@@ -42,7 +48,9 @@ const ItemWrapperObject = observer(({
     itemParentId: parentSelectionItemId,
     path: keyPath,
     itemKind: 'objectEntry',
+    itemKey,
     label: itemKey,
+    value,
     containerKind: 'object',
     containerPath: pathPrefixRef?.current || '',
   };
@@ -55,6 +63,11 @@ const ItemWrapperObject = observer(({
   }, [dragOperationStore, isDragMoveEnabled, itemMeta, selectionOperationStore]);
 
   const handleSelectionMouseDownCapture = (event) => {
+    // Plain left click should leave selection mode immediately; shift-click is the only selection gesture.
+    if (!event.shiftKey && event.button === 0) {
+      selectionOperationStore?.clearSelection();
+      return;
+    }
     if (!event.shiftKey || event.button !== 0) return;
     if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
     if (!itemSelectionState?.isSelected) {
@@ -69,6 +82,22 @@ const ItemWrapperObject = observer(({
     event.preventDefault();
     event.stopPropagation();
     selectionOperationStore?.selectNextFromItem(selectionItemId);
+  };
+
+  const handleContextMenuCapture = (event) => {
+    if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const itemMetaTarget = getJsonContextMenuTargetMeta({
+      itemIdClicked: selectionItemId,
+      itemMetaClicked: itemMeta,
+      selectionOperationStore,
+    });
+    requestJsonContextMenu?.({
+      itemMeta: itemMetaTarget,
+      position: { x: event.clientX, y: event.clientY },
+      queryParentInfo,
+    });
   };
 
   const handleDragStart = (event) => {
@@ -157,10 +186,12 @@ const ItemWrapperObject = observer(({
       draggable={isDragMoveEnabled}
       onMouseDownCapture={handleSelectionMouseDownCapture}
       onClickCapture={handleSelectionClickCapture}
+      onContextMenuCapture={handleContextMenuCapture}
       onDragStart={isDragMoveEnabled ? handleDragStart : undefined}
       onDragOver={isDragMoveEnabled ? handleDragOver : undefined}
       onDrop={isDragMoveEnabled ? handleDrop : undefined}
       onDragEnd={isDragMoveEnabled ? handleDragEnd : undefined}
+      data-json-selection-item-id={selectionItemId}
     >
       {itemDragState?.isInsertBefore ? <div className="json-drop-line json-drop-line-before" /> : null}
       {itemDragState?.isInsertAfter ? <div className="json-drop-line json-drop-line-after" /> : null}

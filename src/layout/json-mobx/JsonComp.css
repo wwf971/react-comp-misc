@@ -150,6 +150,11 @@
   margin-bottom: 12px;
 }
 
+.json-menu-path-item {
+  color: #8a8f98;
+  font-size: 12px;
+}
+
 .json-keyvalue {
   display: flex;
   align-items: baseline;
