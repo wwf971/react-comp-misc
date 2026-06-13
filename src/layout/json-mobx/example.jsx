@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import JsonCompMobx, { createJsonDragOperationStore, createJsonSelectionOperationStore } from './JsonCompMobx';
@@ -40,12 +40,18 @@ const JsonMobxSelectionStatus = observer(({ dragOperationStore, selectionOperati
 
   return (
     <div className="json-selection-status-line">
-      Shift click to select, then shift drag the selected item to move it.
       <span> Current selection: {statusText}</span>
       <span> Drag: {dragText}</span>
     </div>
   );
 });
+
+const getJsonMobxActionLabel = (changeData) => {
+  if (changeData?._action === 'moveJsonItem') return 'Drag move';
+  if (changeData?._action) return changeData._action;
+  if (changeData?._keyRename) return 'Key rename';
+  return 'Value edit';
+};
 
 const JsonMobxRenderDebugExample = observer(() => {
   const dataExample = useMemo(() => makeAutoObservable({
@@ -146,6 +152,10 @@ const JsonMobxExample = observer(() => {
   const [isKeyEditable, setIsKeyEditable] = useState(true);
   const [isDebug, setIsDebug] = useState(true);
   const [isDragMoveEnabled, setIsDragMoveEnabled] = useState(true);
+  const [dragFailureRate, setDragFailureRate] = useState(30);
+  const [changeMessage, setChangeMessage] = useState(null);
+  const dragFailureRateRef = useRef(dragFailureRate);
+  dragFailureRateRef.current = dragFailureRate;
   const dragOperationStore = useMemo(() => createJsonDragOperationStore(), []);
   const selectionOperationStore = useMemo(() => createJsonSelectionOperationStore(), []);
   const selectionExampleData = useMemo(() => makeAutoObservable({
@@ -177,8 +187,29 @@ const JsonMobxExample = observer(() => {
     count: 3
   }), []);
 
-  // Create the onChange handler using the helper function
-  const handleChange = useMemo(() => createHandleChange(observableData), [observableData]);
+  const handleChangeBase = useMemo(() => createHandleChange(observableData), [observableData]);
+  const handleChange = useCallback(async (path, changeData) => {
+    const actionLabel = getJsonMobxActionLabel(changeData);
+    const dragFailureRateCurrent = dragFailureRateRef.current;
+    if (changeData?._action === 'moveJsonItem' && Math.random() * 100 < dragFailureRateCurrent) {
+      const result = { code: -1, message: `Rejected by demo failure rate (${dragFailureRateCurrent}%)` };
+      setChangeMessage({
+        type: 'error',
+        text: `${actionLabel} failed at ${path || 'root'}: ${result.message}`,
+      });
+      return result;
+    }
+    const result = await handleChangeBase(path, changeData);
+    const isSuccess = !result || result.code === 0;
+    setChangeMessage({
+      type: isSuccess ? 'success' : 'error',
+      text: `${actionLabel} ${isSuccess ? 'accepted' : 'failed'} at ${path || 'root'}: ${result?.message || 'Success'}`,
+    });
+    return result;
+  }, [handleChangeBase]);
+  const handleDragFailureRateChange = useCallback((event) => {
+    setDragFailureRate(Number(event.target.value));
+  }, []);
   const getCustomValueComp = useCallback(({ path, value }) => {
     if (path !== 'notes.longText') return null;
     return <JsonMobxCustomValue path={path} value={value} />;
@@ -194,10 +225,17 @@ const JsonMobxExample = observer(() => {
     <div style={{ maxWidth: '900px', padding: '20px' }}>
       <div style={{ marginBottom: '16px', padding: '12px', background: '#e8f5e9', borderRadius: '3px' }}>
         <strong>MobX-based JSON Component</strong>
-        <div style={{ fontSize: '13px', marginTop: '6px', color: '#555' }}>
-          Right-click on keys, values, or empty objects/arrays to access the context menu.
-          Supports type conversions, add/delete operations, and more.
-        </div>
+        <ul className="json-mobx-guidance-list">
+          <li>
+            Use <span className="json-mobx-key-chip">Right click</span> on keys, values, or empty containers to open the context menu.
+          </li>
+          <li>
+            Use the menu for type conversion, add, delete, and related edit actions.
+          </li>
+          <li>
+            Use <span className="json-mobx-key-chip">Shift</span> + <span className="json-mobx-key-chip">Click</span> to select, then <span className="json-mobx-key-chip">Shift</span> + drag to move the selected item.
+          </li>
+        </ul>
       </div>
 
       <div style={{ marginBottom: '12px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -230,6 +268,23 @@ const JsonMobxExample = observer(() => {
             onChange={setIsDragMoveEnabled}
           />
         </div>
+        <div className="json-mobx-drag-failure-control">
+          <span className="json-mobx-control-label">Drag Failure Rate:</span>
+          <input
+            type="range"
+            className="json-mobx-drag-failure-slider"
+            min="0"
+            max="100"
+            step="5"
+            value={dragFailureRate}
+            onChange={handleDragFailureRateChange}
+          />
+          <span className="json-mobx-drag-failure-value">{dragFailureRate}%</span>
+        </div>
+      </div>
+
+      <div className={`json-mobx-change-message-bar ${changeMessage ? `is-${changeMessage.type}` : ''}`}>
+        {changeMessage?.text || ' '}
       </div>
 
       <div style={{ background: '#f9f9f9', padding: '12px', borderRadius: '3px', marginBottom: '16px' }}>

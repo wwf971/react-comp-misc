@@ -6,11 +6,6 @@ export const getJsonObjectSelectionItemId = (path) => `json-object-item:${path |
 
 export const getJsonArraySelectionItemId = (path) => `json-array-item:${path || '$root'}`;
 
-export const createJsonSelectionItemState = () => ({
-  isSelected: false,
-  isSelectionAncestor: false,
-});
-
 export const createJsonSelectionOperationStore = () => {
   const store = {
     isSelectionActive: false,
@@ -19,14 +14,17 @@ export const createJsonSelectionOperationStore = () => {
     selectedAncestorItemIds: [],
     selectedItemMeta: null,
     itemMetaById: {},
-    itemSelectionStateById: {},
     isNextSelectionClickSuppressed: false,
     getItemSelectionState(itemId) {
-      if (!itemId) return createJsonSelectionItemState();
-      if (!this.itemSelectionStateById[itemId]) {
-        this.itemSelectionStateById[itemId] = createJsonSelectionItemState();
-      }
-      return this.itemSelectionStateById[itemId];
+      const selectionRevision = this.selectionRevision;
+      const isSelectionActive = this.isSelectionActive;
+      const itemSelectedId = this.selectedItemId;
+      const itemAncestorIds = this.selectedAncestorItemIds;
+      return {
+        selectionRevision,
+        isSelected: Boolean(isSelectionActive && itemId && itemSelectedId === itemId),
+        isSelectionAncestor: Boolean(isSelectionActive && itemId && itemAncestorIds.includes(itemId)),
+      };
     },
     registerItem(itemMeta) {
       if (!itemMeta?.itemId) return;
@@ -40,16 +38,6 @@ export const createJsonSelectionOperationStore = () => {
       if (this.selectedItemId === itemMeta.itemId) {
         this.selectedItemMeta = this.itemMetaById[itemMeta.itemId];
       }
-    },
-    clearItemSelectionState(itemId) {
-      if (!itemId || !this.itemSelectionStateById[itemId]) return;
-      Object.assign(this.itemSelectionStateById[itemId], createJsonSelectionItemState());
-    },
-    clearActiveItemSelectionStates() {
-      this.clearItemSelectionState(this.selectedItemId);
-      this.selectedAncestorItemIds.forEach((itemId) => {
-        this.clearItemSelectionState(itemId);
-      });
     },
     getAncestorItemIds(itemId) {
       const ancestorItemIds = [];
@@ -85,15 +73,10 @@ export const createJsonSelectionOperationStore = () => {
       }
       const itemIdPrevious = this.selectedItemId;
       const isSelectionChanged = !this.isSelectionActive || itemIdPrevious !== itemId;
-      this.clearActiveItemSelectionStates();
       this.isSelectionActive = true;
       this.selectedItemId = itemId;
       this.selectedItemMeta = this.itemMetaById[itemId] ?? { itemId };
       this.selectedAncestorItemIds = this.getAncestorItemIds(itemId);
-      this.getItemSelectionState(itemId).isSelected = true;
-      this.selectedAncestorItemIds.forEach((itemIdAncestor) => {
-        this.getItemSelectionState(itemIdAncestor).isSelectionAncestor = true;
-      });
       if (isSelectionChanged) {
         this.selectionRevision += 1;
       }
@@ -116,7 +99,6 @@ export const createJsonSelectionOperationStore = () => {
     },
     clearSelection() {
       const isSelectionChanged = this.isSelectionActive || this.selectedItemId || this.selectedAncestorItemIds.length > 0;
-      this.clearActiveItemSelectionStates();
       this.isSelectionActive = false;
       this.selectedItemId = null;
       this.selectedAncestorItemIds = [];

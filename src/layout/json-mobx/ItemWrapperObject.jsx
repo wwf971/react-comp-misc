@@ -4,7 +4,10 @@ import { useDerivedPathRef } from './pathRef';
 import JsonKeyValueComp from './JsonKeyValueComp';
 import { useJsonContext } from './JsonContext';
 import { getJsonObjectSelectionItemId } from './jsonSelectionOperationStore';
-import { useJsonItemInteractionHandlers } from './useJsonItemInteractionHandlers';
+import {
+  useJsonItemInteraction,
+  useJsonSelectionRenderRevision,
+} from './useJsonItemInteraction';
 
 /**
  * ObjectItemWrapper - Isolated observer for each object key-value pair
@@ -39,6 +42,7 @@ const ItemWrapperObject = observer(({
     selectionOperationStore,
   } = useJsonContext();
   const selectionItemId = getJsonObjectSelectionItemId(keyPath);
+  const revisionSelectionRender = useJsonSelectionRenderRevision(selectionOperationStore);
   const itemSelectionState = selectionOperationStore?.getItemSelectionState(selectionItemId);
   const isDragMoveEnabled = Boolean(dragOperationStore);
   const itemDragState = isDragMoveEnabled ? dragOperationStore?.getItemDragState(selectionItemId) : null;
@@ -73,7 +77,7 @@ const ItemWrapperObject = observer(({
     handlePointerDownCapture,
     handleSelectionClickCapture,
     handleSelectionMouseDownCapture,
-  } = useJsonItemInteractionHandlers({
+  } = useJsonItemInteraction({
     selectionItemId,
     itemMeta,
     itemSelectionState,
@@ -106,6 +110,7 @@ const ItemWrapperObject = observer(({
       onClickCapture={handleSelectionClickCapture}
       onContextMenuCapture={handleContextMenuCapture}
       data-json-selection-item-id={selectionItemId}
+      data-json-selection-render-revision={revisionSelectionRender}
     >
       {itemDragState?.isInsertBefore ? <div className="json-drop-line json-drop-line-before" /> : null}
       {itemDragState?.isInsertAfter ? <div className="json-drop-line json-drop-line-after" /> : null}

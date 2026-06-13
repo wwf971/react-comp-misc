@@ -5,7 +5,10 @@ import PseudoListItem from './PseudoListItem';
 import { getStableKey } from './keysManage';
 import { useJsonContext } from './JsonContext';
 import { getJsonArraySelectionItemId } from './jsonSelectionOperationStore';
-import { useJsonItemInteractionHandlers } from './useJsonItemInteractionHandlers';
+import {
+  useJsonItemInteraction,
+  useJsonSelectionRenderRevision,
+} from './useJsonItemInteraction';
 
 /**
  * ItemWrapperArray - Isolated observer for each array item
@@ -48,6 +51,7 @@ const ItemWrapperArray = observer(({
   const stableKey = getStableKey(item, index);
   const itemPath = getItemPath();
   const selectionItemId = getJsonArraySelectionItemId(itemPath);
+  const revisionSelectionRender = useJsonSelectionRenderRevision(selectionOperationStore);
   const itemSelectionState = !isPseudo
     ? selectionOperationStore?.getItemSelectionState(selectionItemId)
     : null;
@@ -87,7 +91,7 @@ const ItemWrapperArray = observer(({
     handlePointerDownCapture,
     handleSelectionClickCapture,
     handleSelectionMouseDownCapture,
-  } = useJsonItemInteractionHandlers({
+  } = useJsonItemInteraction({
     selectionItemId,
     itemMeta,
     itemSelectionState,
@@ -139,6 +143,7 @@ const ItemWrapperArray = observer(({
       onClickCapture={handleSelectionClickCapture}
       onContextMenuCapture={handleContextMenuCapture}
       data-json-selection-item-id={selectionItemId}
+      data-json-selection-render-revision={revisionSelectionRender}
     >
       {itemDragState?.isInsertBefore ? <div className="json-drop-line json-drop-line-before" /> : null}
       {itemDragState?.isInsertAfter ? <div className="json-drop-line json-drop-line-after" /> : null}

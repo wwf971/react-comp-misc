@@ -376,6 +376,7 @@ const JsonCompMobx = observer(({
       if (event.target.closest('.json-selection-item')) return;
       event.preventDefault();
       event.stopPropagation();
+      if (activeSelectionOperationStore.consumeNextSelectionClickSuppressed()) return;
       activeSelectionOperationStore.selectNextFromItem(JSON_ROOT_SELECTION_ITEM_ID);
     };
     const rootSelectionClassName = [
