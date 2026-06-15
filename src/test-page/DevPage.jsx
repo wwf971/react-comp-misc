@@ -73,22 +73,27 @@ function DevPage() {
       <PanelDual orientation="vertical" initialWidth={300}>
         <div className="dev-header">
           <ItemTree
-            items={sideTreeItems}
-            searchPlaceholder="Search components..."
-            selectedItemKey={CompSelectedStr}
-            titleText="React Components Assortment"
-            headerExtraContent={(
-              <a
-                href="https://github.com/wwf971/react-comp-misc"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="github-link"
-              >
-                view source code
-              </a>
-            )}
-            onItemSelect={(itemData) => {
-              const itemKey = String(itemData?.key || '').trim();
+            data={{
+              items: sideTreeItems,
+              selectedItemKey: CompSelectedStr,
+            }}
+            config={{
+              searchPlaceholder: 'Search components...',
+              titleText: 'React Components Assortment',
+              headerExtraContent: (
+                <a
+                  href="https://github.com/wwf971/react-comp-misc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="github-link"
+                >
+                  view source code
+                </a>
+              ),
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType !== 'itemSelect') return;
+              const itemKey = String(eventData.itemData?.key || '').trim();
               if (!itemKey) return;
               if (!components[itemKey]) return;
               setCompSelectedStr(itemKey);

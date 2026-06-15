@@ -43,11 +43,17 @@ Shift-click selects an item. Repeated shift-click expands selection to ancestors
 
 Shift-drag starts only when the pointer begins inside the currently selected item. The selected item can be dragged from its nested content.
 
+Shift-drag can also start directly from an item that is outside the current selection. That item is selected when the pointer passes the drag threshold, then the same drag flow continues. This shortcut also works when nothing is selected.
+
+For non-leaf items, the shortcut applies when the pointer starts on that item’s own row area. If the pointer starts inside a nested child item, the child item receives the gesture instead.
+
 Pointer movement starts drag after a small distance threshold. Native browser drag is not used, because native drag can be unreliable when the gesture starts from editable or text-like descendants.
 
 During drag, `jsonDropPreview.js` uses `document.elementFromPoint()` to find the current item or empty container under the pointer. It then asks `jsonDragMove.js` for the drop position and validation result.
 
 On pointer up, `jsonMoveCompletion.js` sends an `onChange` request with `_action: 'moveJsonItem'`. If the owner accepts the move, the moved item remains selected.
+
+If pointer up happens on a red or otherwise invalid drop target, `jsonMoveCompletion.js` sends a rejected move request with `_invalidDrop: true`. The example owner handles this flag and shows an error in its message bar. This keeps the visual drop validation and the user-facing failure message in sync.
 
 The owner may reject the request by returning a non-zero `code`. The demo in `example.jsx` uses this to simulate drag move failures. That failure rate belongs to the example’s data-management layer, not to `JsonCompMobx`.
 

@@ -127,27 +127,26 @@ const TreeTextItemComp = ({ itemData }) => {
 };
 
 const TreeItemNode = observer(({
-  itemId,
-  itemParentId = null,
-  itemPreviousId = null,
-  itemNextId = null,
-  depth = 0,
-  indentPx = 10,
-  getItemDataById,
-  onDataChangeRequest,
-  selectedItemId,
-  onItemClick,
-  onItemDoubleClick,
-  onItemContextMenu,
-  getItemComp,
-  getItemRowClassName,
-  isToggleExpandOnItemClick,
-  isItemDragEnabled,
-  getIsItemDraggable,
-  getItemDropStatus,
-  dragOperationStore,
+  data = {},
+  config = {},
+  onEvent,
 }) => {
-  const itemData = getItemDataById?.(itemId);
+  const itemId = data?.itemId;
+  const itemParentId = data?.itemParentId ?? null;
+  const itemPreviousId = data?.itemPreviousId ?? null;
+  const itemNextId = data?.itemNextId ?? null;
+  const depth = data?.depth ?? 0;
+  const itemSelectedId = data?.itemSelectedId;
+  const itemDataById = data?.itemDataById || {};
+  const indentPx = config?.indentPx ?? 10;
+  const getItemComp = config?.getItemComp;
+  const getItemRowClassName = config?.getItemRowClassName;
+  const isToggleExpandOnItemClick = config?.isToggleExpandOnItemClick !== false;
+  const isItemDragEnabled = config?.isItemDragEnabled === true;
+  const getIsItemDraggable = config?.getIsItemDraggable;
+  const getItemDropStatus = config?.getItemDropStatus;
+  const dragOperationStore = config?.dragOperationStore;
+  const itemData = itemDataById[itemId] || null;
 
   if (!itemData) {
     return null;
@@ -157,7 +156,7 @@ const TreeItemNode = observer(({
   const isExpanded = itemData.isExpanded === true;
   const childrenLoadState = itemData.childrenLoadState || 'loaded';
   const childrenIds = Array.isArray(itemData.childrenIds) ? itemData.childrenIds : [];
-  const isSelected = selectedItemId !== undefined && selectedItemId === itemId;
+  const isSelected = itemSelectedId !== undefined && itemSelectedId === itemId;
   const canRenderChildren = !isLeaf && isExpanded;
   const ItemComp = getItemComp?.(itemData) || TreeTextItemComp;
   const itemRowClassName = `${getItemRowClassName?.(itemData) ?? ''}`.trim();
@@ -166,36 +165,38 @@ const TreeItemNode = observer(({
 
   const handleToggleClick = async (event) => {
     event.stopPropagation();
-    if (isLeaf || !onDataChangeRequest) return;
-    await onDataChangeRequest('toggle-expand', {
+    if (isLeaf || !onEvent) return;
+    await onEvent('toggleExpand', {
       itemId,
+      itemData,
       nextIsExpanded: !isExpanded,
     });
   };
 
   const handleRowClick = async () => {
-    if (onItemClick) {
-      await onItemClick(itemId, itemData);
+    if (onEvent) {
+      await onEvent('itemClick', { itemId, itemData });
     }
-    if (isToggleExpandOnItemClick && !isLeaf && onDataChangeRequest) {
-      await onDataChangeRequest('toggle-expand', {
+    if (isToggleExpandOnItemClick && !isLeaf && onEvent) {
+      await onEvent('toggleExpand', {
         itemId,
+        itemData,
         nextIsExpanded: !isExpanded,
       });
     }
   };
 
   const handleRowContextMenu = async (event) => {
-    if (!onItemContextMenu) return;
+    if (!onEvent) return;
     event.preventDefault();
     event.stopPropagation();
-    await onItemContextMenu(itemId, itemData, event);
+    await onEvent('itemContextMenu', { itemId, itemData, event });
   };
 
   const handleReloadClick = async (event) => {
     event.stopPropagation();
-    if (!onDataChangeRequest) return;
-    await onDataChangeRequest('reload-children', { itemId });
+    if (!onEvent) return;
+    await onEvent('reloadChildren', { itemId, itemData });
   };
 
   const isDropAllowedByDefault = (dropInfo) => {
@@ -210,7 +211,7 @@ const TreeItemNode = observer(({
     if (!isDropAllowedByDefault(dropInfo)) return false;
     const status = getItemDropStatus?.({
       itemId: dragOperationStore.itemDraggedId,
-      itemData: getItemDataById?.(dragOperationStore.itemDraggedId),
+      itemData: itemDataById[dragOperationStore.itemDraggedId] || null,
       targetItemId: dropInfo.targetItemId,
       targetItemData: itemData,
       drop: dropInfo.drop,
@@ -253,9 +254,10 @@ const TreeItemNode = observer(({
       ? dragOperationStore.getItemDragState(dropInfoActive.targetItemId)
       : null;
 
-    if (itemDraggedId && dropInfoActive?.drop && itemDragStateActive?.isDropAllowed !== false && onDataChangeRequest) {
-      await onDataChangeRequest('move-item', {
+    if (itemDraggedId && dropInfoActive?.drop && itemDragStateActive?.isDropAllowed !== false && onEvent) {
+      await onEvent('moveItem', {
         itemId: itemDraggedId,
+        itemData: itemDataById[itemDraggedId] || null,
         drop: dropInfoActive.drop,
       });
     }
@@ -285,7 +287,7 @@ const TreeItemNode = observer(({
           draggable={isItemDraggable}
           onClick={handleRowClick}
           onDoubleClick={() => {
-            onItemDoubleClick?.(itemId, itemData);
+            onEvent?.('itemDoubleClick', { itemId, itemData });
           }}
           onContextMenu={handleRowContextMenu}
           onDragStart={isItemDragEnabled ? handleRowDragStart : undefined}
@@ -338,25 +340,17 @@ const TreeItemNode = observer(({
           {childrenIds.map((childId, childIndex) => (
             <TreeItemNode
               key={childId}
-              itemId={childId}
-              itemParentId={itemId}
-              itemPreviousId={childrenIds[childIndex - 1] ?? null}
-              itemNextId={childrenIds[childIndex + 1] ?? null}
-              depth={depth + 1}
-              indentPx={indentPx}
-              getItemDataById={getItemDataById}
-              onDataChangeRequest={onDataChangeRequest}
-              selectedItemId={selectedItemId}
-              onItemClick={onItemClick}
-              onItemDoubleClick={onItemDoubleClick}
-              onItemContextMenu={onItemContextMenu}
-              getItemComp={getItemComp}
-              getItemRowClassName={getItemRowClassName}
-              isToggleExpandOnItemClick={isToggleExpandOnItemClick}
-              isItemDragEnabled={isItemDragEnabled}
-              getIsItemDraggable={getIsItemDraggable}
-              getItemDropStatus={getItemDropStatus}
-              dragOperationStore={dragOperationStore}
+              data={{
+                itemId: childId,
+                itemParentId: itemId,
+                itemPreviousId: childrenIds[childIndex - 1] ?? null,
+                itemNextId: childrenIds[childIndex + 1] ?? null,
+                depth: depth + 1,
+                itemSelectedId,
+                itemDataById,
+              }}
+              config={config}
+              onEvent={onEvent}
             />
           ))}
         </div>
@@ -366,48 +360,36 @@ const TreeItemNode = observer(({
 });
 
 const TreeView = observer(({
-  rootItemIds = [],
-  getItemDataById,
-  onDataChangeRequest,
-  selectedItemId,
-  onItemClick,
-  onItemDoubleClick,
-  onItemContextMenu,
-  getItemComp,
-  getItemRowClassName,
-  className = '',
-  isToggleExpandOnItemClick = true,
-  isItemDragEnabled = false,
-  getIsItemDraggable,
-  getItemDropStatus,
-  indentPx = 10,
+  data = {},
+  config = {},
+  onEvent,
 }) => {
   const dragOperationStore = React.useMemo(() => createTreeDragOperationStore(), []);
+  const itemRootIds = Array.isArray(data?.itemRootIds) ? data.itemRootIds : [];
+  const itemDataById = data?.itemDataById || {};
+  const itemSelectedId = data?.itemSelectedId;
+  const className = config?.className || '';
+  const configResolved = {
+    ...config,
+    dragOperationStore,
+  };
 
   return (
     <div className={`tree-view ${className}`}>
-      {rootItemIds.map((itemId, itemIndex) => (
+      {itemRootIds.map((itemId, itemIndex) => (
         <TreeItemNode
           key={itemId}
-          itemId={itemId}
-          itemParentId={null}
-          itemPreviousId={rootItemIds[itemIndex - 1] ?? null}
-          itemNextId={rootItemIds[itemIndex + 1] ?? null}
-          depth={0}
-          indentPx={indentPx}
-          getItemDataById={getItemDataById}
-          onDataChangeRequest={onDataChangeRequest}
-          selectedItemId={selectedItemId}
-          onItemClick={onItemClick}
-          onItemDoubleClick={onItemDoubleClick}
-          onItemContextMenu={onItemContextMenu}
-          getItemComp={getItemComp}
-          getItemRowClassName={getItemRowClassName}
-          isToggleExpandOnItemClick={isToggleExpandOnItemClick}
-          isItemDragEnabled={isItemDragEnabled}
-          getIsItemDraggable={getIsItemDraggable}
-          getItemDropStatus={getItemDropStatus}
-          dragOperationStore={dragOperationStore}
+          data={{
+            itemId,
+            itemParentId: null,
+            itemPreviousId: itemRootIds[itemIndex - 1] ?? null,
+            itemNextId: itemRootIds[itemIndex + 1] ?? null,
+            depth: 0,
+            itemSelectedId,
+            itemDataById,
+          }}
+          config={configResolved}
+          onEvent={onEvent}
         />
       ))}
     </div>

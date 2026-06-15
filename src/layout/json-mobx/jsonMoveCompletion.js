@@ -48,6 +48,11 @@ export const completeJsonMoveDrop = async ({
   const itemDragStateActive = dropInfoActive?.targetItemId
     ? dragOperationStore.getItemDragState(dropInfoActive.targetItemId)
     : null;
+  const isDropInvalid = Boolean(
+    itemDraggedMeta
+      && onChange
+      && (!dropInfoActive?.drop || itemDragStateActive?.isDropAllowed === false)
+  );
   const isDropCommitted = Boolean(
     itemDraggedMeta
       && dropInfoActive?.drop
@@ -56,6 +61,19 @@ export const completeJsonMoveDrop = async ({
   );
   const selectionRevisionBeforeMove = selectionOperationStore?.selectionRevision;
   dragOperationStore.clearAll();
+  if (isDropInvalid) {
+    await onChange(itemDraggedMeta.path, {
+      old: { type: itemDraggedMeta.itemKind },
+      new: { type: itemDraggedMeta.itemKind },
+      _action: 'moveJsonItem',
+      _invalidDrop: true,
+      moveRequest: {
+        source: itemDraggedMeta,
+        drop: dropInfoActive?.drop ?? null,
+      },
+    });
+    return;
+  }
   if (!isDropCommitted) return;
 
   const result = await onChange(itemDraggedMeta.path, {

@@ -205,11 +205,11 @@ const MenuRightClickExample = () => {
     // CRUCIAL: Temporarily hide backdrop to find element underneath
     const backdrop = e.currentTarget
     backdrop.style.pointerEvents = 'none'
-    const clickedElement = document.elementFromPoint(e.clientX, e.clientY)
+    const clickedEl = document.elementFromPoint(e.clientX, e.clientY)
     backdrop.style.pointerEvents = ''
     
     // Check if we clicked on a tag
-    const tagElement = clickedElement?.closest('[data-tag-name]')
+    const tagElement = clickedEl?.closest('[data-tag-name]')
     
     if (tagElement) {
       const tagName = tagElement.getAttribute('data-tag-name')

@@ -78,27 +78,21 @@ const ItemTree = ({
   data = {},
   config = {},
   onEvent,
-  items,
-  selectedItemKey,
-  onItemSelect,
-  titleText,
-  headerExtraContent = null,
-  searchPlaceholder,
-  isSearchEnabled,
-  isHeaderVisible,
-  getItemKey = defaultGetItemKey,
-  getItemLabel = defaultGetItemLabel,
-  getItemDescription = defaultGetItemDescription,
-  className = '',
 }) => {
-  const resolvedItems = Array.isArray(data?.items)
-    ? data.items
-    : (Array.isArray(items) ? items : []);
-  const resolvedSelectedItemKey = data?.selectedItemKey ?? selectedItemKey ?? '';
-  const resolvedTitleText = config?.titleText ?? titleText ?? '';
-  const resolvedSearchPlaceholder = config?.searchPlaceholder ?? searchPlaceholder ?? 'Search...';
-  const resolvedIsSearchEnabled = config?.isSearchEnabled ?? (isSearchEnabled !== false);
-  const resolvedIsHeaderVisible = config?.isHeaderVisible ?? (isHeaderVisible !== false);
+  const resolvedItems = Array.isArray(data?.items) ? data.items : [];
+  const resolvedSelectedItemKey = data?.selectedItemKey ?? '';
+  const getItemKey = config?.getItemKey || defaultGetItemKey;
+  const getItemLabel = config?.getItemLabel || defaultGetItemLabel;
+  const getItemDescription = config?.getItemDescription || defaultGetItemDescription;
+  const className = config?.className || '';
+  const resolvedTitleText = config?.titleText ?? '';
+  const headerExtraContent = config?.headerExtraContent ?? null;
+  const resolvedSearchPlaceholder = config?.searchPlaceholder ?? 'Search...';
+  const resolvedIsSearchEnabled = config?.isSearchEnabled !== false;
+  const resolvedIsHeaderVisible = config?.isHeaderVisible !== false;
+  const isItemDragEnabled = config?.isItemDragEnabled === true;
+  const getIsItemDraggable = config?.getIsItemDraggable;
+  const getItemDropStatus = config?.getItemDropStatus;
   const [searchText, setSearchText] = useState('');
   const [expandedById, setExpandedById] = useState({});
   const [selectedItemIdInternal, setSelectedItemIdInternal] = useState(resolvedSelectedItemKey);
@@ -170,6 +164,19 @@ const ItemTree = ({
     />
   );
 
+  const emitMoveItem = async (eventData) => {
+    const itemId = String(eventData?.itemId || '').trim();
+    const itemData = renderTreeData.itemDataById[itemId] || null;
+    if (!itemId || !itemData) return { code: -1 };
+    if (!onEvent) return { code: 0 };
+    return onEvent('moveItem', {
+      itemKey: itemId,
+      itemData: itemData.source,
+      treeItemData: itemData,
+      drop: eventData?.drop,
+    });
+  };
+
   const emitSelect = async (itemIdRaw, itemData) => {
     if (itemData?.isLeaf !== true) {
       return;
@@ -177,9 +184,6 @@ const ItemTree = ({
     const itemId = String(itemIdRaw || itemData?.id || '').trim();
     const sourceItem = itemData?.source || null;
     setSelectedItemIdInternal(itemId);
-    if (onItemSelect) {
-      await onItemSelect(sourceItem, itemId);
-    }
     if (onEvent) {
       await onEvent('itemSelect', { itemData: sourceItem, itemKey: itemId });
     }
@@ -243,27 +247,53 @@ const ItemTree = ({
       </div>
       <div className="side-list-tree-wrap">
         <TreeView
-          className="side-list-tree"
-          rootItemIds={renderTreeData.rootItemIds}
-          getItemDataById={(itemId) => renderTreeData.itemDataById[itemId] || null}
-          selectedItemId={selectedItemIdInternal}
-          indentPx={20}
-          isToggleExpandOnItemClick={true}
-          onItemClick={emitSelect}
-          onDataChangeRequest={async (type, params) => {
-            if (type !== 'toggle-expand') return { code: 0 };
-            const itemId = params?.itemId;
-            if (!itemId) return { code: -1 };
-            setExpandedById((prev) => ({
-              ...prev,
-              [itemId]: params?.nextIsExpanded === true,
-            }));
-            if (onEvent) {
-              await onEvent('toggleExpand', { itemId, nextIsExpanded: params?.nextIsExpanded === true });
+          data={{
+            itemRootIds: renderTreeData.rootItemIds,
+            itemDataById: renderTreeData.itemDataById,
+            itemSelectedId: selectedItemIdInternal,
+          }}
+          config={{
+            className: 'side-list-tree',
+            indentPx: config?.indentPx ?? 20,
+            isToggleExpandOnItemClick: true,
+            isItemDragEnabled,
+            getIsItemDraggable: getIsItemDraggable
+              ? (itemData) => getIsItemDraggable(itemData?.source, itemData)
+              : undefined,
+            getItemDropStatus: getItemDropStatus
+              ? ({ itemId, itemData, targetItemId, targetItemData, drop }) => getItemDropStatus({
+                itemKey: itemId,
+                itemData: itemData?.source,
+                treeItemData: itemData,
+                targetItemKey: targetItemId,
+                targetItemData: targetItemData?.source,
+                targetTreeItemData: targetItemData,
+                drop,
+              })
+              : undefined,
+            getItemComp: (itemData) => (itemData?.isLeaf ? TreeLeafItemComp : TreeBranchItemComp),
+          }}
+          onEvent={async (eventType, eventData) => {
+            if (eventType === 'itemClick') {
+              return emitSelect(eventData?.itemId, eventData?.itemData);
+            }
+            if (eventType === 'toggleExpand') {
+              const itemId = eventData?.itemId;
+              if (!itemId) return { code: -1 };
+              setExpandedById((prev) => ({
+                ...prev,
+                [itemId]: eventData?.nextIsExpanded === true,
+              }));
+              if (onEvent) {
+                await onEvent('toggleExpand', { itemId, nextIsExpanded: eventData?.nextIsExpanded === true });
+              }
+              return { code: 0 };
+            }
+            if (eventType === 'moveItem') {
+              return emitMoveItem(eventData);
             }
             return { code: 0 };
           }}
-          getItemComp={(itemData) => (itemData?.isLeaf ? TreeLeafItemComp : TreeBranchItemComp)}
         />
       </div>
     </div>

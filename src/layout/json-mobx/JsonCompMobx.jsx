@@ -135,7 +135,7 @@ const JsonCompMobx = observer(({
 
   const getElementUnderMenu = useCallback((event) => {
     const overlayElements = Array.from(document.querySelectorAll('.menu-backdrop, .menu-core-root'));
-    const valuePreviousList = overlayElements.map((element) => ({
+    const valuePrevList = overlayElements.map((element) => ({
       element,
       pointerEvents: element.style.pointerEvents,
     }));
@@ -143,7 +143,7 @@ const JsonCompMobx = observer(({
       element.style.pointerEvents = 'none';
     });
     const elementTarget = document.elementFromPoint(event.clientX, event.clientY);
-    valuePreviousList.forEach(({ element, pointerEvents }) => {
+    valuePrevList.forEach(({ element, pointerEvents }) => {
       element.style.pointerEvents = pointerEvents;
     });
     return elementTarget;

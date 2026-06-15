@@ -137,7 +137,56 @@ export const BoolSlider: ComponentType<any>;
 export const SegmentedControl: ComponentType<any>;
 export const FolderBody: ComponentType<any>;
 export const CellDropdown: ComponentType<any>;
-export const TreeView: ComponentType<any>;
+export type TreeViewItemData = {
+  id: string;
+  text?: ReactNode;
+  name?: ReactNode;
+  isLeaf?: boolean;
+  isExpanded?: boolean;
+  childrenIds?: string[];
+  childrenLoadState?: 'loaded' | 'loading' | 'load-failed' | string;
+  childrenErrorMessage?: string;
+  [key: string]: unknown;
+};
+export type TreeViewDropInfo = {
+  type: 'before' | 'after' | 'under';
+  itemParentId?: string | null;
+  itemBeforeId?: string | null;
+  itemAfterId?: string | null;
+};
+export type TreeViewDragState = {
+  isDragged: boolean;
+  isDragHovered: boolean;
+  isInsertBefore: boolean;
+  isInsertAfter: boolean;
+  isInsertUnder: boolean;
+  isDropAllowed: boolean;
+};
+export type TreeViewProps = {
+  data?: {
+    itemRootIds?: string[];
+    itemDataById?: Record<string, TreeViewItemData>;
+    itemSelectedId?: string | null;
+  };
+  config?: {
+    className?: string;
+    indentPx?: number;
+    isToggleExpandOnItemClick?: boolean;
+    isItemDragEnabled?: boolean;
+    getItemComp?: (itemData: TreeViewItemData) => ComponentType<any> | null | undefined;
+    getItemRowClassName?: (itemData: TreeViewItemData) => string;
+    getIsItemDraggable?: (itemData: TreeViewItemData) => boolean;
+    getItemDropStatus?: (context: {
+      itemId: string;
+      itemData?: TreeViewItemData | null;
+      targetItemId: string;
+      targetItemData?: TreeViewItemData | null;
+      drop: TreeViewDropInfo;
+    }) => boolean | { isDropAllowed?: boolean };
+  };
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
+};
+export const TreeView: ComponentType<TreeViewProps>;
 export const ItemList: ComponentType<ItemListProps>;
 export const ItemTree: ComponentType<ItemTreeProps>;
 export const HtmlRender: ComponentType<any>;
@@ -296,7 +345,36 @@ export type ItemListProps = {
   getItemDescription?: (itemData: SideListItemData) => string;
   className?: string;
 };
-export type ItemTreeProps = ItemListProps;
+export type ItemTreeProps = {
+  data?: {
+    items?: SideListItemData[];
+    selectedItemKey?: string;
+  };
+  config?: {
+    titleText?: string;
+    headerExtraContent?: unknown;
+    searchPlaceholder?: string;
+    isSearchEnabled?: boolean;
+    isHeaderVisible?: boolean;
+    getItemKey?: (itemData: SideListItemData) => string;
+    getItemLabel?: (itemData: SideListItemData) => string;
+    getItemDescription?: (itemData: SideListItemData) => string;
+    className?: string;
+    indentPx?: number;
+    isItemDragEnabled?: boolean;
+    getIsItemDraggable?: (itemData: SideListItemData, treeItemData: TreeViewItemData) => boolean;
+    getItemDropStatus?: (context: {
+      itemKey: string;
+      itemData?: SideListItemData | null;
+      treeItemData?: TreeViewItemData | null;
+      targetItemKey: string;
+      targetItemData?: SideListItemData | null;
+      targetTreeItemData?: TreeViewItemData | null;
+      drop: TreeViewDropInfo;
+    }) => boolean | { isDropAllowed?: boolean };
+  };
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
+};
 export type EndpointCardActionItem = {
   id: string;
   labelText?: string;

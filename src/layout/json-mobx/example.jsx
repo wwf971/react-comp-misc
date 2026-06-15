@@ -19,7 +19,7 @@ const JsonMobxCustomValue = ({ path, value }) => {
         <button
           type="button"
           className="json-mobx-custom-value-button"
-          onClick={() => setIsExpanded((valuePrevious) => !valuePrevious)}
+          onClick={() => setIsExpanded((valuePrev) => !valuePrev)}
         >
           {isExpanded ? 'Collapse' : 'Show full'}
         </button>
@@ -190,6 +190,14 @@ const JsonMobxExample = observer(() => {
   const handleChangeBase = useMemo(() => createHandleChange(observableData), [observableData]);
   const handleChange = useCallback(async (path, changeData) => {
     const actionLabel = getJsonMobxActionLabel(changeData);
+    if (changeData?._invalidDrop) {
+      const result = { code: -1, message: 'This attempt failed because the drop place is not allowed.' };
+      setChangeMessage({
+        type: 'error',
+        text: `${actionLabel} failed at ${path || 'root'}: ${result.message}`,
+      });
+      return result;
+    }
     const dragFailureRateCurrent = dragFailureRateRef.current;
     if (changeData?._action === 'moveJsonItem' && Math.random() * 100 < dragFailureRateCurrent) {
       const result = { code: -1, message: `Rejected by demo failure rate (${dragFailureRateCurrent}%)` };

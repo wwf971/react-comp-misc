@@ -434,13 +434,28 @@ const TreeExamplesPanel = observer(() => {
           {/* Fixed-height viewport avoids panel jitter while tree branches expand/collapse. */}
           {/* Leaf rows keep the hidden toggle spacer for indentation, but visual highlight starts at the label area. */}
           <TreeView
-            className="tree-view-fixed-height"
-            rootItemIds={lazyTreeStore.rootItemIds}
-            getItemDataById={lazyTreeStore.getItemDataById}
-            onDataChangeRequest={lazyTreeStore.onTreeDataChangeRequest}
-            selectedItemId={lazyTreeStore.selectedItemId}
-            onItemClick={(itemId) => lazyTreeStore.setSelectedItem(itemId)}
-            getItemComp={getTreeItemComp}
+            data={{
+              itemRootIds: lazyTreeStore.rootItemIds,
+              itemDataById: lazyTreeStore.itemDataById,
+              itemSelectedId: lazyTreeStore.selectedItemId,
+            }}
+            config={{
+              className: 'tree-view-fixed-height',
+              getItemComp: getTreeItemComp,
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'itemClick') {
+                lazyTreeStore.setSelectedItem(eventData.itemId);
+                return { code: 0 };
+              }
+              if (eventType === 'toggleExpand') {
+                return lazyTreeStore.onTreeDataChangeRequest('toggle-expand', eventData);
+              }
+              if (eventType === 'reloadChildren') {
+                return lazyTreeStore.onTreeDataChangeRequest('reload-children', eventData);
+              }
+              return { code: 0 };
+            }}
           />
         </div>
       </div>
@@ -455,18 +470,33 @@ const TreeExamplesPanel = observer(() => {
         </div>
         <div className="tree-example-box">
           <TreeView
-            className="tree-view-fixed-height"
-            rootItemIds={moveTreeStore.rootItemIds}
-            getItemDataById={moveTreeStore.getItemDataById}
-            onDataChangeRequest={moveTreeStore.onTreeDataChangeRequest}
-            selectedItemId={moveTreeStore.selectedItemId}
-            onItemClick={(itemId) => moveTreeStore.setSelectedItem(itemId)}
-            getItemComp={getTreeItemComp}
-            isItemDragEnabled={true}
-            getIsItemDraggable={(itemData) => itemData?.id !== 'workspace'}
-            getItemDropStatus={({ itemId, drop }) => ({
-              isDropAllowed: moveTreeStore.getIsTreeDropAllowed(itemId, drop),
-            })}
+            data={{
+              itemRootIds: moveTreeStore.rootItemIds,
+              itemDataById: moveTreeStore.itemDataById,
+              itemSelectedId: moveTreeStore.selectedItemId,
+            }}
+            config={{
+              className: 'tree-view-fixed-height',
+              getItemComp: getTreeItemComp,
+              isItemDragEnabled: true,
+              getIsItemDraggable: (itemData) => itemData?.id !== 'workspace',
+              getItemDropStatus: ({ itemId, drop }) => ({
+                isDropAllowed: moveTreeStore.getIsTreeDropAllowed(itemId, drop),
+              }),
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'itemClick') {
+                moveTreeStore.setSelectedItem(eventData.itemId);
+                return { code: 0 };
+              }
+              if (eventType === 'toggleExpand') {
+                return moveTreeStore.onTreeDataChangeRequest('toggle-expand', eventData);
+              }
+              if (eventType === 'moveItem') {
+                return moveTreeStore.onTreeDataChangeRequest('move-item', eventData);
+              }
+              return { code: 0 };
+            }}
           />
         </div>
       </div>
@@ -494,16 +524,32 @@ const TreeExamplesPanel = observer(() => {
         >
           {/* Same row-highlight rule here: child/leaf rows highlight from label edge, not from toggle spacer area. */}
           <TreeView
-            className="tree-view-fixed-height"
-            rootItemIds={contextTreeStore.rootItemIds}
-            getItemDataById={contextTreeStore.getItemDataById}
-            onDataChangeRequest={contextTreeStore.onTreeDataChangeRequest}
-            selectedItemId={contextTreeStore.selectedItemId}
-            onItemClick={(itemId) => contextTreeStore.setSelectedItem(itemId)}
-            onItemContextMenu={async (itemId, _itemData, event) => {
-              openTreeContextMenuForItem(itemId, event.clientX, event.clientY);
+            data={{
+              itemRootIds: contextTreeStore.rootItemIds,
+              itemDataById: contextTreeStore.itemDataById,
+              itemSelectedId: contextTreeStore.selectedItemId,
             }}
-            getItemComp={getTreeItemComp}
+            config={{
+              className: 'tree-view-fixed-height',
+              getItemComp: getTreeItemComp,
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'itemClick') {
+                contextTreeStore.setSelectedItem(eventData.itemId);
+                return { code: 0 };
+              }
+              if (eventType === 'itemContextMenu') {
+                openTreeContextMenuForItem(eventData.itemId, eventData.event.clientX, eventData.event.clientY);
+                return { code: 0 };
+              }
+              if (eventType === 'toggleExpand') {
+                return contextTreeStore.onTreeDataChangeRequest('toggle-expand', eventData);
+              }
+              if (eventType === 'reloadChildren') {
+                return contextTreeStore.onTreeDataChangeRequest('reload-children', eventData);
+              }
+              return { code: 0 };
+            }}
           />
         </div>
         {treeContextMenuState ? (
@@ -542,15 +588,15 @@ const TreeExamplesPanel = observer(() => {
                 event.stopPropagation();
                 const backdropElement = event.currentTarget;
                 backdropElement.style.pointerEvents = 'none';
-                const clickedElement = document.elementFromPoint(event.clientX, event.clientY);
+                const clickedEl = document.elementFromPoint(event.clientX, event.clientY);
                 backdropElement.style.pointerEvents = '';
 
-                const rowElement = clickedElement?.closest?.('.tree-view-row[data-tree-item-id]');
+                const rowElement = clickedEl?.closest?.('.tree-view-row[data-tree-item-id]');
                 if (rowElement) {
                   const rowItemId = `${rowElement.getAttribute('data-tree-item-id') ?? ''}`.trim();
                   if (openTreeContextMenuForItem(rowItemId, event.clientX, event.clientY)) return;
                 }
-                const isInContextWrap = Boolean(clickedElement?.closest?.('[data-tree-context-wrap="true"]'));
+                const isInContextWrap = Boolean(clickedEl?.closest?.('[data-tree-context-wrap="true"]'));
                 if (isInContextWrap) {
                   openTreeContextMenuAt(event.clientX, event.clientY, {
                     menuType: 'empty',
@@ -589,13 +635,25 @@ const TreeExamplesPanel = observer(() => {
         <div className="tree-example-box">
           {/* Filter demo follows the same background-area rule so leaf highlight behavior stays consistent across examples. */}
           <TreeView
-            className="tree-view-fixed-height"
-            rootItemIds={filteredTreeRenderData.rootItemIds}
-            getItemDataById={(itemId) => filteredTreeRenderData.itemDataById[itemId] || null}
-            selectedItemId={treeFilterSelectedItemId}
-            onItemClick={(itemId) => setTreeFilterSelectedItemId(itemId)}
-            onDataChangeRequest={handleTreeFilterDataChangeRequest}
-            getItemComp={getTreeFilterItemComp}
+            data={{
+              itemRootIds: filteredTreeRenderData.rootItemIds,
+              itemDataById: filteredTreeRenderData.itemDataById,
+              itemSelectedId: treeFilterSelectedItemId,
+            }}
+            config={{
+              className: 'tree-view-fixed-height',
+              getItemComp: getTreeFilterItemComp,
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'itemClick') {
+                setTreeFilterSelectedItemId(eventData.itemId);
+                return { code: 0 };
+              }
+              if (eventType === 'toggleExpand') {
+                return handleTreeFilterDataChangeRequest('toggle-expand', eventData);
+              }
+              return { code: 0 };
+            }}
           />
         </div>
       </div>

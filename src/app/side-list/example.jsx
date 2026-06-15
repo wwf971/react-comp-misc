@@ -56,13 +56,17 @@ const SideListExamplesPanel = ({ initialMode = 'list' }) => {
           />
         ) : (
           <ItemTree
-            items={DEMO_TREE_ITEMS}
-            selectedItemKey={selectedTreeKey}
-            titleText="Demo ItemTree"
-            searchPlaceholder="Search tree leaves..."
-            onItemSelect={(itemData) => {
-              if (itemData?.parentKey) {
-                setSelectedTreeKey(itemData.key);
+            data={{
+              items: DEMO_TREE_ITEMS,
+              selectedItemKey: selectedTreeKey,
+            }}
+            config={{
+              titleText: 'Demo ItemTree',
+              searchPlaceholder: 'Search tree leaves...',
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'itemSelect' && eventData.itemData?.parentKey) {
+                setSelectedTreeKey(eventData.itemData.key);
               }
             }}
           />

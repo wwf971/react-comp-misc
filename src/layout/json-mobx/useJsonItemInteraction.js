@@ -31,9 +31,12 @@ const useJsonPointerDragHandler = ({
   completePointerDrop,
 }) => {
   const handlePointerDownCapture = React.useCallback((event) => {
-    const itemDraggedId = selectionOperationStore?.selectedItemId;
+    const itemSelectedId = selectionOperationStore?.selectedItemId;
     const isPointerInsideSelectedItem = selectionOperationStore?.getIsItemInsideSelectedItem(selectionItemId);
-    if (!isDragMoveEnabled || !event.shiftKey || event.button !== 0 || !itemDraggedId || !isPointerInsideSelectedItem) return;
+    const isDragFromSelectedItem = Boolean(itemSelectedId && isPointerInsideSelectedItem);
+    const isDragFromItemDirect = !isDragFromSelectedItem;
+    const itemDraggedId = isDragFromSelectedItem ? itemSelectedId : selectionItemId;
+    if (!isDragMoveEnabled || !event.shiftKey || event.button !== 0 || (!isDragFromSelectedItem && !isDragFromItemDirect)) return;
     if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
 
     event.preventDefault();
@@ -52,6 +55,9 @@ const useJsonPointerDragHandler = ({
       const distanceY = Math.abs(eventMove.clientY - pointerDrag.y);
       if (!pointerDrag.isDragging && (distanceX > 3 || distanceY > 3)) {
         pointerDrag.isDragging = true;
+        if (isDragFromItemDirect) {
+          selectionOperationStore?.selectItem(selectionItemId);
+        }
         dragOperationStore.startDrag(itemDraggedId);
       }
       if (pointerDrag.isDragging) {

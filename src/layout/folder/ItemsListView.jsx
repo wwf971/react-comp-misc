@@ -168,9 +168,9 @@ const ItemsListView = observer(({
     if (isLocked || !contextMenuItems || contextMenuItems.length === 0) return;
     const backdrop = e.currentTarget;
     backdrop.style.pointerEvents = 'none';
-    const clickedElement = document.elementFromPoint(e.clientX, e.clientY);
+    const clickedEl = document.elementFromPoint(e.clientX, e.clientY);
     backdrop.style.pointerEvents = '';
-    const rowElement = clickedElement?.closest('[data-row-id]');
+    const rowElement = clickedEl?.closest('[data-row-id]');
     if (rowElement) {
       const rowId = rowElement.getAttribute('data-row-id');
       if (rowId) {
