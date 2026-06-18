@@ -2,9 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: '/react-comp-misc/',
+  base: command === 'serve' ? '/' : '/react-comp-misc/',
   root: '.',
   publicDir: 'public',
   server: {
@@ -19,5 +19,5 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src')
     }
   }
-})
+}))
 

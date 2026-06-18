@@ -40,3 +40,36 @@ Keep indentation small and predictable. If the tree also uses nested child conta
 Custom item components should be compact and should not contain unrelated click handlers unless they stop propagation intentionally. Let `TreeView` own row click, double click, context menu, and expand/collapse behavior.
 
 For filtering, include ancestor nodes for matched descendants and expand those ancestors. Do not mutate the original tree source while filtering.
+
+## Horizontal Scroll Bar Behavior
+
+`TreeView` should show a horizontal scroll bar only when real item content is wider than the available panel. If all visible text fits, there should be no bottom scroll bar. This is easiest when the scroll container measures item content, while each row still covers at least the visible tree width.
+
+Be careful with local CSS around `TreeView`. A common mistake is hiding horizontal overflow on the sidebar or tree root. That removes the scroll bar even when item text is clipped with `...`. Another common mistake is setting nested tree blocks to `width: 100%` without `box-sizing: border-box`, which can create a tiny permanent overflow from borders or padding, so a horizontal scroll bar appears even when all text fits.
+
+When a consumer needs full text to drive horizontal scrolling, prefer a scoped class on that tree instance:
+
+```css
+.project-tree-view {
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.project-tree-view .tree-view-node-content {
+  box-sizing: border-box;
+  min-width: max-content;
+}
+
+.project-tree-view .tree-view-row {
+  box-sizing: border-box;
+  min-width: 100%;
+}
+
+.project-tree-view .tree-view-label,
+.project-tree-view .tree-view-text-item {
+  overflow: visible;
+  text-overflow: clip;
+}
+```
+
+With this pattern, short rows still fill the panel width, so hover and selected backgrounds cover the visible row. Long rows can grow beyond the panel width, so the tree root shows a horizontal scroll bar only when there is hidden content.

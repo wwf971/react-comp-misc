@@ -288,10 +288,13 @@ export type FolderViewProps = {
   columnsOrder?: string[];
   columnsSizeInit?: Record<string, { width?: number; minWidth?: number; resizable?: boolean }>;
   rows?: Array<{ id: string; data?: Record<string, unknown> }>;
+  getHeaderComponent?: (columnId: string) => ComponentType<any> | undefined;
+  getBodyComponent?: (columnId: string) => ComponentType<any> | undefined;
   selectionMode?: 'single' | 'multiple' | 'none';
   selectedRowIds?: string[];
   selectedRowId?: string;
   onSelectedRowIdsChange?: (nextRowIds: string[]) => void;
+  onRowClick?: (rowId: string) => void;
   onRowDoubleClick?: (rowId: string) => void;
   bodyHeight?: number;
   showStatusBar?: boolean;

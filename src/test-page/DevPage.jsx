@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { components } from './examples.jsx';
+import {
+  defaultComponentKey,
+  getComponentKeyFromRouteSlug,
+  getRoutePathForComponentKey,
+} from './demoRoutes.js';
 import PanelDual from '../layout/panel/PanelDual.jsx';
 import ItemTree from '../app/side-list/ItemTree.jsx';
 import './DevPage.css';
@@ -63,10 +69,18 @@ const sideTreeItems = (() => {
 })();
 
 function DevPage() {
-  const [CompSelectedStr, setCompSelectedStr] = useState('Login');
+  const navigate = useNavigate();
+  const { componentSlug } = useParams();
+  const selectedComponentKey = componentSlug
+    ? getComponentKeyFromRouteSlug(componentSlug)
+    : defaultComponentKey;
 
-  const CompSelected = components[CompSelectedStr]?.example;
-  const selectedCompDescription = components[CompSelectedStr]?.description;
+  if (!selectedComponentKey) {
+    return <Navigate to={getRoutePathForComponentKey(defaultComponentKey)} replace />;
+  }
+
+  const CompSelected = components[selectedComponentKey]?.example;
+  const selectedCompDescription = components[selectedComponentKey]?.description;
 
   return (
     <div className="dev-page">
@@ -75,7 +89,7 @@ function DevPage() {
           <ItemTree
             data={{
               items: sideTreeItems,
-              selectedItemKey: CompSelectedStr,
+              selectedItemKey: selectedComponentKey,
             }}
             config={{
               searchPlaceholder: 'Search components...',
@@ -96,14 +110,14 @@ function DevPage() {
               const itemKey = String(eventData.itemData?.key || '').trim();
               if (!itemKey) return;
               if (!components[itemKey]) return;
-              setCompSelectedStr(itemKey);
+              navigate(getRoutePathForComponentKey(itemKey));
             }}
           />
         </div>
         
         <div className="dev-content">
           <div className="content-header">
-            <div className="content-title">{CompSelectedStr}</div>
+            <div className="content-title">{selectedComponentKey}</div>
             <div className="content-description">{selectedCompDescription}</div>
           </div>
           <div className="comp-demo">
