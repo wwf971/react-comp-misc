@@ -1,18 +1,34 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { observer } from 'mobx-react-lite';
 import ConfigPanel from './Config.jsx';
 import ConfigPanelWithSubtabs from './ConfigSubtab.jsx';
 import baseStyles from './Config.module.css';
 import styles from './ConfigTabGroup.module.css';
+import {
+  ConfigRuntimeProvider,
+  appendConfigPath,
+  emitConfigEvent,
+  getConfigComponentPath,
+  getConfigOperationState,
+  joinConfigPath,
+  useConfigRuntime
+} from './ConfigUtils.jsx';
 
 const ConfigPanelWithTabGroups = observer(({
-  parentData,
-  configStruct,
-  onChangeAttempt,
-  missingItemStrategy = 'setDefault'
+  data,
+  config,
+  onEvent
 }) => {
+  const runtime = useConfigRuntime();
+  const effectiveData = data ?? runtime.data ?? {};
+  const effectiveConfig = config ?? runtime.config ?? {};
+  const effectiveOnEvent = onEvent ?? runtime.onEvent;
+  const componentPath = getConfigComponentPath(effectiveConfig);
+  const operationState = getConfigOperationState(effectiveConfig, componentPath);
+  const items = effectiveConfig.items ?? [];
+
   const findFirstTab = () => {
-    for (const item of configStruct.items) {
+    for (const item of items) {
       if (item.type === 'tab') {
         return item.id;
       } else if (item.type === 'tab-group' && item.children && item.children.length > 0) {
@@ -22,7 +38,7 @@ const ConfigPanelWithTabGroups = observer(({
     return '';
   };
 
-  const [activeTabId, setActiveTabId] = useState(findFirstTab());
+  const activeTabId = operationState.activeTabId ?? effectiveConfig.activeTabId ?? findFirstTab();
 
   const renderTabContent = (tab) => {
     if (tab.type !== 'tab') {
@@ -41,26 +57,39 @@ const ConfigPanelWithTabGroups = observer(({
 
     const children = tab.children || [];
     const hasSubtabs = children.length > 0 && children.every((child) => child.type === 'subtab');
+    const tabPath = appendConfigPath(componentPath, tab.id);
+    const childConfig = {
+      ...effectiveConfig,
+      componentPath: tabPath,
+      items: children
+    };
 
     if (hasSubtabs) {
       return (
         <ConfigPanelWithSubtabs
-          parentData={parentData}
-          configStruct={{ items: children }}
-          onChangeAttempt={onChangeAttempt}
-          missingItemStrategy={missingItemStrategy}
+          data={effectiveData}
+          config={childConfig}
         />
       );
     }
 
     return (
       <ConfigPanel
-        parentData={parentData}
-        configStruct={{ items: children }}
-        onChangeAttempt={onChangeAttempt}
-        missingItemStrategy={missingItemStrategy}
+        data={effectiveData}
+        config={childConfig}
       />
     );
+  };
+
+  const handleTabClick = (tab) => {
+    const tabPath = appendConfigPath(componentPath, tab.id);
+    emitConfigEvent(effectiveOnEvent, 'activeTabChange', {
+      componentPath,
+      componentPathText: joinConfigPath(componentPath),
+      tabPath,
+      tabPathText: joinConfigPath(tabPath),
+      tabId: tab.id
+    });
   };
 
   const renderItem = (item, itemIndex) => {
@@ -69,7 +98,7 @@ const ConfigPanelWithTabGroups = observer(({
         <button
           key={item.id}
           className={`${baseStyles.configTab} ${activeTabId === item.id ? baseStyles.active : ''}`}
-          onClick={() => setActiveTabId(item.id)}
+          onClick={() => handleTabClick(item)}
         >
           {item.name}
         </button>
@@ -93,7 +122,7 @@ const ConfigPanelWithTabGroups = observer(({
             <button
               key={tab.id}
               className={`${baseStyles.configTab} ${activeTabId === tab.id ? baseStyles.active : ''}`}
-              onClick={() => setActiveTabId(tab.id)}
+              onClick={() => handleTabClick(tab)}
             >
               {tab.name}
             </button>
@@ -116,7 +145,7 @@ const ConfigPanelWithTabGroups = observer(({
   };
 
   const findActiveTab = () => {
-    for (const item of configStruct.items) {
+    for (const item of items) {
       if (item.type === 'tab' && item.id === activeTabId) {
         return item;
       } else if (item.type === 'tab-group' && item.children) {
@@ -130,21 +159,27 @@ const ConfigPanelWithTabGroups = observer(({
   const activeTab = findActiveTab();
 
   return (
-    <div className={baseStyles.configTabContainer}>
-      <div className={baseStyles.configTabSidebarContainer}>
-        <div className={`${baseStyles.configTabSidebar} ${styles.configTabSidebar}`}>
-          {configStruct.items.map((item, index) => renderItem(item, index))}
+    <ConfigRuntimeProvider
+      data={effectiveData}
+      config={effectiveConfig}
+      onEvent={effectiveOnEvent}
+    >
+      <div className={baseStyles.configTabContainer}>
+        <div className={baseStyles.configTabSidebarContainer}>
+          <div className={`${baseStyles.configTabSidebar} ${styles.configTabSidebar}`}>
+            {items.map((item, index) => renderItem(item, index))}
+          </div>
+        </div>
+
+        <div className={baseStyles.configTabContent}>
+          {activeTab ? renderTabContent(activeTab) : (
+            <div className={baseStyles.configTabEmpty}>
+              No tab selected
+            </div>
+          )}
         </div>
       </div>
-
-      <div className={baseStyles.configTabContent}>
-        {activeTab ? renderTabContent(activeTab) : (
-          <div className={baseStyles.configTabEmpty}>
-            No tab selected
-          </div>
-        )}
-      </div>
-    </div>
+    </ConfigRuntimeProvider>
   );
 });
 

@@ -2,7 +2,7 @@
 import { authExamples } from '../component/auth/example.jsx';
 import { layoutExamples } from '../layout/master-detail/example.jsx';
 import { iconExamples } from '../icon/example.jsx';
-import { configExamples } from '../component/config/example.jsx';
+import { configExamples } from '../app/config/example.jsx';
 import { pathExamples } from '../component/path/example.jsx';
 import { dictExamples } from '../component/key-value/example.jsx';
 import { tabExamples } from '../layout/tab/example.jsx';

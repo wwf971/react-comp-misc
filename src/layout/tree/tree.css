@@ -15,9 +15,10 @@
 }
 
 .tree-view-row {
-  height: 22px;
+  min-height: 22px;
+  height: auto;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0;
   padding: 0 4px;
   cursor: pointer;
@@ -26,20 +27,10 @@
 }
 
 .tree-view-row:hover {
-  background: transparent;
-}
-
-.tree-view-row.selected {
-  background: transparent;
-}
-
-.tree-view-row:hover .tree-view-toggle-btn:not(.is-empty),
-.tree-view-row:hover .tree-view-label {
   background: #f8f8f8;
 }
 
-.tree-view-row.selected .tree-view-toggle-btn:not(.is-empty),
-.tree-view-row.selected .tree-view-label {
+.tree-view-row.selected {
   background: #e3f2fd;
 }
 
@@ -47,12 +38,12 @@
   opacity: 0.45;
 }
 
-.tree-view-row.is-insert-under .tree-view-label {
+.tree-view-row.is-insert-under {
   background: #e8f2ff;
   outline: 1px solid #2196f3;
 }
 
-.tree-view-row.is-drop-blocked .tree-view-label {
+.tree-view-row.is-drop-blocked {
   background: #fff1f1;
   outline: 1px solid #c62828;
 }
@@ -80,23 +71,25 @@
 }
 
 .tree-view-toggle-btn {
-  width: auto;
-  height: 14px;
-  min-width: 0;
+  width: 16px;
+  min-width: 16px;
+  align-self: stretch;
+  height: auto;
   border: none;
   padding: 0;
   margin: 0;
-  border-radius: 2px;
+  border-radius: 0;
   background: transparent;
   color: #666;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .tree-view-toggle-btn:hover:not(.is-empty) {
-  background: #ececec;
+  background: transparent;
 }
 
 .tree-view-toggle-btn.is-empty {
@@ -105,10 +98,14 @@
 }
 
 .tree-view-label {
+  display: flex;
+  align-items: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+  min-width: 0;
+  background: transparent;
 }
 
 .tree-view-row.is-leaf .tree-view-label {

@@ -81,10 +81,12 @@ export const sideListExamples = {
     component: null,
     description: 'Searchable side list component for selecting demo entries',
     example: () => <SideListExamplesPanel initialMode="list" />,
+    routeAliases: ['item-list', 'side-list'],
   },
   ItemTree: {
     component: null,
     description: 'Tree-style side list with branch toggle and leaf filtering',
     example: () => <SideListExamplesPanel initialMode="tree" />,
+    routeAliases: ['item-tree', 'side-tree'],
   },
 };

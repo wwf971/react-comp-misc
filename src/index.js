@@ -57,10 +57,10 @@ export { default as TabsOnTop, Tab as TabsOnTopTab, TabLabel as TabsOnTopTabLabe
 
 export { default as Login } from "./component/auth/Login.jsx";
 
-export { default as ConfigPanel } from "./component/config/Config.jsx";
-export { default as ConfigPanelWithTabs } from "./component/config/ConfigTab.jsx";
-export { default as ConfigPanelWithTabGroups } from "./component/config/ConfigTabGroup.jsx";
-export { default as ConfigPanelWithSubtabs } from "./component/config/ConfigSubtab.jsx";
+export { default as ConfigPanel } from "./app/config/Config.jsx";
+export { default as ConfigPanelWithTabs } from "./app/config/ConfigTab.jsx";
+export { default as ConfigPanelWithTabGroups } from "./app/config/ConfigTabGroup.jsx";
+export { default as ConfigPanelWithSubtabs } from "./app/config/ConfigSubtab.jsx";
 
 export {
   default as PathBar,

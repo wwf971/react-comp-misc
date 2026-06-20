@@ -381,5 +381,6 @@ export const statExamples = {
     component: null,
     description: 'Radar chart with dynamic axes and custom corner components',
     example: () => <RadarExamplesPanel />,
+    routeAliases: ['stat', 'chart'],
   },
 };

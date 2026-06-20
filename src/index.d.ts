@@ -70,10 +70,61 @@ export const TabsOnTopTab: ComponentType<any>;
 export const TabsOnTopTabLabel: ComponentType<any>;
 
 export const Login: ComponentType<any>;
-export const ConfigPanel: ComponentType<any>;
-export const ConfigPanelWithTabs: ComponentType<any>;
-export const ConfigPanelWithTabGroups: ComponentType<any>;
-export const ConfigPanelWithSubtabs: ComponentType<any>;
+export type ConfigItemType = 'group' | 'boolean' | 'string' | 'number' | 'select' | 'tab' | 'tab-group' | 'subtab' | string;
+export type ConfigItem = {
+  id: string;
+  type: ConfigItemType;
+  label?: ReactNode;
+  name?: ReactNode;
+  description?: ReactNode;
+  defaultValue?: unknown;
+  options?: string[];
+  children?: ConfigItem[];
+  [key: string]: unknown;
+};
+export type ConfigOperationState = {
+  activeTabId?: string;
+  activeSubtabId?: string;
+  isLocked?: boolean;
+  isEditable?: boolean;
+  [key: string]: unknown;
+};
+export type ConfigPanelConfig = {
+  componentPath?: string[] | string;
+  path?: string[] | string;
+  items?: ConfigItem[];
+  operationStateByPath?: Record<string, ConfigOperationState>;
+  activeTabId?: string;
+  activeSubtabId?: string;
+  isLocked?: boolean;
+  isEditable?: boolean;
+  missingItemStrategy?: 'setDefault' | 'reportError' | 'ignore' | string;
+  [key: string]: unknown;
+};
+export type ConfigPanelEventData = {
+  componentPath?: string[];
+  componentPathText?: string;
+  itemPath?: string[];
+  itemPathText?: string;
+  tabPath?: string[];
+  tabPathText?: string;
+  subtabPath?: string[];
+  subtabPathText?: string;
+  valueId?: string;
+  value?: unknown;
+  tabId?: string;
+  subtabId?: string;
+  [key: string]: unknown;
+};
+export type ConfigPanelProps = {
+  data?: Record<string, unknown>;
+  config?: ConfigPanelConfig;
+  onEvent?: (eventType: string, eventData: ConfigPanelEventData) => Promise<unknown> | unknown;
+};
+export const ConfigPanel: ComponentType<ConfigPanelProps>;
+export const ConfigPanelWithTabs: ComponentType<ConfigPanelProps>;
+export const ConfigPanelWithTabGroups: ComponentType<ConfigPanelProps>;
+export const ConfigPanelWithSubtabs: ComponentType<ConfigPanelProps>;
 export const PathBar: ComponentType<any>;
 export const KeyValues: ComponentType<any>;
 export const KeyValuesComp: ComponentType<any>;

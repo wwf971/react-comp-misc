@@ -10,7 +10,14 @@ import ConfigPanelWithSubtabs from './ConfigSubtab.jsx';
 const BasicConfigPanelExample = observer(() => {
   const [message, setMessage] = useState('');
   
-  const configStruct = {
+  const [config] = useState(() => makeAutoObservable({
+    componentPath: ['root'],
+    operationStateByPath: {
+      root: {
+        isEditable: true,
+        isLocked: false
+      }
+    },
     items: [
       {
         id: 'basic_group',
@@ -49,7 +56,7 @@ const BasicConfigPanelExample = observer(() => {
         ]
       }
     ]
-  };
+  }, {}, { deep: true }));
 
   const [configData] = useState(() => {
     const data = {
@@ -60,9 +67,8 @@ const BasicConfigPanelExample = observer(() => {
     return makeAutoObservable(data, {}, { deep: true });
   });
 
-  const handleChange = (id, newValue) => {
-    configData[id] = newValue;
-    setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
+  const handleEvent = (eventType, eventData) => {
+    handleConfigExampleEvent(configData, config, setMessage, eventType, eventData);
   };
 
   const handleExternalUpdate = () => {
@@ -73,9 +79,9 @@ const BasicConfigPanelExample = observer(() => {
   return (
     <div>
       <ConfigPanel
-        parentData={configData}
-        configStruct={configStruct}
-        onChangeAttempt={handleChange}
+        data={configData}
+        config={config}
+        onEvent={handleEvent}
       />
       <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
         <button onClick={handleExternalUpdate} style={{ padding: '8px 12px', cursor: 'pointer' }}>
@@ -118,13 +124,19 @@ const ConfigPanelWithTabsExample = observer(() => {
     performance: { id: 'performance_group', label: 'Performance', type: 'group', children: [items.cache_size] }
   };
 
-  const configStruct = {
+  const [config] = useState(() => makeAutoObservable({
+    componentPath: ['root'],
+    operationStateByPath: {
+      root: {
+        activeTabId: 'general_tab'
+      }
+    },
     items: [
       { id: 'general_tab', name: 'General', type: 'tab', children: [groups.general] },
       { id: 'appearance_tab', name: 'Appearance', type: 'tab', children: [groups.ui] },
       { id: 'advanced_tab', name: 'Advanced', type: 'tab', children: [groups.debug, groups.performance] }
     ]
-  };
+  }, {}, { deep: true }));
 
   const [configData] = useState(() => {
     const data = {
@@ -141,18 +153,17 @@ const ConfigPanelWithTabsExample = observer(() => {
     return makeAutoObservable(data, {}, { deep: true });
   });
 
-  const handleChange = (id, newValue) => {
-    configData[id] = newValue;
-    setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
+  const handleEvent = (eventType, eventData) => {
+    handleConfigExampleEvent(configData, config, setMessage, eventType, eventData);
   };
 
   return (
     <div>
       <div style={{ height: '500px', maxWidth: '100%' }}>
         <ConfigPanelWithTabs
-          parentData={configData}
-          configStruct={configStruct}
-          onChangeAttempt={handleChange}
+          data={configData}
+          config={config}
+          onEvent={handleEvent}
         />
       </div>
       {message && (
@@ -211,7 +222,16 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
   };
 
   // Compose into tab groups
-  const configStruct = {
+  const [config] = useState(() => makeAutoObservable({
+    componentPath: ['root'],
+    operationStateByPath: {
+      root: {
+        activeTabId: 'general_tab'
+      },
+      'root.appearance_tab': {
+        activeSubtabId: 'ui_basic_subtab'
+      }
+    },
     items: [
       // First group without name - no divider or name displayed
       { id: 'first_group', type: 'tab-group', children: [tabs.general, tabs.appearance] },
@@ -224,7 +244,7 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
       // Invalid entry for testing
       { id: 'invalid_group', name: 'Invalid', type: 'invalid_type', children: [] }
     ]
-  };
+  }, {}, { deep: true }));
 
   const [configData] = useState(() => {
     const data = {
@@ -241,18 +261,17 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
     return makeAutoObservable(data, {}, { deep: true });
   });
 
-  const handleChange = (id, newValue) => {
-    configData[id] = newValue;
-    setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
+  const handleEvent = (eventType, eventData) => {
+    handleConfigExampleEvent(configData, config, setMessage, eventType, eventData);
   };
 
   return (
     <div>
       <div style={{ height: '600px', maxWidth: '100%' }}>
         <ConfigPanelWithTabGroups
-          parentData={configData}
-          configStruct={configStruct}
-          onChangeAttempt={handleChange}
+          data={configData}
+          config={config}
+          onEvent={handleEvent}
         />
       </div>
       {message && (
@@ -286,13 +305,19 @@ const ConfigPanelWithSubtabsExample = observer(() => {
     advanced: { id: 'advanced_group', label: 'Advanced Options', type: 'group', children: [items.debug_mode] }
   };
 
-  const configStruct = {
+  const [config] = useState(() => makeAutoObservable({
+    componentPath: ['root'],
+    operationStateByPath: {
+      root: {
+        activeSubtabId: 'general_subtab'
+      }
+    },
     items: [
       { id: 'general_subtab', name: 'General', type: 'subtab', children: [groups.general] },
       { id: 'display_subtab', name: 'Display', type: 'subtab', children: [groups.display] },
       { id: 'advanced_subtab', name: 'Advanced', type: 'subtab', children: [groups.advanced] }
     ]
-  };
+  }, {}, { deep: true }));
 
   const [configData] = useState(() => {
     const data = {
@@ -305,18 +330,17 @@ const ConfigPanelWithSubtabsExample = observer(() => {
     return makeAutoObservable(data, {}, { deep: true });
   });
 
-  const handleChange = (id, newValue) => {
-    configData[id] = newValue;
-    setMessage(`Changed ${id} to ${JSON.stringify(newValue)}`);
+  const handleEvent = (eventType, eventData) => {
+    handleConfigExampleEvent(configData, config, setMessage, eventType, eventData);
   };
 
   return (
     <div>
       <div style={{ height: '500px', maxWidth: '100%', border: '1px solid #e5e7eb', borderRadius: '2px', overflow: 'hidden' }}>
         <ConfigPanelWithSubtabs
-          parentData={configData}
-          configStruct={configStruct}
-          onChangeAttempt={handleChange}
+          data={configData}
+          config={config}
+          onEvent={handleEvent}
         />
       </div>
       {message && (
@@ -384,10 +408,43 @@ const ConfigPanelExamplesPanel = () => {
   );
 };
 
+function handleConfigExampleEvent(configData, config, setMessage, eventType, eventData) {
+  if (eventType === 'valueChangeAttempt' || eventType === 'valueDefaultSetAttempt') {
+    configData[eventData.valueId] = eventData.value;
+    setMessage(`Changed ${eventData.valueId} to ${JSON.stringify(eventData.value)}`);
+    return { code: 0 };
+  }
+
+  if (eventType === 'activeTabChange') {
+    const operationState = getConfigExampleOperationState(config, eventData.componentPathText);
+    operationState.activeTabId = eventData.tabId;
+    setMessage(`Selected tab ${eventData.tabId}`);
+    return { code: 0 };
+  }
+
+  if (eventType === 'activeSubtabChange') {
+    const operationState = getConfigExampleOperationState(config, eventData.componentPathText);
+    operationState.activeSubtabId = eventData.subtabId;
+    setMessage(`Selected subtab ${eventData.subtabId}`);
+    return { code: 0 };
+  }
+
+  return { code: 0 };
+}
+
+function getConfigExampleOperationState(config, componentPathText) {
+  if (!config.operationStateByPath[componentPathText]) {
+    config.operationStateByPath[componentPathText] = {};
+  }
+
+  return config.operationStateByPath[componentPathText];
+}
+
 export const configExamples = {
   'ConfigPanel': {
     component: ConfigPanel,
     description: 'Configuration UI components with various layouts: basic, tabs, tab groups, and subtabs',
-    example: ConfigPanelExamplesPanel
+    example: ConfigPanelExamplesPanel,
+    routeAliases: ['config', 'configuration'],
   }
 };

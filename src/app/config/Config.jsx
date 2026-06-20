@@ -5,33 +5,57 @@ import ConfigBool from './ConfigBool.jsx';
 import ConfigStr from './ConfigStr.jsx';
 import ConfigNumber from './ConfigNumber.jsx';
 import ConfigSelect from './ConfigSelect.jsx';
+import {
+  ConfigRuntimeProvider,
+  appendConfigPath,
+  emitConfigEvent,
+  getConfigComponentPath,
+  joinConfigPath,
+  useConfigRuntime
+} from './ConfigUtils.jsx';
 
 const ConfigPanel = observer(({
-  parentData,
-  configStruct,
-  onChangeAttempt,
-  missingItemStrategy = 'setDefault'
+  data,
+  config,
+  onEvent
 }) => {
+  const runtime = useConfigRuntime();
+  const effectiveData = data ?? runtime.data ?? {};
+  const effectiveConfig = config ?? runtime.config ?? {};
+  const effectiveOnEvent = onEvent ?? runtime.onEvent;
+  const componentPath = getConfigComponentPath(effectiveConfig);
+  const componentPathText = joinConfigPath(componentPath);
+  const missingItemStrategy = effectiveConfig.missingItemStrategy ?? 'setDefault';
+  const items = effectiveConfig.items ?? [];
+
   useEffect(() => {
     if (missingItemStrategy === 'setDefault') {
       const checkItems = (items) => {
         items.forEach(item => {
           if (item.type === 'group' && item.children) {
             checkItems(item.children);
-          } else if (!(item.id in parentData) && onChangeAttempt && item.defaultValue !== undefined) {
-            onChangeAttempt(item.id, item.defaultValue);
+          } else if (!(item.id in effectiveData) && item.defaultValue !== undefined) {
+            const itemPath = appendConfigPath(componentPath, item.id);
+            emitConfigEvent(effectiveOnEvent, 'valueDefaultSetAttempt', {
+              componentPath,
+              componentPathText,
+              itemPath,
+              itemPathText: joinConfigPath(itemPath),
+              valueId: item.id,
+              value: item.defaultValue
+            });
           }
         });
       };
-      checkItems(configStruct.items);
+      checkItems(items);
     }
-  }, [configStruct, parentData, onChangeAttempt, missingItemStrategy]);
+  }, [componentPathText, effectiveData, effectiveOnEvent, items, missingItemStrategy]);
 
-  const renderConfigItem = (item) => {
-    if (!(item.id in parentData) && missingItemStrategy === 'reportError') {
+  const renderConfigItem = (item, itemPath) => {
+    if (!(item.id in effectiveData) && missingItemStrategy === 'reportError') {
       return (
         <div className={styles.configError}>
-          Value missing in parentData
+          Value missing in data
         </div>
       );
     }
@@ -40,41 +64,32 @@ const ConfigPanel = observer(({
       case 'boolean':
         return (
           <ConfigBool
-            parentData={parentData}
-            entry={item.id}
-            onChangeAttempt={onChangeAttempt}
-            defaultValue={item.defaultValue}
+            item={item}
+            itemPath={itemPath}
           />
         );
 
       case 'string':
         return (
           <ConfigStr
-            parentData={parentData}
-            entry={item.id}
-            onChangeAttempt={onChangeAttempt}
-            defaultValue={item.defaultValue}
+            item={item}
+            itemPath={itemPath}
           />
         );
 
       case 'number':
         return (
           <ConfigNumber
-            parentData={parentData}
-            entry={item.id}
-            onChangeAttempt={onChangeAttempt}
-            defaultValue={item.defaultValue}
+            item={item}
+            itemPath={itemPath}
           />
         );
 
       case 'select':
         return (
           <ConfigSelect
-            parentData={parentData}
-            entry={item.id}
-            onChangeAttempt={onChangeAttempt}
-            defaultValue={item.defaultValue}
-            options={item.options}
+            item={item}
+            itemPath={itemPath}
           />
         );
 
@@ -84,6 +99,8 @@ const ConfigPanel = observer(({
   };
 
   const renderItem = (item) => {
+    const itemPath = appendConfigPath(componentPath, item.id);
+
     if (item.type === 'group') {
       return (
         <div key={item.id} className={styles.configGroup}>
@@ -99,7 +116,7 @@ const ConfigPanel = observer(({
                   )}
                 </div>
                 <div className={styles.configControl}>
-                  {renderConfigItem(subItem)}
+                  {renderConfigItem(subItem, appendConfigPath(itemPath, subItem.id))}
                 </div>
               </div>
             ))}
@@ -117,18 +134,24 @@ const ConfigPanel = observer(({
           )}
         </div>
         <div className={styles.configControl}>
-          {renderConfigItem(item)}
+          {renderConfigItem(item, itemPath)}
         </div>
       </div>
     );
   };
 
   return (
-    <div className={styles.configContainer}>
-      <div className={styles.configList}>
-        {configStruct.items.map(item => renderItem(item))}
+    <ConfigRuntimeProvider
+      data={effectiveData}
+      config={effectiveConfig}
+      onEvent={effectiveOnEvent}
+    >
+      <div className={styles.configContainer}>
+        <div className={styles.configList}>
+          {items.map(item => renderItem(item))}
+        </div>
       </div>
-    </div>
+    </ConfigRuntimeProvider>
   );
 });
 
