@@ -408,10 +408,13 @@ const JsonCompMobx = observer(({
           <MenuComp
             data={{
               items: getMenuItems(conversionMenu),
-              position: conversionMenu.position,
+            }}
+            config={{
+              isOpen: true,
+              posOpen: conversionMenu.position,
             }}
             onEvent={(eventType, eventData) => {
-              if (eventType === 'close') {
+              if (eventType === 'closeRequest') {
                 closeMenu();
                 return;
               }

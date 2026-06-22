@@ -504,7 +504,7 @@ const JsonComp = ({
         children: conversionMenu.availableConversions.map(conv => ({
           type: 'item',
           name: conv.targetType,
-          disabled: !conv.canConvert,
+          isDisabled: !conv.canConvert,
           data: { targetType: conv.targetType }
         }))
       });
@@ -573,7 +573,7 @@ const JsonComp = ({
         }
       );
       
-      // If this is the only entry in parent dict, show option (disabled if value is not primitive)
+      // If this is the only entry in parent dict, show option (isDisabled if value is not primitive)
       // Show on both key and value menus
       if (conversionMenu.isSingleEntryInParent && conversionMenu.itemKey) {
         const valueIsPrimitive = conversionMenu.value === null || 
@@ -582,7 +582,7 @@ const JsonComp = ({
         items.push({
           type: 'item',
           name: 'Convert parent dict to text',
-          disabled: !valueIsPrimitive,
+          isDisabled: !valueIsPrimitive,
           data: { action: 'convertParentDictToText' }
         });
       }
@@ -597,25 +597,25 @@ const JsonComp = ({
           {
             type: 'item',
             name: 'Move up',
-            disabled: conversionMenu.isFirstInParent,
+            isDisabled: conversionMenu.isFirstInParent,
             data: { action: 'moveEntryUp' }
           },
           {
             type: 'item',
             name: 'Move down',
-            disabled: conversionMenu.isLastInParent,
+            isDisabled: conversionMenu.isLastInParent,
             data: { action: 'moveEntryDown' }
           },
           {
             type: 'item',
             name: 'Move to top',
-            disabled: conversionMenu.isFirstInParent,
+            isDisabled: conversionMenu.isFirstInParent,
             data: { action: 'moveEntryToTop' }
           },
           {
             type: 'item',
             name: 'Move to bottom',
-            disabled: conversionMenu.isLastInParent,
+            isDisabled: conversionMenu.isLastInParent,
             data: { action: 'moveEntryToBottom' }
           }
         );
@@ -650,7 +650,7 @@ const JsonComp = ({
         }
       );
       
-      // If this is the only item in parent array, show option (disabled if item is not primitive)
+      // If this is the only item in parent array, show option (isDisabled if item is not primitive)
       if (conversionMenu.isSingleEntryInParent) {
         const valueIsPrimitive = conversionMenu.value === null || 
                                  conversionMenu.value === undefined || 
@@ -658,7 +658,7 @@ const JsonComp = ({
         items.push({
           type: 'item',
           name: 'Convert parent array to text',
-          disabled: !valueIsPrimitive,
+          isDisabled: !valueIsPrimitive,
           data: { action: 'convertParentArrayToText' }
         });
       }
@@ -672,25 +672,25 @@ const JsonComp = ({
           {
             type: 'item',
             name: 'Move up',
-            disabled: conversionMenu.isFirstInParent,
+            isDisabled: conversionMenu.isFirstInParent,
             data: { action: 'moveItemUp' }
           },
           {
             type: 'item',
             name: 'Move down',
-            disabled: conversionMenu.isLastInParent,
+            isDisabled: conversionMenu.isLastInParent,
             data: { action: 'moveItemDown' }
           },
           {
             type: 'item',
             name: 'Move to top',
-            disabled: conversionMenu.isFirstInParent,
+            isDisabled: conversionMenu.isFirstInParent,
             data: { action: 'moveItemToTop' }
           },
           {
             type: 'item',
             name: 'Move to bottom',
-            disabled: conversionMenu.isLastInParent,
+            isDisabled: conversionMenu.isLastInParent,
             data: { action: 'moveItemToBottom' }
           }
         );
@@ -941,10 +941,13 @@ const JsonComp = ({
           <MenuComp
             data={{
               items: getMenuItems(),
-              position: conversionMenu.position,
+            }}
+            config={{
+              isOpen: true,
+              posOpen: conversionMenu.position,
             }}
             onEvent={(eventType, eventData) => {
-              if (eventType === 'close') {
+              if (eventType === 'closeRequest') {
                 closeMenu();
                 return;
               }

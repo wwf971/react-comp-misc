@@ -4,7 +4,7 @@ Most components in this project are designed based on a rendering pipeline that 
 
 Implement components in **JavaScript** (`.jsx` / `.js`). Do not add new component source files as `.tsx` unless there is a strong reason.
 
-# Component Architecture Design
+# # Fully Data-Driven Frontend Architecture
 
 Conform to a fully data-driven frontend architecture as shown below.
 

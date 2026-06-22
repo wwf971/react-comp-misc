@@ -15,20 +15,19 @@ const MenuDropDown = ({
     <MenuCore
       data={{
         items,
-        position: data?.position ?? { x: 0, y: 0 },
         emptyText,
       }}
       config={{
+        posOpen: config?.posOpen ?? { x: 0, y: 0 },
         minWidth: config?.minWidth ?? 130,
         className: `menu-dropdown-panel ${className}`.trim(),
         itemClassName: config?.itemClassName,
         disabledItemClassName: config?.disabledItemClassName,
         isClickPropagationStopped: config?.isClickPropagationStopped,
+        itemHoverId: config?.itemHoverId,
+        submenuPosOpen: config?.submenuPosOpen,
       }}
-      onEvent={(eventType, eventData) => {
-        if (eventType !== 'itemClick') return;
-        onEvent?.(eventType, eventData);
-      }}
+      onEvent={onEvent}
     />
   );
 };

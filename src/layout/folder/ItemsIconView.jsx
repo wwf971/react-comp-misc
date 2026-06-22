@@ -284,10 +284,13 @@ const ItemsIconView = observer(({
         <Menu
           data={{
             items: contextMenuItems,
-            position: { x: contextMenu.x, y: contextMenu.y },
+          }}
+          config={{
+            isOpen: true,
+            posOpen: { x: contextMenu.x, y: contextMenu.y },
           }}
           onEvent={(eventType, eventData) => {
-            if (eventType === 'close') {
+            if (eventType === 'closeRequest') {
               setContextMenu(null);
               return;
             }

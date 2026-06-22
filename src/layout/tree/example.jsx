@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import TreeView, { TreeTextItemComp } from './TreeView';
@@ -34,6 +34,47 @@ const TREE_LOAD_FAIL_ONCE_COUNT = {
 };
 
 const TREE_FILTER_ROOT_ITEM_IDS = ['workspace'];
+
+function createTreeContextMenuCatalog() {
+  const catalog = {
+    'ctx-workspace': {
+      id: 'ctx-workspace',
+      text: 'workspace',
+      kind: 'folder',
+      isLeaf: false,
+      childrenIds: [],
+    },
+  };
+  const moduleIds = [];
+  for (let moduleIndex = 1; moduleIndex <= 24; moduleIndex += 1) {
+    const moduleId = `ctx-module-${String(moduleIndex).padStart(2, '0')}`;
+    const fileIds = [];
+    for (let fileIndex = 1; fileIndex <= 8; fileIndex += 1) {
+      const fileId = `${moduleId}-file-${String(fileIndex).padStart(2, '0')}`;
+      catalog[fileId] = {
+        id: fileId,
+        text: `component-${String(fileIndex).padStart(2, '0')}.jsx`,
+        kind: 'file',
+        isLeaf: true,
+        childrenIds: [],
+      };
+      fileIds.push(fileId);
+    }
+    catalog[moduleId] = {
+      id: moduleId,
+      text: `module-${String(moduleIndex).padStart(2, '0')}`,
+      kind: 'folder',
+      isLeaf: false,
+      childrenIds: fileIds,
+    };
+    moduleIds.push(moduleId);
+  }
+  catalog['ctx-workspace'].childrenIds = moduleIds;
+  return catalog;
+}
+
+const TREE_CONTEXT_MENU_CATALOG = createTreeContextMenuCatalog();
+const TREE_CONTEXT_MENU_ROOT_ITEM_IDS = ['ctx-workspace'];
 
 function createTreeParentIdById(nodeCatalog) {
   const parentIdById = {};
@@ -286,14 +327,113 @@ function createTreeViewMoveDemoStore() {
   return makeAutoObservable(store, {}, { autoBind: true });
 }
 
+function createTreeViewContextMenuDemoStore() {
+  const itemDataById = {};
+  Object.values(TREE_CONTEXT_MENU_CATALOG).forEach((source) => {
+    itemDataById[source.id] = {
+      ...source,
+      isExpanded: source.isLeaf !== true,
+      childrenIds: [...(source.childrenIds || [])],
+      childrenLoadState: 'loaded',
+      childrenErrorMessage: '',
+      isChildrenLoaded: true,
+    };
+  });
+
+  const store = {
+    rootItemIds: [...TREE_CONTEXT_MENU_ROOT_ITEM_IDS],
+    selectedItemId: 'ctx-workspace',
+    itemDataById,
+    getItemDataById(itemId) {
+      return this.itemDataById[itemId] || null;
+    },
+    setSelectedItem(itemId) {
+      this.selectedItemId = itemId;
+    },
+    async onTreeDataChangeRequest(type, params) {
+      const itemData = this.getItemDataById(params.itemId);
+      if (!itemData) return { code: -1 };
+      if (type === 'toggle-expand') {
+        itemData.isExpanded = params.nextIsExpanded;
+        return { code: 0 };
+      }
+      return { code: 0 };
+    },
+  };
+  return makeAutoObservable(store, {}, { autoBind: true });
+}
+
+function getTreeContextScrollContainer(contextWrapElement) {
+  return contextWrapElement?.querySelector?.('.tree-view') ?? null;
+}
+
+function createTreeItemContextMenuAnchor(itemId, event, contextWrapElement) {
+  const rowElement = event.currentTarget;
+  const rowRect = rowElement.getBoundingClientRect();
+  const getTargetEl = () => (
+    document.querySelector(`.tree-view-row[data-tree-item-id="${CSS.escape(itemId)}"]`)
+  );
+  return {
+    getRect: () => getTargetEl()?.getBoundingClientRect() ?? null,
+    getTargetEl,
+    getVisibilityRoot: () => getTreeContextScrollContainer(contextWrapElement),
+    offsetX: event.clientX - rowRect.left,
+    offsetY: event.clientY - rowRect.top,
+  };
+}
+
+function createTreeEmptyContextMenuAnchor(contextWrapElement, event) {
+  const scrollContainer = getTreeContextScrollContainer(contextWrapElement);
+  if (!scrollContainer) {
+    return {
+      getRect: () => ({
+        left: event.clientX,
+        top: event.clientY,
+        width: 0,
+        height: 0,
+        right: event.clientX,
+        bottom: event.clientY,
+      }),
+      offsetX: 0,
+      offsetY: 0,
+    };
+  }
+
+  const containerRect = scrollContainer.getBoundingClientRect();
+  const offsetContentX = event.clientX - containerRect.left + scrollContainer.scrollLeft;
+  const offsetContentY = event.clientY - containerRect.top + scrollContainer.scrollTop;
+
+  return {
+    getRect: () => {
+      const container = getTreeContextScrollContainer(contextWrapElement);
+      if (!container) return null;
+      const rect = container.getBoundingClientRect();
+      const left = rect.left + offsetContentX - container.scrollLeft;
+      const top = rect.top + offsetContentY - container.scrollTop;
+      return {
+        left,
+        top,
+        width: 0,
+        height: 0,
+        right: left,
+        bottom: top,
+      };
+    },
+    getVisibilityRoot: () => getTreeContextScrollContainer(contextWrapElement),
+    offsetX: 0,
+    offsetY: 0,
+  };
+}
+
 const TreeExamplesPanel = observer(() => {
   const [lazyTreeStore] = useState(() => createTreeViewDemoStore());
   const [moveTreeStore] = useState(() => createTreeViewMoveDemoStore());
-  const [contextTreeStore] = useState(() => createTreeViewDemoStore());
+  const [contextTreeStore] = useState(() => createTreeViewContextMenuDemoStore());
   const [treeFilterText, setTreeFilterText] = useState('');
   const [treeFilterSelectedItemId, setTreeFilterSelectedItemId] = useState('workspace');
   const [treeFilterExpandedById, setTreeFilterExpandedById] = useState({});
   const [treeContextMenuState, setTreeContextMenuState] = useState(null);
+  const treeContextWrapRef = useRef(null);
 
   const filteredTreeData = useMemo(
     () => createLeafFilteredTreeData(treeFilterText),
@@ -396,28 +536,32 @@ const TreeExamplesPanel = observer(() => {
     return { code: 0 };
   };
 
-  const openTreeContextMenuAt = (x, y, nextState) => {
+  const openTreeContextMenu = (nextState) => {
     setTreeContextMenuState(null);
     requestAnimationFrame(() => {
-      setTreeContextMenuState({
-        x,
-        y,
-        ...nextState,
-      });
+      setTreeContextMenuState(nextState);
     });
   };
 
-  const openTreeContextMenuForItem = (itemIdRaw, x, y) => {
+  const openTreeContextMenuForItem = (itemIdRaw, event) => {
     const itemId = `${itemIdRaw ?? ''}`.trim();
     if (!itemId) return false;
     const itemData = contextTreeStore.getItemDataById(itemId);
     if (!itemData) return false;
     contextTreeStore.setSelectedItem(itemId);
-    openTreeContextMenuAt(x, y, {
+    openTreeContextMenu({
       menuType: 'item',
       itemId,
+      anchor: createTreeItemContextMenuAnchor(itemId, event, treeContextWrapRef.current),
     });
     return true;
+  };
+
+  const openTreeContextMenuForEmptyArea = (event) => {
+    openTreeContextMenu({
+      menuType: 'empty',
+      anchor: createTreeEmptyContextMenuAnchor(treeContextWrapRef.current, event),
+    });
   };
 
   return (
@@ -504,12 +648,13 @@ const TreeExamplesPanel = observer(() => {
       <div className="tree-example-block">
         <div className="tree-example-title">Tree View with Context Menus</div>
         <div className="tree-example-desc">
-          Right click on row for item menu. Right click on empty area for panel menu. Right click again while menu is open repositions and retargets correctly.
+          Right click on row for item menu. Right click on empty area for panel menu. Right click again while menu is open repositions and retargets correctly. The tree below scrolls inside a fixed-height container: right click a row, keep the menu open, then scroll to verify the menu stays aligned with the clicked item.
         </div>
         <div className="tree-example-meta">
           Context target: {`${treeContextMenuState?.menuType ?? '-'}`}{treeContextMenuState?.itemId ? ` (${treeContextMenuState.itemId})` : ''}
         </div>
         <div
+          ref={treeContextWrapRef}
           className="tree-example-box tree-context-wrap"
           data-tree-context-wrap="true"
           onContextMenu={(event) => {
@@ -517,9 +662,7 @@ const TreeExamplesPanel = observer(() => {
             if (isOnTreeRow) return;
             event.preventDefault();
             event.stopPropagation();
-            openTreeContextMenuAt(event.clientX, event.clientY, {
-              menuType: 'empty',
-            });
+            openTreeContextMenuForEmptyArea(event);
           }}
         >
           {/* Same row-highlight rule here: child/leaf rows highlight from label edge, not from toggle spacer area. */}
@@ -530,7 +673,7 @@ const TreeExamplesPanel = observer(() => {
               itemSelectedId: contextTreeStore.selectedItemId,
             }}
             config={{
-              className: 'tree-view-fixed-height',
+              className: 'tree-view-context-scroll',
               getItemComp: getTreeItemComp,
             }}
             onEvent={(eventType, eventData) => {
@@ -539,14 +682,11 @@ const TreeExamplesPanel = observer(() => {
                 return { code: 0 };
               }
               if (eventType === 'itemContextMenu') {
-                openTreeContextMenuForItem(eventData.itemId, eventData.event.clientX, eventData.event.clientY);
+                openTreeContextMenuForItem(eventData.itemId, eventData.event);
                 return { code: 0 };
               }
               if (eventType === 'toggleExpand') {
                 return contextTreeStore.onTreeDataChangeRequest('toggle-expand', eventData);
-              }
-              if (eventType === 'reloadChildren') {
-                return contextTreeStore.onTreeDataChangeRequest('reload-children', eventData);
               }
               return { code: 0 };
             }}
@@ -571,39 +711,20 @@ const TreeExamplesPanel = observer(() => {
                   { id: 'delete', label: `Delete ${typeText}`, data: { action: 'delete', itemId: itemData.id } },
                 ];
               })(),
-              position: { x: treeContextMenuState.x, y: treeContextMenuState.y },
+            }}
+            config={{
+              isOpen: true,
+              posOpen: { x: 0, y: 0 },
+              anchor: treeContextMenuState.anchor,
+              isBackdropScrollPassThrough: true,
             }}
             onEvent={(eventType, eventData) => {
-              if (eventType === 'close') {
+              if (eventType === 'closeRequest') {
                 setTreeContextMenuState(null);
                 return;
               }
               if (eventType === 'itemClick') {
                 setTreeContextMenuState((prevState) => prevState ? { ...prevState, lastAction: eventData.item?.data?.action ?? '' } : null);
-                return;
-              }
-              if (eventType === 'backdropContextMenu') {
-                const event = eventData.event;
-                event.preventDefault();
-                event.stopPropagation();
-                const backdropElement = event.currentTarget;
-                backdropElement.style.pointerEvents = 'none';
-                const clickedEl = document.elementFromPoint(event.clientX, event.clientY);
-                backdropElement.style.pointerEvents = '';
-
-                const rowElement = clickedEl?.closest?.('.tree-view-row[data-tree-item-id]');
-                if (rowElement) {
-                  const rowItemId = `${rowElement.getAttribute('data-tree-item-id') ?? ''}`.trim();
-                  if (openTreeContextMenuForItem(rowItemId, event.clientX, event.clientY)) return;
-                }
-                const isInContextWrap = Boolean(clickedEl?.closest?.('[data-tree-context-wrap="true"]'));
-                if (isInContextWrap) {
-                  openTreeContextMenuAt(event.clientX, event.clientY, {
-                    menuType: 'empty',
-                  });
-                  return;
-                }
-                setTreeContextMenuState(null);
               }
             }}
           />

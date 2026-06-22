@@ -46,7 +46,7 @@ const EditableValueComp = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [menuPosition, setMenuPosition] = useState(null);
+  const [menuPosOpen, setMenuPosOpen] = useState(null);
   const containerRef = useRef(null);
   const contentRowRef = useRef(null);
   const booleanRef = useRef(null);
@@ -99,20 +99,20 @@ const EditableValueComp = ({
     
     // Always update position - React will handle the update properly
     // Force a re-render by closing first, then opening at new position in next tick
-    setMenuPosition(null);
+    setMenuPosOpen(null);
     requestAnimationFrame(() => {
-      setMenuPosition({ x: e.pageX, y: e.pageY });
+      setMenuPosOpen({ x: e.pageX, y: e.pageY });
     });
   };
 
   const handleCloseMenu = () => {
-    setMenuPosition(null);
+    setMenuPosOpen(null);
   };
 
   const handleMenuItemClick = async (item) => {
     if (!onAction) return;
 
-    setMenuPosition(null);
+    setMenuPosOpen(null);
     setIsSubmitting(true);
 
     try {
@@ -406,14 +406,17 @@ const EditableValueComp = ({
           {renderPinnedOrStatusIcon()}
         </span>
         
-        {menuPosition && (
+        {menuPosOpen && (
           <Menu
             data={{
               items: getMenuItems(),
-              position: menuPosition,
+            }}
+            config={{
+              isOpen: true,
+              posOpen: menuPosOpen,
             }}
             onEvent={(eventType, eventData) => {
-              if (eventType === 'close') {
+              if (eventType === 'closeRequest') {
                 handleCloseMenu();
                 return;
               }
@@ -454,14 +457,17 @@ const EditableValueComp = ({
         {renderPinnedOrStatusIcon()}
       </span>
       
-      {menuPosition && (
+      {menuPosOpen && (
         <Menu
           data={{
             items: getMenuItems(),
-            position: menuPosition,
+          }}
+          config={{
+            isOpen: true,
+            posOpen: menuPosOpen,
           }}
           onEvent={(eventType, eventData) => {
-            if (eventType === 'close') {
+            if (eventType === 'closeRequest') {
               handleCloseMenu();
               return;
             }

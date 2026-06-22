@@ -1,5 +1,12 @@
 import { JsonMenuPathItem } from './jsonContextMenu';
 
+const makeMenuItem = (id, label, data = {}, extra = {}) => ({
+  id,
+  label,
+  data,
+  ...extra,
+});
+
 export function getMenuItems(conversionMenu) {
   if (!conversionMenu) return [];
 
@@ -7,232 +14,111 @@ export function getMenuItems(conversionMenu) {
   const items = [
     {
       id: 'json-menu-path',
-      type: 'item',
       label: pathText,
       isDisabled: true,
-      component: JsonMenuPathItem,
-      componentProps: { pathText },
+      comp: JsonMenuPathItem,
+      compProps: { pathText },
       preferredWidth: 220,
     },
   ];
   const { menuType } = conversionMenu;
-  
-  // Add type conversion menu if available (for values)
+
   if (conversionMenu.availableConversions) {
     items.push({
-      type: 'menu',
-      name: 'Convert to',
-      children: conversionMenu.availableConversions.map(conv => ({
-        type: 'item',
-        name: conv.targetType,
-        disabled: !conv.canConvert,
-        data: { targetType: conv.targetType }
-      }))
+      id: 'convert-to',
+      label: 'Convert to',
+      children: conversionMenu.availableConversions.map((conv) => ({
+        id: `convert-to-${conv.targetType}`,
+        label: conv.targetType,
+        isDisabled: !conv.canConvert,
+        data: { targetType: conv.targetType },
+      })),
     });
   }
-  
-  // Add delete options based on menu type
+
   if (menuType === 'key' || menuType === 'value') {
-    // For dict entries (key or value)
     items.push(
-      {
-        type: 'item',
-        name: 'Add entry above',
-        data: { action: 'addEntryAbove' }
-      },
-      {
-        type: 'item',
-        name: 'Add entry below',
-        data: { action: 'addEntryBelow' }
-      },
-      {
-        type: 'item',
-        name: 'Delete entry',
-        data: { action: 'deleteEntry' }
-      },
-      {
-        type: 'item',
-        name: 'Delete dict',
-        data: { action: 'deleteDict' }
-      },
-      {
-        type: 'item',
-        name: 'Delete all entries',
-        data: { action: 'deleteAllEntries' }
-      }
+      makeMenuItem('add-entry-above', 'Add entry above', { action: 'addEntryAbove' }),
+      makeMenuItem('add-entry-below', 'Add entry below', { action: 'addEntryBelow' }),
+      makeMenuItem('delete-entry', 'Delete entry', { action: 'deleteEntry' }),
+      makeMenuItem('delete-dict', 'Delete dict', { action: 'deleteDict' }),
+      makeMenuItem('delete-all-entries', 'Delete all entries', { action: 'deleteAllEntries' }),
     );
 
     if (conversionMenu.value && typeof conversionMenu.value === 'object') {
       if (Array.isArray(conversionMenu.value)) {
-        items.push({
-          type: 'item',
-          name: 'Add child item',
-          data: { action: 'addItem' }
-        });
+        items.push(makeMenuItem('add-child-item', 'Add child item', { action: 'addItem' }));
       } else {
-        items.push({
-          type: 'item',
-          name: 'Add child entry',
-          data: { action: 'addEntry' }
-        });
+        items.push(makeMenuItem('add-child-entry', 'Add child entry', { action: 'addEntry' }));
       }
     }
-    
-    // If this is the only entry in parent dict, show option (disabled if value is not primitive)
+
     if (conversionMenu.isSingleEntryInParent && conversionMenu.itemKey) {
-      const valueIsPrimitive = conversionMenu.value === null || 
-                                conversionMenu.value === undefined || 
-                                typeof conversionMenu.value !== 'object';
-      items.push({
-        type: 'item',
-        name: 'Convert parent dict to text',
-        disabled: !valueIsPrimitive,
-        data: { action: 'convertParentDictToText' }
-      });
+      const valueIsPrimitive = conversionMenu.value === null
+        || conversionMenu.value === undefined
+        || typeof conversionMenu.value !== 'object';
+      items.push(makeMenuItem(
+        'convert-parent-dict-to-text',
+        'Convert parent dict to text',
+        { action: 'convertParentDictToText' },
+        { isDisabled: !valueIsPrimitive },
+      ));
     }
-    
-    // Add move up/down for dict entries
-    // For values, only allow if value is primitive
-    if (menuType === 'key' || (menuType === 'value' && 
-        (conversionMenu.value === null || 
-          conversionMenu.value === undefined || 
-          typeof conversionMenu.value !== 'object'))) {
+
+    if (menuType === 'key' || (menuType === 'value'
+      && (conversionMenu.value === null
+        || conversionMenu.value === undefined
+        || typeof conversionMenu.value !== 'object'))) {
       items.push(
-        {
-          type: 'item',
-          name: 'Move up',
-          disabled: conversionMenu.isFirstInParent,
-          data: { action: 'moveEntryUp' }
-        },
-        {
-          type: 'item',
-          name: 'Move down',
-          disabled: conversionMenu.isLastInParent,
-          data: { action: 'moveEntryDown' }
-        },
-        {
-          type: 'item',
-          name: 'Move to top',
-          disabled: conversionMenu.isFirstInParent,
-          data: { action: 'moveEntryToTop' }
-        },
-        {
-          type: 'item',
-          name: 'Move to bottom',
-          disabled: conversionMenu.isLastInParent,
-          data: { action: 'moveEntryToBottom' }
-        }
+        makeMenuItem('move-entry-up', 'Move up', { action: 'moveEntryUp' }, { isDisabled: conversionMenu.isFirstInParent }),
+        makeMenuItem('move-entry-down', 'Move down', { action: 'moveEntryDown' }, { isDisabled: conversionMenu.isLastInParent }),
+        makeMenuItem('move-entry-to-top', 'Move to top', { action: 'moveEntryToTop' }, { isDisabled: conversionMenu.isFirstInParent }),
+        makeMenuItem('move-entry-to-bottom', 'Move to bottom', { action: 'moveEntryToBottom' }, { isDisabled: conversionMenu.isLastInParent }),
       );
     }
   } else if (menuType === 'arrayItem') {
-    // For array items
     items.push(
-      {
-        type: 'item',
-        name: 'Add item above',
-        data: { action: 'addItemAbove' }
-      },
-      {
-        type: 'item',
-        name: 'Add item below',
-        data: { action: 'addItemBelow' }
-      },
-      {
-        type: 'item',
-        name: 'Delete item',
-        data: { action: 'deleteArrayItem' }
-      },
-      {
-        type: 'item',
-        name: 'Delete array',
-        data: { action: 'deleteArray' }
-      },
-      {
-        type: 'item',
-        name: 'Delete all items',
-        data: { action: 'clearArray' }
-      }
+      makeMenuItem('add-item-above', 'Add item above', { action: 'addItemAbove' }),
+      makeMenuItem('add-item-below', 'Add item below', { action: 'addItemBelow' }),
+      makeMenuItem('delete-array-item', 'Delete item', { action: 'deleteArrayItem' }),
+      makeMenuItem('delete-array', 'Delete array', { action: 'deleteArray' }),
+      makeMenuItem('delete-all-items', 'Delete all items', { action: 'clearArray' }),
     );
-    
-    // If this is the only item in parent array, show option (disabled if item is not primitive)
+
     if (conversionMenu.isSingleEntryInParent) {
-      const valueIsPrimitive = conversionMenu.value === null || 
-                                conversionMenu.value === undefined || 
-                                typeof conversionMenu.value !== 'object';
-      items.push({
-        type: 'item',
-        name: 'Convert parent array to text',
-        disabled: !valueIsPrimitive,
-        data: { action: 'convertParentArrayToText' }
-      });
+      const valueIsPrimitive = conversionMenu.value === null
+        || conversionMenu.value === undefined
+        || typeof conversionMenu.value !== 'object';
+      items.push(makeMenuItem(
+        'convert-parent-array-to-text',
+        'Convert parent array to text',
+        { action: 'convertParentArrayToText' },
+        { isDisabled: !valueIsPrimitive },
+      ));
     }
-    
+
     if (conversionMenu.value && typeof conversionMenu.value === 'object') {
       if (Array.isArray(conversionMenu.value)) {
-        items.push({
-          type: 'item',
-          name: 'Add child item',
-          data: { action: 'addItem' }
-        });
+        items.push(makeMenuItem('add-child-item', 'Add child item', { action: 'addItem' }));
       } else {
-        items.push({
-          type: 'item',
-          name: 'Add child entry',
-          data: { action: 'addEntry' }
-        });
+        items.push(makeMenuItem('add-child-entry', 'Add child entry', { action: 'addEntry' }));
       }
     }
 
     items.push(
-      {
-        type: 'item',
-        name: 'Move up',
-        disabled: conversionMenu.isFirstInParent,
-        data: { action: 'moveItemUp' }
-      },
-      {
-        type: 'item',
-        name: 'Move down',
-        disabled: conversionMenu.isLastInParent,
-        data: { action: 'moveItemDown' }
-      },
-      {
-        type: 'item',
-        name: 'Move to top',
-        disabled: conversionMenu.isFirstInParent,
-        data: { action: 'moveItemToTop' }
-      },
-      {
-        type: 'item',
-        name: 'Move to bottom',
-        disabled: conversionMenu.isLastInParent,
-        data: { action: 'moveItemToBottom' }
-      }
+      makeMenuItem('move-item-up', 'Move up', { action: 'moveItemUp' }, { isDisabled: conversionMenu.isFirstInParent }),
+      makeMenuItem('move-item-down', 'Move down', { action: 'moveItemDown' }, { isDisabled: conversionMenu.isLastInParent }),
+      makeMenuItem('move-item-to-top', 'Move to top', { action: 'moveItemToTop' }, { isDisabled: conversionMenu.isFirstInParent }),
+      makeMenuItem('move-item-to-bottom', 'Move to bottom', { action: 'moveItemToBottom' }, { isDisabled: conversionMenu.isLastInParent }),
     );
   } else if (menuType === 'emptyDict') {
-    // For empty dict
     items.push(
-      {
-        type: 'item',
-        name: 'Add entry',
-        data: { action: 'addEntry' }
-      },
-      {
-        type: 'item',
-        name: 'Delete dict',
-        data: { action: 'deleteDict' }
-      }
+      makeMenuItem('add-entry', 'Add entry', { action: 'addEntry' }),
+      makeMenuItem('delete-dict', 'Delete dict', { action: 'deleteDict' }),
     );
   } else if (menuType === 'emptyList') {
-    // For empty list
-    items.push(
-      {
-        type: 'item',
-        name: 'Add item',
-        data: { action: 'addItem' }
-      }
-    );
+    items.push(makeMenuItem('add-item', 'Add item', { action: 'addItem' }));
   }
-  
+
   return items;
 }

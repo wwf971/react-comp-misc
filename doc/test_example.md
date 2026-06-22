@@ -30,3 +30,5 @@ export const folderExamples = {
   }
 };
 ```
+
+For a panel containing multiple examples, explanation of/introduction to one specific example should be contained inside that example's area. Global introduction should be close to top of the panel.

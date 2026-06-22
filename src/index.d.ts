@@ -177,11 +177,10 @@ export function parseJsonString(...args: any[]): any;
 export function parseStringToJson(...args: any[]): any;
 export function formatJson(...args: any[]): any;
 
-export const Menu: ComponentType<any>;
-export const MenuContext: ComponentType<MenuContextProps>;
-export const MenuCore: ComponentType<MenuCoreProps>;
+export const Menu: ComponentType<MenuCompProps>;
+export const MenuContext: ComponentType<MenuCompProps>;
 export const MenuDropDown: ComponentType<MenuDropDownProps>;
-export const MenuComp: ComponentType<import('./component/menu/MenuComp').MenuCompProps>;
+export const MenuComp: ComponentType<MenuCompProps>;
 export const DatabaseSetup: ComponentType<any>;
 export const TableManage: ComponentType<any>;
 export const BoolSlider: ComponentType<any>;
@@ -317,8 +316,6 @@ export function parseMs48Id(id: string | number | bigint, options?: Ms48IdParseO
 export function parseMs48IdBigInt(id: string | number | bigint, options?: Ms48IdParseOptions): bigint;
 
 export type { TypeConversionBehavior, ConversionMenuRequest } from './layout/json/JsonContext';
-export type { MenuItem, MenuItemSingle, MenuItemSubmenu } from './component/menu/Menu';
-export type { MenuCompItem, MenuCompItemSingle, MenuCompItemSubmenu, MenuCompProps } from './component/menu/MenuComp';
 export type { DatabaseSetupProps, TableConfig } from './database/DatabaseSetup';
 export type { TableManageProps } from './database/TableManage';
 export type FolderColumnDef = {
@@ -518,52 +515,76 @@ export type ButtonWithDropDownProps = {
 };
 export const MetadataKeyValues: ComponentType<MetadataKeyValuesProps>;
 
-export type MenuDataItem = {
+export type MenuItemData = {
   id: string;
-  label?: string;
+  label?: ReactNode;
   isDisabled?: boolean;
   data?: unknown;
-  children?: MenuDataItem[];
-  component?: ComponentType<any>;
-  componentProps?: Record<string, unknown>;
+  children?: MenuItemData[];
+  comp?: ComponentType<any>;
+  compProps?: Record<string, unknown>;
+  preferredWidth?: number;
+  preferredHeight?: number;
   [key: string]: unknown;
 };
 
-export type MenuPosition = {
+export type MenuPos = {
   x: number;
   y: number;
 };
 
-export type MenuCoreProps = {
-  data?: {
-    items?: MenuDataItem[];
-    position?: MenuPosition;
-    emptyText?: string;
-  };
-  config?: {
-    minWidth?: number;
-    className?: string;
-    itemClassName?: string;
-    disabledItemClassName?: string;
-    isClickPropagationStopped?: boolean;
-  };
-  onEvent?: (eventType: string, eventData: any) => void;
+export type MenuAnchor = {
+  getRect?: () => DOMRect | {
+    left: number;
+    top: number;
+    width?: number;
+    height?: number;
+    right?: number;
+    bottom?: number;
+  } | null;
+  getTargetEl?: () => Element | null;
+  getVisibilityRoot?: () => Element | null;
+  offsetX?: number;
+  offsetY?: number;
 };
 
-export type MenuContextProps = MenuCoreProps;
+export type MenuCompData = {
+  items?: MenuItemData[];
+  emptyText?: string;
+};
+
+export type MenuCompConfig = {
+  isOpen?: boolean;
+  posOpen?: MenuPos;
+  anchor?: MenuAnchor;
+  itemHoverId?: string | null;
+  submenuPosOpen?: MenuPos | null;
+  minWidth?: number;
+  className?: string;
+  itemClassName?: string;
+  disabledItemClassName?: string;
+  isClickPropagationStopped?: boolean;
+  isBackdropScrollPassThrough?: boolean;
+};
+
+export type MenuCompProps = {
+  data?: MenuCompData;
+  config?: MenuCompConfig;
+  onEvent?: (eventType: string, eventData: any) => void | Promise<{ code: number; message?: string }>;
+};
 
 export type MenuDropDownProps = {
-  data?: {
-    items?: MenuDataItem[];
-    position?: MenuPosition;
-    emptyText?: string;
-  };
-  config?: {
-    className?: string;
-    minWidth?: number;
-    itemClassName?: string;
-    disabledItemClassName?: string;
-    isClickPropagationStopped?: boolean;
-  };
-  onEvent?: (eventType: string, eventData: any) => void;
+  data?: MenuCompData;
+  config?: Omit<MenuCompConfig, 'isOpen' | 'anchor' | 'isBackdropScrollPassThrough'>;
+  onEvent?: MenuCompProps['onEvent'];
 };
+
+export type MenuItem = MenuItemData;
+export type MenuItemSingle = MenuItemData;
+export type MenuItemSubmenu = MenuItemData & { children: MenuItemData[] };
+export type MenuCompItem = MenuItemData;
+export type MenuCompItemSingle = MenuItemData;
+export type MenuCompItemSubmenu = MenuItemData & { children: MenuItemData[] };
+export type MenuContextProps = MenuCompProps;
+export type MenuDataItem = MenuItemData;
+export type MenuPosition = MenuPos;

@@ -216,6 +216,11 @@
   overflow-y: auto;
 }
 
+.tree-view-context-scroll {
+  height: 240px;
+  overflow-y: auto;
+}
+
 .tree-item-label {
   display: flex;
   align-items: center;

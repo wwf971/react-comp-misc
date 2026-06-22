@@ -1,3 +1,12 @@
+## Related Components
+
+- `TreeView` (search for `TreeView.jsx` in the react-comp-misc project folder): low-level tree render component. Emits `itemContextMenu` on row right click. Does not render a context menu itself.
+- `ItemTree` (search for `ItemTree.jsx` in the react-comp-misc project folder): side-list wrapper built on `TreeView`. Adds search, expand/collapse-all, and flat `items[]` to tree conversion. Does not include context menu UI; consumer handles `itemContextMenu` in `onEvent` (or uses `TreeView` directly).
+- `ItemList` (search for `ItemList.jsx` in the react-comp-misc project folder): flat side list, not tree-based. Does not include context menu UI; consumer adds row `onContextMenu` if needed.
+- `Menu` / `MenuContext` (search for `MenuContext.jsx` in the react-comp-misc project folder): portal context menu. Use this with `data.anchor` for item-attached menus. See the tree `example.jsx` in the same project for reference wiring.
+
+None of the list/tree components above implement a complete right-click menu by themselves. If a consumer opens `Menu` with only `{ x: clientX, y: clientY }`, the usual bugs appear: menu fixed to the window, scroll blocked while open, menu stays visible after the row is hidden.
+
 ## TreeView Usage Notes
 
 Use stable typed ids for nodes. Avoid ids that depend on display text or list index unless the list index is part of the source model.
@@ -14,6 +23,93 @@ Each item should provide:
   childrenLoadState: 'loaded',
 }
 ```
+
+## Item Context Menu(Right Click Menu) Behavior
+
+When implementing context menu, ensure the following features. The below principles should be obeyed when implementing for `TreeView`, `ItemTree`, or `ItemList`.
+
+1. context menu get closed, if the item that get right clicked on become no longer visible, due to parent or ancestor node collapse.
+
+2. context menu get closed, if the item that get right clicked on become no longer visible, due to vertical scroll.
+
+3. when right click on other item B when item A's context menu is already open, item A's context menu should disappear, and item B's context menu should appear, at the right click position.
+
+4. during vertical scrolling at any level, the current open right click menu, should remain static relative to the corresponding item(the item that was right clicked on)
+
+### Typical implementation
+
+Use `Menu` with anchor-based positioning, not viewport-fixed coordinates alone.
+
+```jsx
+<Menu
+  data={{
+    items: menuItems,
+    position: { x: 0, y: 0 },
+    anchor: {
+      getRect: () => rowElement?.getBoundingClientRect() ?? null,
+      getTargetEl: () => rowElementOrQueryResult,
+      getVisibilityRoot: () => scrollContainerElement,
+      offsetX: event.clientX - rowRect.left,
+      offsetY: event.clientY - rowRect.top,
+    },
+  }}
+  config={{ isBackdropScrollPassThrough: true }}
+  onEvent={(eventType) => {
+    if (eventType === 'close' || eventType === 'anchorHidden') setMenuState(null);
+  }}
+/>
+```
+
+`MenuCore` tracks the anchor on scroll/resize, closes the menu when the anchor is hidden, and keeps menu position relative to the anchor rect plus offset.
+
+Reference: search for `createTreeItemContextMenuAnchor` in the tree `example.jsx` in the react-comp-misc project folder.
+
+### Requirement notes
+
+**1. Close when ancestor collapse hides the row**
+
+`TreeView` removes collapsed children from DOM, so the anchor row disappears.
+
+Provide `anchor.getTargetEl` pointing at the row element (for example `.tree-view-row[data-tree-item-id="..."]`). When the row is unmounted, `getRect()` returns null and `Menu` emits `anchorHidden`, which should close the menu.
+
+No extra collapse-specific logic is needed if anchor + `getTargetEl` are set correctly.
+
+**2. Close when row scrolls out of the container**
+
+Provide `anchor.getVisibilityRoot` as the nearest scroll container that clips the row (for `TreeView`, usually the `.tree-view` root with `overflow: auto`).
+
+`Menu` checks intersection between anchor rect and visibility root on scroll/resize, and uses `IntersectionObserver` when `getTargetEl` is also provided. When the row is fully outside the visible container area, the menu closes.
+
+Do not rely on `clientX/clientY` alone; those are viewport coordinates and do not know when the row left the container.
+
+**3. Right click item B while item A menu is open**
+
+Use close-then-open in one handler:
+
+```js
+setMenuState(null);
+requestAnimationFrame(() => setMenuState(nextMenuState));
+```
+
+With `config.isBackdropScrollPassThrough: true`, the menu backdrop does not block pointer events, so the row `itemContextMenu` event reaches the tree directly. Right click on another row replaces the open menu without stale position/content.
+
+`TreeView` already emits `itemContextMenu` with `{ itemId, itemData, event }`. Wire that in the parent store/handler, not inside the row component.
+
+**4. Menu stays relative to the row while scrolling**
+
+Provide `data.anchor` with `getRect`, `offsetX`, and `offsetY` from the original right-click event.
+
+`Menu` recomputes menu position from the row rect on every scroll (capture-phase scroll listener catches nested scroll containers). The menu moves with the row instead of staying fixed to the window.
+
+Also set `isBackdropScrollPassThrough: true`, otherwise the full-screen backdrop blocks wheel/scroll interaction even if position math is correct.
+
+### Pitfalls to avoid
+
+- Opening `Menu` with only `position: { x: event.clientX, y: event.clientY }`.
+- Using a blocking menu backdrop while expecting the tree/list to scroll underneath.
+- Putting menu open/close logic inside a leaf item component instead of the parent that owns menu state.
+- For `ItemTree`, remember it wraps `TreeView` but does not forward `itemContextMenu` today; add that forwarding in `onEvent`, or compose `TreeView` yourself.
+- For `ItemList`, rows are plain buttons; add `onContextMenu` on the row wrapper and build the same anchor object from the clicked button element.
 
 ## Expand/Collapse Behavior
 

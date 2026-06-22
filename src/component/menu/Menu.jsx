@@ -1,3 +1,3 @@
-import MenuContext from './MenuContext.jsx';
+import MenuComp from './MenuComp.jsx';
 
-export default MenuContext;
+export default MenuComp;

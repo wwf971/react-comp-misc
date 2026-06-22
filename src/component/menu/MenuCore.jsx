@@ -23,7 +23,7 @@ const getItemChildren = (item) => {
   return Array.isArray(item?.children) ? item.children : [];
 };
 
-const getComponentStyle = (item) => {
+const getCompStyle = (item) => {
   const style = {};
   const preferredWidth = Number(item?.preferredWidth);
   const preferredHeight = Number(item?.preferredHeight);
@@ -36,18 +36,40 @@ const getComponentStyle = (item) => {
   return style;
 };
 
-const resolvePosition = (position = {}, menuElement = null) => {
+const resolvePos = (pos = {}, menuEl = null) => {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
-  const rect = menuElement?.getBoundingClientRect?.();
+  const rect = menuEl?.getBoundingClientRect?.();
   const width = rect?.width ?? 0;
   const height = rect?.height ?? 0;
-  const x = Number(position.x ?? 0);
-  const y = Number(position.y ?? 0);
+  const x = Number(pos.x ?? 0);
+  const y = Number(pos.y ?? 0);
   return {
     x: Math.max(2, Math.min(x, viewportWidth - width - 2)),
     y: Math.max(2, Math.min(y, viewportHeight - height - 2)),
   };
+};
+
+const isRectsIntersecting = (rectA, rectB) => {
+  const aLeft = rectA.left;
+  const aTop = rectA.top;
+  const aRight = rectA.right ?? rectA.left;
+  const aBottom = rectA.bottom ?? rectA.top;
+  return aRight > rectB.left
+    && aLeft < rectB.right
+    && aBottom > rectB.top
+    && aTop < rectB.bottom;
+};
+
+const isMenuAnchorVisible = (anchor) => {
+  const rect = anchor?.getRect?.();
+  if (!rect) return false;
+
+  const visibilityRoot = anchor?.getVisibilityRoot?.();
+  if (!visibilityRoot) return true;
+
+  const rootRect = visibilityRoot.getBoundingClientRect();
+  return isRectsIntersecting(rect, rootRect);
 };
 
 const MenuCore = ({
@@ -56,28 +78,102 @@ const MenuCore = ({
   onEvent,
 }) => {
   const menuRef = useRef(null);
-  const [hoveredItemId, setHoveredItemId] = useState(null);
-  const [submenuPosition, setSubmenuPosition] = useState(null);
-  const [adjustedPosition, setAdjustedPosition] = useState(data?.position ?? { x: 0, y: 0 });
+  const [itemHoverIdInternal, setItemHoverIdInternal] = useState(null);
+  const [submenuPosOpenInternal, setSubmenuPosOpenInternal] = useState(null);
+  const [adjustPos, setAdjustPos] = useState(config?.posOpen ?? { x: 0, y: 0 });
+  const [trackedPos, setTrackedPos] = useState(config?.posOpen ?? { x: 0, y: 0 });
+  const anchorRef = useRef(config?.anchor ?? null);
+  anchorRef.current = config?.anchor ?? null;
   const items = Array.isArray(data?.items) ? data.items : [];
   const emptyText = `${data?.emptyText ?? ''}` || 'No items';
-  const position = data?.position ?? { x: 0, y: 0 };
+  const posOpen = config?.posOpen ?? { x: 0, y: 0 };
+  const hasAnchor = Boolean(config?.anchor?.getRect);
   const minWidth = config?.minWidth ?? 120;
   const className = `${config?.className ?? ''}`.trim();
   const itemClassName = `${config?.itemClassName ?? ''}`.trim();
   const disabledItemClassName = `${config?.disabledItemClassName ?? ''}`.trim();
   const isClickPropagationStopped = Boolean(config?.isClickPropagationStopped);
+  const isHoverControlled = config && ('itemHoverId' in config || 'submenuPosOpen' in config);
+  const itemHoverId = isHoverControlled ? (config?.itemHoverId ?? null) : itemHoverIdInternal;
+  const submenuPosOpen = isHoverControlled ? (config?.submenuPosOpen ?? null) : submenuPosOpenInternal;
+
+  const requestItemHoverChange = (nextItemHoverId, nextSubmenuPosOpen) => {
+    if (!isHoverControlled) {
+      setItemHoverIdInternal(nextItemHoverId);
+      setSubmenuPosOpenInternal(nextSubmenuPosOpen);
+    }
+    onEvent?.('itemHoverChange', {
+      itemHoverId: nextItemHoverId,
+      submenuPosOpen: nextSubmenuPosOpen,
+    });
+  };
 
   useEffect(() => {
-    setHoveredItemId(null);
-    setSubmenuPosition(null);
-  }, [position.x, position.y]);
+    if (!isHoverControlled) {
+      setItemHoverIdInternal(null);
+      setSubmenuPosOpenInternal(null);
+    }
+    onEvent?.('itemHoverChange', {
+      itemHoverId: null,
+      submenuPosOpen: null,
+    });
+  }, [posOpen.x, posOpen.y, trackedPos.x, trackedPos.y, isHoverControlled]);
 
   useEffect(() => {
-    const menuElement = menuRef.current;
-    if (!menuElement) return;
-    setAdjustedPosition(resolvePosition(position, menuElement));
-  }, [position.x, position.y, items.length]);
+    if (!hasAnchor) {
+      setTrackedPos(posOpen);
+      return undefined;
+    }
+
+    const updateTrackedPos = () => {
+      const anchor = anchorRef.current;
+      if (!isMenuAnchorVisible(anchor)) {
+        onEvent?.('closeRequest', {});
+        return;
+      }
+      const rect = anchor.getRect();
+      setTrackedPos({
+        x: rect.left + (anchor.offsetX ?? 0),
+        y: rect.top + (anchor.offsetY ?? 0),
+      });
+    };
+
+    updateTrackedPos();
+    window.addEventListener('scroll', updateTrackedPos, true);
+    window.addEventListener('resize', updateTrackedPos);
+
+    const anchor = anchorRef.current;
+    const targetEl = anchor?.getTargetEl?.() ?? null;
+    const visibilityRoot = anchor?.getVisibilityRoot?.() ?? null;
+    let intersectionObserver = null;
+    if (targetEl && visibilityRoot && typeof IntersectionObserver !== 'undefined') {
+      intersectionObserver = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) {
+          onEvent?.('closeRequest', {});
+          return;
+        }
+        updateTrackedPos();
+      }, {
+        root: visibilityRoot,
+        threshold: 0,
+      });
+      intersectionObserver.observe(targetEl);
+    }
+
+    return () => {
+      window.removeEventListener('scroll', updateTrackedPos, true);
+      window.removeEventListener('resize', updateTrackedPos);
+      intersectionObserver?.disconnect();
+    };
+  }, [hasAnchor, posOpen.x, posOpen.y, items.length]);
+
+  useEffect(() => {
+    const menuEl = menuRef.current;
+    if (!menuEl) return;
+    const resolvedPos = hasAnchor ? trackedPos : posOpen;
+    setAdjustPos(resolvePos(resolvedPos, menuEl));
+  }, [hasAnchor, posOpen.x, posOpen.y, trackedPos.x, trackedPos.y, items.length]);
 
   const requestItemClick = (item, event) => {
     if (isClickPropagationStopped) {
@@ -94,15 +190,14 @@ const MenuCore = ({
 
   const requestItemHover = (item, index, event) => {
     if (isItemDisabled(item) || getItemChildren(item).length <= 0) {
-      setHoveredItemId(null);
-      setSubmenuPosition(null);
+      requestItemHoverChange(null, null);
       return;
     }
     const rect = event.currentTarget.getBoundingClientRect();
-    const submenuX = rect.right + 2;
-    const submenuY = rect.top;
-    setHoveredItemId(getItemId(item, index));
-    setSubmenuPosition({ x: submenuX, y: submenuY });
+    requestItemHoverChange(getItemId(item, index), {
+      x: rect.right + 2,
+      y: rect.top,
+    });
   };
 
   return (
@@ -110,8 +205,8 @@ const MenuCore = ({
       ref={menuRef}
       className={`menu-core-root ${className}`}
       style={{
-        left: adjustedPosition.x,
-        top: adjustedPosition.y,
+        left: adjustPos.x,
+        top: adjustPos.y,
         minWidth,
       }}
       onContextMenu={(event) => {
@@ -124,7 +219,7 @@ const MenuCore = ({
           const itemId = getItemId(item, index);
           const children = getItemChildren(item);
           const isDisabled = isItemDisabled(item);
-          const ItemComp = item?.component ?? null;
+          const ItemComp = item?.comp ?? null;
           return (
             <React.Fragment key={itemId}>
               <button
@@ -136,21 +231,21 @@ const MenuCore = ({
               >
                 <span className="menu-core-item-label">
                   {ItemComp ? (
-                    <span className="menu-core-item-component" style={getComponentStyle(item)}>
-                      <ItemComp {...(item?.componentProps ?? {})} />
+                    <span className="menu-core-item-component" style={getCompStyle(item)}>
+                      <ItemComp {...(item?.compProps ?? {})} />
                     </span>
                   ) : getItemLabel(item)}
                 </span>
                 {children.length > 0 ? <SubmenuIcon /> : null}
               </button>
-              {hoveredItemId === itemId && submenuPosition && children.length > 0 ? (
+              {itemHoverId === itemId && submenuPosOpen && children.length > 0 ? (
                 <MenuCore
                   data={{
                     items: children,
-                    position: submenuPosition,
                     emptyText,
                   }}
                   config={{
+                    posOpen: submenuPosOpen,
                     minWidth,
                     itemClassName,
                     disabledItemClassName,

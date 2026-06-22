@@ -10,7 +10,7 @@ const ButtonWithDropDown = ({
 }) => {
   const rootRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [menuPosOpen, setMenuPosOpen] = useState({ x: 0, y: 0 });
   const label = typeof data?.label === 'string'
     ? data.label.trim() || 'Menu'
     : data?.label ?? 'Menu';
@@ -24,11 +24,11 @@ const ButtonWithDropDown = ({
   const minWidth = config?.minWidth ?? 130;
   const isClickPropagationStopped = Boolean(config?.isClickPropagationStopped);
 
-  const updateMenuPosition = useCallback(() => {
+  const updateMenuPosOpen = useCallback(() => {
     const rootElement = rootRef.current;
     if (!rootElement) return;
     const rect = rootElement.getBoundingClientRect();
-    setMenuPosition({
+    setMenuPosOpen({
       x: menuAlign === 'right' ? rect.right - minWidth : rect.left,
       y: rect.bottom + 2,
     });
@@ -42,14 +42,14 @@ const ButtonWithDropDown = ({
 
   useEffect(() => {
     if (!isOpen) return undefined;
-    updateMenuPosition();
-    window.addEventListener('scroll', updateMenuPosition, true);
-    window.addEventListener('resize', updateMenuPosition);
+    updateMenuPosOpen();
+    window.addEventListener('scroll', updateMenuPosOpen, true);
+    window.addEventListener('resize', updateMenuPosOpen);
     return () => {
-      window.removeEventListener('scroll', updateMenuPosition, true);
-      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosOpen, true);
+      window.removeEventListener('resize', updateMenuPosOpen);
     };
-  }, [isOpen, updateMenuPosition]);
+  }, [isOpen, updateMenuPosOpen]);
 
   const overlayContent = isOpen ? (
     <>
@@ -72,10 +72,10 @@ const ButtonWithDropDown = ({
       <MenuDropDown
         data={{
           items,
-          position: menuPosition,
           emptyText,
         }}
         config={{
+          posOpen: menuPosOpen,
           minWidth,
           className: menuClassName,
           itemClassName: config?.itemClassName,
@@ -102,7 +102,7 @@ const ButtonWithDropDown = ({
           }
           if (isDisabled) return;
           if (!isOpen) {
-            updateMenuPosition();
+            updateMenuPosOpen();
           }
           setIsOpen((prevValue) => !prevValue);
         }}
