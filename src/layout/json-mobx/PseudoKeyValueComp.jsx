@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { runInAction, set as mobxSet, remove as mobxRemove } from 'mobx';
 import { addKeyInOrder, assignKeyIdentity } from './keyOrderStore';
+import { useJsonContext } from './JsonContext';
 import SpinningCircle from '../../icon/SpinningCircle';
 import './JsonComp.css';
 
@@ -8,8 +9,9 @@ import './JsonComp.css';
  * PseudoKeyValueComp - Temporary component for creating a new key-value pair in MobX
  * Mutates observable data directly
  */
-const PseudoKeyValueComp = ({ path, data, pseudoKey, onChange, onCancel, depth }) => {
-  const pseudoData = data[pseudoKey];
+const PseudoKeyValueComp = ({ data: dataProp }) => {
+  const { container, itemKey, path, pseudoData } = dataProp;
+  const { emitEvent } = useJsonContext();
   const [key, setKey] = useState('');
   const [value, setValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,27 +20,34 @@ const PseudoKeyValueComp = ({ path, data, pseudoKey, onChange, onCancel, depth }
   const valueRef = useRef(null);
 
   useEffect(() => {
-    // Focus on key input when component mounts
     if (keyRef.current) {
       keyRef.current.focus();
     }
   }, []);
 
+  const handleCancel = () => {
+    runInAction(() => {
+      mobxRemove(container, itemKey);
+    });
+    emitEvent?.(path, {
+      old: { type: 'pseudo' },
+      new: { type: 'deleted' },
+      _action: 'cancelCreate',
+    });
+  };
+
   const handleSubmit = async () => {
     const trimmedKey = key.trim();
     if (!trimmedKey) {
-      // Key is required - don't submit
       return;
     }
 
-    // Check if key already exists
-    if (trimmedKey in data && trimmedKey !== pseudoKey) {
+    if (trimmedKey in container && trimmedKey !== itemKey) {
       setIsShowingError(`Key "${trimmedKey}" already exists`);
       setIsSubmitting(false);
       
-      // Auto-remove after showing error for 2 seconds
       setTimeout(() => {
-        onCancel();
+        handleCancel();
       }, 2000);
       return;
     }
@@ -53,36 +62,29 @@ const PseudoKeyValueComp = ({ path, data, pseudoKey, onChange, onCancel, depth }
         _key: trimmedKey
       };
       
-      const result = await onChange(path, changeData);
+      const result = await emitEvent(path, changeData);
       
       if (result && result.code === 0) {
-        // Success - mutate data directly to replace pseudo with real entry
-        // Preserve position by using the pseudo key's position
         runInAction(() => {
           const position = pseudoData?.position;
           const referenceKey = pseudoData?.referenceKey;
           
-          // Remove pseudo key
-          mobxRemove(data, pseudoKey);
+          mobxRemove(container, itemKey);
           
-          // Add the new entry at the correct position
           if (position && referenceKey) {
-            addKeyInOrder(data, trimmedKey, position, referenceKey);
+            addKeyInOrder(container, trimmedKey, position, referenceKey);
           }
           
-          // Set the value and assign identity
-          mobxSet(data, trimmedKey, value);
-          assignKeyIdentity(data, trimmedKey);
+          mobxSet(container, trimmedKey, value);
+          assignKeyIdentity(container, trimmedKey);
         });
       } else {
-        // Failed - show error briefly then remove via onCancel
         const errMsg = result?.message || 'Failed to create entry';
         setIsShowingError(errMsg);
         setIsSubmitting(false);
         
-        // Auto-remove after showing error for 2 seconds
         setTimeout(() => {
-          onCancel();
+          handleCancel();
         }, 2000);
       }
     } catch (error) {
@@ -90,9 +92,8 @@ const PseudoKeyValueComp = ({ path, data, pseudoKey, onChange, onCancel, depth }
       setIsShowingError(error.message || 'Network error');
       setIsSubmitting(false);
       
-      // Auto-remove after showing error for 2 seconds
       setTimeout(() => {
-        onCancel();
+        handleCancel();
       }, 2000);
     }
   };
@@ -107,23 +108,20 @@ const PseudoKeyValueComp = ({ path, data, pseudoKey, onChange, onCancel, depth }
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      onCancel();
+      handleCancel();
     }
   };
 
   const handleBlur = (e, field) => {
-    // Check if the blur is moving to the other input field
     const relatedTarget = e.relatedTarget;
     if (relatedTarget && (relatedTarget === keyRef.current || relatedTarget === valueRef.current)) {
-      // Moving between key and value inputs - don't submit or cancel
       return;
     }
     
-    // Clicking outside - submit if we have a key, otherwise cancel
     if (key.trim()) {
       handleSubmit();
     } else {
-      onCancel();
+      handleCancel();
     }
   };
 

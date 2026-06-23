@@ -39,30 +39,30 @@ export const getJsonSelectionItemIdAfterMove = ({ itemDraggedMeta, drop }) => {
 };
 
 export const completeJsonMoveDrop = async ({
-  dragOperationStore,
-  selectionOperationStore,
-  onChange,
+  drag,
+  selection,
+  emitEvent,
 }) => {
-  const itemDraggedMeta = dragOperationStore.itemDraggedMeta;
-  const dropInfoActive = dragOperationStore.dropInfoActive;
+  const itemDraggedMeta = drag.itemDraggedMeta;
+  const dropInfoActive = drag.dropInfoActive;
   const itemDragStateActive = dropInfoActive?.targetItemId
-    ? dragOperationStore.getItemDragState(dropInfoActive.targetItemId)
+    ? drag.getItemDragState(dropInfoActive.targetItemId)
     : null;
   const isDropInvalid = Boolean(
     itemDraggedMeta
-      && onChange
+      && emitEvent
       && (!dropInfoActive?.drop || itemDragStateActive?.isDropAllowed === false)
   );
   const isDropCommitted = Boolean(
     itemDraggedMeta
       && dropInfoActive?.drop
       && itemDragStateActive?.isDropAllowed !== false
-      && onChange
+      && emitEvent
   );
-  const selectionRevisionBeforeMove = selectionOperationStore?.selectionRevision;
-  dragOperationStore.clearAll();
+  const revisionSelectionBeforeMove = selection?.revisionSelection;
+  drag.clearAll();
   if (isDropInvalid) {
-    await onChange(itemDraggedMeta.path, {
+    await emitEvent(itemDraggedMeta.path, {
       old: { type: itemDraggedMeta.itemKind },
       new: { type: itemDraggedMeta.itemKind },
       _action: 'moveJsonItem',
@@ -76,7 +76,7 @@ export const completeJsonMoveDrop = async ({
   }
   if (!isDropCommitted) return;
 
-  const result = await onChange(itemDraggedMeta.path, {
+  const result = await emitEvent(itemDraggedMeta.path, {
     old: { type: itemDraggedMeta.itemKind },
     new: { type: itemDraggedMeta.itemKind },
     _action: 'moveJsonItem',
@@ -86,11 +86,11 @@ export const completeJsonMoveDrop = async ({
     },
   });
   if (result && result.code !== 0) return;
-  if (selectionOperationStore?.selectionRevision !== selectionRevisionBeforeMove) return;
+  if (selection?.revisionSelection !== revisionSelectionBeforeMove) return;
 
   const itemIdNext = getJsonSelectionItemIdAfterMove({
     itemDraggedMeta,
     drop: dropInfoActive.drop,
   });
-  selectionOperationStore?.selectItem(itemIdNext);
+  selection?.selectItem(itemIdNext);
 };

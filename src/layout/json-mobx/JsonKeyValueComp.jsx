@@ -13,52 +13,41 @@ import JsonNullComp from './JsonNullComp';
  * Wrapped with observer to auto-track MobX dependencies
  */
 const JsonKeyValueComp = observer(({ 
-  data,
-  itemKey, 
-  path,
-  getPath,
-  isEditable,
-  isKeyEditable,
-  isValueEditable,
-  onChange,
-  depth,
-  getValueComp,
+  data: dataProp,
   children 
 }) => {
-  // Call all hooks first (before any conditional returns)
-  const { showConversionMenu, queryParentInfo, isDebug, selectionOperationStore } = useJsonContext();
+  const { container, itemKey, path } = dataProp;
+  const { config, store, emitEvent, pathQueryParentInfo } = useJsonContext();
+  const { selection, openMenu } = store;
+  const { isEditable, isKeyEditable, isValueEditable, isDebug, getValueComp } = config;
   const [isEditingKey, setIsEditingKey] = useState(false);
   const [error, setError] = useState(null);
   const keyRef = useRef(null);
   const originalKeyRef = useRef('');
-  const resolvePath = useCallback(() => (getPath ? getPath() : path), [getPath, path]);
   
-  // Handle key edit focus (useEffect must be called before any return)
   useEffect(() => {
     if (isEditingKey && keyRef.current) {
       keyRef.current.focus();
       const range = document.createRange();
-      const selection = window.getSelection();
+      const selectionWindow = window.getSelection();
       range.selectNodeContents(keyRef.current);
-      selection.removeAllRanges();
-      selection.addRange(range);
+      selectionWindow.removeAllRanges();
+      selectionWindow.addRange(range);
     }
   }, [isEditingKey]);
   
-  const hasKey = mobxKeys(data).includes(itemKey);
+  const hasKey = mobxKeys(container).includes(itemKey);
   
-  const value = data[itemKey];
-  // Detect empty collections for special handling
+  const value = container[itemKey];
   const isEmptyCollection = (typeof value === 'object' && value !== null) && 
     ((Array.isArray(value) && value.length === 0) || 
      (!Array.isArray(value) && Object.keys(value).length === 0));
-  // Empty collections are NOT treated as primitive (they need to be on new line with indent)
   const isPrimitive = value === null || value === undefined || typeof value !== 'object';
   const valueType = value === null || value === undefined ? 'null' : typeof value;
   
   const canEditKey = isEditable && isKeyEditable;
   const canEditValue = isEditable && isValueEditable;
-  const renderCountKey = isDebug ? getKeyIdentity(data, itemKey) : undefined;
+  const renderCountKey = isDebug ? getKeyIdentity(container, itemKey) : undefined;
 
   const handleKeyClick = () => {
     if (!canEditKey) return;
@@ -72,7 +61,6 @@ const JsonKeyValueComp = observer(({
     
     const newKey = keyRef.current.textContent.trim();
     
-    // Don't submit if value hasn't changed
     if (newKey === originalKeyRef.current) {
       setIsEditingKey(false);
       clearBrowserTextSelection();
@@ -82,7 +70,6 @@ const JsonKeyValueComp = observer(({
       return;
     }
     
-    // Don't allow empty key
     if (newKey === '') {
       setError('Key cannot be empty');
       if (keyRef.current) {
@@ -94,8 +81,7 @@ const JsonKeyValueComp = observer(({
       return;
     }
 
-    // Check if key already exists
-    if (newKey in data) {
+    if (newKey in container) {
       setError(`Key "${newKey}" already exists`);
       if (keyRef.current) {
         keyRef.current.textContent = originalKeyRef.current;
@@ -110,52 +96,48 @@ const JsonKeyValueComp = observer(({
     clearBrowserTextSelection();
     
     try {
-      if (onChange) {
-        // For key changes, send structured format with special _keyRename marker
-        const changeData = {
-          old: { type: 'key', value: originalKeyRef.current },
-          new: { type: 'key', value: newKey },
-          _keyRename: true
-        };
-        
-        const result = await onChange(resolvePath(), changeData);
-        
-        if (result && result.code !== 0) {
-          setError(result.message || 'Failed to update key');
-          if (keyRef.current) {
-            keyRef.current.textContent = originalKeyRef.current;
-          }
-          setTimeout(() => setError(null), 3000);
-          return;
+      const changeData = {
+        old: { type: 'key', value: originalKeyRef.current },
+        new: { type: 'key', value: newKey },
+        _keyRename: true
+      };
+      
+      const result = await emitEvent(path, changeData);
+      
+      if (result && result.code !== 0) {
+        setError(result.message || 'Failed to update key');
+        if (keyRef.current) {
+          keyRef.current.textContent = originalKeyRef.current;
         }
+        setTimeout(() => setError(null), 3000);
+        return;
       }
       
-      // Mutate in place - rename key while preserving position
       runInAction(() => {
-        renameKeyInOrder(data, originalKeyRef.current, newKey);
-        renameKeyIdentity(data, originalKeyRef.current, newKey);
-        const tempValue = data[originalKeyRef.current];
-        mobxRemove(data, originalKeyRef.current);
-        mobxSet(data, newKey, tempValue);
+        renameKeyInOrder(container, originalKeyRef.current, newKey);
+        renameKeyIdentity(container, originalKeyRef.current, newKey);
+        const tempValue = container[originalKeyRef.current];
+        mobxRemove(container, originalKeyRef.current);
+        mobxSet(container, newKey, tempValue);
       });
-    } catch (error) {
-      setError(error.message || 'Error renaming key');
+    } catch (errorSubmit) {
+      setError(errorSubmit.message || 'Error renaming key');
       if (keyRef.current) {
         keyRef.current.textContent = originalKeyRef.current;
       }
       setTimeout(() => setError(null), 3000);
     }
-  }, [data, itemKey, onChange, resolvePath]);
+  }, [container, emitEvent, path]);
 
   useEffect(() => {
-    if (!isEditingKey || !selectionOperationStore) return undefined;
+    if (!isEditingKey || !selection) return undefined;
     return reaction(
-      () => selectionOperationStore.selectionRevision,
+      () => selection.revisionSelection,
       () => {
         handleKeySubmit();
       }
     );
-  }, [handleKeySubmit, isEditingKey, selectionOperationStore]);
+  }, [handleKeySubmit, isEditingKey, selection]);
 
   const handleKeyBlur = () => {
     handleKeySubmit();
@@ -175,31 +157,27 @@ const JsonKeyValueComp = observer(({
     }
   };
 
-  // Handle context menu on key
   const handleKeyContextMenu = (e) => {
     if (!isEditable) return;
     e.preventDefault();
     e.stopPropagation();
     
-    if (showConversionMenu) {
-      const parentInfo = queryParentInfo ? queryParentInfo(resolvePath()) : { isSingleEntryInParent: false };
-      showConversionMenu({
-        position: { x: e.clientX, y: e.clientY },
-        menuType: 'key',
-        itemKey: itemKey,
-        path: resolvePath(),
-        value: value,
-        isSingleEntryInParent: parentInfo.isSingleEntryInParent,
-        isFirstInParent: parentInfo.isFirstInParent,
-        isLastInParent: parentInfo.isLastInParent
-      });
-    }
+    const parentInfo = pathQueryParentInfo ? pathQueryParentInfo(path) : { isSingleEntryInParent: false };
+    openMenu({
+      position: { x: e.clientX, y: e.clientY },
+      menuType: 'key',
+      itemKey,
+      path,
+      value,
+      isSingleEntryInParent: parentInfo.isSingleEntryInParent,
+      isFirstInParent: parentInfo.isFirstInParent,
+      isLastInParent: parentInfo.isLastInParent
+    });
   };
 
   const renderValueComponent = () => {
-    // Handle empty collections first (even though isPrimitive is true for layout)
     if (isEmptyCollection) {
-      return children; // Render the EmptyList or EmptyDict component
+      return children;
     }
     
     if (!isPrimitive) {
@@ -208,9 +186,9 @@ const JsonKeyValueComp = observer(({
 
     if (getValueComp) {
       const CustomValueComp = getValueComp({
-        path: resolvePath(),
+        path,
         value,
-        data,
+        data: container,
         itemKey,
         valueType,
       });
@@ -218,39 +196,23 @@ const JsonKeyValueComp = observer(({
     }
 
     if (valueType === 'null') {
-      return <JsonNullComp getPath={resolvePath} />;
+      return <JsonNullComp data={{ path }} />;
     } else if (valueType === 'boolean') {
       return (
         <JsonBoolComp
-          data={data}
-          objKey={itemKey}
-          getPath={resolvePath}
-          isEditable={canEditValue}
-          onChange={onChange}
-          renderCountKey={renderCountKey}
+          data={{ container, itemKey, path, renderCountKey }}
         />
       );
     } else if (valueType === 'number') {
       return (
         <JsonNumberComp
-          data={data}
-          objKey={itemKey}
-          getPath={resolvePath}
-          isEditable={canEditValue}
-          onChange={onChange}
-          renderCountKey={renderCountKey}
+          data={{ container, itemKey, path, renderCountKey }}
         />
       );
     } else {
-      // string or other
       return (
         <JsonTextComp
-          data={data}
-          objKey={itemKey}
-          getPath={resolvePath}
-          isEditable={canEditValue}
-          onChange={onChange}
-          renderCountKey={renderCountKey}
+          data={{ container, itemKey, path, renderCountKey }}
         />
       );
     }

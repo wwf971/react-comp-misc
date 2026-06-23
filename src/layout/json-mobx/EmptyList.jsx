@@ -2,28 +2,25 @@ import React from 'react';
 import { useJsonContext } from './JsonContext';
 import './JsonComp.css';
 
-/**
- * EmptyList - Placeholder for empty arrays
- */
-const EmptyList = ({ path, onChange, containerOwnerSelectionItemId }) => {
-  const { dragOperationStore, showConversionMenu } = useJsonContext();
-  const isDragMoveEnabled = Boolean(dragOperationStore);
-  const targetItemId = containerOwnerSelectionItemId || 'json-empty-list-root';
-  const itemDragState = isDragMoveEnabled ? dragOperationStore.getItemDragState(targetItemId) : null;
+const EmptyList = ({ data }) => {
+  const { path, parentItemId } = data;
+  const { store } = useJsonContext();
+  const { drag, openMenu } = store;
+  const isDragMoveEnabled = Boolean(drag);
+  const targetItemId = parentItemId || 'json-empty-list-root';
+  const itemDragState = isDragMoveEnabled ? drag.getItemDragState(targetItemId) : null;
 
   const handleContextMenu = (e) => {
     if (!path) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
 
-    if (showConversionMenu) {
-      showConversionMenu({
-        position: { x: e.clientX, y: e.clientY },
-        menuType: 'emptyList',
-        path: path
-      });
-    }
+    openMenu({
+      position: { x: e.clientX, y: e.clientY },
+      menuType: 'emptyList',
+      path,
+    });
   };
 
   const className = [
@@ -34,7 +31,7 @@ const EmptyList = ({ path, onChange, containerOwnerSelectionItemId }) => {
   ].filter(Boolean).join(' ');
 
   return (
-    <span 
+    <span
       className={className}
       onContextMenu={handleContextMenu}
       data-json-empty-drop-target="array"

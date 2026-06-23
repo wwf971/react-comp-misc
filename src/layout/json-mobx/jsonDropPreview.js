@@ -7,12 +7,12 @@ import {
 export const previewJsonDropFromPoint = ({
   clientX,
   clientY,
-  dragOperationStore,
-  selectionOperationStore,
+  drag,
+  selection,
 }) => {
   const elementTarget = document.elementFromPoint(clientX, clientY);
   if (!elementTarget) {
-    dragOperationStore.clearDropPreview();
+    drag.clearDropPreview();
     return;
   }
 
@@ -25,18 +25,18 @@ export const previewJsonDropFromPoint = ({
     });
     const isDropAllowed = getIsJsonDropAllowedByDefault({
       dropInfo,
-      dragOperationStore,
-      selectionOperationStore,
+      dragOperationStore: drag,
+      selectionOperationStore: selection,
     });
-    dragOperationStore.previewDrop(dropInfo, isDropAllowed);
+    drag.previewDrop(dropInfo, isDropAllowed);
     return;
   }
 
   const elementSelectionTarget = elementTarget.closest('[data-json-selection-item-id]');
   const itemTargetId = elementSelectionTarget?.dataset.jsonSelectionItemId;
-  const itemTargetMeta = itemTargetId ? dragOperationStore.itemMetaById[itemTargetId] : null;
+  const itemTargetMeta = itemTargetId ? drag.itemMetaById[itemTargetId] : null;
   if (!elementSelectionTarget || !itemTargetMeta) {
-    dragOperationStore.clearDropPreview();
+    drag.clearDropPreview();
     return;
   }
 
@@ -51,8 +51,8 @@ export const previewJsonDropFromPoint = ({
   });
   const isDropAllowed = getIsJsonDropAllowedByDefault({
     dropInfo,
-    dragOperationStore,
-    selectionOperationStore,
+    dragOperationStore: drag,
+    selectionOperationStore: selection,
   });
-  dragOperationStore.previewDrop(dropInfo, isDropAllowed);
+  drag.previewDrop(dropInfo, isDropAllowed);
 };

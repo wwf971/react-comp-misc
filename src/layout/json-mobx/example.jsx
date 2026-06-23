@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import JsonCompMobx, { createJsonDragOperationStore, createJsonSelectionOperationStore } from './JsonCompMobx';
+import JsonCompMobx, { createJsonCompMobxStore, createJsonOnEventAdapter } from './JsonCompMobx';
 import BoolSlider from '../../component/button/BoolSlider';
 import { createHandleChange } from './exampleHandleChange';
 
@@ -29,13 +29,13 @@ const JsonMobxCustomValue = ({ path, value }) => {
   );
 };
 
-const JsonMobxSelectionStatus = observer(({ dragOperationStore, selectionOperationStore }) => {
-  const { selectedItemMeta, isSelectionActive } = selectionOperationStore;
-  const statusText = isSelectionActive && selectedItemMeta
-    ? `${selectedItemMeta.itemKind}: ${selectedItemMeta.path || selectedItemMeta.label}`
+const JsonMobxSelectionStatus = observer(({ store }) => {
+  const { itemSelectedMeta, isSelectionActive } = store.selection;
+  const statusText = isSelectionActive && itemSelectedMeta
+    ? `${itemSelectedMeta.itemKind}: ${itemSelectedMeta.path || itemSelectedMeta.label}`
     : 'No selection';
-  const dragText = dragOperationStore.isDragging && dragOperationStore.itemDraggedMeta
-    ? `${dragOperationStore.itemDraggedMeta.itemKind}: ${dragOperationStore.itemDraggedMeta.path}`
+  const dragText = store.drag.isDragging && store.drag.itemDraggedMeta
+    ? `${store.drag.itemDraggedMeta.itemKind}: ${store.drag.itemDraggedMeta.path}`
     : 'No drag';
 
   return (
@@ -53,7 +53,49 @@ const getJsonMobxActionLabel = (changeData) => {
   return 'Value edit';
 };
 
-const JsonMobxRenderDebugExample = observer(() => {
+const JsonMobxRenderDebugControls = observer(({ dataExample, onRenderDebugChange }) => (
+  <div className="json-mobx-debug-control">
+    <span className="json-mobx-debug-label">Render debug:</span>
+    <BoolSlider
+      checked={dataExample.config.isRenderDebugEnabled}
+      onChange={onRenderDebugChange}
+    />
+  </div>
+));
+
+JsonMobxRenderDebugControls.displayName = 'JsonMobxRenderDebugControls';
+
+const JsonMobxRenderDebugPanel = ({ doc, isDebug, baseConfig, handleOnEvent }) => {
+  const jsonConfig = useMemo(() => ({
+    ...baseConfig,
+    isDebug,
+  }), [baseConfig, isDebug]);
+
+  return (
+    <div className="json-mobx-example-panel">
+      <JsonCompMobx
+        data={doc}
+        config={jsonConfig}
+        onEvent={handleOnEvent}
+      />
+    </div>
+  );
+};
+
+JsonMobxRenderDebugPanel.displayName = 'JsonMobxRenderDebugPanel';
+
+const JsonMobxRenderDebugPanelWrap = observer(({ dataExample, baseConfig, handleOnEvent }) => (
+  <JsonMobxRenderDebugPanel
+    doc={dataExample.doc}
+    isDebug={dataExample.config.isRenderDebugEnabled}
+    baseConfig={baseConfig}
+    handleOnEvent={handleOnEvent}
+  />
+));
+
+JsonMobxRenderDebugPanelWrap.displayName = 'JsonMobxRenderDebugPanelWrap';
+
+const JsonMobxRenderDebugExample = () => {
   const dataExample = useMemo(() => makeAutoObservable({
     config: {
       isRenderDebugEnabled: true,
@@ -81,7 +123,14 @@ const JsonMobxRenderDebugExample = observer(() => {
       ],
     },
   }, {}, { deep: true }), []);
+  const baseConfig = useMemo(() => ({
+    isEditable: true,
+    isKeyEditable: true,
+    isDragMoveEnabled: true,
+    compId: 'json-mobx-render-debug',
+  }), []);
   const handleChange = useMemo(() => createHandleChange(dataExample.doc), [dataExample]);
+  const handleOnEvent = useMemo(() => createJsonOnEventAdapter(handleChange), [handleChange]);
   const handleRenderDebugChange = useCallback((isRenderDebugEnabledNext) => {
     runInAction(() => {
       dataExample.config.isRenderDebugEnabled = isRenderDebugEnabledNext;
@@ -94,57 +143,44 @@ const JsonMobxRenderDebugExample = observer(() => {
       <div className="json-mobx-example-note">
         Edit or rename editingTarget.title, then check that farAwayBranch values keep their render numbers.
       </div>
-      <div className="json-mobx-debug-control">
-        <span className="json-mobx-debug-label">Render debug:</span>
-        <BoolSlider
-          checked={dataExample.config.isRenderDebugEnabled}
-          onChange={handleRenderDebugChange}
-        />
-      </div>
-      <div className="json-mobx-example-panel">
-        <JsonCompMobx
-          data={dataExample.doc}
-          isEditable
-          isKeyEditable
-          isDragMoveEnabled
-          isDebug={dataExample.config.isRenderDebugEnabled}
-          onChange={handleChange}
-        />
-      </div>
+      <JsonMobxRenderDebugControls
+        dataExample={dataExample}
+        onRenderDebugChange={handleRenderDebugChange}
+      />
+      <JsonMobxRenderDebugPanelWrap
+        dataExample={dataExample}
+        baseConfig={baseConfig}
+        handleOnEvent={handleOnEvent}
+      />
     </div>
   );
-});
+};
 
 JsonMobxRenderDebugExample.displayName = 'JsonMobxRenderDebugExample';
 
-/**
- * Example demonstrating MobX-based JSON component with in-place mutations
- */
 const JsonMobxExample = observer(() => {
-  // Create observable data - MobX will track all changes
   const [observableData] = useState(() => {
     const data = {
       user: {
         id: 123,
-        name: "Alice Smith",
-        email: "alice@example.com",
-        roles: ["admin", "editor"],
+        name: 'Alice Smith',
+        email: 'alice@example.com',
+        roles: ['admin', 'editor'],
         settings: {
-          theme: "dark",
+          theme: 'dark',
           notifications: {
             email: true,
-            push: false
-          }
-        }
+            push: false,
+          },
+        },
       },
-      tags: ["important", "verified"],
+      tags: ['important', 'verified'],
       metadata: {
         views: 1234,
-        published: true
-      }
+        published: true,
+      },
     };
-    
-    // Make the entire tree observable with deep option
+
     return makeAutoObservable(data, {}, { deep: true });
   });
 
@@ -156,8 +192,7 @@ const JsonMobxExample = observer(() => {
   const [changeMessage, setChangeMessage] = useState(null);
   const dragFailureRateRef = useRef(dragFailureRate);
   dragFailureRateRef.current = dragFailureRate;
-  const dragOperationStore = useMemo(() => createJsonDragOperationStore(), []);
-  const selectionOperationStore = useMemo(() => createJsonSelectionOperationStore(), []);
+  const selectionDemoStore = useMemo(() => createJsonCompMobxStore({ compId: 'json-mobx-selection-demo' }), []);
   const selectionExampleData = useMemo(() => makeAutoObservable({
     account: {
       name: 'Alice Smith',
@@ -177,18 +212,23 @@ const JsonMobxExample = observer(() => {
     archive: [],
   }, {}, { deep: true }), []);
   const handleSelectionExampleChange = useMemo(() => createHandleChange(selectionExampleData), [selectionExampleData]);
+  const handleSelectionOnEvent = useMemo(
+    () => createJsonOnEventAdapter(handleSelectionExampleChange),
+    [handleSelectionExampleChange]
+  );
   const customValueData = useMemo(() => ({
     title: 'Tool Result',
     status: 'success',
     notes: {
       longText: 'This custom renderer demonstrates getValueComp. The normal JSON tree still comes from JsonCompMobx, but this one primitive value is rendered with a custom component that can show an abbreviated preview and expand inline.',
-      shortText: 'Rendered by the default JsonCompMobx string value component.'
+      shortText: 'Rendered by the default JsonCompMobx string value component.',
     },
-    count: 3
+    count: 3,
   }), []);
 
   const handleChangeBase = useMemo(() => createHandleChange(observableData), [observableData]);
-  const handleChange = useCallback(async (path, changeData) => {
+  const handleOnEvent = useCallback(async (eventType, eventData) => {
+    const { path, changeData } = eventData;
     const actionLabel = getJsonMobxActionLabel(changeData);
     if (changeData?._invalidDrop) {
       const result = { code: -1, message: 'This attempt failed because the drop place is not allowed.' };
@@ -249,21 +289,21 @@ const JsonMobxExample = observer(() => {
       <div style={{ marginBottom: '12px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '13px' }}>Editable:</span>
-          <BoolSlider 
+          <BoolSlider
             checked={isEditable}
             onChange={handleEditableChange}
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '13px' }}>Key editable:</span>
-          <BoolSlider 
+          <BoolSlider
             checked={isKeyEditable}
             onChange={setIsKeyEditable}
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '13px' }}>Debug mode:</span>
-          <BoolSlider 
+          <BoolSlider
             checked={isDebug}
             onChange={setIsDebug}
           />
@@ -296,31 +336,33 @@ const JsonMobxExample = observer(() => {
       </div>
 
       <div style={{ background: '#f9f9f9', padding: '12px', borderRadius: '3px', marginBottom: '16px' }}>
-        <JsonCompMobx 
+        <JsonCompMobx
           data={observableData}
-          isEditable={isEditable}
-          isKeyEditable={isKeyEditable}
-          isDebug={isDebug}
-          isDragMoveEnabled={isDragMoveEnabled}
-          onChange={handleChange}
+          config={{
+            isEditable,
+            isKeyEditable,
+            isDebug,
+            isDragMoveEnabled,
+            compId: 'json-mobx-main-demo',
+          }}
+          onEvent={handleOnEvent}
         />
       </div>
 
       <div className="json-selection-demo-panel">
         <JsonCompMobx
           data={selectionExampleData}
-          isEditable={false}
-          isKeyEditable={false}
-          isValueEditable={false}
-          onChange={handleSelectionExampleChange}
-          dragOperationStore={dragOperationStore}
-          isDragMoveEnabled={isDragMoveEnabled}
-          selectionOperationStore={selectionOperationStore}
+          store={selectionDemoStore}
+          config={{
+            isEditable: false,
+            isKeyEditable: false,
+            isValueEditable: false,
+            isDragMoveEnabled,
+            compId: 'json-mobx-selection-demo',
+          }}
+          onEvent={handleSelectionOnEvent}
         />
-        <JsonMobxSelectionStatus
-          dragOperationStore={dragOperationStore}
-          selectionOperationStore={selectionOperationStore}
-        />
+        <JsonMobxSelectionStatus store={selectionDemoStore} />
       </div>
 
       <div className="json-mobx-example-section">
@@ -331,10 +373,13 @@ const JsonMobxExample = observer(() => {
         <div className="json-mobx-example-panel">
           <JsonCompMobx
             data={customValueData}
-            isEditable={false}
-            isKeyEditable={false}
-            isValueEditable={false}
-            getValueComp={getCustomValueComp}
+            config={{
+              isEditable: false,
+              isKeyEditable: false,
+              isValueEditable: false,
+              getValueComp: getCustomValueComp,
+              compId: 'json-mobx-custom-value-demo',
+            }}
           />
         </div>
       </div>
@@ -347,7 +392,7 @@ const JsonMobxExample = observer(() => {
           <li><strong>Fine-grained reactivity:</strong> Only components that read changed properties re-render</li>
           <li><strong>Editing:</strong> Click on values to edit (strings, numbers); click booleans to toggle; click keys to rename</li>
           <li><strong>Right-click menu:</strong> Type conversion, add/delete entries/items, view raw JSON, and more</li>
-          <li><strong>Pseudo items:</strong> Right-click and select "Add entry/item" for interactive creation</li>
+          <li><strong>Pseudo items:</strong> Right-click and select Add entry/item for interactive creation</li>
           <li><strong>Debug mode:</strong> Shows render counts - only changed values increment (not siblings!)</li>
           <li><strong>Selection:</strong> Shift-click a list item or object entry to select it; repeat shift-click to expand selection upward</li>
           <li><strong>Drag move:</strong> Enable the Drag move slider, shift-click an item, then hold Shift and drag it to a valid list or object target</li>
@@ -360,13 +405,12 @@ const JsonMobxExample = observer(() => {
 
 JsonMobxExample.displayName = 'JsonMobxExample';
 
-// Export in the format expected by examples.jsx
 export const jsonMobxExamples = {
-  'JsonCompMobx': {
+  JsonCompMobx: {
     component: JsonCompMobx,
     description: 'MobX-based JSON editor with automatic dependency tracking and in-place mutations',
-    example: JsonMobxExample
-  }
+    example: JsonMobxExample,
+  },
 };
 
 export default JsonMobxExample;

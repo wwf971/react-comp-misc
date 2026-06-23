@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import JsonListItemComp from './JsonListItemComp';
 import PseudoListItem from './PseudoListItem';
@@ -10,81 +10,69 @@ import {
   useJsonSelectionRenderRevision,
 } from './useJsonItemInteraction';
 
-/**
- * ItemWrapperArray - Isolated observer for each array item
- * This prevents sibling items from re-rendering when one item changes
- */
-const ItemWrapperArray = observer(({ 
-  data,
-  index,
-  itemData,
-  pathPrefixRef,
-  isEditable,
-  isKeyEditable,
-  isValueEditable,
-  onChange,
-  indent,
-  depth,
-  renderNestedJsonValue,
-  getValueComp,
-  parentSelectionItemId,
-  itemPreviousPath,
-  itemNextPath
-}) => {
-  // Use itemData directly instead of data[index] to avoid MobX tracking
-  const item = itemData !== undefined ? itemData : data[index];
-  const getItemPath = useCallback(() => {
-    const prefix = pathPrefixRef?.current || '';
-    return prefix ? `${prefix}..${index}` : `..${index}`;
-  }, [index, pathPrefixRef]);
-  const isLastItem = index === data.length - 1;
+const ItemWrapperArray = observer(({ data }) => {
+  const {
+    container,
+    itemIndex,
+    pathRef,
+    parentItemId,
+    itemPathPrevious,
+    itemPathNext,
+  } = data;
+  const { config, store, emitEvent, pathQueryParentInfo, requestJsonContextMenu, renderNestedJson } = useJsonContext();
+  const { selection, drag } = store;
+  const itemIndexRef = useRef(itemIndex);
+  itemIndexRef.current = itemIndex;
+  const itemPathRef = useRef(null);
+  if (!itemPathRef.current) {
+    itemPathRef.current = {
+      get current() {
+        const prefix = pathRef?.current || '';
+        return prefix ? `${prefix}..${itemIndexRef.current}` : `..${itemIndexRef.current}`;
+      },
+    };
+  }
+  const item = container[itemIndex];
+  const itemPath = itemPathRef.current;
+  const isLastItem = itemIndex === container.length - 1;
   const isPrimitive = item === null || item === undefined || typeof item !== 'object';
   const isPseudo = item && typeof item === 'object' && item.isPseudo;
-  const {
-    dragOperationStore,
-    queryParentInfo,
-    requestJsonContextMenu,
-    selectionOperationStore,
-  } = useJsonContext();
-  
-  // Use stable key - for objects use WeakMap, for primitives use value+index
-  const stableKey = getStableKey(item, index);
-  const itemPath = getItemPath();
+  const stableKey = getStableKey(item, itemIndex);
   const selectionItemId = getJsonArraySelectionItemId(itemPath);
-  const revisionSelectionRender = useJsonSelectionRenderRevision(selectionOperationStore);
+  const revisionSelectionRender = useJsonSelectionRenderRevision(selection);
   const itemSelectionState = !isPseudo
-    ? selectionOperationStore?.getItemSelectionState(selectionItemId)
+    ? selection?.getItemSelectionState(selectionItemId)
     : null;
-  const isDragMoveEnabled = Boolean(dragOperationStore);
+  const isDragMoveEnabled = config.isDragMoveEnabled;
   const itemDragState = !isPseudo && isDragMoveEnabled
-    ? dragOperationStore?.getItemDragState(selectionItemId)
+    ? drag?.getItemDragState(selectionItemId)
     : null;
   const containerChildKind = item && typeof item === 'object'
     ? (Array.isArray(item) ? 'array' : 'object')
     : null;
   const itemMeta = {
     itemId: selectionItemId,
-    itemParentId: parentSelectionItemId,
+    itemParentId: parentItemId,
     path: itemPath,
     itemKind: 'arrayItem',
-    itemKey: index,
-    label: `[${index}]`,
+    itemKey: itemIndex,
+    label: `[${itemIndex}]`,
     value: item,
     containerKind: 'array',
-    containerPath: pathPrefixRef?.current || '',
-    itemPreviousPath,
-    itemNextPath,
+    containerPath: pathRef?.current || '',
+    itemPreviousPath: itemPathPrevious,
+    itemNextPath: itemPathNext,
     containerChildKind,
     containerPathForInside: containerChildKind ? itemPath : null,
   };
 
   React.useEffect(() => {
     if (isPseudo) return;
-    selectionOperationStore?.registerItem(itemMeta);
+    selection?.registerItem(itemMeta);
     if (isDragMoveEnabled) {
-      dragOperationStore.registerItem(itemMeta);
+      drag.registerItem(itemMeta);
     }
-  }, [dragOperationStore, isDragMoveEnabled, isPseudo, itemMeta, selectionOperationStore]);
+  }, [drag, isDragMoveEnabled, isPseudo, itemMeta, selection]);
 
   const {
     handleContextMenuCapture,
@@ -96,26 +84,22 @@ const ItemWrapperArray = observer(({
     itemMeta,
     itemSelectionState,
     isDragMoveEnabled,
-    dragOperationStore,
-    selectionOperationStore,
+    drag,
+    selection,
     requestJsonContextMenu,
-    queryParentInfo,
-    onChange,
+    pathQueryParentInfo,
+    emitEvent,
   });
 
   if (isPseudo) {
     return (
       <div key={stableKey} className="json-array-item">
         <PseudoListItem
-          getPath={getItemPath}
-          parentData={data}
-          index={index}
-          onChange={onChange}
-          onCancel={() => {
-            // Remove pseudo item by mutating array
-            data.splice(index, 1);
+          data={{
+            container,
+            itemIndex,
+            path: itemPath,
           }}
-          depth={depth}
         />
       </div>
     );
@@ -148,27 +132,16 @@ const ItemWrapperArray = observer(({
       {itemDragState?.isInsertBefore ? <div className="json-drop-line json-drop-line-before" /> : null}
       {itemDragState?.isInsertAfter ? <div className="json-drop-line json-drop-line-after" /> : null}
       <JsonListItemComp
-        parentData={data}
-        index={index}
-        itemData={item}
-        getPath={getItemPath}
-        isEditable={isEditable && isValueEditable}
-        onChange={onChange}
-        depth={depth}
-        getValueComp={getValueComp}
+        data={{
+          container,
+          itemIndex,
+          path: itemPath,
+        }}
       >
-        {renderNestedJsonValue({
-          data: item,
-          isEditable,
-          isKeyEditable,
-          isValueEditable,
-          onChange,
-          indent,
-          pathPrefix: getItemPath(),
-          depth: depth + 1,
-          isArrayItem: true,
-          getValueComp,
-          parentSelectionItemId: selectionItemId,
+        {renderNestedJson(item, {
+          pathRef: itemPathRef,
+          parentItemId: selectionItemId,
+          isItemInArray: true,
         })}
       </JsonListItemComp>
       {!isLastItem && isPrimitive && <span className="json-comma">,</span>}

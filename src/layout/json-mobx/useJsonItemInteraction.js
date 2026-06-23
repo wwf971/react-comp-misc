@@ -4,18 +4,18 @@ import { getJsonContextMenuTargetMeta } from './jsonContextMenu';
 import { previewJsonDropFromPoint } from './jsonDropPreview';
 import { completeJsonMoveDrop } from './jsonMoveCompletion';
 
-export const useJsonSelectionRenderRevision = (selectionOperationStore) => {
+export const useJsonSelectionRenderRevision = (selection) => {
   const [revisionRender, setRevisionRender] = React.useState(0);
 
   React.useEffect(() => {
-    if (!selectionOperationStore) return undefined;
+    if (!selection) return undefined;
     return reaction(
-      () => selectionOperationStore.selectionRevision,
+      () => selection.revisionSelection,
       () => {
         setRevisionRender((revisionPrevious) => revisionPrevious + 1);
       }
     );
-  }, [selectionOperationStore]);
+  }, [selection]);
 
   return revisionRender;
 };
@@ -23,16 +23,16 @@ export const useJsonSelectionRenderRevision = (selectionOperationStore) => {
 const useJsonPointerDragHandler = ({
   isDragMoveEnabled,
   selectionItemId,
-  dragOperationStore,
-  selectionOperationStore,
+  drag,
+  selection,
   pointerDragRef,
   dragAttemptRef,
   previewDropFromPoint,
   completePointerDrop,
 }) => {
   const handlePointerDownCapture = React.useCallback((event) => {
-    const itemSelectedId = selectionOperationStore?.selectedItemId;
-    const isPointerInsideSelectedItem = selectionOperationStore?.getIsItemInsideSelectedItem(selectionItemId);
+    const itemSelectedId = selection?.itemSelectedId;
+    const isPointerInsideSelectedItem = selection?.getIsItemInsideSelectedItem(selectionItemId);
     const isDragFromSelectedItem = Boolean(itemSelectedId && isPointerInsideSelectedItem);
     const isDragFromItemDirect = !isDragFromSelectedItem;
     const itemDraggedId = isDragFromSelectedItem ? itemSelectedId : selectionItemId;
@@ -56,9 +56,9 @@ const useJsonPointerDragHandler = ({
       if (!pointerDrag.isDragging && (distanceX > 3 || distanceY > 3)) {
         pointerDrag.isDragging = true;
         if (isDragFromItemDirect) {
-          selectionOperationStore?.selectItem(selectionItemId);
+          selection?.selectItem(selectionItemId);
         }
-        dragOperationStore.startDrag(itemDraggedId);
+        drag.startDrag(itemDraggedId);
       }
       if (pointerDrag.isDragging) {
         previewDropFromPoint(eventMove.clientX, eventMove.clientY);
@@ -71,13 +71,13 @@ const useJsonPointerDragHandler = ({
       window.removeEventListener('pointerup', handlePointerUp);
       pointerDragRef.current = null;
       if (pointerDrag?.isDragging) {
-        selectionOperationStore?.suppressNextSelectionClick();
+        selection?.suppressNextSelectionClick();
         completePointerDrop();
         setTimeout(() => {
-          selectionOperationStore?.clearNextSelectionClickSuppressed();
+          selection?.clearNextSelectionClickSuppressed();
         }, 200);
       } else {
-        selectionOperationStore?.selectNextFromItem(selectionItemId);
+        selection?.selectNextFromItem(selectionItemId);
       }
       setTimeout(() => {
         dragAttemptRef.current = null;
@@ -88,13 +88,13 @@ const useJsonPointerDragHandler = ({
     window.addEventListener('pointerup', handlePointerUp, { once: true });
   }, [
     completePointerDrop,
+    drag,
     dragAttemptRef,
-    dragOperationStore,
     isDragMoveEnabled,
     pointerDragRef,
     previewDropFromPoint,
+    selection,
     selectionItemId,
-    selectionOperationStore,
   ]);
 
   return handlePointerDownCapture;
@@ -105,11 +105,11 @@ export const useJsonItemInteraction = ({
   itemMeta,
   itemSelectionState,
   isDragMoveEnabled,
-  dragOperationStore,
-  selectionOperationStore,
+  drag,
+  selection,
   requestJsonContextMenu,
-  queryParentInfo,
-  onChange,
+  pathQueryParentInfo,
+  emitEvent,
 }) => {
   const dragAttemptRef = React.useRef(null);
   const pointerDragRef = React.useRef(null);
@@ -118,22 +118,25 @@ export const useJsonItemInteraction = ({
     previewJsonDropFromPoint({
       clientX,
       clientY,
-      dragOperationStore,
-      selectionOperationStore,
+      drag,
+      selection,
     });
-  }, [dragOperationStore, selectionOperationStore]);
+  }, [drag, selection]);
 
   const completePointerDrop = React.useCallback(async () => {
     await completeJsonMoveDrop({
-      dragOperationStore,
-      selectionOperationStore,
-      onChange,
+      drag,
+      selection,
+      emitEvent,
     });
-  }, [dragOperationStore, onChange, selectionOperationStore]);
+  }, [drag, emitEvent, selection]);
 
   const handleSelectionMouseDownCapture = React.useCallback((event) => {
     if (!event.shiftKey && event.button === 0) {
-      selectionOperationStore?.clearSelection();
+      if (event.target.closest('.json-value.editable, .json-key.editable, .json-boolean.clickable')) {
+        return;
+      }
+      selection?.clearSelection();
       return;
     }
     if (!event.shiftKey || event.button !== 0) return;
@@ -144,14 +147,14 @@ export const useJsonItemInteraction = ({
     if (itemSelectionState?.isSelected) return;
     event.preventDefault();
     event.stopPropagation();
-  }, [itemSelectionState, selectionOperationStore]);
+  }, [itemSelectionState, selection]);
 
   const handleSelectionClickCapture = React.useCallback((event) => {
     if (!event.shiftKey || event.button !== 0) return;
     if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
     event.preventDefault();
     event.stopPropagation();
-    if (selectionOperationStore?.consumeNextSelectionClickSuppressed()) {
+    if (selection?.consumeNextSelectionClickSuppressed()) {
       dragAttemptRef.current = null;
       return;
     }
@@ -160,8 +163,8 @@ export const useJsonItemInteraction = ({
       return;
     }
     dragAttemptRef.current = null;
-    selectionOperationStore?.selectNextFromItem(selectionItemId);
-  }, [selectionItemId, selectionOperationStore]);
+    selection?.selectNextFromItem(selectionItemId);
+  }, [selectionItemId, selection]);
 
   const handleContextMenuCapture = React.useCallback((event) => {
     if (event.target.closest('.json-selection-item') !== event.currentTarget) return;
@@ -170,24 +173,24 @@ export const useJsonItemInteraction = ({
     const itemMetaTarget = getJsonContextMenuTargetMeta({
       itemIdClicked: selectionItemId,
       itemMetaClicked: itemMeta,
-      selectionOperationStore,
+      selectionOperationStore: selection,
     });
     requestJsonContextMenu?.({
       itemMeta: itemMetaTarget,
       position: { x: event.clientX, y: event.clientY },
-      queryParentInfo,
+      queryParentInfo: pathQueryParentInfo,
     });
-  }, [itemMeta, queryParentInfo, requestJsonContextMenu, selectionItemId, selectionOperationStore]);
+  }, [itemMeta, pathQueryParentInfo, requestJsonContextMenu, selectionItemId, selection]);
 
   const handlePointerDownCapture = useJsonPointerDragHandler({
     completePointerDrop,
+    drag,
     dragAttemptRef,
-    dragOperationStore,
     isDragMoveEnabled,
     pointerDragRef,
     previewDropFromPoint,
+    selection,
     selectionItemId,
-    selectionOperationStore,
   });
 
   return {

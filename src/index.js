@@ -95,7 +95,7 @@ export { default as JsonRaw } from "./layout/json/JsonRaw.jsx";
 export { JsonContextProvider, useJsonContext } from "./layout/json/JsonContext";
 export * from "./layout/json/typeConvert";
 
-export { default as JsonCompMobx } from "./layout/json-mobx/JsonCompMobx.jsx";
+export { default as JsonCompMobx, createJsonCompMobxStore, createJsonSelectionOperationStore, createJsonDragOperationStore, createJsonOnEventAdapter } from "./layout/json-mobx/JsonCompMobx.jsx";
 
 export { parseYamlToJson, parseJsonString, parseStringToJson, formatJson } from "./utils/parseString";
 

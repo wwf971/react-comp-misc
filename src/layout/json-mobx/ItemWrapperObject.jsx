@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useDerivedPathRef } from './pathRef';
 import JsonKeyValueComp from './JsonKeyValueComp';
@@ -9,68 +9,52 @@ import {
   useJsonSelectionRenderRevision,
 } from './useJsonItemInteraction';
 
-/**
- * ObjectItemWrapper - Isolated observer for each object key-value pair
- * This prevents sibling entries from re-rendering when one entry changes
- */
-const ItemWrapperObject = observer(({
-  data,
-  itemKey,
-  pathPrefixRef,
-  isEditable,
-  isKeyEditable,
-  isValueEditable,
-  onChange,
-  indent,
-  depth,
-  isLastItem,
-  renderNestedJsonValue,
-  getValueComp,
-  parentSelectionItemId,
-  itemPreviousPath,
-  itemNextPath
-}) => {
-  const keyPathRef = useDerivedPathRef(pathPrefixRef, itemKey);
-  const keyPath = keyPathRef.current;
-  const getPath = useCallback(() => keyPathRef.current, [keyPathRef]);
-  const value = data[itemKey];
-  const isPrimitive = value === null || value === undefined || typeof value !== 'object';
+const ItemWrapperObject = observer(({ data }) => {
   const {
-    dragOperationStore,
-    queryParentInfo,
-    requestJsonContextMenu,
-    selectionOperationStore,
-  } = useJsonContext();
+    container,
+    itemKey,
+    pathRef,
+    parentItemId,
+    itemPathPrevious,
+    itemPathNext,
+    isLastItem,
+  } = data;
+  const { config, store, emitEvent, pathQueryParentInfo, requestJsonContextMenu, renderNestedJson } = useJsonContext();
+  const { selection, drag } = store;
+  const keyPathRef = useDerivedPathRef(pathRef, itemKey);
+  const keyPath = keyPathRef.current;
+  const value = container[itemKey];
+  const isPrimitive = value === null || value === undefined || typeof value !== 'object';
   const selectionItemId = getJsonObjectSelectionItemId(keyPath);
-  const revisionSelectionRender = useJsonSelectionRenderRevision(selectionOperationStore);
-  const itemSelectionState = selectionOperationStore?.getItemSelectionState(selectionItemId);
-  const isDragMoveEnabled = Boolean(dragOperationStore);
-  const itemDragState = isDragMoveEnabled ? dragOperationStore?.getItemDragState(selectionItemId) : null;
+  const revisionSelectionRender = useJsonSelectionRenderRevision(selection);
+  const itemSelectionState = selection?.getItemSelectionState(selectionItemId);
+  const isDragMoveEnabled = config.isDragMoveEnabled;
+  const itemDragState = isDragMoveEnabled ? drag?.getItemDragState(selectionItemId) : null;
   const containerChildKind = value && typeof value === 'object'
     ? (Array.isArray(value) ? 'array' : 'object')
     : null;
   const itemMeta = {
     itemId: selectionItemId,
-    itemParentId: parentSelectionItemId,
+    itemParentId: parentItemId,
     path: keyPath,
     itemKind: 'objectEntry',
     itemKey,
     label: itemKey,
     value,
     containerKind: 'object',
-    containerPath: pathPrefixRef?.current || '',
-    itemPreviousPath,
-    itemNextPath,
+    containerPath: pathRef?.current || '',
+    itemPreviousPath: itemPathPrevious,
+    itemNextPath: itemPathNext,
     containerChildKind,
     containerPathForInside: containerChildKind ? keyPath : null,
   };
 
   React.useEffect(() => {
-    selectionOperationStore?.registerItem(itemMeta);
+    selection?.registerItem(itemMeta);
     if (isDragMoveEnabled) {
-      dragOperationStore.registerItem(itemMeta);
+      drag.registerItem(itemMeta);
     }
-  }, [dragOperationStore, isDragMoveEnabled, itemMeta, selectionOperationStore]);
+  }, [drag, isDragMoveEnabled, itemMeta, selection]);
 
   const {
     handleContextMenuCapture,
@@ -82,11 +66,11 @@ const ItemWrapperObject = observer(({
     itemMeta,
     itemSelectionState,
     isDragMoveEnabled,
-    dragOperationStore,
-    selectionOperationStore,
+    drag,
+    selection,
     requestJsonContextMenu,
-    queryParentInfo,
-    onChange,
+    pathQueryParentInfo,
+    emitEvent,
   });
 
   const selectionClassName = [
@@ -115,29 +99,16 @@ const ItemWrapperObject = observer(({
       {itemDragState?.isInsertBefore ? <div className="json-drop-line json-drop-line-before" /> : null}
       {itemDragState?.isInsertAfter ? <div className="json-drop-line json-drop-line-after" /> : null}
       <JsonKeyValueComp
-        data={data}
-        itemKey={itemKey}
-        path={keyPath}
-        getPath={getPath}
-        isEditable={isEditable}
-        isKeyEditable={isKeyEditable}
-        isValueEditable={isValueEditable}
-        onChange={onChange}
-        depth={depth}
-        getValueComp={getValueComp}
+        data={{
+          container,
+          itemKey,
+          path: keyPath,
+        }}
       >
-        {renderNestedJsonValue({
-          data: value,
-          isEditable,
-          isKeyEditable,
-          isValueEditable,
-          onChange,
-          indent,
-          pathPrefix: '',
-          pathPrefixRef: keyPathRef,
-          depth: depth + 1,
-          getValueComp,
-          parentSelectionItemId: selectionItemId,
+        {renderNestedJson(value, {
+          pathRef: keyPathRef,
+          parentItemId: selectionItemId,
+          isItemInArray: false,
         })}
       </JsonKeyValueComp>
       {!isLastItem && isPrimitive && <span className="json-comma">,</span>}

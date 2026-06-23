@@ -6,38 +6,35 @@ import './JsonComp.css';
 
 /**
  * JsonNullComp - MobX-based null value component
- * Note: null doesn't have parent data, so it can't use persistent render counts
- * We'll just show a static indicator
  */
-const JsonNullComp = observer(({ path, getPath }) => {
-  const { showConversionMenu, queryParentInfo, isDebug } = useJsonContext();
+const JsonNullComp = observer(({ data }) => {
+  const { path } = data;
+  const { store, pathQueryParentInfo } = useJsonContext();
+  const { openMenu } = store;
 
   const handleContextMenu = (e) => {
-    const currentPath = getPath ? getPath() : path;
-    if (!currentPath) return;
+    if (!path) return;
     
     e.preventDefault();
     e.stopPropagation();
 
-    if (showConversionMenu) {
-      const pathParts = currentPath.split('..');
-      const isArrayItem = pathParts.length > 1 && !pathParts[pathParts.length - 1].includes('.');
-      const parentInfo = queryParentInfo ? queryParentInfo(currentPath) : { isSingleEntryInParent: false };
-      
-        showConversionMenu({
-          position: { x: e.clientX, y: e.clientY },
-          currentValue: null,
-          currentType: 'null',
-          path: currentPath,
-          menuType: isArrayItem ? 'arrayItem' : 'value',
-          value: null,
-          itemKey: undefined,
-          availableConversions: getAvailableConversions(null, 'null', { includeArray: true, includeObject: true }),
-          isSingleEntryInParent: parentInfo.isSingleEntryInParent,
-          isFirstInParent: parentInfo.isFirstInParent,
-          isLastInParent: parentInfo.isLastInParent
-        });
-    }
+    const pathParts = path.split('..');
+    const isArrayItem = pathParts.length > 1 && !pathParts[pathParts.length - 1].includes('.');
+    const parentInfo = pathQueryParentInfo ? pathQueryParentInfo(path) : { isSingleEntryInParent: false };
+    
+    openMenu({
+      position: { x: e.clientX, y: e.clientY },
+      currentValue: null,
+      currentType: 'null',
+      path,
+      menuType: isArrayItem ? 'arrayItem' : 'value',
+      value: null,
+      itemKey: undefined,
+      availableConversions: getAvailableConversions(null, 'null', { includeArray: true, includeObject: true }),
+      isSingleEntryInParent: parentInfo.isSingleEntryInParent,
+      isFirstInParent: parentInfo.isFirstInParent,
+      isLastInParent: parentInfo.isLastInParent
+    });
   };
 
   return (

@@ -158,19 +158,32 @@ export type JsonCompMobxValueCompContext = {
   valueType: string;
 };
 
-export type JsonCompMobxProps = {
-  data?: unknown;
+export type JsonCompMobxConfig = {
+  compId?: string;
   isEditable?: boolean;
   isKeyEditable?: boolean;
   isValueEditable?: boolean;
-  onChange?: (path: string, changeData: unknown) => Promise<{ code: number; message?: string }>;
-  indent?: number;
-  typeConversionBehavior?: string;
+  isDragMoveEnabled?: boolean;
   isDebug?: boolean;
+  indentPx?: number;
+  typeConversionBehavior?: string;
   getValueComp?: (context: JsonCompMobxValueCompContext) => ReactNode;
 };
 
+export type JsonCompMobxEventResult = { code: number; message?: string };
+
+export type JsonCompMobxProps = {
+  data?: unknown;
+  config?: JsonCompMobxConfig;
+  onEvent?: (eventType: string, eventData: { path: string; changeData: unknown }) => Promise<JsonCompMobxEventResult | void> | JsonCompMobxEventResult | void;
+  store?: unknown;
+};
+
 export const JsonCompMobx: ComponentType<JsonCompMobxProps>;
+export function createJsonCompMobxStore(...args: any[]): any;
+export function createJsonSelectionOperationStore(...args: any[]): any;
+export function createJsonDragOperationStore(...args: any[]): any;
+export function createJsonOnEventAdapter(...args: any[]): any;
 
 export function parseYamlToJson(...args: any[]): any;
 export function parseJsonString(...args: any[]): any;

@@ -9,21 +9,19 @@ export const getJsonArraySelectionItemId = (path) => `json-array-item:${path || 
 export const createJsonSelectionOperationStore = () => {
   const store = {
     isSelectionActive: false,
-    selectionRevision: 0,
-    selectedItemId: null,
-    selectedAncestorItemIds: [],
-    selectedItemMeta: null,
+    revisionSelection: 0,
+    itemSelectedId: null,
+    itemAncestorIdsSelected: [],
+    itemSelectedMeta: null,
     itemMetaById: {},
     isNextSelectionClickSuppressed: false,
     getItemSelectionState(itemId) {
-      const selectionRevision = this.selectionRevision;
       const isSelectionActive = this.isSelectionActive;
-      const itemSelectedId = this.selectedItemId;
-      const itemAncestorIds = this.selectedAncestorItemIds;
+      const itemSelectedId = this.itemSelectedId;
+      const itemAncestorIdsSelected = this.itemAncestorIdsSelected;
       return {
-        selectionRevision,
         isSelected: Boolean(isSelectionActive && itemId && itemSelectedId === itemId),
-        isSelectionAncestor: Boolean(isSelectionActive && itemId && itemAncestorIds.includes(itemId)),
+        isSelectionAncestor: Boolean(isSelectionActive && itemId && itemAncestorIdsSelected.includes(itemId)),
       };
     },
     registerItem(itemMeta) {
@@ -35,8 +33,8 @@ export const createJsonSelectionOperationStore = () => {
         label: '',
         ...itemMeta,
       };
-      if (this.selectedItemId === itemMeta.itemId) {
-        this.selectedItemMeta = this.itemMetaById[itemMeta.itemId];
+      if (this.itemSelectedId === itemMeta.itemId) {
+        this.itemSelectedMeta = this.itemMetaById[itemMeta.itemId];
       }
     },
     getAncestorItemIds(itemId) {
@@ -51,9 +49,9 @@ export const createJsonSelectionOperationStore = () => {
       return ancestorItemIds;
     },
     getIsItemInsideSelectedItem(itemId) {
-      if (!itemId || !this.selectedItemId) return false;
-      if (itemId === this.selectedItemId) return true;
-      return this.getAncestorItemIds(itemId).includes(this.selectedItemId);
+      if (!itemId || !this.itemSelectedId) return false;
+      if (itemId === this.itemSelectedId) return true;
+      return this.getAncestorItemIds(itemId).includes(this.itemSelectedId);
     },
     suppressNextSelectionClick() {
       this.isNextSelectionClickSuppressed = true;
@@ -71,22 +69,22 @@ export const createJsonSelectionOperationStore = () => {
         this.clearSelection();
         return;
       }
-      const itemIdPrevious = this.selectedItemId;
+      const itemIdPrevious = this.itemSelectedId;
       const isSelectionChanged = !this.isSelectionActive || itemIdPrevious !== itemId;
       this.isSelectionActive = true;
-      this.selectedItemId = itemId;
-      this.selectedItemMeta = this.itemMetaById[itemId] ?? { itemId };
-      this.selectedAncestorItemIds = this.getAncestorItemIds(itemId);
+      this.itemSelectedId = itemId;
+      this.itemSelectedMeta = this.itemMetaById[itemId] ?? { itemId };
+      this.itemAncestorIdsSelected = this.getAncestorItemIds(itemId);
       if (isSelectionChanged) {
-        this.selectionRevision += 1;
+        this.revisionSelection += 1;
       }
     },
     selectNextFromItem(itemId) {
       if (!itemId) return;
       const itemIdToExpand = this.getIsItemInsideSelectedItem(itemId)
-        ? this.selectedItemId
+        ? this.itemSelectedId
         : itemId;
-      if (this.selectedItemId !== itemIdToExpand) {
+      if (this.itemSelectedId !== itemIdToExpand) {
         this.selectItem(itemIdToExpand);
         return;
       }
@@ -98,14 +96,15 @@ export const createJsonSelectionOperationStore = () => {
       this.clearSelection();
     },
     clearSelection() {
-      const isSelectionChanged = this.isSelectionActive || this.selectedItemId || this.selectedAncestorItemIds.length > 0;
-      this.isSelectionActive = false;
-      this.selectedItemId = null;
-      this.selectedAncestorItemIds = [];
-      this.selectedItemMeta = null;
-      if (isSelectionChanged) {
-        this.selectionRevision += 1;
+      const isSelectionChanged = this.isSelectionActive || this.itemSelectedId || this.itemAncestorIdsSelected.length > 0;
+      if (!isSelectionChanged) {
+        return;
       }
+      this.isSelectionActive = false;
+      this.itemSelectedId = null;
+      this.itemAncestorIdsSelected.length = 0;
+      this.itemSelectedMeta = null;
+      this.revisionSelection += 1;
     },
   };
   return makeAutoObservable(store, {

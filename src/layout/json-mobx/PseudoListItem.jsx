@@ -1,24 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { runInAction } from 'mobx';
+import { useJsonContext } from './JsonContext';
 import SpinningCircle from '../../icon/SpinningCircle';
 import './JsonComp.css';
 
-/**
- * PseudoListItem - Temporary component for creating a new array item in MobX
- * Mutates observable array directly
- */
-const PseudoListItem = ({ path, getPath, parentData, index, onChange, onCancel, depth }) => {
+const PseudoListItem = ({ data }) => {
+  const { container, itemIndex, path } = data;
+  const { emitEvent } = useJsonContext();
   const [value, setValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isShowingError, setIsShowingError] = useState('');
   const valueRef = useRef(null);
 
   useEffect(() => {
-    // Focus on value input when component mounts
     if (valueRef.current) {
       valueRef.current.focus();
     }
   }, []);
+
+  const handleCancel = () => {
+    runInAction(() => {
+      container.splice(itemIndex, 1);
+    });
+    emitEvent?.(path, {
+      old: { type: 'pseudo' },
+      new: { type: 'deleted' },
+      _action: 'cancelCreate',
+    });
+  };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -27,36 +36,31 @@ const PseudoListItem = ({ path, getPath, parentData, index, onChange, onCancel, 
       const changeData = {
         old: { type: 'pseudo' },
         new: { type: 'string', value: value },
-        _action: 'createItem'
+        _action: 'createItem',
       };
-      
-      const currentPath = getPath ? getPath() : path;
-      const result = await onChange(currentPath, changeData);
-      
+
+      const result = await emitEvent(path, changeData);
+
       if (result && result.code === 0) {
-        // Success - mutate array directly to replace pseudo with real item
         runInAction(() => {
-          parentData[index] = value;
+          container[itemIndex] = value;
         });
       } else {
-        // Failed - show error briefly then remove via onCancel
         const errMsg = result?.message || 'Failed to create item';
         setIsShowingError(errMsg);
         setIsSubmitting(false);
-        
-        // Auto-remove after showing error for 2 seconds
+
         setTimeout(() => {
-          onCancel();
+          handleCancel();
         }, 2000);
       }
     } catch (error) {
       console.error('Failed to create item:', error);
       setIsShowingError(error.message || 'Network error');
       setIsSubmitting(false);
-      
-      // Auto-remove after showing error for 2 seconds
+
       setTimeout(() => {
-        onCancel();
+        handleCancel();
       }, 2000);
     }
   };
@@ -67,16 +71,14 @@ const PseudoListItem = ({ path, getPath, parentData, index, onChange, onCancel, 
       handleSubmit();
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      onCancel();
+      handleCancel();
     }
   };
 
   const handleBlur = () => {
-    // If value is empty, cancel instead of submitting
     if (!value.trim()) {
-      onCancel();
+      handleCancel();
     } else {
-      // Submit on blur (clicking outside)
       handleSubmit();
     }
   };
@@ -103,7 +105,7 @@ const PseudoListItem = ({ path, getPath, parentData, index, onChange, onCancel, 
         )}
         {isShowingError && (
           <span style={{ marginLeft: '8px', fontSize: '12px', color: '#d32f2f' }}>
-            ✗ {isShowingError}
+            {isShowingError}
           </span>
         )}
       </span>

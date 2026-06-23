@@ -57,14 +57,14 @@ export const getJsonContextMenuRequestFromItemMeta = ({ itemMeta, position, quer
 };
 
 export const getJsonContextMenuTargetMeta = ({ itemIdClicked, itemMetaClicked, selectionOperationStore }) => {
-  const isSelectionExisting = Boolean(selectionOperationStore?.selectedItemId);
+  const isSelectionExisting = Boolean(selectionOperationStore?.itemSelectedId);
   if (!isSelectionExisting) {
     selectionOperationStore?.selectItem(itemIdClicked);
     return itemMetaClicked;
   }
 
   if (selectionOperationStore.getIsItemInsideSelectedItem(itemIdClicked)) {
-    return selectionOperationStore.selectedItemMeta || itemMetaClicked;
+    return selectionOperationStore.itemSelectedMeta || itemMetaClicked;
   }
 
   selectionOperationStore.selectItem(itemIdClicked);

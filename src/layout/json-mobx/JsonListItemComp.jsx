@@ -1,24 +1,18 @@
 import React from 'react';
+import { useJsonContext } from './JsonContext';
 import JsonTextComp from './JsonTextComp';
 import JsonNumberComp from './JsonNumberComp';
 import JsonBoolComp from './JsonBoolComp';
 import JsonNullComp from './JsonNullComp';
 
-/**
- * JsonListItemComp - Displays an item in an array
- * NOT wrapped with observer - receives itemData directly to avoid array tracking
- */
-const JsonListItemComp = ({ 
-  parentData,
-  index,
-  itemData,
-  getPath,
-  isEditable,
-  onChange,
-  depth,
-  getValueComp,
-  children 
+const JsonListItemComp = ({
+  data,
+  children,
 }) => {
+  const { container, itemIndex, path } = data;
+  const { config } = useJsonContext();
+  const { getValueComp } = config;
+  const itemData = container[itemIndex];
   const isPrimitive = itemData === null || itemData === undefined || typeof itemData !== 'object';
   const dataType = itemData === null || itemData === undefined ? 'null' : typeof itemData;
 
@@ -29,52 +23,25 @@ const JsonListItemComp = ({
 
     if (getValueComp) {
       const CustomValueComp = getValueComp({
-        path: getPath ? getPath() : '',
+        path,
         value: itemData,
-        data: parentData,
-        itemKey: index,
+        data: container,
+        itemKey: itemIndex,
         valueType: dataType,
       });
       if (CustomValueComp) return CustomValueComp;
     }
 
     if (dataType === 'null') {
-      return <JsonNullComp getPath={getPath} />;
-    } else if (dataType === 'boolean') {
-      return (
-        <JsonBoolComp
-          data={parentData}
-          objKey={index}
-          value={itemData}
-          getPath={getPath}
-          isEditable={isEditable}
-          onChange={onChange}
-        />
-      );
-    } else if (dataType === 'number') {
-      return (
-        <JsonNumberComp
-          data={parentData}
-          objKey={index}
-          value={itemData}
-          getPath={getPath}
-          isEditable={isEditable}
-          onChange={onChange}
-        />
-      );
-    } else {
-      // string or other
-      return (
-        <JsonTextComp
-          data={parentData}
-          objKey={index}
-          value={itemData}
-          getPath={getPath}
-          isEditable={isEditable}
-          onChange={onChange}
-        />
-      );
+      return <JsonNullComp data={{ path }} />;
     }
+    if (dataType === 'boolean') {
+      return <JsonBoolComp data={{ container, itemKey: itemIndex, path }} />;
+    }
+    if (dataType === 'number') {
+      return <JsonNumberComp data={{ container, itemKey: itemIndex, path }} />;
+    }
+    return <JsonTextComp data={{ container, itemKey: itemIndex, path }} />;
   };
 
   return (

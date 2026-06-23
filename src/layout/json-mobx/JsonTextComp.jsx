@@ -15,44 +15,36 @@ export const clearBrowserTextSelection = () => {
 /**
  * JsonTextComp - MobX-based editable text component
  */
-const JsonTextComp = observer(({
-  data,
-  objKey,
-  value: propValue,
-  path,
-  getPath,
-  isEditable,
-  onChange,
-  renderCountKey
-}) => {
+const JsonTextComp = observer(({ data: dataProp }) => {
+  const { container, itemKey, path, renderCountKey } = dataProp;
+  const { config, store, emitEvent, pathQueryParentInfo } = useJsonContext();
+  const { selection, openMenu } = store;
+  const { isEditable, isValueEditable, isDebug } = config;
+  const canEditValue = isEditable && isValueEditable;
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   
   const valueRef = useRef(null);
   const originalValueRef = useRef('');
-  const { showConversionMenu, queryParentInfo, isDebug, selectionOperationStore } = useJsonContext();
   
-  const renderCount = useRenderCount(data, renderCountKey ?? objKey, isDebug);
+  const renderCount = useRenderCount(container, renderCountKey ?? itemKey, isDebug);
   
-  // Use propValue if provided (for avoiding array access), otherwise access data[objKey]
-  const value = propValue !== undefined ? propValue : data[objKey];
+  const value = container[itemKey];
 
   useEffect(() => {
     if (isEditing && valueRef.current) {
       valueRef.current.focus();
       const range = document.createRange();
-      const selection = window.getSelection();
+      const selectionWindow = window.getSelection();
       range.selectNodeContents(valueRef.current);
-      selection.removeAllRanges();
-      selection.addRange(range);
+      selectionWindow.removeAllRanges();
+      selectionWindow.addRange(range);
     }
   }, [isEditing]);
 
-  const resolvePath = useCallback(() => (getPath ? getPath() : path), [getPath, path]);
-
   const handleClick = () => {
-    if (!isEditable || isSubmitting || error) return;
+    if (!canEditValue || isSubmitting || error) return;
     originalValueRef.current = String(value);
     setIsEditing(true);
   };
@@ -72,25 +64,23 @@ const JsonTextComp = observer(({
     clearBrowserTextSelection();
     
     try {
-      if (onChange) {
-        const changeData = {
-          old: { type: 'string', value: originalValueRef.current },
-          new: { type: 'string', value: newValue }
-        };
-        const result = await onChange(resolvePath(), changeData);
-        
-        if (result && result.code !== 0) {
-          setError(result.message || 'Update failed');
-          if (valueRef.current) {
-            valueRef.current.textContent = originalValueRef.current;
-          }
-          setTimeout(() => setError(null), 3000);
-          return;
+      const changeData = {
+        old: { type: 'string', value: originalValueRef.current },
+        new: { type: 'string', value: newValue }
+      };
+      const result = await emitEvent(path, changeData);
+      
+      if (result && result.code !== 0) {
+        setError(result.message || 'Update failed');
+        if (valueRef.current) {
+          valueRef.current.textContent = originalValueRef.current;
         }
+        setTimeout(() => setError(null), 3000);
+        return;
       }
       
       runInAction(() => {
-        data[objKey] = newValue;
+        container[itemKey] = newValue;
       });
     } catch (err) {
       setError(err.message || 'Error');
@@ -99,17 +89,17 @@ const JsonTextComp = observer(({
       }
       setTimeout(() => setError(null), 3000);
     }
-  }, [data, objKey, onChange, resolvePath]);
+  }, [container, emitEvent, itemKey, path]);
 
   useEffect(() => {
-    if (!isEditing || !selectionOperationStore) return undefined;
+    if (!isEditing || !selection) return undefined;
     return reaction(
-      () => selectionOperationStore.selectionRevision,
+      () => selection.revisionSelection,
       () => {
         handleSubmit();
       }
     );
-  }, [handleSubmit, isEditing, selectionOperationStore]);
+  }, [handleSubmit, isEditing, selection]);
 
   const handleBlur = () => {
     handleSubmit();
@@ -133,27 +123,23 @@ const JsonTextComp = observer(({
     e.preventDefault();
     e.stopPropagation();
 
-    if (showConversionMenu) {
-      // Check if this is a direct array item
-      const currentPath = resolvePath();
-      const pathParts = currentPath.split('..');
-      const isArrayItem = pathParts.length > 1 && !pathParts[pathParts.length - 1].includes('.');
-      const parentInfo = queryParentInfo ? queryParentInfo(currentPath) : { isSingleEntryInParent: false };
-      
-      showConversionMenu({
-        position: { x: e.clientX, y: e.clientY },
-        currentValue: value,
-        currentType: 'string',
-        path: currentPath,
-        menuType: isArrayItem ? 'arrayItem' : 'value',
-        value: value,
-        itemKey: objKey,
-        availableConversions: getAvailableConversions(value, 'string', { includeArray: true, includeObject: true }),
-        isSingleEntryInParent: parentInfo.isSingleEntryInParent,
-        isFirstInParent: parentInfo.isFirstInParent,
-        isLastInParent: parentInfo.isLastInParent
-      });
-    }
+    const pathParts = path.split('..');
+    const isArrayItem = pathParts.length > 1 && !pathParts[pathParts.length - 1].includes('.');
+    const parentInfo = pathQueryParentInfo ? pathQueryParentInfo(path) : { isSingleEntryInParent: false };
+    
+    openMenu({
+      position: { x: e.clientX, y: e.clientY },
+      currentValue: value,
+      currentType: 'string',
+      path,
+      menuType: isArrayItem ? 'arrayItem' : 'value',
+      value,
+      itemKey,
+      availableConversions: getAvailableConversions(value, 'string', { includeArray: true, includeObject: true }),
+      isSingleEntryInParent: parentInfo.isSingleEntryInParent,
+      isFirstInParent: parentInfo.isFirstInParent,
+      isLastInParent: parentInfo.isLastInParent
+    });
   };
 
   const isEmpty = !value || value.trim() === '';
@@ -163,7 +149,7 @@ const JsonTextComp = observer(({
     <span className="json-value-wrapper">
       <span
         ref={valueRef}
-        className={`json-value json-string ${isEditable && !error ? 'editable' : ''} ${isEditing ? 'editing' : ''} ${isWhitespaceOnly ? 'whitespace-only' : ''} ${isEmpty ? 'empty-text' : ''}`}
+        className={`json-value json-string ${canEditValue && !error ? 'editable' : ''} ${isEditing ? 'editing' : ''} ${isWhitespaceOnly ? 'whitespace-only' : ''} ${isEmpty ? 'empty-text' : ''}`}
         contentEditable={isEditing}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
