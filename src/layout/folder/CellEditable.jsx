@@ -2,24 +2,25 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { DownIcon } from '../../icon/DirectionIcons.jsx';
 import SpinningCircle from '../../icon/SpinningCircle.jsx';
+import { emitFolderEvent } from './folderUtils.js';
 import './folder.css';
 
 const CellDropdown = React.memo(({
-  data,
+  data = {},
+  config = {},
+  onEvent,
   rowId,
-  columnId,
+  colId,
 }) => {
-  const {
-    value = null,
-    options = [],
-    isEditable = false,
-    onChange,
-  } = data || {};
+  const value = data?.value ?? null;
+  const options = Array.isArray(data?.options) ? data.options : [];
+  const isEditable = config?.isEditable === true || data?.isEditable === true;
+  const isBusy = config?.isBusy === true || data?.isBusy === true;
+
   const rootRef = useRef(null);
   const menuRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState(null);
-  const [isBusy, setIsBusy] = useState(false);
 
   useEffect(() => {
     if (!isEditable && isOpen) {
@@ -30,12 +31,14 @@ const CellDropdown = React.memo(({
   useEffect(() => {
     if (!isOpen) {
       setMenuPosition(null);
-      return;
+      return undefined;
     }
     const updateMenuPosition = () => {
-      const rootElement = rootRef.current;
-      if (!rootElement) return;
-      const rect = rootElement.getBoundingClientRect();
+      const rootEl = rootRef.current;
+      if (!rootEl) {
+        return;
+      }
+      const rect = rootEl.getBoundingClientRect();
       setMenuPosition({
         left: rect.left,
         top: rect.bottom + 2,
@@ -43,11 +46,17 @@ const CellDropdown = React.memo(({
       });
     };
     const onDocumentMouseDown = (event) => {
-      const rootElement = rootRef.current;
-      const menuElement = menuRef.current;
-      if (!rootElement) return;
-      if (rootElement.contains(event.target)) return;
-      if (menuElement && menuElement.contains(event.target)) return;
+      const rootEl = rootRef.current;
+      const menuEl = menuRef.current;
+      if (!rootEl) {
+        return;
+      }
+      if (rootEl.contains(event.target)) {
+        return;
+      }
+      if (menuEl && menuEl.contains(event.target)) {
+        return;
+      }
       setIsOpen(false);
     };
     updateMenuPosition();
@@ -63,18 +72,21 @@ const CellDropdown = React.memo(({
 
   const valueOption = options.find((item) => item.value === value);
   const valueLabel = valueOption?.label || String(value ?? '');
-  const isDisabled = !isEditable || isBusy || typeof onChange !== 'function';
+  const isDisabled = !isEditable || isBusy || !onEvent;
 
   const handleOptionClick = async (nextValue) => {
-    if (isDisabled) return;
-    setIsOpen(false);
-    if (nextValue === value) return;
-    setIsBusy(true);
-    try {
-      await Promise.resolve(onChange(nextValue, { rowId, columnId }));
-    } finally {
-      setIsBusy(false);
+    if (isDisabled) {
+      return;
     }
+    setIsOpen(false);
+    if (nextValue === value) {
+      return;
+    }
+    await emitFolderEvent(onEvent, 'cellValueChange', {
+      rowId,
+      colId,
+      valueNext: nextValue,
+    });
   };
 
   return (
@@ -93,7 +105,9 @@ const CellDropdown = React.memo(({
           type="button"
           onClick={(event) => {
             event.stopPropagation();
-            if (isDisabled) return;
+            if (isDisabled) {
+              return;
+            }
             setIsOpen((prev) => !prev);
           }}
           disabled={isDisabled}
@@ -133,7 +147,13 @@ const CellDropdown = React.memo(({
         : null}
     </div>
   );
-}, (prevProps, nextProps) => prevProps.data === nextProps.data);
+}, (prevProps, nextProps) => (
+  prevProps.data === nextProps.data
+  && prevProps.config === nextProps.config
+  && prevProps.onEvent === nextProps.onEvent
+  && prevProps.rowId === nextProps.rowId
+  && prevProps.colId === nextProps.colId
+));
 
 export default CellDropdown;
 export { CellDropdown };

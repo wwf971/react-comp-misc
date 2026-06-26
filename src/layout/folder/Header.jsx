@@ -1,186 +1,171 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import { DEFAULT_COL_MIN_WIDTH, emitFolderEvent } from './folderUtils.js';
 import './folder.css';
 
-/**
- * Default component for rendering plain text in header cells
- */
-const DefaultHeaderTextComp = ({ data }) => {
-  return <>{data}</>;
-};
+const DefaultHeaderTextComp = ({ data }) => <>{data}</>;
 
-// Memoize to prevent unnecessary re-renders
-const MemoizedDefaultHeaderTextComp = React.memo(DefaultHeaderTextComp, (prev, next) => {
-  return prev.data === next.data;
-});
+const MemoizedDefaultHeaderTextComp = React.memo(DefaultHeaderTextComp, (prev, next) => (
+  prev.data === next.data
+));
 
-const Header = observer(({ 
-  columns, 
-  columnsOrder, 
-  columnsSizeInit = {}, 
-  columnWidths: externalColumnWidths,
-  getComponent, 
-  onColumnWidthChange,
-  allowColumnReorder = false, 
-  onDataChangeRequest,
-  isLastColumnFilled = true,
-  pageUtils = null,
-  columnResizeDragMode = 'preview', // 'preview' or 'immediate'
-  columnResizeWidthMode = 'natural',
-  onColumnResizeIndicatorLeftChange,
+const Header = observer(({
+  data = {},
+  config = {},
+  onEvent,
 }) => {
-  
+  const columns = data?.columns || {};
+  const colsOrder = data?.colsOrder || [];
+  const colWidthById = data?.colWidthById || {};
+
+  const colSizeById = config?.colSizeById || {};
+  const isColReorderAllowed = config?.isColReorderAllowed === true;
+  const isLastColFilled = config?.isLastColFilled !== false;
+  const compByColId = config?.compByColId;
+  const headerPageUtils = config?.headerPageUtils;
+  const colResizeDragMode = config?.colResizeDragMode || 'preview';
+  const colResizeWidthMode = config?.colResizeWidthMode || 'natural';
+
   const headerRef = useRef(null);
   const [resizing, setResizing] = useState(null);
   const resizeStartX = useRef(0);
   const edgePosesInitial = useRef([]);
   const edgePosesCurrent = useRef([]);
   const resizingColIndex = useRef(-1);
-  const pendingColumnWidths = useRef(null);
-  const widthByColumnIdInitial = useRef({});
-  const [columnResizeIndicatorLeft, setColumnResizeIndicatorLeft] = useState(null);
-  
-  // Column reordering state
+  const pendingColWidthById = useRef(null);
+  const colWidthByIdInitial = useRef({});
+  const [colResizeIndicatorLeft, setColResizeIndicatorLeft] = useState(null);
+
   const [draggingColId, setDraggingColId] = useState(null);
   const [dragOverSeparatorIndex, setDragOverSeparatorIndex] = useState(null);
   const dragOffsetX = useRef(0);
   const dragOffsetY = useRef(0);
-  const isColumnResizePreview = columnResizeDragMode !== 'immediate';
-  const isColumnResizeNaturalMode = columnResizeWidthMode !== 'local';
+  const isColResizePreview = colResizeDragMode !== 'immediate';
+  const isColResizeNaturalMode = colResizeWidthMode !== 'local';
 
-  // Always use external columnWidths - FolderView manages all widths
-  const columnWidths = externalColumnWidths || {}
+  const handleColResizeIndicatorLeftChange = (left) => {
+    setColResizeIndicatorLeft(left);
+    emitFolderEvent(onEvent, 'colResizeIndicatorChange', { left });
+  };
 
-  const handleResizeStart = (e, columnId, colIndex) => {
+  const handleResizeStart = (e, colId, colIndex) => {
     e.preventDefault();
-    
-    if (!headerRef.current) return;
-    
+    if (!headerRef.current) {
+      return;
+    }
+
     const headerRect = headerRef.current.getBoundingClientRect();
-    
-    // Calculate edge positions from columnWidths state (not DOM)
-    // This prevents jumps due to DOM rounding or layout differences
     const edges = [];
     let currentLeft = 0;
-    columnsOrder.forEach((colId, index) => {
-      const isLastColumn = index === columnsOrder.length - 1;
-      const width = columnWidths[colId] || 0;
+    colsOrder.forEach((currentColId, index) => {
+      const isLastCol = index === colsOrder.length - 1;
+      const width = colWidthById[currentColId] || 0;
       currentLeft += width;
-      edges.push(isLastColumnFilled && isLastColumn ? Math.max(currentLeft, headerRect.width) : currentLeft);
+      edges.push(isLastColFilled && isLastCol ? Math.max(currentLeft, headerRect.width) : currentLeft);
     });
-    
+
     edgePosesInitial.current = [...edges];
     edgePosesCurrent.current = [...edges];
-    widthByColumnIdInitial.current = columnsOrder.reduce((acc, currentColId, index) => {
+    colWidthByIdInitial.current = colsOrder.reduce((acc, currentColId, index) => {
       const prevEdge = index > 0 ? edges[index - 1] : 0;
       const currentEdge = edges[index] || 0;
-      const isLastColumn = index === columnsOrder.length - 1;
-      acc[currentColId] = isLastColumnFilled && isLastColumn
+      const isLastCol = index === colsOrder.length - 1;
+      acc[currentColId] = isLastColFilled && isLastCol
         ? Math.max(0, currentEdge - prevEdge)
-        : (columnWidths[currentColId] || 0);
+        : (colWidthById[currentColId] || 0);
       return acc;
     }, {});
     resizeStartX.current = e.clientX - headerRect.left;
     resizingColIndex.current = colIndex;
-    pendingColumnWidths.current = null;
-    setColumnResizeIndicatorLeft(edges[colIndex]);
-    if (onColumnResizeIndicatorLeftChange) {
-      onColumnResizeIndicatorLeftChange(edges[colIndex]);
-    }
-    
-    setResizing(columnId);
+    pendingColWidthById.current = null;
+    handleColResizeIndicatorLeftChange(edges[colIndex]);
+    setResizing(colId);
   };
 
   const handleResizeMove = (e) => {
-    if (!resizing || resizingColIndex.current < 0 || !headerRef.current) return;
-    
+    if (!resizing || resizingColIndex.current < 0 || !headerRef.current) {
+      return;
+    }
+
     const headerRect = headerRef.current.getBoundingClientRect();
     const currentMouseX = e.clientX - headerRect.left;
     const mouseDelta = currentMouseX - resizeStartX.current;
-    
     const colIdx = resizingColIndex.current;
     const edgePosInitial = edgePosesInitial.current[colIdx];
     let edgePosNew = edgePosInitial + mouseDelta;
-    
-    // Get column config
-    const colId = columnsOrder[colIdx];
-    const DEFAULT_MIN_WIDTH = 40;
-    const minWidth = columnsSizeInit?.[colId]?.minWidth ?? DEFAULT_MIN_WIDTH;
-    
+
+    const colId = colsOrder[colIdx];
+    const minWidth = colSizeById?.[colId]?.minWidth ?? DEFAULT_COL_MIN_WIDTH;
     const leftEdge = colIdx > 0 ? edgePosesInitial.current[colIdx - 1] : 0;
     let maxPos;
-    if (isColumnResizeNaturalMode && colIdx < columnsOrder.length - 1) {
-      const lastColId = columnsOrder[columnsOrder.length - 1];
-      const lastMinWidth = columnsSizeInit?.[lastColId]?.minWidth ?? DEFAULT_MIN_WIDTH;
-      const lastWidthInitial = widthByColumnIdInitial.current[lastColId] || 0;
+    if (isColResizeNaturalMode && colIdx < colsOrder.length - 1) {
+      const lastColId = colsOrder[colsOrder.length - 1];
+      const lastMinWidth = colSizeById?.[lastColId]?.minWidth ?? DEFAULT_COL_MIN_WIDTH;
+      const lastWidthInitial = colWidthByIdInitial.current[lastColId] || 0;
       maxPos = edgePosInitial + Math.max(0, lastWidthInitial - lastMinWidth);
     } else {
       const rightEdge = colIdx < edgePosesInitial.current.length - 1
         ? edgePosesInitial.current[colIdx + 1]
         : headerRect.width;
-      const nextColId = colIdx < columnsOrder.length - 1 ? columnsOrder[colIdx + 1] : null;
-      const nextMinWidth = nextColId ? (columnsSizeInit?.[nextColId]?.minWidth ?? DEFAULT_MIN_WIDTH) : 0;
-      maxPos = colIdx < columnsOrder.length - 1 ? rightEdge - nextMinWidth : rightEdge;
+      const nextColId = colIdx < colsOrder.length - 1 ? colsOrder[colIdx + 1] : null;
+      const nextMinWidth = nextColId ? (colSizeById?.[nextColId]?.minWidth ?? DEFAULT_COL_MIN_WIDTH) : 0;
+      maxPos = colIdx < colsOrder.length - 1 ? rightEdge - nextMinWidth : rightEdge;
     }
     const minPos = leftEdge + minWidth;
     edgePosNew = Math.max(minPos, Math.min(maxPos, edgePosNew));
-    
-    // Update current edge positions
+
     const newEdges = [...edgePosesInitial.current];
     newEdges[colIdx] = edgePosNew;
     edgePosesCurrent.current = newEdges;
-    
-    let newWidths = {};
-    if (isColumnResizeNaturalMode && colIdx < columnsOrder.length - 1) {
-      const colIdCurrent = columnsOrder[colIdx];
-      const colIdLast = columnsOrder[columnsOrder.length - 1];
+
+    let nextColWidthById = {};
+    if (isColResizeNaturalMode && colIdx < colsOrder.length - 1) {
+      const colIdCurrent = colsOrder[colIdx];
+      const colIdLast = colsOrder[colsOrder.length - 1];
       const deltaWidth = edgePosNew - edgePosInitial;
-      columnsOrder.forEach((currentColId) => {
-        newWidths[currentColId] = widthByColumnIdInitial.current[currentColId] || 0;
+      colsOrder.forEach((currentColId) => {
+        nextColWidthById[currentColId] = colWidthByIdInitial.current[currentColId] || 0;
       });
-      newWidths[colIdCurrent] = (widthByColumnIdInitial.current[colIdCurrent] || 0) + deltaWidth;
-      newWidths[colIdLast] = (widthByColumnIdInitial.current[colIdLast] || 0) - deltaWidth;
+      nextColWidthById[colIdCurrent] = (colWidthByIdInitial.current[colIdCurrent] || 0) + deltaWidth;
+      nextColWidthById[colIdLast] = (colWidthByIdInitial.current[colIdLast] || 0) - deltaWidth;
     } else {
       let prevEdge = 0;
-      columnsOrder.forEach((colIdItem, index) => {
+      colsOrder.forEach((currentColId, index) => {
         const currentEdge = newEdges[index];
-        newWidths[colIdItem] = currentEdge - prevEdge;
+        nextColWidthById[currentColId] = currentEdge - prevEdge;
         prevEdge = currentEdge;
       });
     }
 
-    setColumnResizeIndicatorLeft(edgePosNew);
-    if (onColumnResizeIndicatorLeftChange) {
-      onColumnResizeIndicatorLeftChange(edgePosNew);
-    }
+    handleColResizeIndicatorLeftChange(edgePosNew);
 
-    if (isColumnResizePreview) {
-      pendingColumnWidths.current = newWidths;
+    if (isColResizePreview) {
+      pendingColWidthById.current = nextColWidthById;
       return;
     }
 
-    if (onColumnWidthChange) {
-      onColumnWidthChange(newWidths);
-    }
+    emitFolderEvent(onEvent, 'colResize', {
+      colId,
+      colWidthByIdNext: nextColWidthById,
+    });
   };
 
   const handleResizeEnd = () => {
-    if (isColumnResizePreview && pendingColumnWidths.current && onColumnWidthChange) {
-      onColumnWidthChange(pendingColumnWidths.current);
+    if (isColResizePreview && pendingColWidthById.current) {
+      emitFolderEvent(onEvent, 'colResize', {
+        colId: resizing,
+        colWidthByIdNext: pendingColWidthById.current,
+      });
     }
     setResizing(null);
     resizingColIndex.current = -1;
     edgePosesInitial.current = [];
     edgePosesCurrent.current = [];
-    widthByColumnIdInitial.current = {};
-    pendingColumnWidths.current = null;
-    setColumnResizeIndicatorLeft(null);
-    if (onColumnResizeIndicatorLeftChange) {
-      onColumnResizeIndicatorLeftChange(null);
-    }
+    colWidthByIdInitial.current = {};
+    pendingColWidthById.current = null;
+    handleColResizeIndicatorLeftChange(null);
   };
 
-  // Add/remove mouse event listeners for column resizing
   useEffect(() => {
     if (resizing) {
       document.addEventListener('mousemove', handleResizeMove);
@@ -190,23 +175,18 @@ const Header = observer(({
         document.removeEventListener('mouseup', handleResizeEnd);
       };
     }
+    return undefined;
   }, [resizing]);
 
-  // Column reordering handlers
-  const handleColumnDragStart = (e, colId, index) => {
-    if (!allowColumnReorder) return;
-    
+  const handleColumnDragStart = (e, colId) => {
+    if (!isColReorderAllowed) {
+      return;
+    }
     e.stopPropagation();
-    
     const cellRect = e.currentTarget.getBoundingClientRect();
-    
-    // Calculate drag offset for ghost image positioning
     dragOffsetX.current = e.clientX - cellRect.left;
     dragOffsetY.current = e.clientY - cellRect.top;
-    
     setDraggingColId(colId);
-    
-    // Create a ghost image
     const ghost = e.currentTarget.cloneNode(true);
     ghost.style.opacity = '0.5';
     ghost.style.position = 'absolute';
@@ -217,84 +197,67 @@ const Header = observer(({
   };
 
   const handleColumnDrag = (e) => {
-    if (!draggingColId || !headerRef.current) return;
-    
+    if (!draggingColId || !headerRef.current) {
+      return;
+    }
     e.preventDefault();
-    
-    if (e.clientX === 0 && e.clientY === 0) return; // Ignore invalid drag events
-    
+    if (e.clientX === 0 && e.clientY === 0) {
+      return;
+    }
     const headerRect = headerRef.current.getBoundingClientRect();
     const mouseX = e.clientX - headerRect.left;
-    
-    // Calculate separator positions
     const cells = headerRef.current.querySelectorAll('.folder-header-cell');
     const separators = [];
     let currentLeft = 0;
-    
-    // Build separator positions: before each column and after the last one
     cells.forEach((cell, idx) => {
       separators.push({ index: idx, position: currentLeft });
       currentLeft += cell.offsetWidth;
     });
-    // Add final separator after all columns
     separators.push({ index: cells.length, position: currentLeft });
-    
-    // Find closest separator
     let closestSeparator = null;
     let minDistance = Infinity;
-    
-    separators.forEach(sep => {
+    separators.forEach((sep) => {
       const distance = Math.abs(mouseX - sep.position);
       if (distance < minDistance) {
         minDistance = distance;
         closestSeparator = sep;
       }
     });
-    
     if (closestSeparator) {
       setDragOverSeparatorIndex(closestSeparator.index);
     }
   };
 
-  const handleColumnDragEnd = async (e) => {
-    if (!draggingColId || !onDataChangeRequest) {
+  const handleColumnDragEnd = async () => {
+    if (!draggingColId || !onEvent) {
       setDraggingColId(null);
       setDragOverSeparatorIndex(null);
       return;
     }
-    
-    const draggedIndex = columnsOrder.indexOf(draggingColId);
-    
-    if (dragOverSeparatorIndex !== null && dragOverSeparatorIndex !== draggedIndex && dragOverSeparatorIndex !== draggedIndex + 1) {
-      // Calculate new position
+
+    const draggedIndex = colsOrder.indexOf(draggingColId);
+    if (
+      dragOverSeparatorIndex !== null
+      && dragOverSeparatorIndex !== draggedIndex
+      && dragOverSeparatorIndex !== draggedIndex + 1
+    ) {
       let newIndex = dragOverSeparatorIndex;
       if (dragOverSeparatorIndex > draggedIndex) {
         newIndex = dragOverSeparatorIndex - 1;
       }
-      
-      // Create new order
-      const newOrder = [...columnsOrder];
-      newOrder.splice(draggedIndex, 1);
-      newOrder.splice(newIndex, 0, draggingColId);
-      
-      // Call the data change callback with reorder type (may be async)
+      const colsOrderNext = [...colsOrder];
+      colsOrderNext.splice(draggedIndex, 1);
+      colsOrderNext.splice(newIndex, 0, draggingColId);
       try {
-        const result = await onDataChangeRequest('reorder', { 
-          columnId: draggingColId, 
-          fromIndex: draggedIndex, 
-          toIndex: newIndex, 
-          newOrder 
+        await emitFolderEvent(onEvent, 'colReorder', {
+          colId: draggingColId,
+          fromIndex: draggedIndex,
+          toIndex: newIndex,
+          colsOrderNext,
         });
-        
-        // If callback returns an error result, log it
-        if (result && result.code !== 0) {
-          console.error('Column reorder failed:', result.message);
-        }
-      } catch (error) {
-        console.error('Column reorder error:', error);
-      }
+      } catch {}
     }
-    
+
     setDraggingColId(null);
     setDragOverSeparatorIndex(null);
   };
@@ -305,35 +268,23 @@ const Header = observer(({
     }
   };
 
-  const isPageUtilsVisible = Boolean(pageUtils?.isVisible);
+  const isPageUtilsVisible = Boolean(headerPageUtils?.isVisible);
 
   const requestPageUtilAction = async (actionType) => {
-    if (!pageUtils) return;
-    if (actionType === 'create-before') {
-      await pageUtils.onCreatePageBefore?.();
-      return;
-    }
-    if (actionType === 'create-after') {
-      await pageUtils.onCreatePageAfter?.();
-      return;
-    }
-    if (actionType === 'move-prev') {
-      await pageUtils.onMoveCurrentPagePrev?.();
-      return;
-    }
-    if (actionType === 'move-next') {
-      await pageUtils.onMoveCurrentPageNext?.();
-    }
+    await emitFolderEvent(onEvent, 'headerPageUtilAction', { actionType });
   };
 
-  if (!columnsOrder) return null;
+  if (!colsOrder.length) {
+    return null;
+  }
 
-  // Calculate separator positions for rendering
   const getSeparatorPos = (sepIndex) => {
-    if (!headerRef.current) return 0;
+    if (!headerRef.current) {
+      return 0;
+    }
     const cells = headerRef.current.querySelectorAll('.folder-header-cell');
     let position = 0;
-    for (let i = 0; i < sepIndex && i < cells.length; i++) {
+    for (let i = 0; i < sepIndex && i < cells.length; i += 1) {
       position += cells[i].offsetWidth;
     }
     return position;
@@ -346,19 +297,16 @@ const Header = observer(({
           <button
             type="button"
             className="folder-header-page-util-btn"
-            disabled={pageUtils?.isLocked || pageUtils?.canCreatePageBefore === false}
+            disabled={headerPageUtils?.isLocked || headerPageUtils?.canCreatePageBefore === false}
             onClick={() => requestPageUtilAction('create-before')}
           >
             +Before
           </button>
-          <div 
-            className="folder-header-page-util-sep"
-          >
-          </div>
+          <div className="folder-header-page-util-sep" />
           <button
             type="button"
             className="folder-header-page-util-btn"
-            disabled={pageUtils?.isLocked || pageUtils?.canCreatePageAfter === false}
+            disabled={headerPageUtils?.isLocked || headerPageUtils?.canCreatePageAfter === false}
             onClick={() => requestPageUtilAction('create-after')}
           >
             +After
@@ -366,7 +314,7 @@ const Header = observer(({
           <button
             type="button"
             className="folder-header-page-util-btn"
-            disabled={pageUtils?.isLocked || pageUtils?.canMoveCurrentPagePrev === false}
+            disabled={headerPageUtils?.isLocked || headerPageUtils?.canMoveCurrentPagePrev === false}
             onClick={() => requestPageUtilAction('move-prev')}
           >
             Move Prev
@@ -374,85 +322,80 @@ const Header = observer(({
           <button
             type="button"
             className="folder-header-page-util-btn"
-            disabled={pageUtils?.isLocked || pageUtils?.canMoveCurrentPageNext === false}
+            disabled={headerPageUtils?.isLocked || headerPageUtils?.canMoveCurrentPageNext === false}
             onClick={() => requestPageUtilAction('move-next')}
           >
             Move Next
           </button>
         </div>
       ) : null}
-      <div 
-        className="folder-header" 
+      <div
+        className="folder-header"
         ref={headerRef}
         onDragOver={handleColumnDragOver}
       >
-        {columnsOrder.map((colId, index) => {
+        {colsOrder.map((colId, index) => {
           const column = columns[colId];
-          if (!column) return null;
-          
-          const isResizable = columnsSizeInit?.[colId]?.resizable !== false;
+          if (!column) {
+            return null;
+          }
+
+          const isResizable = colSizeById?.[colId]?.resizable !== false;
           const align = column.align || 'left';
-          const width = columnWidths?.[colId];
-          const isLastColumn = index === columnsOrder.length - 1;
-          const isLastColumnFillApplied = isLastColumnFilled && isLastColumn;
-          const minWidth = columnsSizeInit?.[colId]?.minWidth ?? 40;
+          const width = colWidthById?.[colId];
+          const isLastCol = index === colsOrder.length - 1;
+          const isLastColFillApplied = isLastColFilled && isLastCol;
+          const minWidth = colSizeById?.[colId]?.minWidth ?? DEFAULT_COL_MIN_WIDTH;
           const isDragging = draggingColId === colId;
-          
-          // Get custom component via callback or use default text component
-          const CustomComp = getComponent ? getComponent(colId) : undefined;
+          const CustomComp = compByColId ? compByColId(colId) : undefined;
           const CellComp = CustomComp || MemoizedDefaultHeaderTextComp;
-          
+
           return (
-            <div 
+            <div
               key={colId}
-              className={`folder-header-cell ${isDragging ? 'dragging' : ''} ${allowColumnReorder ? 'reorderable' : ''}`}
-              style={{ 
+              className={`folder-header-cell ${isDragging ? 'dragging' : ''} ${isColReorderAllowed ? 'reorderable' : ''}`}
+              style={{
                 width: width ? `${width}px` : undefined,
-                minWidth: isLastColumnFillApplied ? `${minWidth}px` : undefined,
-                flexGrow: isLastColumnFillApplied ? 1 : undefined,
+                minWidth: isLastColFillApplied ? `${minWidth}px` : undefined,
+                flexGrow: isLastColFillApplied ? 1 : undefined,
                 textAlign: align,
-                opacity: isDragging ? 0.3 : 1
+                opacity: isDragging ? 0.3 : 1,
               }}
-              draggable={allowColumnReorder}
-              onDragStart={(e) => handleColumnDragStart(e, colId, index)}
+              draggable={isColReorderAllowed}
+              onDragStart={(e) => handleColumnDragStart(e, colId)}
               onDrag={handleColumnDrag}
               onDragEnd={handleColumnDragEnd}
             >
               <div className="folder-header-content">
-                <CellComp 
-                  data={column.data}
-                  columnId={colId}
-                  align={align}
-                />
+                <CellComp data={column.data} colId={colId} align={align} />
               </div>
-              {isResizable && (
-                <div 
+              {isResizable ? (
+                <div
                   className="folder-header-resize-handle"
                   onMouseDown={(e) => handleResizeStart(e, colId, index)}
                 />
-              )}
+              ) : null}
             </div>
           );
         })}
-        
-        {columnResizeIndicatorLeft !== null && (
-        <div
-          className="folder-column-resize-indicator"
-          style={{ left: `${columnResizeIndicatorLeft}px` }}
-        />
-        )}
-        {/* Render separator indicator at calculated position */}
-        {dragOverSeparatorIndex !== null && (
-        <div 
-          className="folder-header-separator-indicator" 
-          style={{ 
-            position: 'absolute',
-            left: `${getSeparatorPos(dragOverSeparatorIndex)}px`,
-            top: 0,
-            bottom: 0
-          }}
-        />
-        )}
+
+        {colResizeIndicatorLeft !== null ? (
+          <div
+            className="folder-column-resize-indicator"
+            style={{ left: `${colResizeIndicatorLeft}px` }}
+          />
+        ) : null}
+        {dragOverSeparatorIndex !== null ? (
+          <div
+            className="folder-header-separator-indicator"
+            style={{
+              position: 'absolute',
+              left: `${getSeparatorPos(dragOverSeparatorIndex)}px`,
+              top: 0,
+              bottom: 0,
+            }}
+          />
+        ) : null}
       </div>
     </div>
   );

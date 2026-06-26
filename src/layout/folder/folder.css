@@ -295,6 +295,10 @@
   overflow-y: hidden;
 }
 
+.folder-view-switcher-scroll.has-body-height {
+  overflow: hidden;
+}
+
 .folder-view-switcher-toolbar {
   display: flex;
   align-items: center;
@@ -331,6 +335,28 @@
   width: max-content;
   min-width: 100%;
   overflow-x: hidden;
+}
+
+.folder-view-switcher-content.has-body-height {
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  min-width: 0;
+}
+
+.folder-view-switcher-content.has-body-height .folder-header-root,
+.folder-view-switcher-content.has-body-height .folder-header,
+.folder-view-switcher-content.has-body-height .folder-body,
+.folder-view-switcher-content.has-body-height .folder-body-row,
+.folder-view-switcher-content.has-body-height .folder-icon-view {
+  width: 100%;
+  min-width: 0;
+}
+
+.folder-view-switcher-content.has-body-height .folder-header-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .folder-icon-view {

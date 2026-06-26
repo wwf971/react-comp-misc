@@ -40,13 +40,13 @@ Conform to a fully data-driven frontend architecture as shown below.
 
 - MobX Store holds the data, and render components subribe to the data they need via apis provided by mobx. Utilizing mobx observer, mobx store can change data object in-place(for example when server confirms change request), without the need to carefully ensure precise re-render in render components.
 
-### Communication between render layer(Render Components) and data layer(Mobx Store)
+## Communication between render layer(Render Components) and data layer(Mobx Store)
 
-- Render Components might emit multiple types of events to parent and mobx store. Avoid having one callback for each type of event, and use one unified callback function `onEvent` to notify event handling logic in handler container or mobx store.
+Render Components might emit multiple types of events to parent and mobx store. Avoid having one callback for each type of event, and use one unified callback function `onEvent` to notify event handling logic in handler container or mobx store.
 
-- In a clean render component design, the render component receives only three major props: data, config, and onEvent. data is the object containing the content to be rendered. config contains variables that records component's current operation status, such as selected rows' id for a table component, and things like isLocked/isEditable. onEvent is a unified callback function through which the component notifies about edit request. data and config can be deeply nested objects, since mobx observer will automatically trace change of subscribed properties and trigger re-render correctly. 
+In a clean render component design, the render component receives only three major props: data, config, and onEvent. data is the object containing the content to be rendered. config contains variables that records component's current operation status, such as selected rows' id for a table component, and things like isLocked/isEditable. onEvent is a unified callback function through which the component notifies about edit request. data and config can be deeply nested objects, since mobx observer will automatically trace change of subscribed properties and trigger re-render correctly. 
 
-### Data organization inside mobx store
+## Data organization inside mobx store
 
 The architecture should be fully data-driven. So mobx store should not only hold data of resource objects, but also operational states of components. Typical operation states includes but are not limited to:
 

@@ -59,10 +59,8 @@ export function createFolderExplorerDemoStore() {
   const store = {
     treeRoot,
     pathSegments: observable.array([]),
-    selectedRowId: null,
-    loading: false,
-    loadingMessage: '',
-    error: null,
+    rowIdsSelected: [],
+    messageState: null,
     pathFeedback: null,
 
     columns: {
@@ -71,12 +69,17 @@ export function createFolderExplorerDemoStore() {
       type: { data: 'Type', align: 'left' },
       modified: { data: 'Modified', align: 'left' },
     },
-    columnsOrder: observable.array(['name', 'size', 'type', 'modified']),
-    columnsSize: {
+    colsOrder: observable.array(['name', 'size', 'type', 'modified']),
+    colSizeById: {
       name: { width: 250, minWidth: 100, resizable: true },
       size: { width: 100, minWidth: 60, resizable: true },
       type: { width: 120, minWidth: 80, resizable: true },
       modified: { width: 180, minWidth: 100, resizable: true },
+    },
+    colWidthById: {},
+
+    get isLocked() {
+      return this.messageState?.status === 'loading';
     },
 
     get pathDataForBar() {
@@ -105,6 +108,13 @@ export function createFolderExplorerDemoStore() {
       }));
     },
 
+    get statusBarData() {
+      return {
+        itemCount: this.rows.length,
+        messageState: this.messageState,
+      };
+    },
+
     clearPathFeedbackTimer() {
       if (pathFeedbackClearTimer != null) {
         clearTimeout(pathFeedbackClearTimer);
@@ -128,7 +138,7 @@ export function createFolderExplorerDemoStore() {
       this.pathFeedback = null;
       const next = this.pathSegments.slice(0, index + 1);
       this.pathSegments.replace(next);
-      this.selectedRowId = null;
+      this.rowIdsSelected = [];
     },
 
     openChildFolderByName(folderName) {
@@ -139,7 +149,7 @@ export function createFolderExplorerDemoStore() {
       this.clearPathFeedbackTimer();
       this.pathFeedback = null;
       this.pathSegments.push({ name: child.name });
-      this.selectedRowId = null;
+      this.rowIdsSelected = [];
       return true;
     },
 
@@ -149,12 +159,12 @@ export function createFolderExplorerDemoStore() {
         return { ok: false, reason: 'Path does not exist or is not a folder.' };
       }
       this.pathSegments.replace(segs.map((s) => ({ name: s.name })));
-      this.selectedRowId = null;
+      this.rowIdsSelected = [];
       return { ok: true };
     },
 
-    setSelectedRow(rowId) {
-      this.selectedRowId = rowId;
+    setRowIdsSelected(rowIds) {
+      this.rowIdsSelected = rowIds;
     },
   };
 

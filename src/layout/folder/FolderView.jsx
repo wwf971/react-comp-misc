@@ -2,126 +2,92 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import ViewSwitcher from './ViewSwitcher';
 import StatusBar from './StatusBar';
+import {
+  buildColWidthByIdFromSize,
+  emitFolderEvent,
+  withResolvedColAlign,
+} from './folderUtils.js';
 import './folder.css';
 
-const resolveColumnAlign = (align) => {
-  const value = `${align ?? ''}`.trim();
-  if (value === 'center' || value === 'right') {
-    return value;
-  }
-  return 'left';
-};
-
-const withResolvedColumnAlign = (columns) => {
-  if (!columns) {
-    return columns;
-  }
-  const next = {};
-  Object.entries(columns).forEach(([columnId, column]) => {
-    next[columnId] = {
-      ...column,
-      align: resolveColumnAlign(column?.align),
-    };
-  });
-  return next;
-};
-
 const FolderView = observer(({
-  columns,
-  columnsOrder,
-  columnsSizeInit,
-  rows,
-  getHeaderComponent,
-  getBodyComponent,
-  getIconData,
-  onDataChangeRequest,
-  allowColumnReorder = false,
-  onRowInteraction,
-  selectedRowIds,
-  onSelectedRowIdsChange,
-  selectionMode = 'single',
-  dataStore,
-  getRowData,
-  onRowClick,
-  onRowDoubleClick,
-  onRowContextMenu,
-  selectedRowId,
-  allowRowReorder = false,
-  showStatusBar = true,
-  loading = false,
-  loadingMessage,
-  error = null,
-  bodyHeight,
-  contextMenuItems = null,
-  showStatusItemCount = true,
-  listOnly = false,
-  isLastColumnFilled = true,
-  headerPageUtils = null,
-  columnResizeDragMode = 'preview',
-  columnResizeWidthMode = 'natural',
+  data = {},
+  config = {},
+  onEvent,
 }) => {
-  const [columnWidths, setColumnWidths] = useState({});
-  const resolvedColumns = useMemo(() => withResolvedColumnAlign(columns), [columns]);
+  const columns = data?.columns;
+  const colsOrder = data?.colsOrder || [];
+  const colSizeById = config?.colSizeById || {};
+  const colWidthByIdFromConfig = config?.colWidthById;
+
+  const colWidthByIdBase = useMemo(
+    () => buildColWidthByIdFromSize(colsOrder, colSizeById),
+    [colsOrder, colSizeById],
+  );
+
+  const [internalColWidthById, setInternalColWidthById] = useState(() => colWidthByIdBase);
+
+  const isColWidthControlled = colWidthByIdFromConfig !== undefined;
+  const colWidthById = isColWidthControlled
+    ? { ...colWidthByIdBase, ...colWidthByIdFromConfig }
+    : internalColWidthById;
 
   useEffect(() => {
-    if (!columnsOrder || columnsOrder.length === 0) return;
-    const newWidths = {};
-    const DEFAULT_MIN_WIDTH = 40;
-    columnsOrder.forEach(colId => {
-      const width = columnsSizeInit?.[colId]?.width;
-      const minWidth = columnsSizeInit?.[colId]?.minWidth ?? DEFAULT_MIN_WIDTH;
-      if (width !== undefined && width !== null && width > 0) {
-        newWidths[colId] = Math.max(width, minWidth);
-      } else {
-        newWidths[colId] = minWidth;
+    if (isColWidthControlled) {
+      return;
+    }
+    setInternalColWidthById(colWidthByIdBase);
+  }, [colWidthByIdBase, isColWidthControlled]);
+
+  const resolvedColumns = useMemo(() => withResolvedColAlign(columns), [columns]);
+
+  const isLocked = config?.isLocked === true;
+  const isStatusBarVisible = config?.isStatusBarVisible !== false;
+
+  const handleEvent = async (eventType, eventData) => {
+    if (eventType === 'colResize' && !isColWidthControlled) {
+      const nextColWidthById = eventData?.colWidthByIdNext;
+      if (nextColWidthById) {
+        setInternalColWidthById(nextColWidthById);
       }
-    });
-    setColumnWidths(newWidths);
-  }, [columnsOrder, columnsSizeInit]);
+    }
+    return emitFolderEvent(onEvent, eventType, eventData);
+  };
+
+  const viewSwitcherData = {
+    ...data,
+    columns: resolvedColumns,
+    colWidthById,
+  };
+
+  const viewSwitcherConfig = {
+    ...config,
+    isColReorderAllowed: config?.isColReorderAllowed === true && !isLocked,
+    isRowReorderAllowed: config?.isRowReorderAllowed === true && !isLocked,
+    isLocked,
+  };
+
+  const statusBarData = data?.statusBar || {
+    itemCount: data?.rows?.length || 0,
+    messageState: null,
+  };
+
+  const statusBarConfig = {
+    isItemCountVisible: config?.isStatusItemCountVisible !== false,
+  };
 
   return (
     <div className="folder-view-container">
       <ViewSwitcher
-        bodyHeight={bodyHeight}
-        columns={resolvedColumns}
-        columnsOrder={columnsOrder}
-        columnsSizeInit={columnsSizeInit}
-        columnWidths={columnWidths}
-        getHeaderComponent={getHeaderComponent}
-        onColumnWidthChange={setColumnWidths}
-        allowColumnReorder={allowColumnReorder && !loading}
-        listOnly={listOnly}
-        isLastColumnFilled={isLastColumnFilled}
-        headerPageUtils={headerPageUtils}
-        columnResizeDragMode={columnResizeDragMode}
-        columnResizeWidthMode={columnResizeWidthMode}
-        getIconData={getIconData}
-        rows={rows}
-        getComponent={getBodyComponent}
-        onRowInteraction={onRowInteraction}
-        selectedRowIds={selectedRowIds}
-        onSelectedRowIdsChange={onSelectedRowIdsChange}
-        selectionMode={selectionMode}
-        dataStore={dataStore}
-        getRowData={getRowData}
-        onRowClick={onRowClick}
-        onRowDoubleClick={onRowDoubleClick}
-        onRowContextMenu={onRowContextMenu}
-        selectedRowId={selectedRowId}
-        allowRowReorder={allowRowReorder && !loading}
-        onDataChangeRequest={onDataChangeRequest}
-        isLocked={loading}
-        contextMenuItems={contextMenuItems}
+        data={viewSwitcherData}
+        config={viewSwitcherConfig}
+        onEvent={handleEvent}
       />
-      {showStatusBar && (
+      {isStatusBarVisible ? (
         <StatusBar
-          itemCount={rows?.length || 0}
-          loading={loading}
-          loadingMessage={loadingMessage}
-          error={error}
-          showStatusItemCount={showStatusItemCount}
+          data={statusBarData}
+          config={statusBarConfig}
         />
-      )}
+      ) : null}
     </div>
   );
 });

@@ -199,7 +199,7 @@ export const TableManage: ComponentType<any>;
 export const BoolSlider: ComponentType<any>;
 export const SegmentedControl: ComponentType<any>;
 export const FolderBody: ComponentType<any>;
-export const CellDropdown: ComponentType<any>;
+export const CellDropdown: ComponentType<CellDropdownProps>;
 export type TreeViewItemData = {
   id: string;
   text?: ReactNode;
@@ -335,44 +335,91 @@ export type FolderColumnDef = {
   data: unknown;
   align?: string;
 };
-export type FolderHeaderProps = {
-  columns: Record<string, FolderColumnDef>;
-  columnsOrder: string[];
-  columnsSizeInit?: Record<string, { width?: number; minWidth?: number; resizable?: boolean }>;
-  allowColumnReorder?: boolean;
-  isLastColumnFilled?: boolean;
-  columnResizeDragMode?: 'preview' | 'immediate';
-  columnResizeWidthMode?: 'natural' | 'local';
+export type FolderColSizeDef = {
+  width?: number;
+  minWidth?: number;
+  resizable?: boolean;
+};
+export type FolderMessageState = {
+  status?: 'idle' | 'loading' | 'success' | 'error';
+  messageText?: string;
+} | null;
+export type FolderViewData = {
+  columns?: Record<string, FolderColumnDef>;
+  colsOrder?: string[];
+  rows?: Array<{ id: string; data?: Record<string, unknown> }>;
+  rowIdsSelected?: string[];
+  viewCurrent?: 'list' | 'icon';
+  contextMenuItems?: unknown[];
+  statusBar?: {
+    itemCount?: number;
+    messageState?: FolderMessageState;
+  };
+  getRowData?: (rowId: string, colId: string) => unknown;
+  getRowIconData?: (rowId: string) => { label?: string; kind?: string };
+};
+export type FolderViewConfig = {
+  compId?: string;
+  isLocked?: boolean;
+  isListOnly?: boolean;
+  isStatusBarVisible?: boolean;
+  isStatusItemCountVisible?: boolean;
+  isColReorderAllowed?: boolean;
+  isRowReorderAllowed?: boolean;
+  isLastColFilled?: boolean;
+  selectionMode?: 'single' | 'multiple' | 'none';
+  colSizeById?: Record<string, FolderColSizeDef>;
+  colWidthById?: Record<string, number>;
+  bodyHeight?: number;
+  viewDefault?: 'list' | 'icon';
+  colResizeDragMode?: 'preview' | 'immediate';
+  colResizeWidthMode?: 'natural' | 'local';
+  headerPageUtils?: Record<string, unknown>;
+  compHeaderByColId?: (colId: string) => ComponentType<any> | undefined;
+  compBodyByColId?: (colId: string, rowId?: string) => ComponentType<any> | undefined;
+  isRowDataObservable?: boolean;
+  isContextMenuBuiltInDisabled?: boolean;
 };
 export type FolderViewProps = {
-  columns?: Record<string, FolderColumnDef>;
-  columnsOrder?: string[];
-  columnsSizeInit?: Record<string, { width?: number; minWidth?: number; resizable?: boolean }>;
-  rows?: Array<{ id: string; data?: Record<string, unknown> }>;
-  getHeaderComponent?: (columnId: string) => ComponentType<any> | undefined;
-  getBodyComponent?: (columnId: string) => ComponentType<any> | undefined;
-  selectionMode?: 'single' | 'multiple' | 'none';
-  selectedRowIds?: string[];
-  selectedRowId?: string;
-  onSelectedRowIdsChange?: (nextRowIds: string[]) => void;
-  onRowClick?: (rowId: string) => void;
-  onRowDoubleClick?: (rowId: string) => void;
-  bodyHeight?: number;
-  showStatusBar?: boolean;
-  listOnly?: boolean;
-  loading?: boolean;
-  loadingMessage?: string;
-  showStatusItemCount?: boolean;
-  isLastColumnFilled?: boolean;
-  onDataChangeRequest?: (type: string, params: Record<string, unknown>) => Promise<{ code: number }> | { code: number };
-  allowColumnReorder?: boolean;
-  allowRowReorder?: boolean;
-  onRowContextMenu?: (event: unknown, rowId: string) => void;
-  contextMenuItems?: unknown[];
-  onRowInteraction?: (event: unknown) => void;
-  isLocked?: boolean;
-  columnResizeDragMode?: 'preview' | 'immediate';
-  columnResizeWidthMode?: 'natural' | 'local';
+  data?: FolderViewData;
+  config?: FolderViewConfig;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<{ code: number; message?: string }> | { code: number; message?: string };
+};
+export type FolderHeaderData = {
+  columns: Record<string, FolderColumnDef>;
+  colsOrder: string[];
+  colWidthById?: Record<string, number>;
+};
+export type FolderHeaderConfig = {
+  colSizeById?: Record<string, FolderColSizeDef>;
+  isColReorderAllowed?: boolean;
+  isLastColFilled?: boolean;
+  colResizeDragMode?: 'preview' | 'immediate';
+  colResizeWidthMode?: 'natural' | 'local';
+  compByColId?: (colId: string) => ComponentType<any> | undefined;
+  headerPageUtils?: Record<string, unknown>;
+};
+export type FolderHeaderProps = {
+  data?: FolderHeaderData;
+  config?: FolderHeaderConfig;
+  onEvent?: FolderViewProps['onEvent'];
+};
+export type CellDropdownData = {
+  value?: unknown;
+  options?: Array<{ value: unknown; label?: string }>;
+  isEditable?: boolean;
+  isBusy?: boolean;
+};
+export type CellDropdownConfig = {
+  isEditable?: boolean;
+  isBusy?: boolean;
+};
+export type CellDropdownProps = {
+  data?: CellDropdownData;
+  config?: CellDropdownConfig;
+  onEvent?: FolderViewProps['onEvent'];
+  rowId?: string;
+  colId?: string;
 };
 export type SideListItemData = {
   key?: string;

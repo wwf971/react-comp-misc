@@ -25,9 +25,9 @@ const ButtonWithDropDown = ({
   const isClickPropagationStopped = Boolean(config?.isClickPropagationStopped);
 
   const updateMenuPosOpen = useCallback(() => {
-    const rootElement = rootRef.current;
-    if (!rootElement) return;
-    const rect = rootElement.getBoundingClientRect();
+    const rootEl = rootRef.current;
+    if (!rootEl) return;
+    const rect = rootEl.getBoundingClientRect();
     setMenuPosOpen({
       x: menuAlign === 'right' ? rect.right - minWidth : rect.left,
       y: rect.bottom + 2,

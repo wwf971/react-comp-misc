@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import Header from './Header';
 import ItemsListView from './ItemsListView';
 import ItemsIconView from './ItemsIconView';
+import { emitFolderEvent } from './folderUtils.js';
 import './folder.css';
 
 const VIEWS = [
@@ -11,128 +12,133 @@ const VIEWS = [
 ];
 
 const ViewSwitcher = observer(({
-  view: controlledView,
-  onViewChange,
-  defaultView = 'list',
-  bodyHeight,
-  columns,
-  columnsOrder,
-  columnsSizeInit,
-  columnWidths,
-  getHeaderComponent,
-  onColumnWidthChange,
-  allowColumnReorder = false,
-  getIconData,
-  rows,
-  getComponent,
-  onRowInteraction,
-  selectedRowIds,
-  onSelectedRowIdsChange,
-  selectionMode = 'single',
-  dataStore,
-  getRowData,
-  onRowClick,
-  onRowDoubleClick,
-  onRowContextMenu,
-  selectedRowId,
-  allowRowReorder = false,
-  onDataChangeRequest,
-  isLocked = false,
-  contextMenuItems = null,
-  listOnly = false,
-  isLastColumnFilled = true,
-  headerPageUtils = null,
-  columnResizeDragMode = 'preview',
-  columnResizeWidthMode = 'natural',
+  data = {},
+  config = {},
+  onEvent,
 }) => {
-  const [internalView, setInternalView] = useState(defaultView);
-  const [columnResizeIndicatorLeft, setColumnResizeIndicatorLeft] = useState(null);
-  const activeView = listOnly ? 'list' : (controlledView !== undefined ? controlledView : internalView);
+  const viewCurrentFromData = data?.viewCurrent;
+  const viewDefault = config?.viewDefault || 'list';
+  const isListOnly = config?.isListOnly === true;
+  const bodyHeight = config?.bodyHeight;
 
-  const handleViewChange = (v) => {
-    if (controlledView === undefined) setInternalView(v);
-    onViewChange?.(v);
+  const [internalViewCurrent, setInternalViewCurrent] = useState(viewDefault);
+  const [colResizeIndicatorLeft, setColResizeIndicatorLeft] = useState(null);
+
+  const viewCurrent = isListOnly
+    ? 'list'
+    : (viewCurrentFromData !== undefined ? viewCurrentFromData : internalViewCurrent);
+
+  const handleViewChange = (nextViewCurrent) => {
+    if (viewCurrentFromData === undefined) {
+      setInternalViewCurrent(nextViewCurrent);
+    }
+    emitFolderEvent(onEvent, 'viewChange', { viewCurrent: nextViewCurrent });
   };
 
-  const sharedProps = {
-    rows,
-    onRowInteraction,
-    selectedRowIds,
-    onSelectedRowIdsChange,
-    selectionMode,
-    dataStore,
-    getRowData,
-    onRowClick,
-    onRowDoubleClick,
-    onRowContextMenu,
-    selectedRowId,
-    allowRowReorder,
-    onDataChangeRequest,
-    isLocked,
-    contextMenuItems,
+  const handleChildEvent = (eventType, eventData) => {
+    if (eventType === 'colResizeIndicatorChange') {
+      setColResizeIndicatorLeft(eventData?.left ?? null);
+      return null;
+    }
+    return emitFolderEvent(onEvent, eventType, eventData);
+  };
+
+  const headerData = {
+    columns: data.columns,
+    colsOrder: data.colsOrder,
+    colWidthById: data.colWidthById,
+  };
+
+  const headerConfig = {
+    colSizeById: config.colSizeById,
+    isColReorderAllowed: config.isColReorderAllowed,
+    isLastColFilled: config.isLastColFilled,
+    compByColId: config.compHeaderByColId,
+    headerPageUtils: config.headerPageUtils,
+    colResizeDragMode: config.colResizeDragMode,
+    colResizeWidthMode: config.colResizeWidthMode,
+  };
+
+  const listData = {
+    columns: data.columns,
+    colsOrder: data.colsOrder,
+    colWidthById: data.colWidthById,
+    rows: data.rows,
+    rowIdsSelected: data.rowIdsSelected,
+    getRowData: data.getRowData,
+    contextMenuItems: data.contextMenuItems,
+  };
+
+  const listConfig = {
+    colSizeById: config.colSizeById,
+    isLastColFilled: config.isLastColFilled,
+    colResizeIndicatorLeft,
+    selectionMode: config.selectionMode,
+    isRowReorderAllowed: config.isRowReorderAllowed,
+    isLocked: config.isLocked,
+    compBodyByColId: config.compBodyByColId,
+    isRowDataObservable: config.isRowDataObservable,
+    isContextMenuBuiltInDisabled: config.isContextMenuBuiltInDisabled,
+  };
+
+  const iconData = {
+    rows: data.rows,
+    rowIdsSelected: data.rowIdsSelected,
+    getRowIconData: data.getRowIconData,
+    contextMenuItems: data.contextMenuItems,
+  };
+
+  const iconConfig = {
+    selectionMode: config.selectionMode,
+    isRowReorderAllowed: config.isRowReorderAllowed,
+    isLocked: config.isLocked,
+    isContextMenuBuiltInDisabled: config.isContextMenuBuiltInDisabled,
   };
 
   return (
     <div className="folder-view-switcher">
-      {!listOnly && (
+      {!isListOnly ? (
         <div className="folder-view-switcher-toolbar">
-          {VIEWS.map(v => (
+          {VIEWS.map((viewItem) => (
             <button
-              key={v.id}
-              className={`folder-view-switcher-btn${activeView === v.id ? ' active' : ''}`}
-              onClick={() => handleViewChange(v.id)}
+              key={viewItem.id}
+              type="button"
+              className={`folder-view-switcher-btn${viewCurrent === viewItem.id ? ' active' : ''}`}
+              onClick={() => handleViewChange(viewItem.id)}
             >
-              {v.label}
+              {viewItem.label}
             </button>
           ))}
         </div>
-      )}
-      <div className="folder-view-switcher-scroll">
-        {activeView === 'list' && columns && (
-          <div className="folder-header-wrapper">
-            <Header
-              columns={columns}
-              columnsOrder={columnsOrder}
-              columnsSizeInit={columnsSizeInit}
-              columnWidths={columnWidths}
-              getComponent={getHeaderComponent}
-              onColumnWidthChange={onColumnWidthChange}
-              onDataChangeRequest={onDataChangeRequest}
-              allowColumnReorder={allowColumnReorder}
-              isLastColumnFilled={isLastColumnFilled}
-              pageUtils={headerPageUtils}
-              columnResizeDragMode={columnResizeDragMode}
-              columnResizeWidthMode={columnResizeWidthMode}
-              onColumnResizeIndicatorLeftChange={setColumnResizeIndicatorLeft}
-            />
-          </div>
-        )}
+      ) : null}
+      <div className={`folder-view-switcher-scroll${bodyHeight ? ' has-body-height' : ''}`}>
         <div
-          className="folder-view-switcher-content"
-          style={{
-            height: bodyHeight ? `${bodyHeight}px` : undefined,
-            overflowX: 'hidden',
-            overflowY: bodyHeight ? 'auto' : undefined,
-          }}
+          className={`folder-view-switcher-content${bodyHeight ? ' has-body-height' : ''}`}
+          style={bodyHeight ? { height: `${bodyHeight}px` } : undefined}
         >
-          {activeView === 'list' && (
+          {viewCurrent === 'list' && data.columns ? (
+            <div className="folder-header-wrapper">
+              <Header
+                data={headerData}
+                config={headerConfig}
+                onEvent={handleChildEvent}
+              />
+            </div>
+          ) : null}
+          {viewCurrent === 'list' ? (
             <ItemsListView
-              columns={columns}
-              columnsOrder={columnsOrder}
-              columnsSizeInit={columnsSizeInit}
-              columnWidths={columnWidths}
-              getComponent={getComponent}
-              isLastColumnFilled={isLastColumnFilled}
-              columnResizeIndicatorLeft={columnResizeIndicatorLeft}
-              {...sharedProps}
+              data={listData}
+              config={listConfig}
+              onEvent={handleChildEvent}
             />
-          )}
-          {activeView === 'icon' && (
+          ) : null}
+          {viewCurrent === 'icon' ? (
             <ItemsIconView
-              getIconData={getIconData}
-              {...sharedProps}
+              data={iconData}
+              config={iconConfig}
+              onEvent={handleChildEvent}
             />
-          )}
+          ) : null}
         </div>
       </div>
     </div>

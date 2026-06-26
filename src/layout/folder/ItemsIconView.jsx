@@ -1,124 +1,102 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import FolderIcon from '../../icon/FolderIcon';
 import FileIcon from '../../icon/FileIcon';
 import Menu from '../../component/menu/Menu.jsx';
+import { calcRowIdsSelectedForClick, emitFolderEvent } from './folderUtils.js';
 import './folder.css';
 
 const ICON_SIZE = 40;
 
 const ItemsIconView = observer(({
-  rows = [],
-  getIconData,
-  onRowInteraction,
-  selectedRowIds,
-  onSelectedRowIdsChange,
-  selectionMode = 'single',
-  onRowClick,
-  onRowDoubleClick,
-  selectedRowId,
-  isLocked = false,
-  contextMenuItems = null,
-  onDataChangeRequest,
-  allowRowReorder = false,
+  data = {},
+  config = {},
+  onEvent,
 }) => {
+  const rows = Array.isArray(data?.rows) ? data.rows : [];
+  const rowIdsSelected = Array.isArray(data?.rowIdsSelected) ? data.rowIdsSelected : [];
+  const getRowIconData = data?.getRowIconData;
+  const contextMenuItems = data?.contextMenuItems;
+
+  const selectionMode = config?.selectionMode || 'single';
+  const isRowReorderAllowed = config?.isRowReorderAllowed === true;
+  const isLocked = config?.isLocked === true;
+  const isContextMenuBuiltInDisabled = config?.isContextMenuBuiltInDisabled === true;
+
   const containerRef = useRef(null);
   const [draggingId, setDraggingId] = useState(null);
   const [draggingIds, setDraggingIds] = useState([]);
   const [insertBeforeIndex, setInsertBeforeIndex] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
-  const [internalSelectedRowIds, setInternalSelectedRowIds] = useState(() => selectedRowIds || []);
-  const [lastClickedRowId, setLastClickedRowId] = useState(null);
+  const [lastRowIdClicked, setLastRowIdClicked] = useState(null);
 
   const isMultipleSelection = selectionMode === 'multiple';
-  const canRowReorder = allowRowReorder;
-  const isSelectionControlled = isMultipleSelection
-    && Array.isArray(selectedRowIds)
-    && typeof onSelectedRowIdsChange === 'function';
+  const canRowReorder = isRowReorderAllowed && !isLocked;
 
-  useEffect(() => {
-    if (isSelectionControlled) {
-      setInternalSelectedRowIds(selectedRowIds);
+  const handleRowIdsSelectedChange = (nextRowIdsSelected, nextLastRowIdClicked) => {
+    if (nextLastRowIdClicked !== undefined) {
+      setLastRowIdClicked(nextLastRowIdClicked);
     }
-  }, [isSelectionControlled, selectedRowIds]);
-
-  const resolveSelectedRowIds = () => {
-    if (isSelectionControlled) return selectedRowIds;
-    return internalSelectedRowIds;
-  };
-
-  const emitSelectionChange = (nextSelectedRowIds) => {
-    if (!isMultipleSelection) return;
-    if (!isSelectionControlled) {
-      setInternalSelectedRowIds(nextSelectedRowIds);
-    }
-    if (onSelectedRowIdsChange) {
-      onSelectedRowIdsChange(nextSelectedRowIds);
-    }
-  };
-
-  const getRowRangeById = (fromRowId, toRowId) => {
-    const fromIndex = rows.findIndex(row => row.id === fromRowId);
-    const toIndex = rows.findIndex(row => row.id === toRowId);
-    if (fromIndex < 0 || toIndex < 0) return [];
-    const startIndex = Math.min(fromIndex, toIndex);
-    const endIndex = Math.max(fromIndex, toIndex);
-    return rows.slice(startIndex, endIndex + 1).map(row => row.id);
+    emitFolderEvent(onEvent, 'rowIdsSelectedChange', {
+      rowIdsSelected: nextRowIdsSelected,
+    });
   };
 
   const handleSelectionForClick = (e, rowId) => {
-    if (selectionMode === 'none') return;
+    if (selectionMode === 'none') {
+      return;
+    }
     if (!isMultipleSelection) {
+      handleRowIdsSelectedChange([rowId], rowId);
       return;
     }
-    const isShiftPressed = e.shiftKey;
+    const nextRowIdsSelected = calcRowIdsSelectedForClick({
+      rows,
+      rowIdsSelected,
+      rowId,
+      lastRowIdClicked,
+      isShiftPressed: e.shiftKey,
+      isCtrlPressed: e.ctrlKey || e.metaKey,
+    });
     const isCtrlPressed = e.ctrlKey || e.metaKey;
-    const currentSelectedRowIds = resolveSelectedRowIds();
-    if (isCtrlPressed && isShiftPressed && lastClickedRowId) {
-      const range = getRowRangeById(lastClickedRowId, rowId);
-      const mergedSelection = [...new Set([...currentSelectedRowIds, ...range])];
-      emitSelectionChange(mergedSelection);
-      setLastClickedRowId(rowId);
-      return;
-    }
-    if (isShiftPressed && lastClickedRowId) {
-      const range = getRowRangeById(lastClickedRowId, rowId);
-      emitSelectionChange(range);
-      setLastClickedRowId(rowId);
-      return;
-    }
-    if (isCtrlPressed) {
-      const isAlreadySelected = currentSelectedRowIds.includes(rowId);
-      const nextSelectedRowIds = isAlreadySelected
-        ? currentSelectedRowIds.filter(id => id !== rowId)
-        : [...currentSelectedRowIds, rowId];
-      emitSelectionChange(nextSelectedRowIds);
-      if (!isAlreadySelected) {
-        setLastClickedRowId(rowId);
-      }
-      return;
-    }
-    emitSelectionChange([rowId]);
-    setLastClickedRowId(rowId);
+    const isAlreadySelected = rowIdsSelected.includes(rowId);
+    const nextLastRowIdClicked = isCtrlPressed && isAlreadySelected
+      ? lastRowIdClicked
+      : rowId;
+    handleRowIdsSelectedChange(nextRowIdsSelected, nextLastRowIdClicked);
   };
 
   const handleInteraction = (e, type, rowId, rowIndex) => {
     if (type === 'click') {
       handleSelectionForClick(e, rowId);
-      if (onRowClick) onRowClick(rowId);
+      emitFolderEvent(onEvent, 'rowClick', { rowId });
     }
-    if (type === 'double-click' && onRowDoubleClick) onRowDoubleClick(rowId);
-    if (onRowInteraction) {
-      onRowInteraction({
-        type, rowId, rowIndex, nativeEvent: e,
-        modifiers: { ctrl: e.ctrlKey, shift: e.shiftKey, meta: e.metaKey, alt: e.altKey },
-      });
+    if (type === 'double-click') {
+      emitFolderEvent(onEvent, 'rowDoubleClick', { rowId });
     }
+    emitFolderEvent(onEvent, 'rowInteraction', {
+      type,
+      rowId,
+      rowIndex,
+      nativeEvent: e,
+      modifiers: {
+        ctrl: e.ctrlKey,
+        shift: e.shiftKey,
+        meta: e.metaKey,
+        alt: e.altKey,
+      },
+    });
   };
 
   const handleContextMenu = (e, rowId, rowIndex) => {
     handleInteraction(e, 'context-menu', rowId, rowIndex);
-    if (isLocked || !contextMenuItems || contextMenuItems.length === 0) return;
+    emitFolderEvent(onEvent, 'rowContextMenu', { rowId, event: e });
+    if (isContextMenuBuiltInDisabled) {
+      return;
+    }
+    if (isLocked || !contextMenuItems || contextMenuItems.length === 0) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     setContextMenu(null);
@@ -128,22 +106,25 @@ const ItemsIconView = observer(({
   };
 
   const handleMenuItemClick = async (item) => {
-    if (!contextMenu || !onDataChangeRequest) return;
+    if (!contextMenu) {
+      return;
+    }
     const rowId = contextMenu.rowId;
     setContextMenu(null);
     if (item.id === 'delete') {
-      await onDataChangeRequest('delete', { rowId });
+      await emitFolderEvent(onEvent, 'rowDelete', { rowId });
     }
   };
 
   const handleDragStart = (e, rowId) => {
-    if (!canRowReorder) return;
+    if (!canRowReorder) {
+      return;
+    }
     e.stopPropagation();
-    const currentSelectedRowIds = resolveSelectedRowIds();
-    const isDraggingSelectedRow = isMultipleSelection && currentSelectedRowIds.includes(rowId);
-    const shouldDragMultipleRows = isDraggingSelectedRow && currentSelectedRowIds.length > 1;
+    const isDraggingSelectedRow = isMultipleSelection && rowIdsSelected.includes(rowId);
+    const shouldDragMultipleRows = isDraggingSelectedRow && rowIdsSelected.length > 1;
     const nextDraggingIds = shouldDragMultipleRows
-      ? rows.filter(row => currentSelectedRowIds.includes(row.id)).map(row => row.id)
+      ? rows.filter((row) => rowIdsSelected.includes(row.id)).map((row) => row.id)
       : [rowId];
     setDraggingId(rowId);
     setDraggingIds(nextDraggingIds);
@@ -158,17 +139,20 @@ const ItemsIconView = observer(({
   };
 
   const handleContainerDragOver = (e) => {
-    if (!canRowReorder) return;
-    if (draggingIds.length === 0) return;
+    if (!canRowReorder || draggingIds.length === 0) {
+      return;
+    }
     e.preventDefault();
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      return;
+    }
     const tileEls = [...container.querySelectorAll('.folder-icon-tile')];
-    for (let i = 0; i < tileEls.length; i++) {
+    for (let i = 0; i < tileEls.length; i += 1) {
       const rect = tileEls[i].getBoundingClientRect();
       if (
-        e.clientX >= rect.left && e.clientX <= rect.right &&
-        e.clientY >= rect.top && e.clientY <= rect.bottom
+        e.clientX >= rect.left && e.clientX <= rect.right
+        && e.clientY >= rect.top && e.clientY <= rect.bottom
       ) {
         setInsertBeforeIndex(e.clientX < rect.left + rect.width / 2 ? i : i + 1);
         return;
@@ -183,50 +167,60 @@ const ItemsIconView = observer(({
   };
 
   const handleDragEnd = async () => {
-    const rowOrder = rows.map(r => r.id);
-    const fromIndex = rowOrder.findIndex(id => id === draggingId);
+    const rowsOrder = rows.map((row) => row.id);
+    const fromIndex = rowsOrder.findIndex((id) => id === draggingId);
     const capturedInsertIndex = insertBeforeIndex;
     setDraggingId(null);
     setDraggingIds([]);
     setInsertBeforeIndex(null);
 
-    if (capturedInsertIndex === null || !onDataChangeRequest || draggingIds.length === 0) return;
+    if (capturedInsertIndex === null || draggingIds.length === 0) {
+      return;
+    }
     if (draggingIds.length > 1) {
       const draggingSet = new Set(draggingIds);
       const draggedIndexes = draggingIds
-        .map(rowId => rowOrder.indexOf(rowId))
-        .filter(index => index >= 0);
-      if (draggedIndexes.length === 0) return;
-      const draggedCountBeforeInsert = draggedIndexes.filter(index => index < capturedInsertIndex).length;
+        .map((rowId) => rowsOrder.indexOf(rowId))
+        .filter((index) => index >= 0);
+      if (draggedIndexes.length === 0) {
+        return;
+      }
+      const draggedCountBeforeInsert = draggedIndexes.filter((index) => index < capturedInsertIndex).length;
       const toIndex = capturedInsertIndex - draggedCountBeforeInsert;
-      const remainingOrder = rowOrder.filter(rowId => !draggingSet.has(rowId));
-      const newOrder = [...remainingOrder];
-      newOrder.splice(toIndex, 0, ...draggingIds);
-      const isSameOrder = newOrder.length === rowOrder.length && newOrder.every((id, idx) => id === rowOrder[idx]);
-      if (isSameOrder) return;
+      const remainingOrder = rowsOrder.filter((rowId) => !draggingSet.has(rowId));
+      const rowsOrderNext = [...remainingOrder];
+      rowsOrderNext.splice(toIndex, 0, ...draggingIds);
+      const isSameOrder = rowsOrderNext.length === rowsOrder.length
+        && rowsOrderNext.every((id, idx) => id === rowsOrder[idx]);
+      if (isSameOrder) {
+        return;
+      }
       try {
-        await onDataChangeRequest('reorder-multiple', {
+        await emitFolderEvent(onEvent, 'rowReorderMultiple', {
           rowIds: draggingIds,
           fromIndexes: draggedIndexes,
           toIndex,
-          newOrder,
+          rowsOrderNext,
         });
       } catch {}
       return;
     }
-    if (fromIndex < 0) return;
+    if (fromIndex < 0) {
+      return;
+    }
     const toIndex = capturedInsertIndex > fromIndex ? capturedInsertIndex - 1 : capturedInsertIndex;
-    if (toIndex === fromIndex) return;
-
-    const newOrder = [...rowOrder];
-    newOrder.splice(fromIndex, 1);
-    newOrder.splice(toIndex, 0, rowOrder[fromIndex]);
+    if (toIndex === fromIndex) {
+      return;
+    }
+    const rowsOrderNext = [...rowsOrder];
+    rowsOrderNext.splice(fromIndex, 1);
+    rowsOrderNext.splice(toIndex, 0, rowsOrder[fromIndex]);
     try {
-      await onDataChangeRequest('reorder', {
-        rowId: rowOrder[fromIndex],
+      await emitFolderEvent(onEvent, 'rowReorder', {
+        rowId: rowsOrder[fromIndex],
         fromIndex,
         toIndex,
-        newOrder,
+        rowsOrderNext,
       });
     } catch {}
   };
@@ -239,15 +233,12 @@ const ItemsIconView = observer(({
       onDragLeave={handleContainerDragLeave}
     >
       {rows.map((row, index) => {
-        const effectiveSelectedRowIds = resolveSelectedRowIds();
-        const isSelected = isMultipleSelection
-          ? effectiveSelectedRowIds.includes(row.id)
-          : (Array.isArray(selectedRowIds) ? selectedRowIds.includes(row.id) : selectedRowId === row.id);
+        const isSelected = rowIdsSelected.includes(row.id);
         const isDragging = draggingIds.includes(row.id);
         const isInsertBefore = canRowReorder && insertBeforeIndex === index;
         const isInsertAfter = canRowReorder && insertBeforeIndex === rows.length && index === rows.length - 1;
-        const { label, kind } = getIconData
-          ? getIconData(row.id)
+        const { label, kind } = getRowIconData
+          ? getRowIconData(row.id)
           : { label: String(row.id), kind: 'file' };
         return (
           <div
@@ -272,19 +263,16 @@ const ItemsIconView = observer(({
             <div className="folder-icon-tile-icon">
               {kind === 'folder'
                 ? <FolderIcon width={ICON_SIZE} height={ICON_SIZE} />
-                : <FileIcon width={ICON_SIZE} height={ICON_SIZE} />
-              }
+                : <FileIcon width={ICON_SIZE} height={ICON_SIZE} />}
             </div>
             <div className="folder-icon-tile-label">{label}</div>
           </div>
         );
       })}
-      {isLocked && <div className="folder-icon-view-overlay" />}
-      {contextMenu && contextMenuItems && (
+      {isLocked ? <div className="folder-icon-view-overlay" /> : null}
+      {contextMenu && contextMenuItems ? (
         <Menu
-          data={{
-            items: contextMenuItems,
-          }}
+          data={{ items: contextMenuItems }}
           config={{
             isOpen: true,
             posOpen: { x: contextMenu.x, y: contextMenu.y },
@@ -299,7 +287,7 @@ const ItemsIconView = observer(({
             }
           }}
         />
-      )}
+      ) : null}
     </div>
   );
 });
