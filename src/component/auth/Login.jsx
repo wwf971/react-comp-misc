@@ -48,7 +48,7 @@ const Login = observer(function Login({
           </div>
         ) : (
           <>
-            {useAuthToken && showTokenAtLogin && data?.token && (
+            {useAuthToken && showTokenAtLogin ? (
               <div className="login-mode-switcher">
                 <button
                   type="button"
@@ -62,10 +62,10 @@ const Login = observer(function Login({
                   className={`mode-button ${data.loginMode === 'token' ? 'active' : ''}`}
                   onClick={() => handleDataChangeRequest('set-login-mode', { loginMode: 'token' })}
                 >
-                  Use Saved Token
+                  Token
                 </button>
               </div>
-            )}
+            ) : null}
 
             {data?.loginMode === 'credentials' && (
               <form onSubmit={handleCredentialsLogin}>

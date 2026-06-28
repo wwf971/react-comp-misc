@@ -81,7 +81,8 @@ const EndpointCard = ({
 
   const [pendingActionId, setPendingActionId] = React.useState('')
   const isBusy = Boolean(pendingActionId)
-  const isInteractionLocked = isLocked || isBusy || isCardDisabled
+  const isOverlayVisible = isLocked || isBusy
+  const isInteractionLocked = isOverlayVisible || isCardDisabled
   const isRootDisabled = isInteractionLocked || isUnavailable
 
   const emitEvent = (eventType, eventData = {}) => {
@@ -96,9 +97,11 @@ const EndpointCard = ({
     }
     if (!actionItem?.id || isInteractionLocked) return
     if (actionItem.isDisabled === true) return
+    const timeStarted = Date.now()
     setPendingActionId(actionItem.id)
     try {
       await Promise.resolve(emitEvent('action', { actionId: actionItem.id, actionItem }))
+      await waitUntilMinimumElapsed(timeStarted, 200)
     } finally {
       setPendingActionId('')
     }
@@ -121,7 +124,7 @@ const EndpointCard = ({
     'endpoint-card',
     isSelected ? 'is-selected' : '',
     isUnavailable ? 'is-unavailable' : '',
-    isInteractionLocked ? 'is-locked' : '',
+    isOverlayVisible ? 'is-locked' : '',
     isRootDisabled ? 'is-disabled' : '',
     isSelectable ? 'is-selectable' : '',
     statusTagText ? 'has-status' : '',
@@ -137,9 +140,9 @@ const EndpointCard = ({
       onClick={isSelectable ? handleRootClick : undefined}
       onKeyDown={isSelectable ? handleRootKeyDown : undefined}
     >
-      {isInteractionLocked ? (
+      {isOverlayVisible ? (
         <div className="endpoint-card-lock-overlay">
-          <SpinningCircle width={28} height={28} color="#4d4d4d" />
+          <SpinningCircle width={24} height={24} color="#666" />
         </div>
       ) : null}
       <div className="endpoint-card-header">
@@ -177,7 +180,6 @@ const EndpointCard = ({
       {statusMessage && statusMessage.messageText ? (
         <div className={`endpoint-card-message status-${statusMessage.status || 'idle'}`}>
           <div className="endpoint-card-message-text-wrap">
-            {statusMessage.status === 'loading' ? <SpinningCircle width={10} height={10} color="#324259" /> : null}
             <span className="endpoint-card-message-text">{statusMessage.messageText}</span>
           </div>
           <button
@@ -207,6 +209,14 @@ const EndpointCard = ({
       {errorMessage ? <div className="endpoint-card-error">{errorMessage}</div> : null}
     </div>
   )
+}
+
+function waitUntilMinimumElapsed(timeStarted, durationMs) {
+  const delayMs = Math.max(0, durationMs - (Date.now() - timeStarted))
+  if (delayMs <= 0) return Promise.resolve()
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, delayMs)
+  })
 }
 
 export default EndpointCard

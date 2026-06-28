@@ -1,8 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Menu from '../../component/menu/Menu.jsx';
+import { getElementUnderMenu, isPointInsideElement } from '../../component/menu/menuContextMenuUtils.js';
 import {
   calcRowIdsSelectedForClick,
+  calcRowIdsSelectedForContextMenu,
   emitFolderEvent,
   DEFAULT_COL_MIN_WIDTH,
 } from './folderUtils.js';
@@ -132,6 +134,35 @@ const ItemsListView = observer(({
     handleRowIdsSelectedChange(nextRowIdsSelected, nextLastRowIdClicked);
   };
 
+  const handleSelectionForContextMenu = (rowId) => {
+    if (selectionMode === 'none') {
+      return;
+    }
+    const nextRowIdsSelected = calcRowIdsSelectedForContextMenu({
+      rowIdsSelected,
+      rowId,
+      isMultipleSelection,
+    });
+    if (nextRowIdsSelected === rowIdsSelected) {
+      return;
+    }
+    handleRowIdsSelectedChange(nextRowIdsSelected, rowId);
+  };
+
+  const handleClearSelection = () => {
+    if (selectionMode === 'none' || rowIdsSelected.length === 0) {
+      return;
+    }
+    handleRowIdsSelectedChange([], null);
+  };
+
+  const handleBodyClick = (e) => {
+    if (e.target.closest('[data-row-id]')) {
+      return;
+    }
+    handleClearSelection();
+  };
+
   const handleRowInteraction = (e, type, rowId, rowIndex) => {
     if (type === 'click') {
       handleSelectionForClick(e, rowId);
@@ -158,6 +189,7 @@ const ItemsListView = observer(({
   const isContextMenuBuiltInDisabled = config?.isContextMenuBuiltInDisabled === true;
 
   const handleRowContextMenu = (e, rowId, rowIndex) => {
+    handleSelectionForContextMenu(rowId);
     handleRowInteraction(e, 'context-menu', rowId, rowIndex);
     if (isContextMenuBuiltInDisabled) {
       return;
@@ -178,21 +210,44 @@ const ItemsListView = observer(({
     if (isLocked || !contextMenuItems || contextMenuItems.length === 0) {
       return;
     }
-    const backdrop = e.currentTarget;
-    backdrop.style.pointerEvents = 'none';
-    const clickedEl = document.elementFromPoint(e.clientX, e.clientY);
-    backdrop.style.pointerEvents = '';
-    const rowElement = clickedEl?.closest('[data-row-id]');
+    const clickedEl = getElementUnderMenu(e);
+    const rowElement = clickedEl?.closest?.('[data-row-id]');
     if (rowElement) {
       const rowId = rowElement.getAttribute('data-row-id');
       if (rowId) {
+        handleSelectionForContextMenu(rowId);
+        const rowIndex = rows.findIndex((row) => row.id === rowId);
+        handleRowInteraction(e, 'context-menu', rowId, rowIndex >= 0 ? rowIndex : 0);
         setContextMenu(null);
         requestAnimationFrame(() => {
           setContextMenu({ x: e.clientX, y: e.clientY, rowId });
         });
+        return;
       }
-    } else {
-      setContextMenu(null);
+    }
+    setContextMenu(null);
+    if (isPointInsideElement(bodyRef.current, e)) {
+      handleClearSelection();
+    }
+  };
+
+  const handleBackdropClick = (e) => {
+    if (isLocked) {
+      return;
+    }
+    const elementClicked = getElementUnderMenu(e);
+    const elementRow = elementClicked?.closest?.('[data-row-id]');
+    setContextMenu(null);
+    if (elementRow) {
+      const rowId = elementRow.getAttribute('data-row-id');
+      if (rowId) {
+        const rowIndex = rows.findIndex((row) => row.id === rowId);
+        handleRowInteraction(e, 'click', rowId, rowIndex >= 0 ? rowIndex : 0);
+        return;
+      }
+    }
+    if (isPointInsideElement(bodyRef.current, e)) {
+      handleClearSelection();
     }
   };
 
@@ -202,6 +257,7 @@ const ItemsListView = observer(({
     }
     const rowId = contextMenu.rowId;
     setContextMenu(null);
+    await emitFolderEvent(onEvent, 'rowContextMenuItemClick', { rowId, item });
     if (item.id === 'delete') {
       await emitFolderEvent(onEvent, 'rowDelete', { rowId });
     }
@@ -369,6 +425,7 @@ const ItemsListView = observer(({
     <div
       className={`folder-body ${isLocked ? 'locked' : ''} ${selectionClassName}`}
       ref={bodyRef}
+      onClick={handleBodyClick}
       onDragOver={handleRowDragOver}
     >
       {rows.map((row, index) => {
@@ -376,11 +433,12 @@ const ItemsListView = observer(({
           ? rowIdsSelected.includes(row.id)
           : rowIdsSelected.includes(row.id) || rowIdsSelected[0] === row.id;
         const isDragging = draggingRowIds.includes(row.id);
+        const rowClassName = row.rowClassName ? String(row.rowClassName) : '';
         return (
           <div
             key={row.id}
             data-row-id={row.id}
-            className={`folder-body-row ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${canRowReorder ? 'reorderable' : ''}`}
+            className={`folder-body-row ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${canRowReorder ? 'reorderable' : ''} ${rowClassName}`}
             style={{ opacity: isDragging ? 0.3 : 1 }}
             onClick={(e) => handleRowInteraction(e, 'click', row.id, index)}
             onDoubleClick={(e) => handleRowInteraction(e, 'double-click', row.id, index)}
@@ -459,6 +517,10 @@ const ItemsListView = observer(({
             }
             if (eventType === 'backdropContextMenu') {
               handleBackdropContextMenu(eventData.event);
+              return;
+            }
+            if (eventType === 'backdropClick') {
+              handleBackdropClick(eventData.event);
             }
           }}
         />

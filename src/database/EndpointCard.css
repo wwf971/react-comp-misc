@@ -39,10 +39,6 @@
   cursor: not-allowed;
 }
 
-.endpoint-card.is-locked {
-  opacity: 0.7;
-}
-
 .endpoint-card.is-error {
   border-color: #e0b3b3;
 }
@@ -50,7 +46,7 @@
 .endpoint-card-lock-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(240, 242, 246, 0.5);
+  background: rgba(240, 242, 246, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;

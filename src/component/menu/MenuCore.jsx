@@ -212,6 +212,7 @@ const MenuCore = ({
       onContextMenu={(event) => {
         event.preventDefault();
         event.stopPropagation();
+        onEvent?.('backdropContextMenu', { event });
       }}
     >
       {items.length > 0 ? (

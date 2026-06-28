@@ -23,6 +23,13 @@ const ButtonWithDropDown = ({
   const menuAlign = config?.menuAlign === 'right' ? 'right' : 'left';
   const minWidth = config?.minWidth ?? 130;
   const isClickPropagationStopped = Boolean(config?.isClickPropagationStopped);
+  const title = `${config?.title ?? ''}`.trim();
+  const hasCustomButtonClass = Boolean(buttonClassName);
+  const buttonClassNames = [
+    'button-with-dropdown-button-base',
+    hasCustomButtonClass ? '' : 'button-with-dropdown-button',
+    buttonClassName,
+  ].filter(Boolean).join(' ');
 
   const updateMenuPosOpen = useCallback(() => {
     const rootEl = rootRef.current;
@@ -93,8 +100,9 @@ const ButtonWithDropDown = ({
       className={`button-with-dropdown-root ${className}`}
     >
       <button
-        className={`button-with-dropdown-button ${buttonClassName}`}
+        className={buttonClassNames}
         type="button"
+        title={title || undefined}
         disabled={isDisabled}
         onClick={(event) => {
           if (isClickPropagationStopped) {

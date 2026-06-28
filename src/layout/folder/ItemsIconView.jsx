@@ -3,7 +3,12 @@ import { observer } from 'mobx-react-lite';
 import FolderIcon from '../../icon/FolderIcon';
 import FileIcon from '../../icon/FileIcon';
 import Menu from '../../component/menu/Menu.jsx';
-import { calcRowIdsSelectedForClick, emitFolderEvent } from './folderUtils.js';
+import { getElementUnderMenu, isPointInsideElement } from '../../component/menu/menuContextMenuUtils.js';
+import {
+  calcRowIdsSelectedForClick,
+  calcRowIdsSelectedForContextMenu,
+  emitFolderEvent,
+} from './folderUtils.js';
 import './folder.css';
 
 const ICON_SIZE = 40;
@@ -66,6 +71,84 @@ const ItemsIconView = observer(({
     handleRowIdsSelectedChange(nextRowIdsSelected, nextLastRowIdClicked);
   };
 
+  const handleSelectionForContextMenu = (rowId) => {
+    if (selectionMode === 'none') {
+      return;
+    }
+    const nextRowIdsSelected = calcRowIdsSelectedForContextMenu({
+      rowIdsSelected,
+      rowId,
+      isMultipleSelection,
+    });
+    if (nextRowIdsSelected === rowIdsSelected) {
+      return;
+    }
+    handleRowIdsSelectedChange(nextRowIdsSelected, rowId);
+  };
+
+  const handleClearSelection = () => {
+    if (selectionMode === 'none' || rowIdsSelected.length === 0) {
+      return;
+    }
+    handleRowIdsSelectedChange([], null);
+  };
+
+  const handleContainerClick = (e) => {
+    if (e.target.closest('[data-row-id]')) {
+      return;
+    }
+    handleClearSelection();
+  };
+
+  const handleBackdropContextMenu = (e) => {
+    e.preventDefault();
+    if (isContextMenuBuiltInDisabled) {
+      return;
+    }
+    if (isLocked || !contextMenuItems || contextMenuItems.length === 0) {
+      return;
+    }
+    const clickedEl = getElementUnderMenu(e);
+    const rowElement = clickedEl?.closest?.('[data-row-id]');
+    if (rowElement) {
+      const rowId = rowElement.getAttribute('data-row-id');
+      if (rowId) {
+        handleSelectionForContextMenu(rowId);
+        const rowIndex = rows.findIndex((row) => row.id === rowId);
+        handleInteraction(e, 'context-menu', rowId, rowIndex >= 0 ? rowIndex : 0);
+        setContextMenu(null);
+        requestAnimationFrame(() => {
+          setContextMenu({ x: e.clientX, y: e.clientY, rowId });
+        });
+        return;
+      }
+    }
+    setContextMenu(null);
+    if (isPointInsideElement(containerRef.current, e)) {
+      handleClearSelection();
+    }
+  };
+
+  const handleBackdropClick = (e) => {
+    if (isLocked) {
+      return;
+    }
+    const elementClicked = getElementUnderMenu(e);
+    const elementRow = elementClicked?.closest?.('[data-row-id]');
+    setContextMenu(null);
+    if (elementRow) {
+      const rowId = elementRow.getAttribute('data-row-id');
+      if (rowId) {
+        const rowIndex = rows.findIndex((row) => row.id === rowId);
+        handleInteraction(e, 'click', rowId, rowIndex >= 0 ? rowIndex : 0);
+        return;
+      }
+    }
+    if (isPointInsideElement(containerRef.current, e)) {
+      handleClearSelection();
+    }
+  };
+
   const handleInteraction = (e, type, rowId, rowIndex) => {
     if (type === 'click') {
       handleSelectionForClick(e, rowId);
@@ -89,6 +172,7 @@ const ItemsIconView = observer(({
   };
 
   const handleContextMenu = (e, rowId, rowIndex) => {
+    handleSelectionForContextMenu(rowId);
     handleInteraction(e, 'context-menu', rowId, rowIndex);
     emitFolderEvent(onEvent, 'rowContextMenu', { rowId, event: e });
     if (isContextMenuBuiltInDisabled) {
@@ -229,6 +313,7 @@ const ItemsIconView = observer(({
     <div
       className={`folder-icon-view ${isLocked ? 'locked' : ''}`}
       ref={containerRef}
+      onClick={handleContainerClick}
       onDragOver={handleContainerDragOver}
       onDragLeave={handleContainerDragLeave}
     >
@@ -284,6 +369,14 @@ const ItemsIconView = observer(({
             }
             if (eventType === 'itemClick') {
               handleMenuItemClick(eventData.item);
+              return;
+            }
+            if (eventType === 'backdropContextMenu') {
+              handleBackdropContextMenu(eventData.event);
+              return;
+            }
+            if (eventType === 'backdropClick') {
+              handleBackdropClick(eventData.event);
             }
           }}
         />

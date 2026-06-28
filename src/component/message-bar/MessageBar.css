@@ -1,0 +1,121 @@
+.message-bar-root {
+  min-height: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid #d5e0ef;
+  border-radius: 2px;
+  padding: 3px 5px;
+  background: #f8fbff;
+  color: #4b6288;
+  font-family: sans-serif;
+  font-size: 13px;
+}
+
+.message-bar-content {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.message-bar-root.height-sm .message-bar-content {
+  min-height: 22px;
+}
+
+.message-bar-root.height-md .message-bar-content {
+  min-height: 28px;
+}
+
+.message-bar-root.height-lg .message-bar-content {
+  min-height: 40px;
+}
+
+.message-bar-track {
+  width: max-content;
+  max-width: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  will-change: transform;
+}
+
+.message-bar-root.is-multi-line .message-bar-content {
+  overflow: visible;
+}
+
+.message-bar-root.is-multi-line .message-bar-track {
+  width: auto;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.message-bar-text {
+  min-width: 0;
+  display: block;
+  overflow: visible;
+  white-space: nowrap;
+  user-select: text;
+}
+
+.message-bar-root.is-one-line .message-bar-text {
+  flex-shrink: 0;
+}
+
+.message-bar-root.is-multi-line .message-bar-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.message-bar-root.status-success {
+  border-color: #cde8d2;
+  background: #f4fbf5;
+}
+
+.message-bar-root.status-error {
+  border-color: #efc8c8;
+  background: #fff5f5;
+}
+
+.message-bar-root.status-loading,
+.message-bar-root.status-info {
+  border-color: #d5def5;
+  background: #f6f8ff;
+}
+
+.message-bar-root.status-empty {
+  color: #607496;
+}
+
+.message-bar-btn {
+  flex-shrink: 0;
+  min-height: 22px;
+  border: 1px solid #b8c9df;
+  border-radius: 2px;
+  background: #ffffff;
+  padding: 1px 6px;
+  color: #1f3761;
+  font-family: sans-serif;
+  font-size: 13px;
+}
+
+.message-bar-btn:disabled {
+  color: #8b99ad;
+  background: #f4f6f8;
+}
+
+.message-bar-custom {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.message-bar-custom.height-sm {
+  min-height: 22px;
+}
+
+.message-bar-custom.height-md {
+  min-height: 28px;
+}
+
+.message-bar-custom.height-lg {
+  min-height: 40px;
+}

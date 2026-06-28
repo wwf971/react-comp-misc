@@ -80,3 +80,17 @@ export const calcRowIdsSelectedForClick = ({
   }
   return [rowId];
 };
+
+export const calcRowIdsSelectedForContextMenu = ({
+  rowIdsSelected,
+  rowId,
+  isMultipleSelection,
+}) => {
+  if (!isMultipleSelection) {
+    return [rowId];
+  }
+  if (rowIdsSelected.includes(rowId)) {
+    return rowIdsSelected;
+  }
+  return [rowId];
+};

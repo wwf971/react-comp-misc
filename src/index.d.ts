@@ -70,6 +70,59 @@ export const TabsOnTopTab: ComponentType<any>;
 export const TabsOnTopTabLabel: ComponentType<any>;
 
 export const Login: ComponentType<any>;
+export type MessageBarStatus = 'idle' | 'loading' | 'success' | 'error' | 'info';
+export type MessageBarContentItem = {
+  id: string;
+  type: 'text' | 'button' | 'custom' | string;
+  text?: string;
+  labelText?: string;
+  buttonKind?: 'dismiss' | string;
+  eventType?: string;
+  eventData?: Record<string, unknown>;
+  isDisabled?: boolean;
+  compKey?: string;
+  data?: Record<string, unknown>;
+  config?: Record<string, unknown>;
+  className?: string;
+  heightSize?: 'sm' | 'md' | 'lg' | string;
+};
+export type MessageBarData = {
+  messageState?: {
+    status?: MessageBarStatus | string;
+    messageText?: string;
+  } | null;
+  idleText?: string;
+  contentItems?: MessageBarContentItem[];
+};
+export type MessageBarConfig = {
+  isOneLine?: boolean;
+  isPersistent?: boolean;
+  isBusy?: boolean;
+  idleText?: string;
+  scrollLeft?: number;
+  isTitleEnabled?: boolean;
+  heightSize?: 'sm' | 'md' | 'lg' | string;
+  className?: string;
+  contentClassName?: string;
+  buttonClassName?: string;
+  getComp?: (item: MessageBarContentItem) => ComponentType<any> | null | undefined;
+};
+export type MessageBarEventData = {
+  itemId?: string;
+  itemData?: unknown;
+  scrollLeft?: number;
+  scrollLeftMax?: number;
+  deltaX?: number;
+  widthViewport?: number;
+  widthContent?: number;
+  [key: string]: unknown;
+};
+export type MessageBarProps = {
+  data?: MessageBarData;
+  config?: MessageBarConfig;
+  onEvent?: (eventType: string, eventData: MessageBarEventData) => Promise<unknown> | unknown;
+};
+export const MessageBar: ComponentType<MessageBarProps>;
 export type ConfigItemType = 'group' | 'boolean' | 'string' | 'number' | 'select' | 'tab' | 'tab-group' | 'subtab' | string;
 export type ConfigItem = {
   id: string;
@@ -347,7 +400,7 @@ export type FolderMessageState = {
 export type FolderViewData = {
   columns?: Record<string, FolderColumnDef>;
   colsOrder?: string[];
-  rows?: Array<{ id: string; data?: Record<string, unknown> }>;
+  rows?: Array<{ id: string; data?: Record<string, unknown>; rowClassName?: string }>;
   rowIdsSelected?: string[];
   viewCurrent?: 'list' | 'icon';
   contextMenuItems?: unknown[];
@@ -570,6 +623,7 @@ export type ButtonWithDropDownProps = {
     minWidth?: number;
     menuAlign?: 'left' | 'right';
     isClickPropagationStopped?: boolean;
+    title?: string;
   };
   onEvent?: (eventType: string, eventData: any) => void;
 };

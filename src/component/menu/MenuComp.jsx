@@ -18,7 +18,14 @@ const MenuComp = ({
 
   const requestBackdropContextMenu = (event) => {
     event.preventDefault();
+    event.stopPropagation();
     onEvent?.('backdropContextMenu', { event });
+  };
+
+  const requestBackdropClick = (event) => {
+    event.stopPropagation();
+    onEvent?.('backdropClick', { event });
+    requestClose();
   };
 
   const requestMenuEvent = (eventType, eventData) => {
@@ -47,7 +54,7 @@ const MenuComp = ({
     <>
       <div
         className={`menu-backdrop ${isBackdropScrollPassThrough ? 'is-scroll-pass-through' : ''}`.trim()}
-        onClick={isBackdropScrollPassThrough ? undefined : requestClose}
+        onClick={isBackdropScrollPassThrough ? undefined : requestBackdropClick}
         onContextMenu={isBackdropScrollPassThrough ? undefined : requestBackdropContextMenu}
       />
       <MenuCore

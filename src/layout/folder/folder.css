@@ -338,10 +338,17 @@
 }
 
 .folder-view-switcher-content.has-body-height {
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   width: 100%;
   min-width: 0;
+  scrollbar-gutter: stable;
+}
+
+.folder-view-switcher-content.has-body-height .folder-body {
+  flex: 1;
 }
 
 .folder-view-switcher-content.has-body-height .folder-header-root,
@@ -349,8 +356,8 @@
 .folder-view-switcher-content.has-body-height .folder-body,
 .folder-view-switcher-content.has-body-height .folder-body-row,
 .folder-view-switcher-content.has-body-height .folder-icon-view {
-  width: 100%;
-  min-width: 0;
+  width: max-content;
+  min-width: 100%;
 }
 
 .folder-view-switcher-content.has-body-height .folder-header-wrapper {
