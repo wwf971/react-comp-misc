@@ -119,6 +119,20 @@ body {
   padding-bottom: 6px;
 }
 
+.login-auto-token-row {
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+  color: #444444;
+  font-size: 12px;
+}
+
+.login-auto-token-row input {
+  margin: 0;
+}
+
 .mode-button {
   flex: 1;
   padding: 6px;

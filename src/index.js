@@ -56,6 +56,8 @@ export {
 export { default as TabsOnTop, Tab as TabsOnTopTab, TabLabel as TabsOnTopTabLabel } from "./layout/tab/TabsOnTop.jsx";
 
 export { default as Login } from "./component/auth/Login.jsx";
+export { default as AuthStatusButton } from "./component/auth/AuthStatusButton.jsx";
+export { default as createAuthStore } from "./component/auth/createAuthStore.js";
 export { default as MessageBar } from "./component/message-bar/MessageBar.jsx";
 
 export { default as ConfigPanel } from "./app/config-panel/Config.jsx";

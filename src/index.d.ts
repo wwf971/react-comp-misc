@@ -70,6 +70,20 @@ export const TabsOnTopTab: ComponentType<any>;
 export const TabsOnTopTabLabel: ComponentType<any>;
 
 export const Login: ComponentType<any>;
+export const AuthStatusButton: ComponentType<any>;
+export function createAuthStore(config: {
+  storageKey: string;
+  autoLoginStorageKey?: string;
+  endpoints?: {
+    login?: string;
+    tokenLogin?: string;
+    temporaryToken?: string;
+    logout?: string;
+  };
+  requestJsonData: (url: string, options?: RequestInit) => Promise<Record<string, unknown>>;
+  loginSuccessMessage?: string;
+  logoutSuccessMessage?: string;
+}): any;
 export type MessageBarStatus = 'idle' | 'loading' | 'success' | 'error' | 'info';
 export type MessageBarContentItem = {
   id: string;
@@ -179,8 +193,40 @@ export const ConfigPanelWithTabs: ComponentType<ConfigPanelProps>;
 export const ConfigPanelWithTabGroups: ComponentType<ConfigPanelProps>;
 export const ConfigPanelWithSubtabs: ComponentType<ConfigPanelProps>;
 export const PathBar: ComponentType<any>;
-export const KeyValues: ComponentType<any>;
-export const KeyValuesComp: ComponentType<any>;
+export type KeyValuesRowData = {
+  id?: string | number;
+  key?: unknown;
+  value?: unknown;
+  keyCompName?: string;
+  valueCompName?: string;
+  rowClassName?: string;
+  [key: string]: unknown;
+};
+export type KeyValuesCompData = {
+  rows?: KeyValuesRowData[];
+  selectedRowId?: string | number | null;
+};
+export type KeyValuesCompConfig = {
+  isEditable?: boolean;
+  isKeyEditable?: boolean;
+  isValueEditable?: boolean;
+  alignCol?: boolean;
+  keyColWidth?: string;
+  keyColWidthEffective?: string | null;
+  keyCellContentAlign?: 'left' | 'right' | 'center';
+  isWrap?: boolean;
+  isDividerDraggable?: boolean;
+  selectionMode?: 'none' | 'single';
+  compResolveFn?: (compName: string, context: Record<string, unknown>) => ComponentType<any> | null;
+  rowIdResolveFn?: (row: KeyValuesRowData) => string | number | null;
+};
+export type KeyValuesCompProps = {
+  data?: KeyValuesCompData | KeyValuesRowData[];
+  config?: KeyValuesCompConfig;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
+};
+export const KeyValues: ComponentType<KeyValuesCompProps>;
+export const KeyValuesComp: ComponentType<KeyValuesCompProps>;
 export const MetadataKeyValues: ComponentType<MetadataKeyValuesProps>;
 export const ButtonWithDropDown: ComponentType<ButtonWithDropDownProps>;
 export const EditableValueComp: ComponentType<any>;
@@ -488,6 +534,7 @@ export type ItemListProps = {
   data?: {
     items?: SideListItemData[];
     selectedItemKey?: string;
+    searchText?: string;
   };
   config?: {
     titleText?: string;
@@ -590,6 +637,7 @@ export type MetadataKeyValuesData = {
 export type MetadataKeyValuesConfig = {
   isLocked?: boolean;
   isEditable?: boolean;
+  isMessageVisible?: boolean;
   keyColWidth?: string;
   requestTimeoutMs?: number;
 };

@@ -1,7 +1,10 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
-import { runInAction } from 'mobx';
 import './KeyValues.css';
+import {
+  createKeyValuesCellChangeHandler,
+  normalizeKeyValuesProps,
+} from './keyValuesPropsNormalize.js';
 
 /**
  * Default Text component for displaying text data
@@ -95,14 +98,8 @@ const DefaultTextComp = ({
     if (editRef.current) {
       const newValue = editRef.current.textContent;
       
-      if (newValue !== originalValueRef.current) {
-        if (onChangeAttempt) {
-          onChangeAttempt(index, field, newValue);
-        } else if (itemRef && field) {
-          runInAction(() => {
-            itemRef[field] = newValue;
-          });
-        }
+      if (newValue !== originalValueRef.current && onChangeAttempt) {
+        onChangeAttempt(index, field, newValue);
       }
     }
     
@@ -147,49 +144,31 @@ const MemoizedDefaultTextComp = React.memo(DefaultTextComp, (prev, next) => {
          prev.itemRef === next.itemRef;
 });
 
-/**
- * KeyValuesComp component for displaying key-value pairs with custom components
- * 
- * MobX Support:
- * - Use observable([...]) from mobx to enable in-place mutations on arrays
- * - Component will auto-track accessed properties and re-render only affected rows
- * - Backward compatible: works with plain arrays and onChangeAttempt callback
- * 
- * @param {Object} props
- * @param {Array<{key: any, keyCompName?: string, value: any, valueCompName?: string}>} props.data - Array of key-value pairs with optional custom component names (can be observable)
- * @param {boolean} props.isEditable - Whether the data is editable (default: true)
- * @param {boolean} props.isKeyEditable - Whether keys are editable (default: false)
- * @param {boolean} props.isValueEditable - Whether values are editable (default: true)
- * @param {boolean} props.alignColumn - Whether to align key/value columns (default: true)
- * @param {string} props.keyColWidth - Width of key column: 'min' for auto-calculated, or fixed like '200px' (default: 'min')
- * @param {Function} props.onChangeAttempt - Callback when user attempts to change a key or value: (index, field, newValue) => void
- * @param {Function} props.getComp - Resolve component by name: (name, context) => React.Component | null
- * @param {boolean} props.isDividerDraggable - Whether the key/value divider line can be dragged to resize columns (default: false)
- * @param {boolean} props.isWrap - Whether cell content wraps to the next line when it overflows; false clips with ellipsis (default: false)
- * @param {'none'|'single'} props.selectionMode - Row selection mode (default: 'none')
- * @param {Function} props.onSelectionChange - Callback when selected row changes: (rowId | null) => void
- * @param {string|number|null} props.selectedRowId - Optional controlled selected row id for single selection mode
- * @param {Function} props.getRowId - Optional id resolver: (item) => rowId
- */
-const KeyValuesCompInner = ({ 
-  data = [], 
-  isEditable = true, 
-  isKeyEditable = false, 
-  isValueEditable = true,
-  isDividerDraggable = false,
-  isWrap = false,
-  alignColumn = true,
-  keyColWidth = 'min',
-  onChangeAttempt,
-  getComp,
-  selectionMode = 'none',
-  onSelectionChange,
-  selectedRowId: controlledSelectedRowId,
-  getRowId,
+const KeyValuesCompInner = ({
+  data = {},
+  config = {},
+  onEvent,
 }) => {
-  const [keyColWidthValue, setKeyColWidthValue] = useState(null);
+  const normalized = normalizeKeyValuesProps({ data, config, onEvent });
+  const {
+    rows,
+    selectedRowId,
+    isEditable,
+    isKeyEditable,
+    isValueEditable,
+    alignCol,
+    keyColWidth,
+    keyColWidthEffective,
+    keyCellContentAlign,
+    isWrap,
+    isDividerDraggable,
+    selectionMode,
+    compResolveFn,
+    rowIdResolveFn,
+  } = normalized;
+
+  const [keyColWidthLocal, setKeyColWidthLocal] = useState(null);
   const [isDividerDragging, setIsDividerDragging] = useState(false);
-  const [internalSelectedRowId, setInternalSelectedRowId] = useState(null);
   const containerRef = useRef(null);
   const generatedRowIdMapRef = useRef(new WeakMap());
   const generatedRowIdCounterRef = useRef(1);
@@ -206,14 +185,15 @@ const KeyValuesCompInner = ({
   const canEditKey = isEditable && isKeyEditable;
   const canEditValue = isEditable && isValueEditable;
   const cellOverflowClass = isWrap ? 'cell-wrap' : 'cell-clip';
+  const normalizedKeyCellContentAlign = ['left', 'right', 'center'].includes(keyCellContentAlign)
+    ? keyCellContentAlign
+    : 'right';
+  const keyCellContentAlignClass = `key-cell-content-align-${normalizedKeyCellContentAlign}`;
   const isSelectionEnabled = selectionMode === 'single';
-  const isSelectionControlled = controlledSelectedRowId !== undefined;
-  const effectiveSelectedRowId = isSelectionControlled
-    ? (controlledSelectedRowId ?? null)
-    : internalSelectedRowId;
+  const effectiveSelectedRowId = selectedRowId ?? null;
   const resolveRowId = useCallback((item) => {
-    if (getRowId) {
-      const rowId = getRowId(item);
+    if (rowIdResolveFn) {
+      const rowId = rowIdResolveFn(item);
       return rowId === undefined || rowId === null ? null : rowId;
     }
     if (item && typeof item === 'object' && item.id !== undefined && item.id !== null) {
@@ -228,7 +208,26 @@ const KeyValuesCompInner = ({
       return generatedMap.get(item);
     }
     return null;
-  }, [getRowId]);
+  }, [rowIdResolveFn]);
+
+  const emitSelectedRowIdChange = useCallback((nextSelectedRowId) => {
+    if (onEvent) {
+      onEvent('selectedRowIdChange', { selectedRowId: nextSelectedRowId });
+    }
+  }, [onEvent]);
+
+  const emitKeyColWidthChange = useCallback((nextKeyColWidthEffective) => {
+    if (onEvent) {
+      onEvent('keyColWidthChange', { keyColWidthEffective: nextKeyColWidthEffective });
+    }
+  }, [onEvent]);
+
+  const setKeyColWidthValue = useCallback((nextWidth) => {
+    setKeyColWidthLocal(nextWidth);
+    emitKeyColWidthChange(nextWidth);
+  }, [emitKeyColWidthChange]);
+
+  const keyColWidthValue = keyColWidthEffective ?? keyColWidthLocal;
 
   const handleRowMouseDownCapture = useCallback((rowId, event) => {
     if (!isSelectionEnabled) return;
@@ -239,11 +238,7 @@ const KeyValuesCompInner = ({
     }, 0);
     const targetElement = event.target;
     if (!(targetElement instanceof Element)) {
-      if (isSelectionControlled && onSelectionChange) {
-        onSelectionChange(rowId);
-      } else {
-        setInternalSelectedRowId(rowId);
-      }
+      emitSelectedRowIdChange(rowId);
       return;
     }
     if (
@@ -253,12 +248,8 @@ const KeyValuesCompInner = ({
     ) {
       return;
     }
-    if (isSelectionControlled && onSelectionChange) {
-      onSelectionChange(rowId);
-    } else {
-      setInternalSelectedRowId(rowId);
-    }
-  }, [isSelectionEnabled, isSelectionControlled, onSelectionChange]);
+    emitSelectedRowIdChange(rowId);
+  }, [isSelectionEnabled, emitSelectedRowIdChange]);
 
   const handleRowContextMenuCapture = useCallback((rowId) => {
     if (!isSelectionEnabled) return;
@@ -267,12 +258,8 @@ const KeyValuesCompInner = ({
     setTimeout(() => {
       internalMouseDownRef.current = false;
     }, 0);
-    if (isSelectionControlled && onSelectionChange) {
-      onSelectionChange(rowId);
-    } else {
-      setInternalSelectedRowId(rowId);
-    }
-  }, [isSelectionEnabled, isSelectionControlled, onSelectionChange]);
+    emitSelectedRowIdChange(rowId);
+  }, [isSelectionEnabled, emitSelectedRowIdChange]);
 
   const startDividerDrag = useCallback((event) => {
     event.preventDefault();
@@ -311,7 +298,6 @@ const KeyValuesCompInner = ({
 
   useEffect(() => {
     if (!isSelectionEnabled) {
-      setInternalSelectedRowId(null);
       return;
     }
     const handleDocumentMouseDown = (event) => {
@@ -325,39 +311,26 @@ const KeyValuesCompInner = ({
         const targetElement = event.target;
         if (targetElement instanceof Node && container.contains(targetElement)) return;
       }
-      if (isSelectionControlled && onSelectionChange) {
-        onSelectionChange(null);
-      } else {
-        setInternalSelectedRowId(null);
-      }
+      emitSelectedRowIdChange(null);
     };
     document.addEventListener('mousedown', handleDocumentMouseDown);
     return () => {
       document.removeEventListener('mousedown', handleDocumentMouseDown);
     };
-  }, [isSelectionEnabled, isSelectionControlled, onSelectionChange]);
-
-  useEffect(() => {
-    if (effectiveSelectedRowId === null) return;
-    if (!data.some((item) => resolveRowId(item) === effectiveSelectedRowId) && !isSelectionControlled) {
-      setInternalSelectedRowId(null);
-    }
-  }, [data, effectiveSelectedRowId, resolveRowId, isSelectionControlled]);
-
-  useEffect(() => {
-    if (isSelectionControlled) return;
-    if (onSelectionChange) {
-      onSelectionChange(internalSelectedRowId);
-    }
-  }, [internalSelectedRowId, onSelectionChange, isSelectionControlled]);
+  }, [isSelectionEnabled, emitSelectedRowIdChange]);
 
   const resolveComp = useCallback((compName, context) => {
-    if (!compName || !getComp) {
+    if (!compName || !compResolveFn) {
       return MemoizedDefaultTextComp;
     }
-    const resolvedComp = getComp(compName, context);
+    const resolvedComp = compResolveFn(compName, context);
     return resolvedComp || MemoizedDefaultTextComp;
-  }, [getComp]);
+  }, [compResolveFn]);
+
+  const onChangeAttempt = useMemo(
+    () => createKeyValuesCellChangeHandler(onEvent, resolveRowId, rows),
+    [onEvent, resolveRowId, rows],
+  );
 
   // Measure the natural width of each key cell and find the maximum
   // Keeps measuring until width stabilizes (for custom components that take time to render)
@@ -434,7 +407,7 @@ const KeyValuesCompInner = ({
         measureMaxWidth(true);
       }, 150);
     }
-  }, []);
+  }, [setKeyColWidthValue]);
 
   // Calculate minimum key column width when keyColWidth is 'min'
   // useLayoutEffect prevents first-paint divider jitter for sync-measurable content.
@@ -450,18 +423,22 @@ const KeyValuesCompInner = ({
       resizeObserverRef.current = null;
     }
 
-    if (!alignColumn) {
-      setKeyColWidthValue(null);
+    if (!alignCol) {
+      setKeyColWidthLocal(null);
+      return;
+    }
+
+    if (keyColWidthEffective) {
       return;
     }
     
     if (keyColWidth !== 'min') {
-      setKeyColWidthValue(keyColWidth);
+      setKeyColWidthLocal(keyColWidth);
       return;
     }
     
-    if (data.length === 0) {
-      setKeyColWidthValue(null);
+    if (rows.length === 0) {
+      setKeyColWidthLocal(null);
       return;
     }
 
@@ -510,25 +487,25 @@ const KeyValuesCompInner = ({
       measureAttemptsRef.current = 0;
       lastMeasuredWidthRef.current = 0;
     };
-  }, [data, alignColumn, keyColWidth, measureMaxWidth]); // Watch data directly, not just data.length
+  }, [rows, alignCol, keyColWidth, keyColWidthEffective, measureMaxWidth]);
 
   return (
     <div className="keyvalues-container" ref={containerRef}>
-      {data.length === 0 ? (
+      {rows.length === 0 ? (
         <div className="keyvalues-empty">No data</div>
       ) : (
         <div
           className={`keyvalues-list${isDividerDragging ? ' divider-dragging' : ''}`}
           ref={listRef}
         >
-          {isDividerDraggable && alignColumn && keyColWidthValue && (
+          {isDividerDraggable && alignCol && keyColWidthValue && (
             <div
               className={`keyvalues-divider-handle${isDividerDragging ? ' dragging' : ''}`}
               style={{ left: keyColWidthValue }}
               onMouseDown={startDividerDrag}
             />
           )}
-          {data.map((item, index) => {
+          {rows.map((item, index) => {
             const rowId = resolveRowId(item);
             const keyContext = { item, index, field: 'key' };
             const valueContext = { item, index, field: 'value' };
@@ -538,20 +515,20 @@ const KeyValuesCompInner = ({
             return (
               <div 
                 key={rowId === null ? `row_${index}` : `row_${String(rowId)}`} 
-                className={`keyvalues-row${alignColumn && keyColWidthValue ? ' show-divider' : ''}${isSelectionEnabled && rowId !== null && rowId === effectiveSelectedRowId ? ' selected-row' : ''}${canEditKey || canEditValue ? ' is-row-editable' : ''} ${String(item?.rowClassName || '')}`}
+                className={`keyvalues-row${alignCol && keyColWidthValue ? ' show-divider' : ''}${isSelectionEnabled && rowId !== null && rowId === effectiveSelectedRowId ? ' selected-row' : ''}${canEditKey || canEditValue ? ' is-row-editable' : ''} ${String(item?.rowClassName || '')}`}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
-                  ...(alignColumn && keyColWidthValue ? { '--key-col-width': keyColWidthValue } : {})
+                  ...(alignCol && keyColWidthValue ? { '--key-col-width': keyColWidthValue } : {})
                 }}
                 onMouseDownCapture={(event) => handleRowMouseDownCapture(rowId, event)}
                 onContextMenuCapture={() => handleRowContextMenuCapture(rowId)}
               >
                 <div 
-                  className={`keyvalues-cell key-cell ${cellOverflowClass} ${canEditKey ? 'editable' : ''}`}
-                  style={alignColumn && keyColWidthValue ? { width: keyColWidthValue, flexShrink: 0 } : {}}
+                  className={`keyvalues-cell key-cell ${cellOverflowClass} ${keyCellContentAlignClass} ${canEditKey ? 'editable' : ''}`}
+                  style={alignCol && keyColWidthValue ? { width: keyColWidthValue, flexShrink: 0 } : {}}
                 >
-                  <span ref={(el) => { keyRefs.current[index] = el; }}>
+                  <span className="key-cell-content-wrap" ref={(el) => { keyRefs.current[index] = el; }}>
                     <KeyComp 
                       data={item.key}
                       onChangeAttempt={onChangeAttempt}
@@ -565,7 +542,7 @@ const KeyValuesCompInner = ({
                 </div>
                 <div 
                   className={`keyvalues-cell value-cell ${cellOverflowClass} ${canEditValue ? 'editable' : ''}`}
-                  style={alignColumn ? { flex: 1 } : {}}
+                  style={alignCol ? { flex: 1 } : {}}
                 >
                   <ValueComp 
                     data={item.value}

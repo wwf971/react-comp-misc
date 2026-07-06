@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import Login from './Login.jsx';
+import AuthStatusButton from './AuthStatusButton.jsx';
 import './example.css';
 
 function createLoginDemoStore() {
@@ -14,12 +15,14 @@ function createLoginDemoStore() {
     isLoading: false,
     isLoggedIn: false,
     isPasswordVisible: false,
+    isAutoLoginEnabled: true,
     loginMode: 'credentials',
     loginStatus: '',
     userState: 'anonymous',
     init() {
       if (typeof window === 'undefined' || !window.localStorage) return;
       const savedToken = window.localStorage.getItem('authTokenDemo');
+      this.isAutoLoginEnabled = window.localStorage.getItem('authTokenDemoAutoLogin') !== 'false';
       if (!savedToken) return;
       this.token = savedToken;
       this.message = 'Saved token is available.';
@@ -28,11 +31,26 @@ function createLoginDemoStore() {
     logout() {
       this.isLoggedIn = false;
       this.userState = 'anonymous';
+      this.token = '';
       this.loginStatus = '';
       this.message = 'Logged out.';
       this.messageType = 'success';
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem('authTokenDemo');
+      }
+    },
+    goToLoginPage() {
+      this.isLoggedIn = false;
+      this.userState = 'login-page';
+      this.loginMode = this.token ? 'token' : 'credentials';
+      this.message = 'Token is kept. Auto login is paused.';
+      this.messageType = 'success';
+      this.setAutoLoginEnabled(false);
+    },
+    setAutoLoginEnabled(isEnabled) {
+      this.isAutoLoginEnabled = Boolean(isEnabled);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('authTokenDemoAutoLogin', this.isAutoLoginEnabled ? 'true' : 'false');
       }
     },
     async onDataChangeRequest(type, params = {}) {
@@ -57,6 +75,10 @@ function createLoginDemoStore() {
         this.isPasswordVisible = !this.isPasswordVisible;
         return { code: 0 };
       }
+      if (type === 'set-auto-login-enabled') {
+        this.setAutoLoginEnabled(params.isAutoLoginEnabled === true);
+        return { code: 0 };
+      }
       if (type === 'submit-credentials') {
         if (!this.username || !this.password) {
           this.message = 'Username and password are required.';
@@ -72,6 +94,7 @@ function createLoginDemoStore() {
             this.token = nextToken;
             this.isLoggedIn = true;
             this.userState = 'authenticated';
+            this.isAutoLoginEnabled = true;
             this.loginStatus = 'Logged in as demo user.';
             this.message = 'Login successful.';
             this.messageType = 'success';
@@ -99,6 +122,7 @@ function createLoginDemoStore() {
           this.isLoading = false;
           this.isLoggedIn = true;
           this.userState = 'authenticated';
+          this.isAutoLoginEnabled = true;
           this.loginStatus = 'Logged in with saved token.';
           this.message = 'Token login successful.';
           this.messageType = 'success';
@@ -117,6 +141,27 @@ const LoginExamplePanel = observer(() => {
   const [loginStore] = useState(() => createLoginDemoStore());
   return (
     <div className="auth-login-demo-root">
+      <div className="auth-login-demo-header-row">
+        <div className="auth-login-demo-header-title">Auth status button</div>
+        <AuthStatusButton
+          data={{
+            isLoggedIn: loginStore.isLoggedIn,
+            username: loginStore.username,
+          }}
+          config={{
+            minWidth: 170,
+            menuAlign: 'right',
+          }}
+          onEvent={(eventType) => {
+            if (eventType === 'go-login') {
+              loginStore.goToLoginPage();
+            }
+            if (eventType === 'sign-out') {
+              loginStore.logout();
+            }
+          }}
+        />
+      </div>
       <div className="auth-login-demo-box">
         <Login
           title="Login"

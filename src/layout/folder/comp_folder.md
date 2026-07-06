@@ -1,3 +1,8 @@
+
+The following are the points to be careful about, when utilizing FolderView.jsx and the series of componetns in the same folder.
+
+You can also refer to ./example.jsx, for exmaples that demonstrate how some features can be implemented when using this series of components.
+
 ## Horizontal Scroll Bar Behavior
 
 When the panel is wide enough for all visible columns, there should be no horizontal scroll bar.

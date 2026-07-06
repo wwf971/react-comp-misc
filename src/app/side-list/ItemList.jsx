@@ -81,7 +81,9 @@ const ItemList = ({
   const resolvedSearchPlaceholder = config?.searchPlaceholder ?? searchPlaceholder ?? 'Search...';
   const resolvedIsSearchEnabled = config?.isSearchEnabled ?? (isSearchEnabled !== false);
   const resolvedIsHeaderVisible = config?.isHeaderVisible ?? (isHeaderVisible !== false);
-  const [searchText, setSearchText] = useState('');
+  const isSearchTextControlled = data?.searchText !== undefined;
+  const [searchTextLocal, setSearchTextLocal] = useState('');
+  const searchText = isSearchTextControlled ? String(data?.searchText ?? '') : searchTextLocal;
 
   const filteredItems = useMemo(() => {
     const normalized = searchText.trim().toLowerCase();
@@ -118,7 +120,9 @@ const ItemList = ({
             value={searchText}
             onChange={(event) => {
               const nextSearchText = event.target.value;
-              setSearchText(nextSearchText);
+              if (!isSearchTextControlled) {
+                setSearchTextLocal(nextSearchText);
+              }
               if (onEvent) {
                 onEvent('searchTextChange', { searchText: nextSearchText });
               }

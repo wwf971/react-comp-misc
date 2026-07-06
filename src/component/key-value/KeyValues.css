@@ -91,8 +91,63 @@
   color: #1a1a1a;
 }
 
+.key-cell-content-align-left {
+  text-align: left;
+}
+
+.key-cell-content-align-right {
+  text-align: right;
+}
+
+.key-cell-content-align-center {
+  text-align: center;
+}
+
 .key-cell.cell-clip {
   overflow: hidden;
+  min-width: 0;
+}
+
+.key-cell.cell-clip.key-cell-content-align-left {
+  text-align: left;
+}
+
+.key-cell.cell-clip.key-cell-content-align-right {
+  direction: rtl;
+  text-align: left;
+  padding-right: 2px;
+}
+
+.key-cell.cell-clip.key-cell-content-align-right:has(.keyvalues-text.editing) {
+  direction: ltr;
+  text-align: right;
+  padding-right: 6px;
+}
+
+.key-cell.cell-clip.key-cell-content-align-center {
+  text-align: center;
+}
+
+.key-cell-content-wrap {
+  min-width: 0;
+}
+
+.key-cell.cell-clip .key-cell-content-wrap {
+  display: inline;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.key-cell.cell-clip.key-cell-content-align-right .key-cell-content-wrap {
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+.key-cell.cell-clip .keyvalues-text {
+  display: inline;
+  overflow: visible;
+  white-space: inherit;
+  word-break: normal;
 }
 
 .key-cell.cell-wrap {
@@ -119,6 +174,15 @@
   outline: none;
 }
 
+.value-cell.cell-clip .keyvalues-text {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+  word-break: normal;
+}
+
 .keyvalues-text.editing {
   background: #ffffff;
   border: 1px solid #0078d7;
@@ -136,5 +200,26 @@
   text-align: center;
   color: #999999;
   font-style: italic;
+}
+
+.keyvalues-example-data-panel {
+  margin-top: 16px;
+  padding: 8px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  font-size: 12px;
+}
+
+.keyvalues-example-data-title {
+  font-weight: 600;
+}
+
+.keyvalues-example-json-text {
+  margin: 4px 0 0 0;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 

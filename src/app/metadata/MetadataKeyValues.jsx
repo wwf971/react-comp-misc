@@ -15,6 +15,7 @@ const MetadataKeyValues = ({
   const messageState = data?.messageState ?? null;
   const isLocked = Boolean(config?.isLocked);
   const isEditable = config?.isEditable === undefined ? true : Boolean(config.isEditable);
+  const isMessageVisible = config?.isMessageVisible !== false;
   const keyColWidth = config?.keyColWidth || '180px';
   const requestTimeoutMs = config?.requestTimeoutMs ?? 8000;
   const [pendingCell, setPendingCell] = useState(null);
@@ -131,7 +132,7 @@ const MetadataKeyValues = ({
   return (
     <div className="metadata-kv-root">
       <div className="metadata-kv-title">{titleText}</div>
-      {effectiveMessageState?.messageText ? (
+      {isMessageVisible && effectiveMessageState?.messageText ? (
         <div className={`metadata-kv-message status-${String(effectiveMessageState.status || 'idle')}`}>
           {effectiveMessageState.status === 'loading' ? <SpinningCircle width={13} height={13} /> : null}
           <div className="metadata-kv-message-content">
@@ -206,21 +207,27 @@ const MetadataKeyValues = ({
       </div>
       <div className={`metadata-kv-table ${effectiveLocked ? 'is-locked' : ''}`}>
         <KeyValuesComp
-          data={tableData}
-          isEditable={!effectiveLocked && isEditable}
-          isKeyEditable={!effectiveLocked && isEditable}
-          isValueEditable={!effectiveLocked && isEditable}
-          keyColWidth={keyColWidth}
-          selectionMode="single"
-          selectedRowId={selectedRowId}
-          onSelectionChange={(nextSelectedRowId) => {
-            emitEvent('selectedRowIdChange', { selectedRowId: nextSelectedRowId });
+          data={{
+            rows: tableData,
+            selectedRowId,
           }}
-          getComp={(name) => {
-            if (name === 'editable') {
-              return EditableMetadataComp;
+          config={{
+            isEditable: !effectiveLocked && isEditable,
+            isKeyEditable: !effectiveLocked && isEditable,
+            isValueEditable: !effectiveLocked && isEditable,
+            keyColWidth,
+            selectionMode: 'single',
+            compResolveFn: (name) => {
+              if (name === 'editable') {
+                return EditableMetadataComp;
+              }
+              return null;
+            },
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'selectedRowIdChange') {
+              emitEvent('selectedRowIdChange', eventData);
             }
-            return null;
           }}
         />
       </div>

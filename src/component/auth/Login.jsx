@@ -67,6 +67,18 @@ const Login = observer(function Login({
               </div>
             ) : null}
 
+            {useAuthToken ? (
+              <label className="login-auto-token-row">
+                <input
+                  type="checkbox"
+                  checked={data?.isAutoLoginEnabled === true}
+                  onChange={(e) => handleDataChangeRequest('set-auto-login-enabled', { isAutoLoginEnabled: e.target.checked })}
+                  disabled={data?.isLoading}
+                />
+                <span>auto login with token</span>
+              </label>
+            ) : null}
+
             {data?.loginMode === 'credentials' && (
               <form onSubmit={handleCredentialsLogin}>
                 <div className="form-group">
@@ -75,6 +87,7 @@ const Login = observer(function Login({
                     type="text"
                     id="username"
                     className="login-input-field"
+                    autoComplete="username"
                     value={data?.username || ''}
                     onChange={(e) => handleDataChangeRequest('set-username', { username: e.target.value })}
                     required
@@ -88,6 +101,7 @@ const Login = observer(function Login({
                       type={data?.isPasswordVisible ? 'text' : 'password'}
                       id="password"
                       className="login-input-field login-password-input"
+                      autoComplete="current-password"
                       value={data?.password || ''}
                       onChange={(e) => handleDataChangeRequest('set-password', { password: e.target.value })}
                       required

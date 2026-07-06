@@ -179,13 +179,18 @@ const ClickingOutsidePanel = observer(() => {
       </div>
 
       <KeyValuesComp
-        data={store.rows}
-        selectionMode="single"
-        selectedRowId={selectedRowId}
-        onSelectionChange={setSelectedRowId}
-        isKeyEditable={true}
-        isValueEditable={true}
-        getComp={getComp}
+        data={{ rows: store.rows, selectedRowId }}
+        config={{
+          selectionMode: 'single',
+          isKeyEditable: true,
+          isValueEditable: true,
+          compResolveFn: getComp,
+        }}
+        onEvent={(eventType, eventData) => {
+          if (eventType === 'selectedRowIdChange') {
+            setSelectedRowId(eventData.selectedRowId);
+          }
+        }}
       />
 
       <div style={{ marginTop: '8px', border: '1px solid #ddd', background: '#fafafa', padding: '4px', fontSize: '12px' }}>

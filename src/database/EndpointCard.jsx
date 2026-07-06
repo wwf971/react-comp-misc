@@ -200,9 +200,8 @@ const EndpointCard = ({
       {keyValues.length > 0 ? (
         <div className="endpoint-card-kv">
           <KeyValues
-            data={keyValues}
-            isEditable={false}
-            keyColWidth={keyColWidth}
+            data={{ rows: keyValues }}
+            config={{ isEditable: false, keyColWidth }}
           />
         </div>
       ) : null}

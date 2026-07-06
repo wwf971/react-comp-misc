@@ -1,5 +1,6 @@
 .tree-view {
   width: 100%;
+  box-sizing: border-box;
   border: 1px solid #d0d0d0;
   border-radius: 2px;
   background: #fff;
@@ -8,13 +9,16 @@
 
 .tree-view-node-block {
   width: 100%;
+  box-sizing: border-box;
 }
 
 .tree-view-node-content {
   width: 100%;
+  box-sizing: border-box;
 }
 
 .tree-view-row {
+  box-sizing: border-box;
   min-height: 22px;
   height: auto;
   display: flex;

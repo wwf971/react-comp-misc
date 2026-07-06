@@ -16,6 +16,21 @@
   justify-content: center;
 }
 
+.auth-login-demo-header-row {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.auth-login-demo-header-title {
+  color: #333;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .auth-login-demo-state {
   display: flex;
   gap: 4px;

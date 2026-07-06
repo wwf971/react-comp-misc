@@ -272,6 +272,24 @@ const DictExamplesPanel = observer(() => {
     return null;
   }, [handleAction]);
 
+  const handleBasicCellUpdate = useCallback((eventType, eventData) => {
+    if (eventType !== 'cellUpdate') {
+      return;
+    }
+    runInAction(() => {
+      const row = store.basicData[eventData.rowIndex];
+      if (row && eventData.field) {
+        row[eventData.field] = eventData.nextValue;
+      }
+    });
+  }, [store.basicData]);
+
+  const handleActionPanelEvent = useCallback((eventType, eventData) => {
+    if (eventType === 'selectedRowIdChange') {
+      setSelectedActionRowId(eventData.selectedRowId);
+    }
+  }, []);
+
   return (
     <div style={{ maxWidth: '900px', padding: '12px' }}>
       <div style={{ marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
@@ -303,37 +321,86 @@ const DictExamplesPanel = observer(() => {
         </button>
       </div>
 
-      <KeyValues 
-        data={store.basicData}
-        isKeyEditable={true}
+      <KeyValues
+        data={{ rows: store.basicData }}
+        config={{ isKeyEditable: true }}
+        onEvent={handleBasicCellUpdate}
       />
 
       <div style={{ marginTop: '20px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
         KeyValues - Column Alignment Options
       </div>
+
+      <div style={{ marginBottom: '10px', fontSize: '12px', color: '#666' }}>
+        alignCol controls whether all rows share one key column width and show a vertical divider between key and value.
+        This is different from keyCellContentAlign, which only controls text alignment inside each key cell.
+      </div>
       
       <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        Auto width (keyColWidth="min")
+        Auto width (keyColWidth="min"). Key column width follows the widest key. Vertical divider is shown.
       </div>
-      <KeyValues 
-        data={store.basicData}
-        keyColWidth="min"
+      <KeyValues
+        data={{ rows: store.basicData }}
+        config={{ keyColWidth: 'min' }}
       />
 
       <div style={{ marginTop: '16px', marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        Fixed width (keyColWidth="200px")
+        Fixed width (keyColWidth="200px"). All rows use the same key column width. Vertical divider is shown.
       </div>
-      <KeyValues 
-        data={store.basicData}
-        keyColWidth="200px"
+      <KeyValues
+        data={{ rows: store.basicData }}
+        config={{ keyColWidth: '200px' }}
+      />
+
+      <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
+        KeyValues - Key Cell Content Alignment
+      </div>
+
+      <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
+        Default is right. With fixed width and clip mode, long key text is hidden instead of wrapping.
+      </div>
+      <KeyValues
+        data={{
+          rows: [
+            { key: 'short', value: 'Default right alignment' },
+            { key: 'very_long_key_name_hidden_by_fixed_width', value: 'Long key is clipped' },
+          ],
+        }}
+        config={{ keyColWidth: '130px' }}
+      />
+
+      <div style={{ marginTop: '12px', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+        Left
+      </div>
+      <KeyValues
+        data={{
+          rows: [
+            { key: 'short', value: 'Left aligned key' },
+            { key: 'very_long_key_name_hidden_by_fixed_width', value: 'Long key is clipped' },
+          ],
+        }}
+        config={{ keyColWidth: '130px', keyCellContentAlign: 'left' }}
+      />
+
+      <div style={{ marginTop: '12px', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
+        Center
+      </div>
+      <KeyValues
+        data={{
+          rows: [
+            { key: 'short', value: 'Center aligned key' },
+            { key: 'very_long_key_name_hidden_by_fixed_width', value: 'Long key is clipped' },
+          ],
+        }}
+        config={{ keyColWidth: '130px', keyCellContentAlign: 'center' }}
       />
 
       <div style={{ marginTop: '16px', marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        No alignment (alignColumn=false)
+        No column alignment (alignCol=false). Each row sizes its key cell independently, so key columns do not line up across rows. Vertical divider is not shown in this mode.
       </div>
-      <KeyValues 
-        data={store.basicData}
-        alignColumn={false}
+      <KeyValues
+        data={{ rows: store.basicData }}
+        config={{ alignCol: false }}
       />
 
       <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
@@ -343,10 +410,9 @@ const DictExamplesPanel = observer(() => {
       <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
         Custom components with info icons
       </div>
-      <KeyValuesComp 
-        data={store.dataWithComp}
-        isValueEditable={true}
-        getComp={getComp}
+      <KeyValuesComp
+        data={{ rows: store.dataWithComp }}
+        config={{ isValueEditable: true, compResolveFn: getComp }}
       />
 
       <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
@@ -358,13 +424,17 @@ const DictExamplesPanel = observer(() => {
       </div>
       
       <div ref={actionPanelRef} style={{ position: 'relative', paddingRight: '126px' }}>
-        <KeyValuesComp 
-          data={store.dataWithActions}
-          isValueEditable={true}
-          getComp={getComp}
-          selectionMode="single"
-          onSelectionChange={setSelectedActionRowId}
-          selectedRowId={selectedActionRowId}
+        <KeyValuesComp
+          data={{
+            rows: store.dataWithActions,
+            selectedRowId: selectedActionRowId,
+          }}
+          config={{
+            isValueEditable: true,
+            compResolveFn: getComp,
+            selectionMode: 'single',
+          }}
+          onEvent={handleActionPanelEvent}
         />
 
         {selectedActionRowIndex >= 0 && (
@@ -503,23 +573,26 @@ const DictExamplesPanel = observer(() => {
         Clip (default)
       </div>
       <KeyValues
-        data={[
-          { key: 'short_key', value: 'Short value' },
-          { key: 'a_very_long_key_name_that_overflows', value: 'A value that is also quite long and would normally overflow the available cell width' }
-        ]}
-        keyColWidth="120px"
+        data={{
+          rows: [
+            { key: 'short_key', value: 'Short value' },
+            { key: 'a_very_long_key_name_that_overflows', value: 'A value that is also quite long and would normally overflow the available cell width' },
+          ],
+        }}
+        config={{ keyColWidth: '120px' }}
       />
 
       <div style={{ marginTop: '12px', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
         Wrap (isWrap=true)
       </div>
       <KeyValues
-        data={[
-          { key: 'short_key', value: 'Short value' },
-          { key: 'a_very_long_key_name_that_overflows', value: 'A value that is also quite long and would normally overflow the available cell width' }
-        ]}
-        keyColWidth="120px"
-        isWrap={true}
+        data={{
+          rows: [
+            { key: 'short_key', value: 'Short value' },
+            { key: 'a_very_long_key_name_that_overflows', value: 'A value that is also quite long and would normally overflow the available cell width' },
+          ],
+        }}
+        config={{ keyColWidth: '120px', isWrap: true }}
       />
 
       <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
@@ -530,14 +603,14 @@ const DictExamplesPanel = observer(() => {
         Hover the divider line and drag to resize columns
       </div>
       <KeyValuesComp
-        data={store.basicData}
-        isKeyEditable={true}
-        isDividerDraggable={true}
+        data={{ rows: store.basicData }}
+        config={{ isKeyEditable: true, isDividerDraggable: true }}
+        onEvent={handleBasicCellUpdate}
       />
 
-      <div style={{ marginTop: '16px', padding: '8px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '2px', fontSize: '12px' }}>
-        <strong>Current Data:</strong>
-        <pre style={{ margin: '4px 0', fontSize: '11px' }}>{JSON.stringify(store.basicData, null, 2)}</pre>
+      <div className="keyvalues-example-data-panel">
+        <div className="keyvalues-example-data-title">Current Data:</div>
+        <div className="keyvalues-example-json-text">{JSON.stringify(store.basicData, null, 2)}</div>
       </div>
     </div>
   );

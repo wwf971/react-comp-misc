@@ -27,7 +27,10 @@ const SegmentedControl = ({
     if (!selectedButton || !trackElement) return;
     const nextLeft = Number(selectedButton.offsetLeft || 0);
     const nextWidth = Number(selectedButton.offsetWidth || 0);
-    setHighlightMetrics({ left: nextLeft, width: nextWidth });
+    setHighlightMetrics((metricsPrev) => {
+      if (metricsPrev.left === nextLeft && metricsPrev.width === nextWidth) return metricsPrev;
+      return { left: nextLeft, width: nextWidth };
+    });
   }, [count, hasSelection, isAutoWidthMode, selectedIndex, options]);
 
   const trackStyle = {

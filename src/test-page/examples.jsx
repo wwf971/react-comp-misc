@@ -5,7 +5,7 @@ import { iconExamples } from '../icon/example.jsx';
 import { configExamples } from '../app/config-panel/example.jsx';
 import { pathExamples } from '../component/path/example.jsx';
 import { messageBarExamples } from '../component/message-bar/example.jsx';
-import { dictExamples } from '../component/key-value/example.jsx';
+import { dictExamples } from '../component/key-value/exampleKeyValues.jsx';
 import { tabExamples } from '../layout/tab/example.jsx';
 import { menuExamples } from '../component/menu/example.jsx';
 import { jsonExamples } from '../layout/json/example.jsx';
