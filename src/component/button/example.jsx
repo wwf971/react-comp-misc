@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ButtonWithDropDown from './ButtonWithDropDown.jsx';
 import BoolSlider from './BoolSlider.jsx';
 import SegmentedControl from './SegmentedControl.jsx';
+import './example.css';
 
 const BoolSliderExample = () => {
   const [checked1, setChecked1] = useState(false);
@@ -9,65 +10,50 @@ const BoolSliderExample = () => {
   const [checked3, setChecked3] = useState(false);
 
   return (
-    <div style={{ padding: '20px', maxWidth: '400px' }}>
-      <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '10px' }}>
+    <div className="button-example-panel">
+      <div className="button-example-row">
         <BoolSlider checked={checked1} onChange={setChecked1} />
-        <span style={{ fontSize: '14px' }}>Default blue</span>
+        <span className="button-example-row-label">Default blue</span>
       </div>
 
-      <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '10px' }}>
+      <div className="button-example-row">
         <BoolSlider checked={checked2} onChange={setChecked2} color="#10b981" />
-        <span style={{ fontSize: '14px' }}>Custom green</span>
+        <span className="button-example-row-label">Custom green</span>
       </div>
 
-      <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '10px' }}>
+      <div className="button-example-row">
         <BoolSlider checked={checked3} onChange={setChecked3} color="#f59e0b" />
-        <span style={{ fontSize: '14px' }}>Custom orange</span>
+        <span className="button-example-row-label">Custom orange</span>
       </div>
 
-      <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '10px' }}>
+      <div className="button-example-row">
         <BoolSlider checked={true} onChange={() => {}} disabled={true} />
-        <span style={{ fontSize: '14px' }}>Disabled</span>
+        <span className="button-example-row-label">Disabled</span>
       </div>
     </div>
   );
 };
 
-const multiOptions = [
-  { value: 'day', label: 'Day' },
-  { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month' },
+const multiSegList = [
+  { value: 'day', labelText: 'Day' },
+  { value: 'week', labelText: 'Week' },
+  { value: 'month', labelText: 'Month' },
 ];
 
-const IconText = ({ icon, text, isSelected, color }) => {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
-      <span style={{ fontSize: '14px' }}>{icon}</span>
-      <span>{text}</span>
-    </div>
-  );
-};
+const IconText = ({ text, isSelected }) => (
+  <span className={`segmented-control-example-icon-text${isSelected ? ' is-selected' : ''}`}>{text}</span>
+);
 
-const BadgeItem = ({ label, badge, isSelected, color }) => {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
-      <span>{label}</span>
-      {badge > 0 && (
-        <span style={{
-          fontSize: '10px',
-          padding: '1px 4px',
-          borderRadius: '8px',
-          backgroundColor: isSelected ? 'rgba(255, 255, 255, 0.3)' : 'rgba(239, 68, 68, 0.8)',
-          color: '#ffffff',
-          minWidth: '16px',
-          textAlign: 'center',
-        }}>
-          {badge}
-        </span>
-      )}
-    </div>
-  );
-};
+const BadgeItem = ({ labelText, badgeCount, isSelected }) => (
+  <span className="segmented-control-example-badge-item">
+    <span>{labelText}</span>
+    {badgeCount > 0 ? (
+      <span className={`segmented-control-example-badge-count${isSelected ? ' is-selected' : ''}`}>
+        {badgeCount}
+      </span>
+    ) : null}
+  </span>
+);
 
 const SegmentedControlExample = () => {
   const [range, setRange] = useState('week');
@@ -77,138 +63,170 @@ const SegmentedControlExample = () => {
   const [section, setSection] = useState('inbox');
   const [widthModeDemo, setWidthModeDemo] = useState('both');
 
-  const notificationCounts = {
+  const notificationCountBySection = {
     inbox: 5,
     sent: 0,
     archive: 12,
   };
 
-  const getComponent = (compName) => {
+  const compResolveFn = (compName) => {
     if (compName === 'GridIcon') {
-      return (props) => <IconText icon="⊞" text="Grid" {...props} />;
+      return (props) => <IconText text="Grid" {...props} />;
     }
     if (compName === 'ListIcon') {
-      return (props) => <IconText icon="☰" text="List" {...props} />;
+      return (props) => <IconText text="List" {...props} />;
     }
     if (compName === 'TableIcon') {
-      return (props) => <IconText icon="⊟" text="Table" {...props} />;
+      return (props) => <IconText text="Table" {...props} />;
     }
     if (compName === 'InboxBadge') {
-      return (props) => <BadgeItem label="Inbox" badge={notificationCounts.inbox} {...props} />;
+      return (props) => <BadgeItem labelText="Inbox" badgeCount={notificationCountBySection.inbox} {...props} />;
     }
     if (compName === 'SentBadge') {
-      return (props) => <BadgeItem label="Sent" badge={notificationCounts.sent} {...props} />;
+      return (props) => <BadgeItem labelText="Sent" badgeCount={notificationCountBySection.sent} {...props} />;
     }
     if (compName === 'ArchiveBadge') {
-      return (props) => <BadgeItem label="Archive" badge={notificationCounts.archive} {...props} />;
+      return (props) => <BadgeItem labelText="Archive" badgeCount={notificationCountBySection.archive} {...props} />;
     }
     return null;
   };
 
   return (
-    <div style={{ maxWidth: '420px' }}>
-      <div style={{ marginBottom: '12px' }}>
+    <div className="segmented-control-example-root">
+      <div className="segmented-control-example-block">
         <SegmentedControl
-          data={range}
-          onChange={setRange}
-          options={multiOptions}
-          widthMode="auto"
+          data={{ valueSelected: range, segList: multiSegList }}
+          config={{ widthModeSegment: 'auto' }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'valueSelectedChange') {
+              setRange(String(eventData.valueSelected || 'week'));
+            }
+          }}
         />
-        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
+        <div className="segmented-control-example-caption">
           Selected: {range}
         </div>
       </div>
 
-      <div style={{ marginBottom: '12px' }}>
+      <div className="segmented-control-example-block">
         <SegmentedControl
-          data={size}
-          onChange={setSize}
-          options={[
-            { value: 's', label: 'S' },
-            { value: 'm', label: 'M' },
-            { value: 'l', label: 'L' },
-            { value: 'xl', label: 'XL' },
-          ]}
-          color="#10b981"
-          widthMode="auto"
+          data={{
+            valueSelected: size,
+            segList: [
+              { value: 's', labelText: 'S' },
+              { value: 'm', labelText: 'M' },
+              { value: 'l', labelText: 'L' },
+              { value: 'xl', labelText: 'XL' },
+            ],
+          }}
+          config={{ colorHighlight: '#10b981', widthModeSegment: 'auto' }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'valueSelectedChange') {
+              setSize(String(eventData.valueSelected || 'm'));
+            }
+          }}
         />
       </div>
 
-      <div style={{ marginBottom: '12px' }}>
+      <div className="segmented-control-example-block">
         <SegmentedControl
-          data={preset}
-          onChange={setPreset}
-          options={[
-            { value: 'a', label: 'A' },
-            { value: 'b', label: 'B' },
-            { value: 'c', label: 'C' },
-          ]}
-          color="#f59e0b"
-          widthMode="auto"
+          data={{
+            valueSelected: preset,
+            segList: [
+              { value: 'a', labelText: 'A' },
+              { value: 'b', labelText: 'B' },
+              { value: 'c', labelText: 'C' },
+            ],
+          }}
+          config={{ colorHighlight: '#f59e0b', widthModeSegment: 'auto' }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'valueSelectedChange') {
+              setPreset(String(eventData.valueSelected || 'b'));
+            }
+          }}
         />
       </div>
 
-      <div style={{ marginBottom: '12px' }}>
+      <div className="segmented-control-example-block">
         <SegmentedControl
-          data={view}
-          onChange={setView}
-          options={[
-            { value: 'grid', component: 'GridIcon' },
-            { value: 'list', component: 'ListIcon' },
-            { value: 'table', component: 'TableIcon' },
-          ]}
-          getComp={getComponent}
-          widthMode="equal"
+          data={{
+            valueSelected: view,
+            segList: [
+              { value: 'grid', compName: 'GridIcon' },
+              { value: 'list', compName: 'ListIcon' },
+              { value: 'table', compName: 'TableIcon' },
+            ],
+          }}
+          config={{ compResolveFn, widthModeSegment: 'equal' }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'valueSelectedChange') {
+              setView(String(eventData.valueSelected || 'grid'));
+            }
+          }}
         />
-        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
+        <div className="segmented-control-example-caption">
           View mode: {view}
         </div>
       </div>
 
-      <div style={{ marginBottom: '12px' }}>
+      <div className="segmented-control-example-block">
         <SegmentedControl
-          data={section}
-          onChange={setSection}
-          options={[
-            { value: 'inbox', component: 'InboxBadge' },
-            { value: 'sent', component: 'SentBadge' },
-            { value: 'archive', component: 'ArchiveBadge' },
-          ]}
-          getComp={getComponent}
-          color="#8b5cf6"
-          widthMode="auto"
+          data={{
+            valueSelected: section,
+            segList: [
+              { value: 'inbox', compName: 'InboxBadge' },
+              { value: 'sent', compName: 'SentBadge' },
+              { value: 'archive', compName: 'ArchiveBadge' },
+            ],
+          }}
+          config={{
+            compResolveFn,
+            colorHighlight: '#8b5cf6',
+            widthModeSegment: 'auto',
+          }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'valueSelectedChange') {
+              setSection(String(eventData.valueSelected || 'inbox'));
+            }
+          }}
         />
-        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
+        <div className="segmented-control-example-caption">
           Section: {section}
         </div>
       </div>
 
-      <div style={{ marginBottom: '12px' }}>
+      <div className="segmented-control-example-block">
         <SegmentedControl
-          data={widthModeDemo}
-          onChange={setWidthModeDemo}
-          options={[
-            { value: 'request', label: 'Requests' },
-            { value: 'plan', label: 'Plans' },
-            { value: 'both', label: 'Show Both' },
-          ]}
-          widthMode="auto"
-          color="#2d579e"
+          data={{
+            valueSelected: widthModeDemo,
+            segList: [
+              { value: 'request', labelText: 'Requests' },
+              { value: 'plan', labelText: 'Plans' },
+              { value: 'both', labelText: 'Show Both' },
+            ],
+          }}
+          config={{ widthModeSegment: 'auto', colorHighlight: '#2d579e' }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'valueSelectedChange') {
+              setWidthModeDemo(String(eventData.valueSelected || 'both'));
+            }
+          }}
         />
-        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
-          widthMode="auto": text-driven width, widthMode="equal": equal segment width
+        <div className="segmented-control-example-caption">
+          widthModeSegment=&quot;auto&quot;: text-driven width, widthModeSegment=&quot;equal&quot;: equal segment width
         </div>
       </div>
 
-      <div>
+      <div className="segmented-control-example-block">
         <SegmentedControl
-          data="on"
-          onChange={() => {}}
-          options={[
-            { value: 'off', label: 'Off' },
-            { value: 'on', label: 'On' },
-          ]}
-          disabled
+          data={{
+            valueSelected: 'on',
+            segList: [
+              { value: 'off', labelText: 'Off' },
+              { value: 'on', labelText: 'On' },
+            ],
+          }}
+          config={{ isDisabled: true }}
         />
       </div>
     </div>
@@ -261,22 +279,22 @@ const ButtonWithDropDownExample = () => {
 const ButtonExamplesPanel = () => {
   return (
     <div>
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>ButtonWithDropDown</div>
-        <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>
+      <div className="button-example-section">
+        <div className="button-example-section-title">ButtonWithDropDown</div>
+        <div className="button-example-section-desc">
           Data-driven dropdown button with disabled item and empty-list states
         </div>
         <ButtonWithDropDownExample />
       </div>
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>BoolSlider</div>
-        <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>Toggle switch for boolean values</div>
+      <div className="button-example-section">
+        <div className="button-example-section-title">BoolSlider</div>
+        <div className="button-example-section-desc">Toggle switch for boolean values</div>
         <BoolSliderExample />
       </div>
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>SegmentedControl</div>
-        <div style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>
-          Parent owns value; sliding highlight moves to the clicked option (radio-group behavior)
+      <div className="button-example-section">
+        <div className="button-example-section-title">SegmentedControl</div>
+        <div className="button-example-section-desc">
+          Parent owns valueSelected; sliding highlight moves to the clicked segment
         </div>
         <SegmentedControlExample />
       </div>

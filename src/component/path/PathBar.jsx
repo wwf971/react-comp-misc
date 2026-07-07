@@ -30,10 +30,10 @@ export function defaultParsePathStrToPathData(raw) {
 }
 
 export function buildCanonicalPathStrFromSegs(
-  segmentList,
+  segList,
   { addSlashBeforeFirstSeg, appendTrailingSlash, separator }
 ) {
-  const segs = segmentList || [];
+  const segs = segList || [];
   if (segs.length === 0) {
     return addSlashBeforeFirstSeg ? '/' : '';
   }

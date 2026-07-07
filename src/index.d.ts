@@ -12,7 +12,7 @@ export type PathData = {
 
 export function defaultParsePathStrToPathData(raw: string): PathData | null;
 export function buildCanonicalPathStrFromSegs(
-  segmentList: PathSegment[] | undefined,
+  segList: PathSegment[] | undefined,
   options: {
     addSlashBeforeFirstSeg: boolean;
     appendTrailingSlash: boolean;
@@ -296,7 +296,30 @@ export const MenuComp: ComponentType<MenuCompProps>;
 export const DatabaseSetup: ComponentType<any>;
 export const TableManage: ComponentType<any>;
 export const BoolSlider: ComponentType<any>;
-export const SegmentedControl: ComponentType<any>;
+export type SegmentedControlSegmentData = {
+  value?: string | number | boolean;
+  labelText?: string;
+  compName?: string;
+  [key: string]: unknown;
+};
+export type SegmentedControlData = {
+  valueSelected?: string | number | boolean | null;
+  segList?: SegmentedControlSegmentData[];
+};
+export type SegmentedControlConfig = {
+  isDisabled?: boolean;
+  colorHighlight?: string;
+  widthModeSegment?: 'auto' | 'equal';
+  durationTransitionMs?: number;
+  compResolveFn?: (compName: string) => ComponentType<any> | null;
+  classNameTrack?: string;
+};
+export type SegmentedControlProps = {
+  data?: SegmentedControlData;
+  config?: SegmentedControlConfig;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
+};
+export const SegmentedControl: ComponentType<SegmentedControlProps>;
 export const FolderBody: ComponentType<any>;
 export const CellDropdown: ComponentType<CellDropdownProps>;
 export type TreeViewItemData = {

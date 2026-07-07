@@ -1,0 +1,70 @@
+.button-example-panel {
+  padding: 20px;
+  max-width: 400px;
+}
+
+.button-example-row {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.button-example-row-label {
+  font-size: 14px;
+}
+
+.button-example-section {
+  margin-bottom: 30px;
+}
+
+.button-example-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.button-example-section-desc {
+  font-size: 13px;
+  color: #666666;
+  margin-bottom: 12px;
+}
+
+.segmented-control-example-root {
+  max-width: 420px;
+}
+
+.segmented-control-example-block {
+  margin-bottom: 12px;
+}
+
+.segmented-control-example-caption {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+.segmented-control-example-icon-text {
+  display: inline-block;
+}
+
+.segmented-control-example-badge-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+}
+
+.segmented-control-example-badge-count {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 8px;
+  background-color: rgba(239, 68, 68, 0.8);
+  color: #ffffff;
+  min-width: 16px;
+  text-align: center;
+}
+
+.segmented-control-example-badge-count.is-selected {
+  background-color: rgba(255, 255, 255, 0.3);
+}
