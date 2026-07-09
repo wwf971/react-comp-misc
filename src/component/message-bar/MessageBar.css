@@ -1,5 +1,6 @@
 .message-bar-root {
-  min-height: 24px;
+  --message-bar-row-height: 22px;
+  min-height: var(--message-bar-row-height);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -12,21 +13,27 @@
   font-size: 13px;
 }
 
+.message-bar-root.height-sm {
+  --message-bar-row-height: 22px;
+}
+
+.message-bar-root.height-md {
+  --message-bar-row-height: 28px;
+}
+
+.message-bar-root.height-lg {
+  --message-bar-row-height: 40px;
+}
+
 .message-bar-content {
   min-width: 0;
+  min-height: var(--message-bar-row-height);
   overflow: hidden;
 }
 
-.message-bar-root.height-sm .message-bar-content {
-  min-height: 22px;
-}
-
-.message-bar-root.height-md .message-bar-content {
-  min-height: 28px;
-}
-
-.message-bar-root.height-lg .message-bar-content {
-  min-height: 40px;
+.message-bar-root.is-one-line .message-bar-content {
+  display: flex;
+  align-items: center;
 }
 
 .message-bar-track {
@@ -35,6 +42,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  min-height: var(--message-bar-row-height);
   will-change: transform;
 }
 
@@ -50,9 +58,12 @@
 
 .message-bar-text {
   min-width: 0;
-  display: block;
+  min-height: var(--message-bar-row-height);
+  display: inline-flex;
+  align-items: center;
   overflow: visible;
   white-space: nowrap;
+  line-height: 1.2;
   user-select: text;
 }
 
@@ -87,14 +98,15 @@
 
 .message-bar-btn {
   flex-shrink: 0;
-  min-height: 22px;
+  min-height: var(--message-bar-row-height);
   border: 1px solid #b8c9df;
   border-radius: 2px;
   background: #ffffff;
-  padding: 1px 6px;
+  padding: 0 6px;
   color: #1f3761;
   font-family: sans-serif;
   font-size: 13px;
+  line-height: 1.2;
 }
 
 .message-bar-btn:disabled {
@@ -104,18 +116,19 @@
 
 .message-bar-custom {
   min-width: 0;
+  min-height: var(--message-bar-row-height);
   display: inline-flex;
   align-items: center;
 }
 
 .message-bar-custom.height-sm {
-  min-height: 22px;
+  min-height: var(--message-bar-row-height);
 }
 
 .message-bar-custom.height-md {
-  min-height: 28px;
+  min-height: var(--message-bar-row-height);
 }
 
 .message-bar-custom.height-lg {
-  min-height: 40px;
+  min-height: var(--message-bar-row-height);
 }

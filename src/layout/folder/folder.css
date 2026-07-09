@@ -358,6 +358,7 @@
 .folder-view-switcher-content.has-body-height .folder-icon-view {
   width: max-content;
   min-width: 100%;
+  min-width: -webkit-fill-available;
 }
 
 .folder-view-switcher-content.has-body-height .folder-header-wrapper {
