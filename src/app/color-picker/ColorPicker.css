@@ -1,0 +1,232 @@
+
+.color-picker-root {
+  box-sizing: border-box;
+  width: 296px;
+  height: 398px;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172033;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
+}
+
+.color-picker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  height: 40px;
+  margin-bottom: 9px;
+}
+
+.color-picker-title-wrap {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.color-picker-title {
+  color: #172033;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.color-picker-value {
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.color-picker-body {
+  height: 286px;
+  overflow: hidden;
+}
+
+.color-picker-hsv-panel {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.color-picker-sv-box {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  appearance: none;
+  background:
+    linear-gradient(to top, #000000 0%, rgb(0 0 0 / 0%) 100%),
+    linear-gradient(to right, #ffffff 0%, rgb(255 255 255 / 0%) 100%),
+    var(--color-picker-hue-color, #ff0000);
+  cursor: crosshair;
+}
+
+.color-picker-sv-cursor {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgb(15 23 42 / 85%), 0 1px 3px rgb(15 23 42 / 35%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.color-picker-hue-range,
+.color-picker-field-range {
+  width: 100%;
+  accent-color: #2563eb;
+}
+
+.color-picker-hue-range {
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+  appearance: none;
+}
+
+.color-picker-hue-range::-webkit-slider-thumb {
+  width: 12px;
+  height: 18px;
+  border: 2px solid #ffffff;
+  border-radius: 4px;
+  background: #172033;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 35%);
+  appearance: none;
+}
+
+.color-picker-field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.color-picker-field-row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) 54px;
+  align-items: center;
+  gap: 7px;
+  color: #334155;
+  font-size: 12px;
+}
+
+.color-picker-field-label,
+.color-picker-value-row span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.color-picker-field-number,
+.color-picker-value-input {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 26px;
+  padding: 2px 5px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #172033;
+  font: inherit;
+  font-size: 12px;
+}
+
+.color-picker-field-number {
+  text-align: right;
+}
+
+.color-picker-swatch-panel {
+  display: grid;
+  height: 100%;
+  align-content: start;
+  overflow: auto;
+}
+
+.color-picker-swatch-panel.has-gap {
+  gap: 6px;
+}
+
+.color-picker-swatch-panel.no-gap {
+  gap: 0;
+}
+
+.color-picker-swatch-panel.no-gap.is-circle {
+  row-gap: 6px;
+}
+
+.color-picker-swatch-panel.is-circle {
+  box-sizing: border-box;
+  padding: 4px;
+}
+
+.color-picker-swatch {
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid rgb(15 23 42 / 20%);
+  background-clip: padding-box;
+  cursor: pointer;
+}
+
+.color-picker-swatch-panel.is-square .color-picker-swatch {
+  border-radius: 4px;
+}
+
+.color-picker-swatch-panel.is-circle .color-picker-swatch {
+  width: 58%;
+  justify-self: center;
+  align-self: center;
+  border-radius: 999px;
+}
+
+.color-picker-swatch.is-empty {
+  background: repeating-linear-gradient(45deg, #f8fafc 0 6px, #e2e8f0 6px 12px);
+  cursor: default;
+}
+
+.color-picker-swatch.is-selected {
+  border-color: #172033;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #2563eb;
+}
+
+.color-picker-preview-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  margin-top: 9px;
+}
+
+.color-picker-preview-chip {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgb(15 23 42 / 20%);
+  border-radius: 4px;
+  background-image:
+    linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+    linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+    linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-size: 16px 16px;
+}
+
+.color-picker-value-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.color-picker-value-input {
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  text-transform: uppercase;
+}

@@ -1,6 +1,6 @@
 # Test Example(s) Design
 
-For each component series, design test examples. Usually put them in an `example.jsx` under the same folder as the component(s). Import those examples from `./src/test-page/examples.jsx`; the dev test page shows them.
+For each component series, design test examples. Usually put them in an `example.jsx` or `exampleXxx` under the same folder as the component(s). Import those examples from `./src/test-page/examples.jsx`; the dev test page shows them.
 
 To open the test page in dev mode, run `pnpm run dev`.
 

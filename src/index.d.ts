@@ -320,6 +320,47 @@ export type SegmentedControlProps = {
   onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
 };
 export const SegmentedControl: ComponentType<SegmentedControlProps>;
+export type ColorPickerModeOption = {
+  value: string;
+  label: string;
+};
+export type ColorPickerSwatchCell = {
+  row: number;
+  col: number;
+  value?: string | null;
+  label?: string;
+};
+export type ColorPickerSwatchGrid = {
+  rowCount?: number;
+  colCount?: number;
+  cells?: ColorPickerSwatchCell[];
+};
+export type ColorPickerData = {
+  modeOptions?: ColorPickerModeOption[];
+  swatchGrid?: ColorPickerSwatchGrid;
+};
+export type ColorPickerConfig = {
+  modeCurrent?: string;
+  hue?: number;
+  saturation?: number;
+  value?: number;
+  alpha?: number;
+  colorCurrentValue?: string;
+  colorCurrentCss?: string;
+  hueColorHex?: string;
+  isSwatchGapShown?: boolean;
+  swatchCellShape?: 'square' | 'circle';
+};
+export type ColorPickerProps = {
+  data?: ColorPickerData;
+  config?: ColorPickerConfig;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
+};
+export const ColorPicker: ComponentType<ColorPickerProps>;
+export const ColorPickerStore: new (...args: any[]) => any;
+export function createColorPickerStore(...args: any[]): any;
+export const colorPickerModeOptions: ColorPickerModeOption[];
+export const swatchGridDefault: ColorPickerSwatchGrid;
 export const FolderBody: ComponentType<any>;
 export const CellDropdown: ComponentType<CellDropdownProps>;
 export type TreeViewItemData = {

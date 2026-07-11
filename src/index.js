@@ -114,6 +114,8 @@ export { default as EndpointCard } from "./database/EndpointCard.jsx";
 
 export { default as BoolSlider } from "./component/button/BoolSlider.jsx";
 export { default as SegmentedControl } from "./component/button/SegmentedControl.jsx";
+export { default as ColorPicker } from "./app/color-picker/ColorPicker.jsx";
+export { default as ColorPickerStore, createColorPickerStore, colorPickerModeOptions, swatchGridDefault } from "./app/color-picker/colorPickerStore.js";
 
 export { default as FolderView } from "./layout/folder/FolderView.jsx";
 export { default as FolderHeader } from "./layout/folder/Header.jsx";
