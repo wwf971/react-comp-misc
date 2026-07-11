@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import TabsOnTop from './TabsOnTop';
 import CrossIcon from '../../icon/CrossIcon';
 
-/**
- * Counter component that increases every second to demonstrate continuous rendering
- */
 function Counter({ label }) {
   const [count, setCount] = useState(0);
 
@@ -23,9 +20,6 @@ function Counter({ label }) {
   );
 }
 
-/**
- * Custom tab button with colored dot indicator
- */
 const CustomTabWithIndicator = ({ label, isActive, onClick, onClose, isDragging, draggable, onDragStart, onDrag, onDragEnd }) => {
   const colorMap = {
     'Home': '#4caf50',
@@ -63,9 +57,6 @@ const CustomTabWithIndicator = ({ label, isActive, onClick, onClose, isDragging,
   );
 };
 
-/**
- * Custom tab button with badge
- */
 const CustomTabWithBadge = ({ label, isActive, onClick, onClose, isDragging, draggable, onDragStart, onDrag, onDragEnd, badge }) => {
   return (
     <button
@@ -104,9 +95,6 @@ const CustomTabWithBadge = ({ label, isActive, onClick, onClose, isDragging, dra
   );
 };
 
-/**
- * Consolidated TabsOnTop examples in a single panel
- */
 const TabsOnTopExamplesPanel = () => {
   return (
     <div style={{ padding: '20px', maxWidth: '1200px' }}>
@@ -115,22 +103,19 @@ const TabsOnTopExamplesPanel = () => {
         Control whether inactive tabs stay mounted or unmount. Watch counters to see the difference.
       </div>
       
-      {/* Example 1: Keep mounted behavior demo */}
       <div style={{ marginBottom: '30px' }}>
         <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Tab Mount Behavior</div>
         <BasicExample />
       </div>
 
-      {/* Example 2: All features combined */}
       <div style={{ marginBottom: '30px' }}>
         <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>All Features: Close, Create, Reorder</div>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          Drag tabs to reorder, close with ×, create with +. Blue line shows drop position.
+          Drag tabs to reorder, close with x, create with +. Blue line shows drop position.
         </div>
         <TabsWithAllFeatures />
       </div>
 
-      {/* Example 3: Custom tab components */}
       <div style={{ marginBottom: '30px' }}>
         <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Custom Tab Components</div>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
@@ -138,11 +123,138 @@ const TabsOnTopExamplesPanel = () => {
         </div>
         <TabsWithCustomComponents />
       </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>One-line Overflow Tabs</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          A fixed one-line tab row. Use mouse wheel to scroll horizontally; drag tabs near the edge to reveal scroll zones.
+        </div>
+        <TabsOneLineOverflow />
+      </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Multi-line Tabs</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          A fixed multi-line tab row. Dragging uses nearest-row slot geometry.
+        </div>
+        <TabsMultiLine />
+      </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Switchable Line Mode With Header Actions</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          The right side of the tab header can host the built-in line mode switch and custom action buttons.
+        </div>
+        <TabsSwitchableWithActions />
+      </div>
     </div>
   );
 };
 
-// Example 1: Basic tabs with counter to show rendering behavior
+const tabLongDefaultList = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'orders', label: 'Orders' },
+  { id: 'customers', label: 'Customers' },
+  { id: 'inventory', label: 'Inventory' },
+  { id: 'fulfillment', label: 'Fulfillment' },
+  { id: 'pricing', label: 'Pricing Rules' },
+  { id: 'reports', label: 'Reports' },
+  { id: 'automation', label: 'Automation' },
+  { id: 'audit', label: 'Audit Log' },
+  { id: 'settings', label: 'Settings' },
+  { id: 'integrations', label: 'Integrations' },
+  { id: 'experiments', label: 'Experiments' },
+];
+
+function reorderByTabConfig(tabDataList, tabConfigList) {
+  const dataById = Object.fromEntries(tabDataList.map((item) => [item.id, item]));
+  return tabConfigList.map((tabConfig) => dataById[tabConfig.key]).filter(Boolean);
+}
+
+function TabsOneLineOverflow() {
+  const [tabs, setTabs] = useState(tabLongDefaultList);
+  return (
+    <div style={{ width: '520px', maxWidth: '100%' }}>
+      <TabsOnTop
+        lineMode="single"
+        allowTabReorder={true}
+        onTabReorder={(tabConfigList) => setTabs(reorderByTabConfig(tabs, tabConfigList))}
+      >
+        {tabs.map((tab) => (
+          <TabsOnTop.Tab key={tab.id} tabKey={tab.id} label={tab.label}>
+            <TabDemoPanel title={tab.label} text="Fixed one-line mode keeps the header compact and horizontally scrollable." />
+          </TabsOnTop.Tab>
+        ))}
+      </TabsOnTop>
+      <OrderPreview tabs={tabs} />
+    </div>
+  );
+}
+
+function TabsMultiLine() {
+  const [tabs, setTabs] = useState(tabLongDefaultList);
+  return (
+    <div style={{ width: '560px', maxWidth: '100%' }}>
+      <TabsOnTop
+        lineMode="wrap"
+        allowTabReorder={true}
+        onTabReorder={(tabConfigList) => setTabs(reorderByTabConfig(tabs, tabConfigList))}
+      >
+        {tabs.map((tab) => (
+          <TabsOnTop.Tab key={tab.id} tabKey={tab.id} label={tab.label}>
+            <TabDemoPanel title={tab.label} text="Fixed multi-line mode exposes all tabs without horizontal scrolling." />
+          </TabsOnTop.Tab>
+        ))}
+      </TabsOnTop>
+      <OrderPreview tabs={tabs} />
+    </div>
+  );
+}
+
+function TabsSwitchableWithActions() {
+  const [tabs, setTabs] = useState(tabLongDefaultList.slice(0, 8));
+  const [actionMessage, setActionMessage] = useState('No header action clicked yet.');
+  return (
+    <div style={{ width: '620px', maxWidth: '100%' }}>
+      <TabsOnTop
+        defaultLineMode="single"
+        allowLineModeSwitch={true}
+        allowTabReorder={true}
+        onTabReorder={(tabConfigList) => setTabs(reorderByTabConfig(tabs, tabConfigList))}
+        headerRightItems={[
+          { id: 'refresh', label: 'Refresh', action: 'refreshClick' },
+          { id: 'save', label: 'Save', action: 'saveClick' },
+        ]}
+        onHeaderRightItemAction={(action, actionData) => setActionMessage(`${action}: ${actionData.itemId}`)}
+      >
+        {tabs.map((tab) => (
+          <TabsOnTop.Tab key={tab.id} tabKey={tab.id} label={tab.label}>
+            <TabDemoPanel title={tab.label} text="Switchable mode lets the user choose compact or expanded tab display." />
+          </TabsOnTop.Tab>
+        ))}
+      </TabsOnTop>
+      <div style={{ marginTop: '8px', padding: '6px', background: '#eef6ff', borderRadius: '2px', fontSize: '12px' }}>{actionMessage}</div>
+    </div>
+  );
+}
+
+function TabDemoPanel({ title, text }) {
+  return (
+    <div style={{ padding: '12px' }}>
+      <div style={{ fontSize: '14px', fontWeight: '650', marginBottom: '6px' }}>{title}</div>
+      <div style={{ fontSize: '12px', color: '#555' }}>{text}</div>
+    </div>
+  );
+}
+
+function OrderPreview({ tabs }) {
+  return (
+    <div style={{ marginTop: '8px', padding: '6px', background: '#f0f0f0', borderRadius: '2px', fontSize: '12px' }}>
+      <strong>Order:</strong> {tabs.map((tab) => tab.label).join(', ')}
+    </div>
+  );
+}
+
 function BasicExample() {
   return (
     <div>
@@ -175,7 +287,6 @@ function BasicExample() {
   );
 }
 
-// Example 2: All features combined - close, create, and reorder
 function TabsWithAllFeatures() {
   const [tabs, setTabs] = useState([
     { id: '1', label: 'First', content: 'Content 1' },
@@ -227,13 +338,12 @@ function TabsWithAllFeatures() {
         ))}
       </TabsOnTop>
       <div style={{ marginTop: '8px', padding: '6px', background: '#f0f0f0', borderRadius: '2px', fontSize: '12px' }}>
-        <strong>Order:</strong> {tabs.map(t => t.label).join(' → ')}
+        <strong>Order:</strong> {tabs.map(t => t.label).join(', ')}
       </div>
     </div>
   );
 }
 
-// Example 3: Custom tab components
 function TabsWithCustomComponents() {
   const [tabs, setTabs] = useState([
     { id: 'home', label: 'Home', useIndicator: true },
@@ -308,18 +418,16 @@ function TabsWithCustomComponents() {
       </TabsOnTop>
       <div style={{ marginTop: '8px', padding: '6px', background: '#f0f0f0', borderRadius: '2px', fontSize: '12px' }}>
         <div>Tabs with custom TabLabel use the custom component. Drag tabs to reorder.</div>
-        <div style={{ marginTop: '4px' }}><strong>Order:</strong> {tabs.map(t => t.label).join(' → ')}</div>
+        <div style={{ marginTop: '4px' }}><strong>Order:</strong> {tabs.map(t => t.label).join(', ')}</div>
       </div>
     </div>
   );
 }
 
-// Export in the format expected by examples.jsx
 export const tabExamples = {
   'TabsOnTop': {
     component: TabsOnTop,
-    description: 'Tabs with close, create, reorder, and custom tab components',
+    description: 'Tabs with close, create, reorder, custom tab components, overflow, multi-line mode, and header actions',
     example: () => <TabsOnTopExamplesPanel />
   },
 };
-

@@ -9,7 +9,7 @@ When the panel is wide enough for all visible columns, there should be no horizo
 
 A common mistake is leaving list header and body at `width: max-content` inside a fixed-width panel. Column widths sum to fixed pixels and the last column does not grow. When a vertical scroll bar appears and takes a few pixels of width, content no longer fits and a horizontal bar shows up even though nothing is clipped.
 
-With `config.bodyHeight` set, `ViewSwitcher` uses `has-body-height` in `folder.css`: the fixed-height content box owns both vertical and horizontal scroll. Header and rows keep natural column width with `width: max-content` and `min-width: 100%`, so a horizontal scroll bar appears when the sum of visible column widths is wider than the panel.
+With `config.bodyHeight` set, `ViewSwitcher` uses `has-body-height` in `folder.css`: the fixed-height content box owns both vertical and horizontal scroll. Header and rows keep natural column width with `width: max-content`, and use browser-specific available-width fallbacks after `min-width: 100%`, so a horizontal scroll bar appears when the sum of visible column widths is wider than the panel.
 
 Keep `isLastColFilled: true` (default) when the last column should absorb remaining width. Do not override the fixed-height content box with `overflow-x: hidden`, and do not force header or row width to `100%` only. Either of those local overrides can hide wide columns without showing a horizontal scroll bar.
 
