@@ -25,6 +25,7 @@ import { metadataExamples } from '../app/metadata/example.jsx';
 import { sideListExamples } from '../app/side-list/example.jsx';
 import { idExamples } from '../app/id/example.jsx';
 import { colorPickerExamples } from '../app/color-picker/exampleColorPicker.jsx';
+import { propEditorExamples } from '../app/property-editor/examplePropEditor.jsx';
 
 // Combine all examples into a single object
 export const components = {
@@ -53,5 +54,6 @@ export const components = {
   ...sideListExamples,
   ...idExamples,
   ...colorPickerExamples,
+  ...propEditorExamples,
   ...htmlExamples,
 };

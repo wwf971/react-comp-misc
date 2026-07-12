@@ -42,7 +42,7 @@ export function createKeyValuesCellChangeHandler(onEvent, resolveRowId, rows) {
       rowIndex,
       rowId,
       field: String(field || ''),
-      nextValue: String(nextValue ?? ''),
+      nextValue,
     });
   };
 }

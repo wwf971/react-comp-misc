@@ -1,0 +1,118 @@
+.demo-prop-editor-root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.demo-prop-editor-switcher,
+.demo-prop-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.demo-prop-editor-example-btn,
+.demo-prop-editor-actions button,
+.demo-prop-editor-popup-title button {
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #172033;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.demo-prop-editor-example-btn.is-selected {
+  border-color: #2d579e;
+  background: #2d579e;
+  color: #ffffff;
+}
+
+.demo-prop-editor-desc {
+  max-width: 760px;
+  color: #526070;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.demo-prop-editor-message {
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  font-size: 12px;
+}
+
+.demo-prop-editor-embedded {
+  width: min(340px, 100%);
+}
+
+.demo-prop-editor-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.demo-prop-editor-secondary-desc {
+  max-width: 760px;
+  color: #526070;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.demo-prop-editor-popup {
+  position: fixed;
+  z-index: 260;
+  width: min(320px, calc(100vw - 24px));
+  border-radius: 5px;
+  box-shadow: 0 18px 46px rgb(15 23 42 / 18%);
+}
+
+.demo-prop-editor-popup-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 26px;
+  padding: 2px 4px 2px 8px;
+  border: 0;
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+  background: #eef2f7;
+  color: #172033;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: move;
+}
+
+.demo-prop-editor-popup-title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.demo-prop-editor-popup-title .demo-prop-editor-popup-close {
+  min-height: 20px;
+  padding: 1px 6px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #526070;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.demo-prop-editor-popup-title .demo-prop-editor-popup-close:hover {
+  background: #dfe6ef;
+  color: #172033;
+}
+
+.demo-prop-editor-popup .prop-editor-root {
+  width: 100%;
+  border-radius: 0 0 5px 5px;
+}

@@ -361,6 +361,44 @@ export const ColorPickerStore: new (...args: any[]) => any;
 export function createColorPickerStore(...args: any[]): any;
 export const colorPickerModeOptions: ColorPickerModeOption[];
 export const swatchGridDefault: ColorPickerSwatchGrid;
+export type PropEditorData = {
+  levelLeftSelectedId?: string;
+  levelTopSelectedId?: string;
+  levelLeftList?: Record<string, unknown>[];
+  levelTopList?: Record<string, unknown>[];
+  panelList?: Record<string, unknown>[];
+  propertyById?: Record<string, unknown>;
+  dragStateByGroupPath?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+export type PropEditorConfig = {
+  titleText?: string;
+  width?: string;
+  embeddedWidth?: number;
+  popupWidth?: number;
+  isLevelLeftShown?: boolean;
+  isLevelTopShown?: boolean;
+  isReadOnly?: boolean;
+  isEditable?: boolean;
+  keyColWidth?: string | number;
+  keyColMinWidth?: string;
+  keyColMaxWidth?: string;
+  isDividerDraggable?: boolean;
+  isGroupCollapsible?: boolean;
+  requestTimeoutMs?: number;
+  groupCollapsedByPath?: Record<string, boolean>;
+  getComp?: (compName: string, context?: Record<string, unknown>) => ComponentType<any> | null;
+  serverSimulation?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+export type PropEditorProps = {
+  data?: PropEditorData;
+  config?: PropEditorConfig;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
+};
+export const PropEditor: ComponentType<PropEditorProps>;
+export const PropEditorStore: new (...args: any[]) => any;
+export function createPropEditorDemoStore(...args: any[]): any;
 export const FolderBody: ComponentType<any>;
 export const CellDropdown: ComponentType<CellDropdownProps>;
 export type TreeViewItemData = {
