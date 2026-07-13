@@ -1,5 +1,6 @@
 
 import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { observer } from 'mobx-react-lite';
 import PlusIcon from '../../icon/PlusIcon.jsx';
 import MinusIcon from '../../icon/MinusIcon.jsx';
@@ -30,30 +31,72 @@ const PropEditorValueNum = observer(function PropEditorValueNum({ data, itemRef,
   const valueNum = numNormalize(data, meta);
   const isLocked = isValueLocked(itemRef);
   const [dragValue, setDragValue] = useState(null);
+  const [isNumberDragging, setIsNumberDragging] = useState(false);
+  const [isDragCancelHover, setIsDragCancelHover] = useState(false);
+  const [dragCancelRect, setDragCancelRect] = useState(null);
   const [confirmValue, setConfirmValue] = useState(null);
   const dragRef = useRef(null);
   const dragMovedRef = useRef(false);
+  const editValueRef = useRef(null);
   const shownValue = dragValue ?? valueNum;
   const isSlider = itemRef?.displayType === 'slider' && Number.isFinite(Number(meta.min)) && Number.isFinite(Number(meta.max));
-  const modeDragCommit = itemRef?.valueConfig?.modeDragCommit === 'end' ? 'end' : 'immediate';
   const alignValue = ['left', 'center', 'right'].includes(itemRef?.valueConfig?.align) ? itemRef.valueConfig.align : 'right';
   const confirmDecrease = itemRef?.valueConfig?.confirmDecrease;
 
+  const syncEditText = (valueNext) => {
+    editValueRef.current?.replaceEditText(String(valueNext));
+  };
   const commitNumDirect = (valueNext) => onChangeAttempt?.(index, 'value', numNormalize(valueNext, meta));
-  const commitNum = (valueNext) => {
+  const commitNum = (valueNext, options = {}) => {
     const normalized = numNormalize(valueNext, meta);
     if (confirmDecrease && normalized < valueNum) {
       setConfirmValue(normalized);
       return { code: 1, message: 'confirm required' };
     }
+    if (options.isEditTextSynced) syncEditText(normalized);
     return commitNumDirect(normalized);
+  };
+
+  const updateDragCancelRect = (anchorElement) => {
+    const editorRect = anchorElement?.closest('.prop-editor-root')?.getBoundingClientRect();
+    const rowRect = anchorElement?.getBoundingClientRect();
+    if (!editorRect || !rowRect) {
+      setDragCancelRect(null);
+      return;
+    }
+    const inset = 6;
+    const width = Math.max(80, Math.min(118, editorRect.width - inset * 2));
+    const leftMax = editorRect.right - inset - width;
+    const leftPreferred = rowRect.left;
+    setDragCancelRect({
+      left: Math.max(editorRect.left + inset, Math.min(leftPreferred, leftMax)),
+      top: rowRect.bottom + 4,
+      width,
+    });
+  };
+
+  const clearDragState = () => {
+    dragRef.current = null;
+    setIsNumberDragging(false);
+    setIsDragCancelHover(false);
+    setDragCancelRect(null);
+    setDragValue(null);
+  };
+
+  const isDragCancelTargetAtPoint = (clientX, clientY) => {
+    const element = document.elementFromPoint(clientX, clientY);
+    return Boolean(element?.closest('.prop-editor-number-drag-cancel'));
   };
 
   const dragBegin = (event) => {
     if (isLocked || ![0, 1].includes(event.button)) return;
-    if (event.target.closest('.prop-editor-editable-number')) return;
-    event.preventDefault();
-    event.stopPropagation();
+    const targetElement = event.target instanceof Element ? event.target : null;
+    if (targetElement?.closest('.prop-editor-number-confirm')) return;
+    if (targetElement?.closest('.prop-editor-editable-number') && editValueRef.current?.isEditing()) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    updateDragCancelRect(event.currentTarget);
     const step = Number(meta.step ?? 1);
     const drag = {
       pointerId: event.pointerId,
@@ -68,10 +111,17 @@ const PropEditorValueNum = observer(function PropEditorValueNum({ data, itemRef,
     const dragMove = (moveEvent) => {
       if (!dragRef.current || drag.pointerId !== moveEvent.pointerId) return;
       const deltaX = moveEvent.clientX - drag.xStart;
-      if (Math.abs(deltaX) > 2) dragMovedRef.current = true;
+      if (Math.abs(deltaX) <= 2 && !dragMovedRef.current) return;
+      moveEvent.preventDefault();
+      moveEvent.stopPropagation();
+      if (!dragMovedRef.current) {
+        dragMovedRef.current = true;
+        setIsNumberDragging(true);
+      }
+      setIsDragCancelHover(isDragCancelTargetAtPoint(moveEvent.clientX, moveEvent.clientY));
       const deltaStep = Math.round(deltaX / 8);
       const valueNext = numNormalize(drag.valueStart + deltaStep * drag.step, meta);
-      if (modeDragCommit === 'immediate' && valueNext !== drag.valueCurrent) commitNum(valueNext);
+      if (editValueRef.current?.isEditing()) syncEditText(valueNext);
       drag.valueCurrent = valueNext;
       setDragValue(valueNext);
     };
@@ -81,9 +131,15 @@ const PropEditorValueNum = observer(function PropEditorValueNum({ data, itemRef,
       document.removeEventListener('pointermove', dragMove, true);
       document.removeEventListener('pointerup', dragEnd, true);
       document.removeEventListener('pointercancel', dragEnd, true);
-      dragRef.current = null;
-      if (modeDragCommit === 'end' && drag.valueCurrent !== valueNum) commitNum(drag.valueCurrent);
-      setDragValue(null);
+      if (dragMovedRef.current) {
+        upEvent.preventDefault();
+        upEvent.stopPropagation();
+      }
+      const isCancelled = upEvent.type === 'pointercancel' || isDragCancelTargetAtPoint(upEvent.clientX, upEvent.clientY);
+      if (dragMovedRef.current && !isCancelled && drag.valueCurrent !== valueNum) {
+        commitNum(drag.valueCurrent, { isEditTextSynced: true });
+      }
+      clearDragState();
       window.setTimeout(() => {
         dragMovedRef.current = false;
       }, 0);
@@ -110,7 +166,7 @@ const PropEditorValueNum = observer(function PropEditorValueNum({ data, itemRef,
       }}
     >
       <div className={`prop-editor-number-row ${isSlider ? 'is-slider' : ''}`}>
-        <button type="button" className="prop-editor-step-button" disabled={isLocked} onClick={() => commitNum(valueNum - Number(meta.step ?? 1))}>
+        <button type="button" className="prop-editor-step-button" disabled={isLocked} onClick={() => commitNum(valueNum - Number(meta.step ?? 1), { isEditTextSynced: true })}>
           <MinusIcon width={12} height={12} />
         </button>
         {isSlider ? (
@@ -129,14 +185,16 @@ const PropEditorValueNum = observer(function PropEditorValueNum({ data, itemRef,
           </button>
         ) : (
           <EditableValue
+            ref={editValueRef}
             value={shownValue}
             className="prop-editor-editable-number"
             align={alignValue}
             isLocked={isLocked}
+            isTextSyncedWhileEditing
             onCommit={commitNum}
           />
         )}
-        <button type="button" className="prop-editor-step-button" disabled={isLocked} onClick={() => commitNum(valueNum + Number(meta.step ?? 1))}>
+        <button type="button" className="prop-editor-step-button" disabled={isLocked} onClick={() => commitNum(valueNum + Number(meta.step ?? 1), { isEditTextSynced: true })}>
           <PlusIcon width={12} height={12} />
         </button>
       </div>
@@ -159,6 +217,18 @@ const PropEditorValueNum = observer(function PropEditorValueNum({ data, itemRef,
             </button>
           </div>
         </div>
+      ) : null}
+      {isNumberDragging && dragCancelRect ? createPortal(
+        <button
+          type="button"
+          className={`prop-editor-number-drag-cancel ${isDragCancelHover ? 'is-hover' : ''}`}
+          style={{ left: dragCancelRect.left, top: dragCancelRect.top, width: dragCancelRect.width }}
+          onPointerEnter={() => setIsDragCancelHover(true)}
+          onPointerLeave={() => setIsDragCancelHover(false)}
+        >
+          Cancel
+        </button>,
+        document.body,
       ) : null}
     </ValueShell>
   );

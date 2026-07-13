@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SpinningCircle from '../../icon/SpinningCircle.jsx';
 
@@ -56,7 +56,16 @@ function ValueShell({ itemRef, children, className = '', onPointerDownCapture, o
   );
 }
 
-function EditableValue({ value, className, onCommit, align = 'left', isLocked = false }) {
+function selectEditableContents(element) {
+  if (!element) return;
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}
+
+const EditableValue = forwardRef(function EditableValue({ value, className, onCommit, align = 'left', isLocked = false, isTextSyncedWhileEditing = false }, ref) {
   const valueText = String(value ?? '');
   const editRef = useRef(null);
   const valueOriginalRef = useRef(valueText);
@@ -70,12 +79,26 @@ function EditableValue({ value, className, onCommit, align = 'left', isLocked = 
   useEffect(() => {
     if (!isEditing || !editRef.current) return;
     editRef.current.textContent = valueOriginalRef.current;
-    const range = document.createRange();
-    range.selectNodeContents(editRef.current);
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
+    selectEditableContents(editRef.current);
   }, [isEditing]);
+
+  useEffect(() => {
+    if (!isTextSyncedWhileEditing || !isEditing || !editRef.current) return;
+    editRef.current.textContent = valueText;
+    valueOriginalRef.current = valueText;
+    selectEditableContents(editRef.current);
+  }, [isTextSyncedWhileEditing, isEditing, valueText]);
+
+  useImperativeHandle(ref, () => ({
+    isEditing: () => isEditingRef.current,
+    replaceEditText: (valueNext) => {
+      if (!isEditingRef.current || !editRef.current) return;
+      const valueTextNext = String(valueNext ?? '');
+      editRef.current.textContent = valueTextNext;
+      valueOriginalRef.current = valueTextNext;
+      selectEditableContents(editRef.current);
+    },
+  }));
 
   const editStart = () => {
     if (isLocked || isEditing) return;
@@ -135,7 +158,7 @@ function EditableValue({ value, className, onCommit, align = 'left', isLocked = 
       {isEditing ? null : valueText}
     </span>
   );
-}
+});
 
 function isValueLocked(itemRef) {
   return Boolean(itemRef?.isReadOnly || itemRef?.isDisabled || itemRef?.isEditorLocked || itemRef?.requestState?.status === 'pending');

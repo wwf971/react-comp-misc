@@ -180,8 +180,8 @@
 }
 
 .tab-on-top-btn.active .tab-label {
-  font-weight: 550;
-  text-shadow: none;
+  font-weight: 450; /* CRITICAL: must match .tab-label font-weight, otherwise tab width shifts and causes horizontal jitter. */
+  text-shadow: 0.02em 0 0 currentColor;
 }
 
 .tabs-on-top-content {

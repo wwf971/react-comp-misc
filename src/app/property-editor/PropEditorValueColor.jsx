@@ -14,9 +14,12 @@ const PropEditorValueColor = observer(function PropEditorValueColor({ data, item
   const modeCommit = itemRef?.valueConfig?.modeCommit === 'immediate' ? 'immediate' : 'apply';
   const [pickerStore, setPickerStore] = useState(null);
   const [pickerPos, setPickerPos] = useState({ left: 0, top: 0 });
+  const [colorErrorMessage, setColorErrorMessage] = useState('');
+  const [isColorRequestPending, setIsColorRequestPending] = useState(false);
   const triggerRef = useRef(null);
   const popupRef = useRef(null);
   const dragRef = useRef(null);
+  const colorRequestSeqRef = useRef(0);
 
   const getPopupPos = (triggerRect, size) => {
     if (typeof popupPlacement === 'function') return popupPlacement(triggerRect, size);
@@ -63,15 +66,46 @@ const PropEditorValueColor = observer(function PropEditorValueColor({ data, item
       const pos = getPopupPos(rect, popupSize);
       setPickerPos({ left: pos.x, top: pos.y });
     }
+    setColorErrorMessage('');
+    setIsColorRequestPending(false);
     setPickerStore(createColorPickerStore({ colorInitialValue: valueText }));
+  };
+
+  const attemptColorChange = async (valueNext) => {
+    const requestSeq = colorRequestSeqRef.current + 1;
+    colorRequestSeqRef.current = requestSeq;
+    setIsColorRequestPending(true);
+    setColorErrorMessage('');
+    let result = null;
+    try {
+      result = await Promise.resolve(onChangeAttempt?.(index, 'value', valueNext));
+    } catch (error) {
+      result = { code: -1, message: error?.message ?? 'Update failed' };
+    }
+    if (colorRequestSeqRef.current !== requestSeq) return result;
+    setIsColorRequestPending(false);
+    const resultNormalized = result ?? { code: 0 };
+    if (resultNormalized.code === 0) {
+      setColorErrorMessage('');
+    } else {
+      setColorErrorMessage(String(resultNormalized.message ?? 'Update failed'));
+    }
+    return resultNormalized;
   };
 
   const pickerEventHandle = (eventType, eventData = {}) => {
     const result = pickerStore?.handleEvent(eventType, eventData);
     if (modeCommit === 'immediate' && ['hsvSet', 'colorValueSet', 'swatchSelect'].includes(eventType)) {
-      onChangeAttempt?.(index, 'value', pickerStore.colorCurrentValue);
+      attemptColorChange(pickerStore.colorCurrentValue);
     }
     return result;
+  };
+
+  const restoreImmediateChange = async () => {
+    if (!pickerStore) return;
+    pickerStore.restoreInitial();
+    const result = await attemptColorChange(pickerStore.colorInitialValue);
+    if ((result ?? { code: 0 }).code === 0) setPickerStore(null);
   };
 
   const dragBegin = (event) => {
@@ -135,9 +169,14 @@ const PropEditorValueColor = observer(function PropEditorValueColor({ data, item
             />
             <div className="prop-editor-color-actions">
               {modeCommit === 'immediate' ? (
-                <button type="button" onClick={() => setPickerStore(null)}>Close</button>
+                <>
+                  <span className="prop-editor-color-action-error">{colorErrorMessage}</span>
+                  <button type="button" disabled={isColorRequestPending} onClick={restoreImmediateChange}>Restore</button>
+                  <button type="button" disabled={isColorRequestPending} onClick={() => setPickerStore(null)}>Close</button>
+                </>
               ) : (
                 <>
+                  <span className="prop-editor-color-action-error" />
                   <button type="button" onClick={() => setPickerStore(null)}>Cancel</button>
                   <button type="button" onClick={() => { onChangeAttempt?.(index, 'value', pickerStore.colorCurrentValue); setPickerStore(null); }}>Apply</button>
                 </>

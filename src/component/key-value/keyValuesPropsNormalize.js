@@ -38,7 +38,7 @@ export function createKeyValuesCellChangeHandler(onEvent, resolveRowId, rows) {
   return (rowIndex, field, nextValue) => {
     const row = rows[rowIndex];
     const rowId = row ? resolveRowId(row) : null;
-    onEvent('cellUpdate', {
+    return onEvent('cellUpdate', {
       rowIndex,
       rowId,
       field: String(field || ''),

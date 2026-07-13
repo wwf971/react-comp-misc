@@ -32,3 +32,8 @@ export const folderExamples = {
 ```
 
 For a panel containing multiple examples, explanation of/introduction to one specific example should be contained inside that example's area. Global introduction should be close to top of the panel.
+
+When a component has multiple interaction modes, add examples that make the behavioral difference visible. For example, the color picker should show:
+
+- Immediate commit mode: each picker change updates the committed value; `Restore` returns to the value from when the picker opened.
+- Apply commit mode: picker edits stay local until `Apply`; `Cancel` discards the local picker value.

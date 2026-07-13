@@ -97,7 +97,7 @@ const KeyValuesForNodes = observer(function KeyValuesForNodes({ nodes, parentPat
         if (eventType !== 'cellUpdate' || eventData.field !== 'value') return;
         const row = rows[eventData.rowIndex];
         if (!row) return;
-        onEvent?.('propertyChangeAttempt', {
+        return onEvent?.('propertyChangeAttempt', {
           propertyId: row.propertyId,
           propertyPath: row.propertyPath,
           valueNext: eventData.nextValue,
