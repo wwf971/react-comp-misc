@@ -137,6 +137,19 @@ export type MessageBarProps = {
   onEvent?: (eventType: string, eventData: MessageBarEventData) => Promise<unknown> | unknown;
 };
 export const MessageBar: ComponentType<MessageBarProps>;
+export type ConfigCustomControlProps = {
+  item: ConfigItem;
+  value?: unknown;
+  itemPath: string[];
+  itemPathText: string;
+  compPath: string[];
+  compPathText: string;
+  componentPath: string[];
+  componentPathText: string;
+  isDisabled?: boolean;
+  onValueChange?: (valueNext: unknown) => Promise<unknown> | unknown;
+  [key: string]: unknown;
+};
 export type ConfigItemType = 'group' | 'boolean' | 'string' | 'number' | 'select' | 'tab' | 'tab-group' | 'subtab' | string;
 export type ConfigItem = {
   id: string;
@@ -147,6 +160,9 @@ export type ConfigItem = {
   defaultValue?: unknown;
   options?: string[];
   children?: ConfigItem[];
+  comp?: ComponentType<ConfigCustomControlProps> | ReactNode;
+  compName?: string;
+  compProps?: Record<string, unknown>;
   [key: string]: unknown;
 };
 export type ConfigOperationState = {
@@ -157,6 +173,7 @@ export type ConfigOperationState = {
   [key: string]: unknown;
 };
 export type ConfigPanelConfig = {
+  compPath?: string[] | string;
   componentPath?: string[] | string;
   path?: string[] | string;
   items?: ConfigItem[];
@@ -166,9 +183,13 @@ export type ConfigPanelConfig = {
   isLocked?: boolean;
   isEditable?: boolean;
   missingItemStrategy?: 'setDefault' | 'reportError' | 'ignore' | string;
+  compResolveFn?: (compName: string, item: ConfigItem) => ComponentType<ConfigCustomControlProps> | null | undefined;
+  getComp?: (itemOrCompName: ConfigItem | string, item?: ConfigItem) => ComponentType<ConfigCustomControlProps> | null | undefined;
   [key: string]: unknown;
 };
 export type ConfigPanelEventData = {
+  compPath?: string[];
+  compPathText?: string;
   componentPath?: string[];
   componentPathText?: string;
   itemPath?: string[];
@@ -187,6 +208,10 @@ export type ConfigPanelProps = {
   data?: Record<string, unknown>;
   config?: ConfigPanelConfig;
   onEvent?: (eventType: string, eventData: ConfigPanelEventData) => Promise<unknown> | unknown;
+  configStruct?: ConfigPanelConfig;
+  configValue?: Record<string, unknown>;
+  onChangeAttempt?: (valueId: string | undefined, value: unknown, eventData: ConfigPanelEventData) => Promise<unknown> | unknown;
+  missingItemStrategy?: 'setDefault' | 'reportError' | 'ignore' | string;
 };
 export const ConfigPanel: ComponentType<ConfigPanelProps>;
 export const ConfigPanelWithTabs: ComponentType<ConfigPanelProps>;

@@ -367,6 +367,34 @@ const editorDataEnumViews = {
   },
 };
 
+const editorDataAlignment = {
+  panelList: [
+    { id: 'alignment.longKey', type: 'property' },
+    { id: 'alignment.longValue', type: 'property' },
+    { id: 'alignment.longBoth', type: 'property' },
+  ],
+  propertyById: {
+    'alignment.longKey': {
+      id: 'alignment.longKey',
+      label: 'Very Long Key Label That Starts With Important Prefix And Ends With Important Suffix',
+      valueType: 'text',
+      value: 'short value',
+    },
+    'alignment.longValue': {
+      id: 'alignment.longValue',
+      label: 'Value',
+      valueType: 'text',
+      value: 'this-is-a-very-long-single-line-value-that-can-be-inspected-by-using-the-mouse-wheel-while-hovering',
+    },
+    'alignment.longBoth': {
+      id: 'alignment.longBoth',
+      label: 'Another Long Key Label Used To Demonstrate Hidden Overflow',
+      valueType: 'text',
+      value: 'another-long-value-without-line-breaks-so-the-row-height-stays-stable-while-horizontal-wheel-scroll-reveals-more',
+    },
+  },
+};
+
 const editorDataTopOnly = {
   levelTopSelectedId: 'basic',
   levelTopList: [
@@ -440,6 +468,13 @@ const exampleListDefault = [
     description: 'Enum values can render as vertical radio lists or horizontal wheel-scrolled radio groups. The horizontal offset is owned by MobX data.',
     data: editorDataEnumViews,
     config: { titleText: 'Enum Views', width: 'min(340px, 100%)', embeddedWidth: 370, popupWidth: 340, isLevelLeftShown: false, isLevelTopShown: false, keyColWidth: 'min', keyColMinWidth: '58px', keyColMaxWidth: '90px', requestTimeoutMs: 1800, serverSimulation: { delayMinMs: 120, delayMaxMs: 360, errorRate: 0.08, timeoutRate: 0.03 } },
+  },
+  {
+    id: 'alignment',
+    label: 'Alignment + Overflow',
+    description: 'Keys default to right alignment, values default to left alignment, and clipped cells can be inspected with the mouse wheel while hovering.',
+    data: editorDataAlignment,
+    config: { titleText: 'Alignment', width: 'min(300px, 100%)', embeddedWidth: 320, popupWidth: 300, isLevelLeftShown: false, isLevelTopShown: false, keyColWidth: '96px', keyCellContentAlign: 'right', valueCellContentAlign: 'left', requestTimeoutMs: 1800, serverSimulation: { delayMinMs: 120, delayMaxMs: 360, errorRate: 0.08, timeoutRate: 0.03 } },
   },
 ];
 

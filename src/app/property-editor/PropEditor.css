@@ -370,6 +370,21 @@
   user-select: none;
 }
 
+.prop-editor-root .key-cell-content-align-left {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.prop-editor-root .key-cell-content-align-center {
+  justify-content: center;
+  text-align: center;
+}
+
+.prop-editor-root .key-cell-content-align-right {
+  justify-content: flex-start;
+  text-align: right;
+}
+
 .prop-editor-root .key-cell > span {
   display: block;
   min-width: max-content;
@@ -387,6 +402,33 @@
   justify-content: flex-start;
   color: #172033;
   text-align: left;
+}
+
+.prop-editor-root .value-cell-content-align-left {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.prop-editor-root .value-cell-content-align-center {
+  justify-content: center;
+  text-align: center;
+}
+
+.prop-editor-root .value-cell-content-align-right {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.prop-editor-root .value-cell-content-align-left .prop-editor-value-shell {
+  justify-content: flex-start;
+}
+
+.prop-editor-root .value-cell-content-align-center .prop-editor-value-shell {
+  justify-content: center;
+}
+
+.prop-editor-root .value-cell-content-align-right .prop-editor-value-shell {
+  justify-content: flex-end;
 }
 
 .prop-editor-value-shell {

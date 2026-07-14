@@ -16,14 +16,17 @@ const ConfigBool = observer(({
   itemPath
 }) => {
   const { data, config, onEvent } = useConfigRuntime();
-  const componentPath = getConfigComponentPath(config);
+  const compPath = getConfigComponentPath(config);
   const value = getConfigValue(data, item);
-  const isDisabled = getIsConfigControlDisabled(config, componentPath);
+  const isDisabled = getIsConfigControlDisabled(config, compPath);
 
   const handleChange = (checked) => {
+    const compPathText = joinConfigPath(compPath);
     emitConfigEvent(onEvent, 'valueChangeAttempt', {
-      componentPath,
-      componentPathText: joinConfigPath(componentPath),
+      compPath,
+      compPathText,
+      componentPath: compPath,
+      componentPathText: compPathText,
       itemPath,
       itemPathText: joinConfigPath(itemPath),
       valueId: item.id,

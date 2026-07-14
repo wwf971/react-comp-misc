@@ -11,7 +11,7 @@ const BasicConfigPanelExample = observer(() => {
   const [message, setMessage] = useState('');
   
   const [config] = useState(() => makeAutoObservable({
-    componentPath: ['root'],
+    compPath: ['root'],
     operationStateByPath: {
       root: {
         isEditable: true,
@@ -125,7 +125,7 @@ const ConfigPanelWithTabsExample = observer(() => {
   };
 
   const [config] = useState(() => makeAutoObservable({
-    componentPath: ['root'],
+    compPath: ['root'],
     operationStateByPath: {
       root: {
         activeTabId: 'general_tab'
@@ -223,7 +223,7 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
 
   // Compose into tab groups
   const [config] = useState(() => makeAutoObservable({
-    componentPath: ['root'],
+    compPath: ['root'],
     operationStateByPath: {
       root: {
         activeTabId: 'general_tab'
@@ -306,7 +306,7 @@ const ConfigPanelWithSubtabsExample = observer(() => {
   };
 
   const [config] = useState(() => makeAutoObservable({
-    componentPath: ['root'],
+    compPath: ['root'],
     operationStateByPath: {
       root: {
         activeSubtabId: 'general_subtab'
@@ -416,14 +416,14 @@ function handleConfigExampleEvent(configData, config, setMessage, eventType, eve
   }
 
   if (eventType === 'activeTabChange') {
-    const operationState = getConfigExampleOperationState(config, eventData.componentPathText);
+    const operationState = getConfigExampleOperationState(config, eventData.compPathText);
     operationState.activeTabId = eventData.tabId;
     setMessage(`Selected tab ${eventData.tabId}`);
     return { code: 0 };
   }
 
   if (eventType === 'activeSubtabChange') {
-    const operationState = getConfigExampleOperationState(config, eventData.componentPathText);
+    const operationState = getConfigExampleOperationState(config, eventData.compPathText);
     operationState.activeSubtabId = eventData.subtabId;
     setMessage(`Selected subtab ${eventData.subtabId}`);
     return { code: 0 };
@@ -432,12 +432,12 @@ function handleConfigExampleEvent(configData, config, setMessage, eventType, eve
   return { code: 0 };
 }
 
-function getConfigExampleOperationState(config, componentPathText) {
-  if (!config.operationStateByPath[componentPathText]) {
-    config.operationStateByPath[componentPathText] = {};
+function getConfigExampleOperationState(config, compPathText) {
+  if (!config.operationStateByPath[compPathText]) {
+    config.operationStateByPath[compPathText] = {};
   }
 
-  return config.operationStateByPath[componentPathText];
+  return config.operationStateByPath[compPathText];
 }
 
 export const configExamples = {

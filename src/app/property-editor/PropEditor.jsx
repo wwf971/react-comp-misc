@@ -77,6 +77,7 @@ const KeyValuesForNodes = observer(function KeyValuesForNodes({ nodes, parentPat
     isEditorLocked,
     isReadOnly: config.isReadOnly === true || row.isReadOnly === true || row.isDisabled === true,
     isDisabled: row.isDisabled === true,
+    valueCellContentAlign: config.valueCellContentAlign ?? 'left',
     onRequestDismiss: config.onRequestDismiss,
     onUiStateChange: (uiStateNext) => onEvent?.('propertyUiStateChange', { propertyId: row.propertyId, propertyPath: row.propertyPath, uiStateNext }),
   }));
@@ -90,6 +91,8 @@ const KeyValuesForNodes = observer(function KeyValuesForNodes({ nodes, parentPat
         isValueEditable,
         alignCol: true,
         keyColWidth: config.keyColWidth ?? 'min',
+        keyCellContentAlign: config.keyCellContentAlign ?? 'right',
+        valueCellContentAlign: config.valueCellContentAlign ?? 'left',
         isDividerDraggable: config.isDividerDraggable === true,
         compResolveFn: (name) => compByName[name] ?? null,
       }}

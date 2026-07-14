@@ -160,6 +160,7 @@ const KeyValuesCompInner = ({
     keyColWidth,
     keyColWidthEffective,
     keyCellContentAlign,
+    valueCellContentAlign,
     isWrap,
     isDividerDraggable,
     selectionMode,
@@ -189,6 +190,10 @@ const KeyValuesCompInner = ({
     ? keyCellContentAlign
     : 'right';
   const keyCellContentAlignClass = `key-cell-content-align-${normalizedKeyCellContentAlign}`;
+  const normalizedValueCellContentAlign = ['left', 'right', 'center'].includes(valueCellContentAlign)
+    ? valueCellContentAlign
+    : 'left';
+  const valueCellContentAlignClass = `value-cell-content-align-${normalizedValueCellContentAlign}`;
   const isSelectionEnabled = selectionMode === 'single';
   const effectiveSelectedRowId = selectedRowId ?? null;
   const resolveRowId = useCallback((item) => {
@@ -287,6 +292,21 @@ const KeyValuesCompInner = ({
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
   }, []);
+
+  const handleCellWheel = useCallback((event) => {
+    if (isWrap) return;
+    const cell = event.currentTarget;
+    const overflowX = cell.scrollWidth - cell.clientWidth;
+    if (overflowX <= 1) return;
+    const deltaX = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (!deltaX) return;
+    event.preventDefault();
+    if (window.getComputedStyle(cell).direction === 'rtl') {
+      cell.scrollLeft = Math.max(-overflowX, Math.min(0, cell.scrollLeft - deltaX));
+      return;
+    }
+    cell.scrollLeft = Math.max(0, Math.min(overflowX, cell.scrollLeft + deltaX));
+  }, [isWrap]);
 
   useEffect(() => {
     return () => {
@@ -527,6 +547,7 @@ const KeyValuesCompInner = ({
                 <div 
                   className={`keyvalues-cell key-cell ${cellOverflowClass} ${keyCellContentAlignClass} ${canEditKey ? 'editable' : ''}`}
                   style={alignCol && keyColWidthValue ? { width: keyColWidthValue, flexShrink: 0 } : {}}
+                  onWheel={handleCellWheel}
                 >
                   <span className="key-cell-content-wrap" ref={(el) => { keyRefs.current[index] = el; }}>
                     <KeyComp 
@@ -541,8 +562,9 @@ const KeyValuesCompInner = ({
                   </span>
                 </div>
                 <div 
-                  className={`keyvalues-cell value-cell ${cellOverflowClass} ${canEditValue ? 'editable' : ''}`}
+                  className={`keyvalues-cell value-cell ${cellOverflowClass} ${valueCellContentAlignClass} ${canEditValue ? 'editable' : ''}`}
                   style={alignCol ? { flex: 1 } : {}}
+                  onWheel={handleCellWheel}
                 >
                   <ValueComp 
                     data={item.value}

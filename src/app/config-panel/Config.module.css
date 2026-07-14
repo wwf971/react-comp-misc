@@ -1,7 +1,7 @@
 .configContainer {
   width: 100%;
   max-width: 100%;
-  overflow-x: scroll;
+  overflow-x: auto;
   scrollbar-width: thin;
 }
 
@@ -26,23 +26,27 @@
 .configList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
   width: max-content;
   min-width: 100%;
+  min-width: -moz-available;
+  min-width: -webkit-fill-available;
 }
 
 .configItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 6px 8px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 4px;
   transition: all 0.2s ease;
   flex-shrink: 0;
   width: max-content;
   min-width: 100%;
+  min-width: -moz-available;
+  min-width: -webkit-fill-available;
 }
 
 .configItem:hover {
@@ -53,29 +57,34 @@
 
 .configInfo {
   flex: 1;
-  margin-right: 12px;
+  margin-right: 8px;
   min-width: 0;
 }
 
 .configLabel {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #111827;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .configDescription {
   font-size: 12px;
   color: #6b7280;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .configControl {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   flex-shrink: 0;
   min-width: 120px;
 }
 
 .configBoolControl {
+  display: flex;
+  justify-content: flex-end;
   min-width: 44px;
   flex-shrink: 0;
 }
@@ -84,10 +93,10 @@
 
 /* Text Input */
 .configInput {
-  padding: 6px 10px;
+  padding: 4px 7px;
   border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: 3px;
+  font-size: 13px;
   min-width: 120px;
 }
 
@@ -99,10 +108,10 @@
 
 /* Select */
 .configSelect {
-  padding: 6px 10px;
+  padding: 4px 7px;
   border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: 3px;
+  font-size: 13px;
   min-width: 120px;
   background: white;
   cursor: pointer;
@@ -126,31 +135,35 @@
 
 /* Config Group */
 .configGroup {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   width: max-content;
   min-width: 100%;
+  min-width: -moz-available;
+  min-width: -webkit-fill-available;
   flex-shrink: 0;
 }
 
 .configGroupTitle {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .configGroupDivider {
   height: 1px;
   background: #e5e7eb;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .configGroupItems {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
   width: max-content;
   min-width: 100%;
+  min-width: -moz-available;
+  min-width: -webkit-fill-available;
 }
 
 /* ============================================================
@@ -162,7 +175,7 @@
   height: 100%;
   min-height: 400px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
 
   background: #f9fafb;
@@ -172,7 +185,7 @@
   border-right: 1px solid #e5e7eb;
   overflow: hidden;
   width: 200px;
-  padding-top: 10px;
+  padding-top: 6px;
   display: flex;
   flex-direction: column;
 }
@@ -183,17 +196,17 @@
   flex-direction: column;
   flex-shrink: 0;
   align-items: stretch;
-  margin: 0px 8px;
+  margin: 0px 5px;
 }
 
 /* Tab Styles */
 .configTab {
-  padding: 6px 16px;
+  padding: 5px 9px;
   border: none;
   background: transparent;
   text-align: left;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #6b7280;
   transition: all 0.2s ease;
@@ -214,13 +227,27 @@
   text-shadow: 0.45px 0 0 currentColor;
 }
 
+.configTabInvalid {
+  color: #991b1b;
+  background: #fef2f2;
+  border-left: 2px solid #fca5a5;
+  cursor: default;
+}
+
+.configItemInvalid {
+  justify-content: flex-start;
+  color: #991b1b;
+  background: #fef2f2;
+  border-color: #fecaca;
+  cursor: default;
+}
+
 /* Right Panel - Content */
 .configTabContent {
   flex: 1;
-  padding: 20px;
-  padding-top: 10px;
+  padding: 7px;
   overflow-y: auto;
-  overflow-x: scroll;
+  overflow-x: auto;
   min-width: 0;
   scrollbar-width: thin;
 }
@@ -274,6 +301,7 @@
 }
 
 .errorJson {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   background: #ffffff;
   border: 1px solid #fecaca;
   border-radius: 4px;
@@ -285,4 +313,38 @@
   overflow-y: auto;
 }
 
+.configInvalidTooltip {
+  position: fixed;
+  z-index: 2000;
+  display: inline-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 320px;
+  padding: 5px 6px;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 18%);
+  transform: translateY(-50%);
+}
+
+.configInvalidTooltipText {
+  color: #a43838;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.configInvalidTooltipJson {
+  max-height: 240px;
+  margin: 0;
+  overflow: auto;
+  padding: 4px 5px;
+  border: 1px solid #fecaca;
+  border-radius: 3px;
+  background: #fff7f7;
+  color: #7f1d1d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  white-space: pre-wrap;
+}
 

@@ -1,4 +1,4 @@
-const KEY_CELL_CONTENT_ALIGN_SET = new Set(['left', 'right', 'center']);
+const CELL_CONTENT_ALIGN_SET = new Set(['left', 'right', 'center']);
 
 export function normalizeKeyValuesProps(props = {}) {
   const dataInput = props.data;
@@ -8,9 +8,13 @@ export function normalizeKeyValuesProps(props = {}) {
     : (Array.isArray(dataInput) ? dataInput : []);
   const selectedRowId = dataInput?.selectedRowId ?? null;
   const keyCellContentAlignRaw = configInput.keyCellContentAlign ?? 'right';
-  const keyCellContentAlign = KEY_CELL_CONTENT_ALIGN_SET.has(keyCellContentAlignRaw)
+  const keyCellContentAlign = CELL_CONTENT_ALIGN_SET.has(keyCellContentAlignRaw)
     ? keyCellContentAlignRaw
     : 'right';
+  const valueCellContentAlignRaw = configInput.valueCellContentAlign ?? 'left';
+  const valueCellContentAlign = CELL_CONTENT_ALIGN_SET.has(valueCellContentAlignRaw)
+    ? valueCellContentAlignRaw
+    : 'left';
 
   return {
     rows,
@@ -22,6 +26,7 @@ export function normalizeKeyValuesProps(props = {}) {
     keyColWidth: configInput.keyColWidth || 'min',
     keyColWidthEffective: configInput.keyColWidthEffective ?? null,
     keyCellContentAlign,
+    valueCellContentAlign,
     isWrap: Boolean(configInput.isWrap),
     isDividerDraggable: Boolean(configInput.isDividerDraggable),
     selectionMode: configInput.selectionMode === 'single' ? 'single' : 'none',

@@ -49,11 +49,11 @@ export const appendConfigPath = (path, itemId) => [
 ];
 
 export const getConfigComponentPath = (config) => (
-  normalizeConfigPath(config?.componentPath ?? config?.path)
+  normalizeConfigPath(config?.compPath ?? config?.componentPath ?? config?.path)
 );
 
-export const getConfigOperationState = (config, componentPath) => {
-  const path = normalizeConfigPath(componentPath);
+export const getConfigOperationState = (config, compPath) => {
+  const path = normalizeConfigPath(compPath);
   const pathText = joinConfigPath(path);
   return config?.operationStateByPath?.[pathText] ?? {};
 };
@@ -62,8 +62,8 @@ export const getConfigValue = (data, item) => (
   data?.[item.id] ?? item.defaultValue
 );
 
-export const getIsConfigControlDisabled = (config, componentPath) => {
-  const operationState = getConfigOperationState(config, componentPath);
+export const getIsConfigControlDisabled = (config, compPath) => {
+  const operationState = getConfigOperationState(config, compPath);
   return Boolean(
     config?.isLocked ||
     operationState.isLocked ||
@@ -78,4 +78,33 @@ export const emitConfigEvent = (onEvent, eventType, eventData) => {
   }
 
   return undefined;
+};
+
+export const normalizeConfigPanelProps = (props = {}, runtime = {}) => {
+  const data = props.data ?? props.configValue ?? runtime.data ?? {};
+  const configBase = props.config ?? props.configStruct ?? runtime.config ?? {};
+  const config = {
+    ...configBase
+  };
+
+  if (props.missingItemStrategy !== undefined) {
+    config.missingItemStrategy = props.missingItemStrategy;
+  }
+
+  const onEvent = props.onEvent ?? runtime.onEvent ?? (
+    props.onChangeAttempt
+      ? (eventType, eventData = {}) => {
+        if (eventType === 'valueChangeAttempt' || eventType === 'valueDefaultSetAttempt') {
+          return props.onChangeAttempt(eventData.valueId, eventData.value, eventData);
+        }
+        return undefined;
+      }
+      : undefined
+  );
+
+  return {
+    data,
+    config,
+    onEvent
+  };
 };
