@@ -48,6 +48,8 @@ export const EditIconPen: ComponentType<any>;
 export const PlusIcon: ComponentType<any>;
 export const MinusIcon: ComponentType<any>;
 export const DragIcon: ComponentType<any>;
+export const SettingIcon: ComponentType<any>;
+export const FilterIcon: ComponentType<any>;
 export const PdfIcon: ComponentType<any>;
 export const RefreshIcon: ComponentType<any>;
 export const CheckIcon: ComponentType<any>;
@@ -150,7 +152,14 @@ export type ConfigCustomControlProps = {
   onValueChange?: (valueNext: unknown) => Promise<unknown> | unknown;
   [key: string]: unknown;
 };
-export type ConfigItemType = 'group' | 'boolean' | 'string' | 'number' | 'select' | 'tab' | 'tab-group' | 'subtab' | string;
+export type ConfigOption = string | {
+  id?: string;
+  value?: string;
+  label?: ReactNode;
+  labelText?: ReactNode;
+  [key: string]: unknown;
+};
+export type ConfigItemType = 'group' | 'boolean' | 'string' | 'number' | 'select' | 'enum' | 'tab' | 'tab-group' | 'subtab' | string;
 export type ConfigItem = {
   id: string;
   type: ConfigItemType;
@@ -158,7 +167,8 @@ export type ConfigItem = {
   name?: ReactNode;
   description?: ReactNode;
   defaultValue?: unknown;
-  options?: string[];
+  options?: ConfigOption[];
+  optionList?: ConfigOption[];
   children?: ConfigItem[];
   comp?: ComponentType<ConfigCustomControlProps> | ReactNode;
   compName?: string;

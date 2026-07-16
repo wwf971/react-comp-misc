@@ -5,10 +5,6 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,

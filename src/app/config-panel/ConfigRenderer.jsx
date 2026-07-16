@@ -5,6 +5,8 @@ import ConfigBool from './ConfigBool.jsx';
 import ConfigStr from './ConfigStr.jsx';
 import ConfigNumber from './ConfigNumber.jsx';
 import ConfigSelect from './ConfigSelect.jsx';
+import SegmentedControl from '../../component/button/SegmentedControl.jsx';
+import SpinningCircle from '../../icon/SpinningCircle.jsx';
 import baseStyles from './Config.module.css';
 import tabGroupStyles from './ConfigTabGroup.module.css';
 import tabStyles from './ConfigTab.module.css';
@@ -15,13 +17,14 @@ import {
   emitConfigEvent,
   getConfigComponentPath,
   getConfigOperationState,
+  getConfigRequestState,
   getConfigValue,
   getIsConfigControlDisabled,
   joinConfigPath,
   useConfigRuntime
 } from './ConfigUtils.jsx';
 
-const fieldTypeList = ['boolean', 'string', 'number', 'select'];
+const fieldTypeList = ['boolean', 'string', 'number', 'select', 'enum'];
 
 function isFieldItem(item) {
   return fieldTypeList.includes(item?.type) || item?.comp || item?.compName;
@@ -110,13 +113,59 @@ function ConfigInvalidItem({ item, expectedText, className, label }) {
   );
 }
 
+function ConfigRequestStatus({ requestState, itemPathText }) {
+  const anchorRef = useRef(null);
+  const [panelRect, panelRectSet] = useState(null);
+  const { config } = useConfigRuntime();
+  if (!requestState) return null;
+  if (requestState.status === 'pending') {
+    return (
+      <span className={baseStyles.configRequestStatusPending}>
+        <SpinningCircle width={13} height={13} color="#5b6f89" />
+      </span>
+    );
+  }
+  if (requestState.status !== 'error') return null;
+  const messageText = String(requestState.message ?? 'Update failed');
+  const panelShow = () => {
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const panelInset = 6;
+    const panelWidth = Math.min(320, window.innerWidth - panelInset * 2);
+    const left = Math.max(panelInset, Math.min(rect.right + 6, window.innerWidth - panelWidth - panelInset));
+    panelRectSet({
+      left,
+      top: rect.top + rect.height / 2,
+      width: panelWidth
+    });
+  };
+  const panelHide = () => panelRectSet(null);
+  return (
+    <span ref={anchorRef} className={baseStyles.configRequestStatusError} onMouseEnter={panelShow} onMouseLeave={panelHide}>
+      Error
+      {panelRect ? createPortal(
+        <span
+          className={baseStyles.configRequestErrorPanel}
+          style={{ left: panelRect.left, top: panelRect.top, width: panelRect.width }}
+          onMouseEnter={panelShow}
+          onMouseLeave={panelHide}
+        >
+          <span className={baseStyles.configRequestErrorText}>{messageText}</span>
+          <button type="button" className={baseStyles.configRequestErrorDismiss} onClick={() => config.onRequestDismiss?.(itemPathText)}>Dismiss</button>
+        </span>,
+        document.body
+      ) : null}
+    </span>
+  );
+}
+
 const ConfigCustomControl = observer(function ConfigCustomControl({ item, itemPath }) {
   const { data, config, onEvent } = useConfigRuntime();
   const compPath = getConfigComponentPath(config);
   const compPathText = joinConfigPath(compPath);
   const itemPathText = joinConfigPath(itemPath);
   const value = getConfigValue(data, item);
-  const isDisabled = getIsConfigControlDisabled(config, compPath);
+  const isDisabled = getIsConfigControlDisabled(config, compPath, itemPath, item);
   const CustomComp = resolveCustomComp(config, item);
   const onValueChange = (valueNext) => emitConfigEvent(onEvent, 'valueChangeAttempt', {
     compPath,
@@ -146,6 +195,44 @@ const ConfigCustomControl = observer(function ConfigCustomControl({ item, itemPa
   return <CustomComp {...commonProps} />;
 });
 
+const ConfigEnumControl = observer(function ConfigEnumControl({ item, itemPath }) {
+  const { data, config, onEvent } = useConfigRuntime();
+  const compPath = getConfigComponentPath(config);
+  const compPathText = joinConfigPath(compPath);
+  const value = getConfigValue(data, item);
+  const isDisabled = getIsConfigControlDisabled(config, compPath, itemPath, item);
+  const segList = (item.options ?? item.optionList ?? []).map((option) => (
+    typeof option === 'string'
+      ? { value: option, labelText: option }
+      : { value: option.value ?? option.id, labelText: option.labelText ?? option.label ?? option.value ?? option.id }
+  ));
+  return (
+    <SegmentedControl
+      data={{ valueSelected: value, segList }}
+      config={{
+        isDisabled,
+        widthModeSegment: item.widthModeSegment ?? 'auto',
+        colorHighlight: item.colorHighlight,
+        durationTransitionMs: item.durationTransitionMs ?? 140,
+        classNameTrack: item.classNameTrack
+      }}
+      onEvent={(eventType, eventData) => {
+        if (eventType !== 'valueSelectedChange') return;
+        emitConfigEvent(onEvent, 'valueChangeAttempt', {
+          compPath,
+          compPathText,
+          componentPath: compPath,
+          componentPathText: compPathText,
+          itemPath,
+          itemPathText: joinConfigPath(itemPath),
+          valueId: item.id,
+          value: eventData.valueSelected
+        });
+      }}
+    />
+  );
+});
+
 function ConfigFieldControl({ item, itemPath, missingItemStrategy }) {
   const { data } = useConfigRuntime();
   if (!(item.id in data) && missingItemStrategy === 'reportError') {
@@ -161,6 +248,8 @@ function ConfigFieldControl({ item, itemPath, missingItemStrategy }) {
       return <ConfigNumber item={item} itemPath={itemPath} />;
     case 'select':
       return <ConfigSelect item={item} itemPath={itemPath} />;
+    case 'enum':
+      return <ConfigEnumControl item={item} itemPath={itemPath} />;
     default:
       return (
         <ConfigInvalidItem
@@ -174,6 +263,7 @@ function ConfigFieldControl({ item, itemPath, missingItemStrategy }) {
 }
 
 const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, missingItemStrategy, listClassName }) {
+  const { config } = useConfigRuntime();
   return (
     <div className={listClassName ?? baseStyles.configList}>
       {(items ?? []).map((item) => {
@@ -203,6 +293,8 @@ const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, mis
             />
           );
         }
+        const itemPathText = joinConfigPath(itemPath);
+        const requestState = getConfigRequestState(config, itemPath, item);
         return (
           <div key={item.id} className={baseStyles.configItem}>
             <div className={baseStyles.configInfo}>
@@ -210,6 +302,7 @@ const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, mis
               {item.description ? <div className={baseStyles.configDescription}>{item.description}</div> : null}
             </div>
             <div className={baseStyles.configControl}>
+              <ConfigRequestStatus requestState={requestState} itemPathText={itemPathText} />
               <ConfigFieldControl item={item} itemPath={itemPath} missingItemStrategy={missingItemStrategy} />
             </div>
           </div>

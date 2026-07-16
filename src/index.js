@@ -25,7 +25,9 @@ export {
     EditIcon,
     EditIconPen,
     PlusIcon,
-    MinusIcon
+    MinusIcon,
+    SettingIcon,
+    FilterIcon
 } from "./icon/Icon.jsx";
 
 export { default as PdfIcon } from "./icon/PdfIcon.jsx";

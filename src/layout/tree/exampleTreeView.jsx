@@ -10,7 +10,7 @@ const TREE_NODE_CATALOG = {
   workspace: { id: 'workspace', text: 'workspace', kind: 'folder', isLeaf: false, childrenIds: ['src', 'public', 'package-json', 'readme-md'] },
   src: { id: 'src', text: 'src', kind: 'folder', isLeaf: false, childrenIds: ['layout', 'components', 'index-js'] },
   layout: { id: 'layout', text: 'layout', kind: 'folder', isLeaf: false, childrenIds: ['folder', 'tab', 'json'] },
-  folder: { id: 'folder', text: 'folder', kind: 'folder', isLeaf: false, childrenIds: ['FolderView.jsx', 'TreeView.jsx', 'example.jsx'] },
+  folder: { id: 'folder', text: 'folder', kind: 'folder', isLeaf: false, childrenIds: ['FolderView.jsx', 'TreeView.jsx', 'exampleTreeView.jsx'] },
   tab: { id: 'tab', text: 'tab', kind: 'folder', isLeaf: false, childrenIds: ['TabsOnTop.jsx'] },
   json: { id: 'json', text: 'json', kind: 'folder', isLeaf: false, childrenIds: ['JsonComp.jsx'] },
   components: { id: 'components', text: 'Components', kind: 'folder', isLeaf: false, childrenIds: ['ExplorerPanel.jsx', 'NodeLabel.jsx'] },
@@ -22,7 +22,7 @@ const TREE_NODE_CATALOG = {
   'readme-md': { id: 'readme-md', text: 'README.md', kind: 'file', type: 'comp', compKey: 'with-info-icon', infoText: 'project guide', isLeaf: true, childrenIds: [] },
   'FolderView.jsx': { id: 'FolderView.jsx', text: 'FolderView.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
   'TreeView.jsx': { id: 'TreeView.jsx', text: 'TreeView.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
-  'example.jsx': { id: 'example.jsx', text: 'example.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
+  'exampleTreeView.jsx': { id: 'exampleTreeView.jsx', text: 'exampleTreeView.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
   'TabsOnTop.jsx': { id: 'TabsOnTop.jsx', text: 'TabsOnTop.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
   'JsonComp.jsx': { id: 'JsonComp.jsx', text: 'JsonComp.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
   'ExplorerPanel.jsx': { id: 'ExplorerPanel.jsx', text: 'ExplorerPanel.jsx', kind: 'file', isLeaf: true, childrenIds: [] },
@@ -782,7 +782,7 @@ const TreeExamplesPanel = observer(() => {
   );
 });
 
-export const treeExamples = {
+export const treeViewExamples = {
   Tree: {
     component: null,
     description: 'Tree view components with lazy loading and text filter',

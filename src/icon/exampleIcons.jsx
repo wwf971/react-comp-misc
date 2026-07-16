@@ -21,7 +21,9 @@ import {
   SpinningCircle,
   FolderIcon,
   EditIconNotepad,
-  EditIconPen
+  EditIconPen,
+  SettingIcon,
+  FilterIcon
 } from './Icon.jsx';
 
 const IconGallery = () => {
@@ -50,6 +52,8 @@ const IconGallery = () => {
     { name: 'EditIconNotepad', component: EditIconNotepad, description: 'Edit/pen on notepad' },
     { name: 'EditIconPen', component: EditIconPen, description: 'Edit/pencil only' },
     { name: 'DragIcon', component: DragIcon, description: 'Drag/grip lines' },
+    { name: 'SettingIcon', component: SettingIcon, description: 'Settings/gear' },
+    { name: 'FilterIcon', component: FilterIcon, description: 'Filter/funnel' },
   ];
 
   const filteredIcons = useMemo(() => {
@@ -137,7 +141,7 @@ const IconGallery = () => {
   );
 };
 
-export const iconExamples = {
+export const iconsExamples = {
   'Icons-SVG': {
     component: IconGallery,
     description: 'Gallery of all available icons',

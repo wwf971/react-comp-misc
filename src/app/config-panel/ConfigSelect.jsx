@@ -17,7 +17,7 @@ const ConfigSelect = observer(({
   const { data, config, onEvent } = useConfigRuntime();
   const compPath = getConfigComponentPath(config);
   const value = getConfigValue(data, item);
-  const isDisabled = getIsConfigControlDisabled(config, compPath);
+  const isDisabled = getIsConfigControlDisabled(config, compPath, itemPath, item);
 
   const handleChange = (e) => {
     const compPathText = joinConfigPath(compPath);

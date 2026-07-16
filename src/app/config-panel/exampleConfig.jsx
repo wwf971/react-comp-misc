@@ -5,12 +5,72 @@ import ConfigPanel from './Config.jsx';
 import ConfigPanelWithTabs from './ConfigTab.jsx';
 import ConfigPanelWithTabGroups from './ConfigTabGroup.jsx';
 import ConfigPanelWithSubtabs from './ConfigSubtab.jsx';
+import styles from './Config.module.css';
+
+const ConfigPermissionMultiControl = observer(({ value, isDisabled, onValueChange, item }) => {
+  const optionList = item.options ?? [];
+  const valueList = Array.isArray(value) ? value : [];
+  const toggleValue = (option) => {
+    const valueNext = valueList.includes(option)
+      ? valueList.filter((valueItem) => valueItem !== option)
+      : [...valueList, option];
+    onValueChange(valueNext);
+  };
+  return (
+    <div className={styles.configCustomMultiControl}>
+      {optionList.map((option) => (
+        <button
+          key={option}
+          type="button"
+          className={`${styles.configCustomMultiButton} ${valueList.includes(option) ? styles.configCustomMultiButtonActive : ''}`}
+          disabled={isDisabled}
+          onClick={() => toggleValue(option)}
+        >
+          {option}
+        </button>
+      ))}
+    </div>
+  );
+});
+
+function createConfigExampleConfig(configInput) {
+  return makeAutoObservable({
+    requestStateByPath: {},
+    onRequestDismiss(itemPathText) {
+      delete this.requestStateByPath[itemPathText];
+    },
+    ...configInput
+  }, {}, { deep: true, autoBind: true });
+}
+
+function waitMs(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function simulateConfigServer(simulationConfig) {
+  const meanDelayMs = Math.max(0, Number(simulationConfig.meanDelayMs) || 0);
+  const failureChance = Math.max(0, Math.min(100, Number(simulationConfig.failureChance) || 0));
+  const delayMs = Math.round(meanDelayMs * (0.5 + Math.random()));
+  await waitMs(delayMs);
+  if (Math.random() * 100 < failureChance) {
+    return {
+      code: -1,
+      message: `simulated server failure after ${delayMs}ms`
+    };
+  }
+  return {
+    code: 0,
+    message: `server ok (${delayMs}ms)`
+  };
+}
 
 // Example 1: Basic ConfigPanel
-const BasicConfigPanelExample = observer(() => {
+const BasicConfigPanelExample = observer(({ simulationConfig }) => {
   const [message, setMessage] = useState('');
   
-  const [config] = useState(() => makeAutoObservable({
+  const [config] = useState(() => createConfigExampleConfig({
     compPath: ['root'],
     operationStateByPath: {
       root: {
@@ -37,6 +97,23 @@ const BasicConfigPanelExample = observer(() => {
             description: 'Enter your username',
             type: 'string',
             defaultValue: ''
+          },
+          {
+            id: 'accent_tone',
+            label: 'Accent Tone',
+            description: 'Enum rendered by the built-in segmented control',
+            type: 'enum',
+            options: ['soft', 'clear', 'strong'],
+            defaultValue: 'clear'
+          },
+          {
+            id: 'permission_set',
+            label: 'Permissions',
+            description: 'Custom multi-select component resolved by compName',
+            type: 'custom',
+            compName: 'permissionMulti',
+            options: ['read', 'write', 'share'],
+            defaultValue: ['read']
           }
         ]
       },
@@ -55,20 +132,25 @@ const BasicConfigPanelExample = observer(() => {
           }
         ]
       }
-    ]
-  }, {}, { deep: true }));
+    ],
+    getComp: (compName) => (
+      compName === 'permissionMulti' ? ConfigPermissionMultiControl : null
+    )
+  }));
 
   const [configData] = useState(() => {
     const data = {
       enable_feature: true,
       username: 'john_doe',
+        accent_tone: 'clear',
+        permission_set: ['read'],
       theme: 'light'
     };
     return makeAutoObservable(data, {}, { deep: true });
   });
 
   const handleEvent = (eventType, eventData) => {
-    handleConfigExampleEvent(configData, config, setMessage, eventType, eventData);
+    return handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData);
   };
 
   const handleExternalUpdate = () => {
@@ -101,7 +183,7 @@ const BasicConfigPanelExample = observer(() => {
 });
 
 // Example 2: ConfigPanel with Tabs
-const ConfigPanelWithTabsExample = observer(() => {
+const ConfigPanelWithTabsExample = observer(({ simulationConfig }) => {
   const [message, setMessage] = useState('');
   
   // Reusable config items
@@ -124,7 +206,7 @@ const ConfigPanelWithTabsExample = observer(() => {
     performance: { id: 'performance_group', label: 'Performance', type: 'group', children: [items.cache_size] }
   };
 
-  const [config] = useState(() => makeAutoObservable({
+  const [config] = useState(() => createConfigExampleConfig({
     compPath: ['root'],
     operationStateByPath: {
       root: {
@@ -136,7 +218,7 @@ const ConfigPanelWithTabsExample = observer(() => {
       { id: 'appearance_tab', name: 'Appearance', type: 'tab', children: [groups.ui] },
       { id: 'advanced_tab', name: 'Advanced', type: 'tab', children: [groups.debug, groups.performance] }
     ]
-  }, {}, { deep: true }));
+  }));
 
   const [configData] = useState(() => {
     const data = {
@@ -154,7 +236,7 @@ const ConfigPanelWithTabsExample = observer(() => {
   });
 
   const handleEvent = (eventType, eventData) => {
-    handleConfigExampleEvent(configData, config, setMessage, eventType, eventData);
+    return handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData);
   };
 
   return (
@@ -179,7 +261,7 @@ const ConfigPanelWithTabsExample = observer(() => {
 });
 
 // Example 3: ConfigPanel with Tab Groups
-const ConfigPanelWithTabGroupsExample = observer(() => {
+const ConfigPanelWithTabGroupsExample = observer(({ simulationConfig }) => {
   const [message, setMessage] = useState('');
   
   // Define reusable config items
@@ -222,7 +304,7 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
   };
 
   // Compose into tab groups
-  const [config] = useState(() => makeAutoObservable({
+  const [config] = useState(() => createConfigExampleConfig({
     compPath: ['root'],
     operationStateByPath: {
       root: {
@@ -244,7 +326,7 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
       // Invalid entry for testing
       { id: 'invalid_group', name: 'Invalid', type: 'invalid_type', children: [] }
     ]
-  }, {}, { deep: true }));
+  }));
 
   const [configData] = useState(() => {
     const data = {
@@ -262,7 +344,7 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
   });
 
   const handleEvent = (eventType, eventData) => {
-    handleConfigExampleEvent(configData, config, setMessage, eventType, eventData);
+    return handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData);
   };
 
   return (
@@ -287,7 +369,7 @@ const ConfigPanelWithTabGroupsExample = observer(() => {
 });
 
 // Example 4: ConfigPanel with Subtabs
-const ConfigPanelWithSubtabsExample = observer(() => {
+const ConfigPanelWithSubtabsExample = observer(({ simulationConfig }) => {
   const [message, setMessage] = useState('');
   
   // Reusable config items
@@ -305,7 +387,7 @@ const ConfigPanelWithSubtabsExample = observer(() => {
     advanced: { id: 'advanced_group', label: 'Advanced Options', type: 'group', children: [items.debug_mode] }
   };
 
-  const [config] = useState(() => makeAutoObservable({
+  const [config] = useState(() => createConfigExampleConfig({
     compPath: ['root'],
     operationStateByPath: {
       root: {
@@ -317,7 +399,7 @@ const ConfigPanelWithSubtabsExample = observer(() => {
       { id: 'display_subtab', name: 'Display', type: 'subtab', children: [groups.display] },
       { id: 'advanced_subtab', name: 'Advanced', type: 'subtab', children: [groups.advanced] }
     ]
-  }, {}, { deep: true }));
+  }));
 
   const [configData] = useState(() => {
     const data = {
@@ -331,7 +413,7 @@ const ConfigPanelWithSubtabsExample = observer(() => {
   });
 
   const handleEvent = (eventType, eventData) => {
-    handleConfigExampleEvent(configData, config, setMessage, eventType, eventData);
+    return handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData);
   };
 
   return (
@@ -356,63 +438,107 @@ const ConfigPanelWithSubtabsExample = observer(() => {
 });
 
 // Consolidated examples panel
-const ConfigPanelExamplesPanel = () => {
+const ConfigPanelExamplesPanel = observer(() => {
+  const [simulationConfig] = useState(() => makeAutoObservable({
+    failureChance: 20,
+    meanDelayMs: 600
+  }));
+
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px' }}>
-      <h2 style={{ marginTop: 0, marginBottom: '20px' }}>Config Panel Component Examples</h2>
-      
-      {/* Example 1 */}
-      <div style={{ marginBottom: '40px' }}>
-        <h3 style={{ marginBottom: '8px' }}>1. Basic ConfigPanel</h3>
-        <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '12px' }}>
-          Simple configuration panel with groups and basic field types.
-        </p>
+    <div className={styles.configDemoPanel}>
+      <div className={styles.configDemoTitle}>Config Panel Component Examples</div>
+
+      <div className={styles.configDemoSimulationPanel}>
+        <label className={styles.configDemoSimulationLabel}>
+          Failure chance (%)
+          <input
+            className={styles.configDemoSimulationInput}
+            type="number"
+            min="0"
+            max="100"
+            value={simulationConfig.failureChance}
+            onChange={(event) => { simulationConfig.failureChance = Number(event.target.value); }}
+          />
+        </label>
+        <label className={styles.configDemoSimulationLabel}>
+          Mean delay (ms)
+          <input
+            className={styles.configDemoSimulationInput}
+            type="number"
+            min="0"
+            step="50"
+            value={simulationConfig.meanDelayMs}
+            onChange={(event) => { simulationConfig.meanDelayMs = Number(event.target.value); }}
+          />
+        </label>
+        <div className={styles.configDemoSimulationHint}>Value changes show pending state, then success or hoverable error.</div>
+      </div>
+
+      <div className={styles.configDemoSection}>
+        <div className={styles.configDemoSectionTitle}>1. Basic ConfigPanel</div>
+        <div className={styles.configDemoSectionDescription}>Simple configuration panel with groups and basic field types.</div>
         <div style={{ maxWidth: '500px' }}>
-          <BasicConfigPanelExample />
+          <BasicConfigPanelExample simulationConfig={simulationConfig} />
         </div>
       </div>
 
-      {/* Example 2 */}
-      <div style={{ marginBottom: '40px' }}>
-        <h3 style={{ marginBottom: '8px' }}>2. ConfigPanel with Tabs</h3>
-        <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '12px' }}>
-          Configuration panel with vertical tabs for organizing multiple sections.
-        </p>
+      <div className={styles.configDemoSection}>
+        <div className={styles.configDemoSectionTitle}>2. ConfigPanel with Tabs</div>
+        <div className={styles.configDemoSectionDescription}>Configuration panel with vertical tabs for organizing multiple sections.</div>
         <div style={{ maxWidth: '900px' }}>
-          <ConfigPanelWithTabsExample />
+          <ConfigPanelWithTabsExample simulationConfig={simulationConfig} />
         </div>
       </div>
 
-      {/* Example 3 */}
-      <div style={{ marginBottom: '40px' }}>
-        <h3 style={{ marginBottom: '8px' }}>3. ConfigPanel with Tab Groups</h3>
-        <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '12px' }}>
-          Configuration panel with grouped tabs, supports subtabs and simple tabs.
-        </p>
+      <div className={styles.configDemoSection}>
+        <div className={styles.configDemoSectionTitle}>3. ConfigPanel with Tab Groups</div>
+        <div className={styles.configDemoSectionDescription}>Configuration panel with grouped tabs, supports subtabs and simple tabs.</div>
         <div style={{ maxWidth: '900px' }}>
-          <ConfigPanelWithTabGroupsExample />
+          <ConfigPanelWithTabGroupsExample simulationConfig={simulationConfig} />
         </div>
       </div>
 
-      {/* Example 4 */}
-      <div>
-        <h3 style={{ marginBottom: '8px' }}>4. ConfigPanel with Subtabs</h3>
-        <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '12px' }}>
-          Configuration panel with horizontal subtabs at the top (like browser tabs).
-        </p>
+      <div className={styles.configDemoSection}>
+        <div className={styles.configDemoSectionTitle}>4. ConfigPanel with Subtabs</div>
+        <div className={styles.configDemoSectionDescription}>Configuration panel with horizontal subtabs at the top.</div>
         <div style={{ maxWidth: '900px' }}>
-          <ConfigPanelWithSubtabsExample />
+          <ConfigPanelWithSubtabsExample simulationConfig={simulationConfig} />
         </div>
       </div>
     </div>
   );
-};
+});
 
-function handleConfigExampleEvent(configData, config, setMessage, eventType, eventData) {
-  if (eventType === 'valueChangeAttempt' || eventType === 'valueDefaultSetAttempt') {
+async function handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData) {
+  if (eventType === 'valueDefaultSetAttempt') {
     configData[eventData.valueId] = eventData.value;
     setMessage(`Changed ${eventData.valueId} to ${JSON.stringify(eventData.value)}`);
     return { code: 0 };
+  }
+
+  if (eventType === 'valueChangeAttempt') {
+    const itemPathText = eventData.itemPathText ?? eventData.valueId;
+    if (config.requestStateByPath[itemPathText]?.status === 'pending') {
+      return { code: -1, message: 'request already pending' };
+    }
+    config.requestStateByPath[itemPathText] = {
+      status: 'pending',
+      valueNext: eventData.value,
+      message: ''
+    };
+    const result = await simulateConfigServer(simulationConfig);
+    if (result.code === 0) {
+      configData[eventData.valueId] = eventData.value;
+      delete config.requestStateByPath[itemPathText];
+      setMessage(`Changed ${eventData.valueId} to ${JSON.stringify(eventData.value)} (${result.message})`);
+      return result;
+    }
+    config.requestStateByPath[itemPathText] = {
+      status: 'error',
+      message: result.message
+    };
+    setMessage(`Failed to change ${eventData.valueId}: ${result.message}`);
+    return result;
   }
 
   if (eventType === 'activeTabChange') {

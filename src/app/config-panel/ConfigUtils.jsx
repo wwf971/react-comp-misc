@@ -62,13 +62,20 @@ export const getConfigValue = (data, item) => (
   data?.[item.id] ?? item.defaultValue
 );
 
-export const getIsConfigControlDisabled = (config, compPath) => {
+export const getConfigRequestState = (config, itemPath, item) => {
+  const itemPathText = joinConfigPath(itemPath);
+  return config?.requestStateByPath?.[itemPathText] ?? config?.requestStateByPath?.[item?.id] ?? null;
+};
+
+export const getIsConfigControlDisabled = (config, compPath, itemPath, item) => {
   const operationState = getConfigOperationState(config, compPath);
+  const requestState = itemPath ? getConfigRequestState(config, itemPath, item) : null;
   return Boolean(
     config?.isLocked ||
     operationState.isLocked ||
     config?.isEditable === false ||
-    operationState.isEditable === false
+    operationState.isEditable === false ||
+    requestState?.status === 'pending'
   );
 };
 

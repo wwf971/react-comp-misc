@@ -78,8 +78,66 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 5px;
   flex-shrink: 0;
   min-width: 120px;
+}
+
+.configRequestStatusPending {
+  display: inline-flex;
+  width: 21px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.configRequestStatusError {
+  display: inline-flex;
+  width: 28px;
+  justify-content: flex-end;
+  color: #a43838;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.configRequestErrorPanel {
+  position: fixed;
+  z-index: 2000;
+  display: inline-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 24px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 18%);
+  transform: translateY(-50%);
+}
+
+.configRequestErrorText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #a43838;
+  font-size: 12px;
+  white-space: normal;
+}
+
+.configRequestErrorDismiss {
+  align-self: flex-start;
+  min-height: 20px;
+  padding: 1px 7px;
+  border: 0;
+  border-radius: 3px;
+  background: #e8edf4;
+  color: #334155;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.configRequestErrorDismiss:hover {
+  background: #dfe6ef;
 }
 
 .configBoolControl {
@@ -87,6 +145,139 @@
   justify-content: flex-end;
   min-width: 44px;
   flex-shrink: 0;
+}
+
+.configCustomMultiControl {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.configCustomMultiButton {
+  min-height: 23px;
+  padding: 2px 6px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #4b5563;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.configCustomMultiButton:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.configCustomMultiButton:not(:first-child) {
+  margin-left: -1px;
+}
+
+.configCustomMultiButton:last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+.configCustomMultiButton:hover {
+  position: relative;
+  z-index: 1;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.configCustomMultiButton:disabled {
+  cursor: default;
+  opacity: 0.56;
+}
+
+.configCustomMultiButtonActive {
+  position: relative;
+  z-index: 2;
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  text-shadow: 0.35px 0 0 currentColor;
+}
+
+.configDemoPanel {
+  padding: 12px;
+  max-width: 1200px;
+}
+
+.configDemoTitle {
+  margin-bottom: 10px;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.configDemoSimulationPanel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 7px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #f8fafc;
+}
+
+.configDemoSimulationLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #374151;
+  font-size: 12px;
+}
+
+.configDemoSimulationInput {
+  width: 74px;
+  padding: 3px 5px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font: inherit;
+  font-size: 12px;
+}
+
+.configDemoSimulationHint {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.configDemoSection {
+  margin-bottom: 24px;
+}
+
+.configDemoSectionTitle {
+  margin-bottom: 5px;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.configDemoSectionDescription {
+  margin-bottom: 8px;
+  color: #666666;
+  font-size: 13px;
+}
+
+.configDemoMessage {
+  margin-top: 8px;
+  padding: 5px 6px;
+  border: 1px solid #bae6fd;
+  border-radius: 3px;
+  background: #e0f2fe;
+  color: #0f172a;
+  font-size: 12px;
+}
+
+.configDemoValues {
+  margin-top: 8px;
+  padding: 5px 6px;
+  border-radius: 3px;
+  background: #f0f0f0;
+  color: #334155;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
 }
 
 /* Toggle Switch - now using BoolSlider component */

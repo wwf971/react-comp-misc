@@ -30,6 +30,8 @@ import PlusIcon from './PlusIcon';
 import MinusIcon from './MinusIcon';
 import CheckIcon from './CheckIcon';
 import CalendarIcon from './CalendarIcon';
+import SettingIcon from './SettingIcon';
+import FilterIcon from './FilterIcon';
 
 export {
 	FileIcon,
@@ -61,5 +63,7 @@ export {
 	PlusIcon,
 	MinusIcon,
 	CheckIcon,
-	CalendarIcon
+	CalendarIcon,
+	SettingIcon,
+	FilterIcon
 }
