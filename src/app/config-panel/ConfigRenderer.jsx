@@ -5,6 +5,7 @@ import ConfigBool from './ConfigBool.jsx';
 import ConfigStr from './ConfigStr.jsx';
 import ConfigNumber from './ConfigNumber.jsx';
 import ConfigSelect from './ConfigSelect.jsx';
+import ConfigHorizontalViewport from './ConfigHorizontalViewport.jsx';
 import SegmentedControl from '../../component/button/SegmentedControl.jsx';
 import SpinningCircle from '../../icon/SpinningCircle.jsx';
 import baseStyles from './Config.module.css';
@@ -262,7 +263,7 @@ function ConfigFieldControl({ item, itemPath, missingItemStrategy }) {
   }
 }
 
-const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, missingItemStrategy, listClassName }) {
+const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, missingItemStrategy, listClassName, itemClassName }) {
   const { config } = useConfigRuntime();
   return (
     <div className={listClassName ?? baseStyles.configList}>
@@ -272,12 +273,12 @@ const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, mis
           return (
             <div key={item.id} className={baseStyles.configGroup}>
               <div className={baseStyles.configGroupTitle}>{item.label}</div>
-              <div className={baseStyles.configGroupDivider} />
               <ConfigNodeList
                 items={getItemChildren(item)}
                 compPath={itemPath}
                 mode="fields"
                 listClassName={baseStyles.configGroupItems}
+                itemClassName={baseStyles.configGroupItem}
               />
             </div>
           );
@@ -288,22 +289,43 @@ const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, mis
               key={item.id}
               item={item}
               expectedText="group or field item"
-              className={`${baseStyles.configItem} ${baseStyles.configItemInvalid}`}
+              className={`${baseStyles.configItem} ${itemClassName ?? ''} ${baseStyles.configItemInvalid}`}
               label={getItemName(item) || 'Invalid item'}
             />
           );
         }
         const itemPathText = joinConfigPath(itemPath);
         const requestState = getConfigRequestState(config, itemPath, item);
+        const isFullWidth = item.isFullWidth === true;
         return (
-          <div key={item.id} className={baseStyles.configItem}>
-            <div className={baseStyles.configInfo}>
-              <div className={baseStyles.configLabel}>{item.label}</div>
-              {item.description ? <div className={baseStyles.configDescription}>{item.description}</div> : null}
-            </div>
-            <div className={baseStyles.configControl}>
-              <ConfigRequestStatus requestState={requestState} itemPathText={itemPathText} />
-              <ConfigFieldControl item={item} itemPath={itemPath} missingItemStrategy={missingItemStrategy} />
+          <div
+            key={item.id}
+            className={`${baseStyles.configItem} ${itemClassName ?? ''} ${isFullWidth ? baseStyles.configItemFullWidth : ''}`}
+          >
+            {!isFullWidth ? (
+              <div className={baseStyles.configInfo}>
+                <ConfigHorizontalViewport>
+                  <div className={baseStyles.configInfoTrack}>
+                    <div className={baseStyles.configLabel}>{item.label}</div>
+                    {item.description ? <div className={baseStyles.configDescription}>{item.description}</div> : null}
+                  </div>
+                </ConfigHorizontalViewport>
+              </div>
+            ) : null}
+            <div className={`${baseStyles.configControl} ${isFullWidth ? baseStyles.configControlFullWidth : ''}`}>
+              {isFullWidth ? (
+                <div className={baseStyles.configControlTrackFullWidth}>
+                  <ConfigRequestStatus requestState={requestState} itemPathText={itemPathText} />
+                  <ConfigFieldControl item={item} itemPath={itemPath} missingItemStrategy={missingItemStrategy} />
+                </div>
+              ) : (
+                <ConfigHorizontalViewport align="right">
+                  <div className={baseStyles.configControlTrack}>
+                    <ConfigRequestStatus requestState={requestState} itemPathText={itemPathText} />
+                    <ConfigFieldControl item={item} itemPath={itemPath} missingItemStrategy={missingItemStrategy} />
+                  </div>
+                </ConfigHorizontalViewport>
+              )}
             </div>
           </div>
         );
@@ -420,7 +442,10 @@ const ConfigSubtabs = observer(function ConfigSubtabs({ items, compPath }) {
   };
   return (
     <div className={subtabStyles.configSubtabContainer}>
-      <div className={subtabStyles.configSubtabBar}>
+      <ConfigHorizontalViewport
+        className={subtabStyles.configSubtabBar}
+        trackClassName={subtabStyles.configSubtabTrack}
+      >
         {(items ?? []).map((subtab) => (
           subtab.type === 'subtab'
             ? (
@@ -443,7 +468,7 @@ const ConfigSubtabs = observer(function ConfigSubtabs({ items, compPath }) {
               />
             )
         ))}
-      </div>
+      </ConfigHorizontalViewport>
       <div className={subtabStyles.configSubtabContent}>
         {activeSubtab ? (
           <ConfigNodeList
@@ -459,13 +484,21 @@ const ConfigSubtabs = observer(function ConfigSubtabs({ items, compPath }) {
   );
 });
 
-const ConfigNodeList = observer(function ConfigNodeList({ items, compPath, mode = 'auto', listClassName }) {
+const ConfigNodeList = observer(function ConfigNodeList({ items, compPath, mode = 'auto', listClassName, itemClassName }) {
   const { config } = useConfigRuntime();
   const levelKind = getLevelKind(items, mode);
   if (levelKind === 'side-tabs') return <ConfigSideTabs items={items} compPath={compPath} />;
   if (levelKind === 'subtabs') return <ConfigSubtabs items={items} compPath={compPath} />;
   if (listClassName) {
-    return <ConfigFieldList items={items} compPath={compPath} missingItemStrategy={config.missingItemStrategy ?? 'setDefault'} listClassName={listClassName} />;
+    return (
+      <ConfigFieldList
+        items={items}
+        compPath={compPath}
+        missingItemStrategy={config.missingItemStrategy ?? 'setDefault'}
+        listClassName={listClassName}
+        itemClassName={itemClassName}
+      />
+    );
   }
   return (
     <div className={baseStyles.configContainer}>

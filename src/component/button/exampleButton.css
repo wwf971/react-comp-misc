@@ -14,6 +14,26 @@
   font-size: 14px;
 }
 
+.num-value-example-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 420px;
+}
+
+.num-value-example-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.num-value-example-note {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .button-example-section {
   margin-bottom: 30px;
 }

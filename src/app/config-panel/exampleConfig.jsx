@@ -182,6 +182,82 @@ const BasicConfigPanelExample = observer(({ simulationConfig }) => {
   );
 });
 
+const NarrowConfigPanelExample = observer(({ simulationConfig }) => {
+  const [message, setMessage] = useState('');
+  const [config] = useState(() => createConfigExampleConfig({
+    compPath: ['narrow'],
+    operationStateByPath: {
+      narrow: {
+        isEditable: true,
+        isLocked: false
+      }
+    },
+    items: [
+      {
+        id: 'narrow_group',
+        label: 'Narrow container settings',
+        type: 'group',
+        children: [
+          {
+            id: 'enable_compact_feature',
+            label: 'Enable compact extension behavior',
+            description: 'A long description that remains available by wheel-scrolling the left region',
+            type: 'boolean',
+            defaultValue: true
+          },
+          {
+            id: 'account_identifier',
+            label: 'Account identifier',
+            description: 'Long input control',
+            type: 'string',
+            defaultValue: 'account-with-a-long-readable-identifier'
+          },
+          {
+            id: 'display_density',
+            label: 'Display density',
+            description: 'Wide segmented control',
+            type: 'enum',
+            options: ['comfortable', 'balanced', 'very compact'],
+            defaultValue: 'balanced'
+          },
+          {
+            id: 'permission_set_narrow',
+            label: 'Permission set',
+            description: 'Wide custom multi-control',
+            type: 'custom',
+            compName: 'permissionMulti',
+            options: ['read', 'write', 'share', 'admin'],
+            defaultValue: ['read', 'write']
+          }
+        ]
+      }
+    ],
+    getComp: (compName) => (
+      compName === 'permissionMulti' ? ConfigPermissionMultiControl : null
+    )
+  }));
+  const [configData] = useState(() => makeAutoObservable({
+    enable_compact_feature: true,
+    account_identifier: 'account-with-a-long-readable-identifier',
+    display_density: 'balanced',
+    permission_set_narrow: ['read', 'write']
+  }, {}, { deep: true }));
+
+  return (
+    <div>
+      <ConfigPanel
+        data={configData}
+        config={config}
+        onEvent={(eventType, eventData) => (
+          handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData)
+        )}
+      />
+      {message ? <div className={styles.configDemoMessage}>{message}</div> : null}
+      <div className={styles.configDemoValues}>{JSON.stringify(configData, null, 2)}</div>
+    </div>
+  );
+});
+
 // Example 2: ConfigPanel with Tabs
 const ConfigPanelWithTabsExample = observer(({ simulationConfig }) => {
   const [message, setMessage] = useState('');
@@ -503,6 +579,14 @@ const ConfigPanelExamplesPanel = observer(() => {
         <div className={styles.configDemoSectionDescription}>Configuration panel with horizontal subtabs at the top.</div>
         <div style={{ maxWidth: '900px' }}>
           <ConfigPanelWithSubtabsExample simulationConfig={simulationConfig} />
+        </div>
+      </div>
+
+      <div className={styles.configDemoSection}>
+        <div className={styles.configDemoSectionTitle}>5. Narrow ConfigPanel</div>
+        <div className={styles.configDemoSectionDescription}>Wheel-scroll the clipped text and control regions independently.</div>
+        <div className={styles.configDemoNarrow}>
+          <NarrowConfigPanelExample simulationConfig={simulationConfig} />
         </div>
       </div>
     </div>

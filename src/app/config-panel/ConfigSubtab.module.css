@@ -4,16 +4,23 @@
 .configSubtabContainer {
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   height: 100%;
 }
 
 /* Horizontal subtab bar at top */
 .configSubtabBar {
-  display: flex;
+  min-width: 0;
+  overflow: hidden;
   border-bottom: 2px solid #e5e7eb;
   background: #f9fafb;
-  gap: 0px;
-  padding: 0px;
+}
+
+.configSubtabTrack {
+  display: flex;
+  align-items: stretch;
 }
 
 /* Individual subtab button */
@@ -52,7 +59,11 @@
 /* Content area below subtabs */
 .configSubtabContent {
   flex: 1;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   padding: 7px;
+  overflow-x: hidden;
   overflow-y: auto;
   background: #ffffff;
 }

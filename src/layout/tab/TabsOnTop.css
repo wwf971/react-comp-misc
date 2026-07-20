@@ -1,5 +1,8 @@
 .tabs-on-top-container {
   display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   flex-direction: column;
 }
 
@@ -186,10 +189,14 @@
 
 .tabs-on-top-content {
   position: relative;
+  width: 100%;
+  min-width: 0;
 }
 
 .tab-panel {
+  box-sizing: border-box;
   width: 100%;
+  min-width: 0;
 }
 
 .tab-panel.is-kept-hidden {

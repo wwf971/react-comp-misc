@@ -1,52 +1,31 @@
 .configContainer {
   width: 100%;
   max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
-.configContainer::-webkit-scrollbar {
-  height: 8px;
-}
-
-.configContainer::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.configContainer::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-.configContainer::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .configList {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  width: max-content;
-  min-width: 100%;
-  min-width: -moz-available;
-  min-width: -webkit-fill-available;
+  width: 100%;
+  min-width: 0;
 }
 
 .configItem {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 5px;
+  box-sizing: border-box;
   padding: 6px 8px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
   transition: all 0.2s ease;
-  flex-shrink: 0;
-  width: max-content;
-  min-width: 100%;
-  min-width: -moz-available;
-  min-width: -webkit-fill-available;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .configItem:hover {
@@ -55,10 +34,21 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+.configItemFullWidth {
+  align-items: stretch;
+  padding: 0;
+}
+
 .configInfo {
-  flex: 1;
-  margin-right: 8px;
-  min-width: 0;
+  flex: 1 1 55%;
+  min-width: 72px;
+  overflow: hidden;
+}
+
+.configInfoTrack {
+  display: flex;
+  min-width: max-content;
+  flex-direction: column;
 }
 
 .configLabel {
@@ -75,12 +65,54 @@
 }
 
 .configControl {
+  flex: 1 1 45%;
+  min-width: 44px;
+  overflow: hidden;
+}
+
+.configControlFullWidth {
+  flex-basis: 100%;
+  width: 100%;
+}
+
+.configControlTrack {
   display: flex;
+  min-width: max-content;
   align-items: center;
   justify-content: flex-end;
   gap: 5px;
+}
+
+.configControlTrackFullWidth {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  justify-content: stretch;
+}
+
+.configHorizontalViewport {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  justify-content: flex-start;
+}
+
+.configHorizontalViewportAlignRight {
+  justify-content: flex-end;
+}
+
+.configHorizontalTrack {
   flex-shrink: 0;
-  min-width: 120px;
+  width: max-content;
+  min-width: max-content;
+  transition: transform 80ms ease-out;
+  will-change: transform;
+}
+
+.configHorizontalTrackAlignRight {
+  margin-left: auto;
 }
 
 .configRequestStatusPending {
@@ -280,6 +312,12 @@
   white-space: pre-wrap;
 }
 
+.configDemoNarrow {
+  width: 280px;
+  max-width: 100%;
+  border: 1px solid #e5e7eb;
+}
+
 /* Toggle Switch - now using BoolSlider component */
 
 /* Text Input */
@@ -327,34 +365,52 @@
 /* Config Group */
 .configGroup {
   margin-bottom: 10px;
-  width: max-content;
-  min-width: 100%;
-  min-width: -moz-available;
-  min-width: -webkit-fill-available;
-  flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .configGroupTitle {
-  font-size: 13px;
-  font-weight: 600;
-  color: #374151;
   margin-bottom: 4px;
-}
-
-.configGroupDivider {
-  height: 1px;
-  background: #e5e7eb;
-  margin-bottom: 5px;
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+  text-align: left;
 }
 
 .configGroupItems {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  width: max-content;
-  min-width: 100%;
-  min-width: -moz-available;
-  min-width: -webkit-fill-available;
+  gap: 0;
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.configGroupItem {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  transition: background 0.2s ease;
+}
+
+.configGroupItem:hover {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.configGroupItem:not(:last-child)::after {
+  position: absolute;
+  right: 8px;
+  bottom: 0;
+  left: 8px;
+  height: 1px;
+  background: #e5e7eb;
+  content: "";
+  pointer-events: none;
 }
 
 /* ============================================================
@@ -438,27 +494,8 @@
   flex: 1;
   padding: 7px;
   overflow-y: auto;
-  overflow-x: auto;
+  overflow-x: hidden;
   min-width: 0;
-  scrollbar-width: thin;
-}
-
-.configTabContent::-webkit-scrollbar {
-  height: 8px;
-}
-
-.configTabContent::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.configTabContent::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-.configTabContent::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
 }
 
 .configTabEmpty {

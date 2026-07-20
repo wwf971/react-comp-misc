@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import ButtonWithDropDown from './ButtonWithDropDown.jsx';
 import BoolSlider from './BoolSlider.jsx';
+import NumValue from './NumValue.jsx';
 import SegmentedControl from './SegmentedControl.jsx';
-import './example.css';
+import './exampleButton.css';
 
 const BoolSliderExample = () => {
   const [checked1, setChecked1] = useState(false);
@@ -276,6 +277,51 @@ const ButtonWithDropDownExample = () => {
   );
 };
 
+const NumValueExample = () => {
+  const [intervalSecond, setIntervalSecond] = useState(10);
+  const [intervalMinute, setIntervalMinute] = useState(5);
+  const [countLocked, setCountLocked] = useState(3);
+
+  return (
+    <div className="num-value-example-panel">
+      <div className="num-value-example-item">
+        <NumValue
+          data={{ value: intervalSecond }}
+          config={{ min: 1, max: 3600, step: 1, unitText: 'seconds' }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'valueChangeAttempt') setIntervalSecond(Number(eventData.value));
+          }}
+        />
+        <div className="num-value-example-note">
+          Click to edit, drag sideways to step, unit suffix
+        </div>
+      </div>
+      <div className="num-value-example-item">
+        <NumValue
+          data={{ value: intervalMinute }}
+          config={{ min: 0.5, max: 1440, step: 0.5, unitText: 'minutes' }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'valueChangeAttempt') setIntervalMinute(Number(eventData.value));
+          }}
+        />
+        <div className="num-value-example-note">
+          Half-minute step with minutes unit
+        </div>
+      </div>
+      <div className="num-value-example-item">
+        <NumValue
+          data={{ value: countLocked }}
+          config={{ min: 0, max: 20, step: 1, isDisabled: true, unitText: 'items' }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'valueChangeAttempt') setCountLocked(Number(eventData.value));
+          }}
+        />
+        <div className="num-value-example-note">Disabled</div>
+      </div>
+    </div>
+  );
+};
+
 const ButtonExamplesPanel = () => {
   return (
     <div>
@@ -290,6 +336,13 @@ const ButtonExamplesPanel = () => {
         <div className="button-example-section-title">BoolSlider</div>
         <div className="button-example-section-desc">Toggle switch for boolean values</div>
         <BoolSliderExample />
+      </div>
+      <div className="button-example-section">
+        <div className="button-example-section-title">NumValue</div>
+        <div className="button-example-section-desc">
+          Number editor with step buttons, contenteditable text, horizontal drag adjust, and unit label
+        </div>
+        <NumValueExample />
       </div>
       <div className="button-example-section">
         <div className="button-example-section-title">SegmentedControl</div>

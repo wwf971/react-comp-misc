@@ -7,6 +7,7 @@ import {
   calcRowIdsSelectedForContextMenu,
   emitFolderEvent,
   DEFAULT_COL_MIN_WIDTH,
+  resolveColJustifyContent,
 } from './folderUtils.js';
 import './folder.css';
 
@@ -469,9 +470,16 @@ const ItemsListView = observer(({
                     minWidth: isLastColFillApplied ? `${minWidth}px` : undefined,
                     flexGrow: isLastColFillApplied ? 1 : undefined,
                     textAlign: align,
+                    justifyContent: resolveColJustifyContent(align),
                   }}
                 >
-                  <div className="folder-body-cell-content">
+                  <div
+                    className="folder-body-cell-content"
+                    style={{
+                      textAlign: align,
+                      width: align === 'left' ? undefined : '100%',
+                    }}
+                  >
                     <CellWrapper
                       rowId={row.id}
                       colId={colId}

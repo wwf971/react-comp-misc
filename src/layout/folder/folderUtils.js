@@ -8,6 +8,17 @@ export const resolveColAlign = (align) => {
   return 'left';
 };
 
+export const resolveColJustifyContent = (align) => {
+  const value = resolveColAlign(align);
+  if (value === 'center') {
+    return 'center';
+  }
+  if (value === 'right') {
+    return 'flex-end';
+  }
+  return 'flex-start';
+};
+
 export const withResolvedColAlign = (columns) => {
   if (!columns) {
     return columns;

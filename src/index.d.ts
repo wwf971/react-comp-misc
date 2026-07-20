@@ -331,6 +331,25 @@ export const MenuComp: ComponentType<MenuCompProps>;
 export const DatabaseSetup: ComponentType<any>;
 export const TableManage: ComponentType<any>;
 export const BoolSlider: ComponentType<any>;
+export type NumValueData = {
+  value?: number | string | null;
+};
+export type NumValueConfig = {
+  min?: number;
+  max?: number;
+  step?: number;
+  isDisabled?: boolean;
+  /** default: center */
+  align?: 'left' | 'center' | 'right';
+  unitText?: string;
+  className?: string;
+};
+export type NumValueProps = {
+  data?: NumValueData;
+  config?: NumValueConfig;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
+};
+export const NumValue: ComponentType<NumValueProps>;
 export type SegmentedControlSegmentData = {
   value?: string | number | boolean;
   labelText?: string;

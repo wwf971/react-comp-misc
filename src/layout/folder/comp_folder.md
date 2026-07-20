@@ -3,9 +3,9 @@ The following are the points to be careful about, when utilizing FolderView.jsx 
 
 You can also refer to ./example.jsx, for exmaples that demonstrate how some features can be implemented when using this series of components.
 
-## Horizontal Scroll Bar Behavior
+## Horizontal Scrollbar Behavior
 
-When the panel is wide enough for all visible columns, there should be no horizontal scroll bar.
+When the panel is wide enough for all visible columns, there should be no horizontal scrollbar.
 
 A common mistake is leaving list header and body at `width: max-content` inside a fixed-width panel. Column widths sum to fixed pixels and the last column does not grow. When a vertical scroll bar appears and takes a few pixels of width, content no longer fits and a horizontal bar shows up even though nothing is clipped.
 

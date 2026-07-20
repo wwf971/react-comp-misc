@@ -1,0 +1,115 @@
+.num-value-root {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  font-family: sans-serif;
+  font-size: 12px;
+  color: #334155;
+  user-select: none;
+}
+
+.num-value-root.is-disabled {
+  opacity: 0.56;
+}
+
+.num-value-row {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  cursor: ew-resize;
+}
+
+.num-value-step-button {
+  display: inline-flex;
+  box-sizing: border-box;
+  width: 20px;
+  min-height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: #e8edf4;
+  color: #334155;
+  cursor: pointer;
+}
+
+.num-value-step-button:hover {
+  background: #dfe6ef;
+}
+
+.num-value-step-button:disabled {
+  cursor: default;
+  opacity: 0.56;
+}
+
+.num-value-editable {
+  box-sizing: border-box;
+  min-width: 42px;
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  border-bottom: 1px solid transparent;
+  color: #1f2937;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+  outline: none;
+  white-space: nowrap;
+  cursor: text;
+}
+
+.num-value-editable.align-left {
+  justify-content: flex-start;
+}
+
+.num-value-editable.align-center {
+  justify-content: center;
+}
+
+.num-value-editable.align-right {
+  justify-content: flex-end;
+}
+
+.num-value-editable.is-editing {
+  border-bottom-color: #3b82f6;
+  background: #f8fafc;
+  cursor: text;
+}
+
+.num-value-unit {
+  flex-shrink: 0;
+  color: #64748b;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.num-value-root.is-dragging {
+  cursor: ew-resize;
+}
+
+.num-value-drag-cancel {
+  position: fixed;
+  z-index: 2000;
+  box-sizing: border-box;
+  height: 24px;
+  padding: 2px 8px;
+  border: 1px solid #d2a8a8;
+  border-radius: 2px;
+  background: #fff7f7;
+  color: #9f2f2f;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.num-value-drag-cancel.is-hover {
+  border-color: #b85d5d;
+  background: #ffe9e9;
+  color: #7f1d1d;
+}
