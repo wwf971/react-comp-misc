@@ -87,6 +87,19 @@
   padding: 4px;
 }
 
+.calendar-date-selector-dropdown.is-inline {
+  position: static;
+  width: 100%;
+  margin-top: 6px;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+
+.calendar-date-selector.is-calendar-always-expanded .calendar-date-selector-error-placeholder,
+.calendar-date-selector.is-calendar-always-expanded .calendar-date-selector-error-text {
+  min-height: 14px;
+}
+
 .calendar-date-view {
   width: 236px;
 }

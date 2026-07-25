@@ -51,6 +51,7 @@ const ViewSwitcher = observer(({
 
   const headerConfig = {
     colSizeById: config.colSizeById,
+    isLocked: config.isLocked,
     isColReorderAllowed: config.isColReorderAllowed,
     isLastColFilled: config.isLastColFilled,
     compByColId: config.compHeaderByColId,

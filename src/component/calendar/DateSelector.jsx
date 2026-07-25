@@ -28,6 +28,8 @@ const DateSelector = observer(({
   const parseErrorTimerRef = useRef(null);
   const [parseErrorText, setParseErrorText] = useState('');
   const isDropdownOpen = !!data?.isDropdownOpen;
+  const isCalendarAlwaysExpanded = data?.isCalendarAlwaysExpanded === true;
+  const isCalendarVisible = isCalendarAlwaysExpanded || isDropdownOpen;
   const inputText = data?.inputText || '';
   const isDisabled = !!data?.isDisabled;
   const selectionMode = data?.selectionMode || 'single';
@@ -89,6 +91,7 @@ const DateSelector = observer(({
   };
 
   const handleToggleDropdown = async () => {
+    if (isCalendarAlwaysExpanded) return;
     if (!onDataChangeRequest) return;
     await onDataChangeRequest('toggle-dropdown');
   };
@@ -100,7 +103,7 @@ const DateSelector = observer(({
   };
 
   useEffect(() => {
-    if (!isDropdownOpen || !onDataChangeRequest) return;
+    if (isCalendarAlwaysExpanded || !isDropdownOpen || !onDataChangeRequest) return;
     const handleDocumentPointerDown = (event) => {
       const selectorElement = selectorRef.current;
       if (!selectorElement) return;
@@ -112,7 +115,7 @@ const DateSelector = observer(({
     return () => {
       document.removeEventListener('mousedown', handleDocumentPointerDown, true);
     };
-  }, [isDropdownOpen, onDataChangeRequest]);
+  }, [isCalendarAlwaysExpanded, isDropdownOpen, onDataChangeRequest]);
 
   useEffect(() => {
     return () => {
@@ -134,8 +137,8 @@ const DateSelector = observer(({
   };
 
   return (
-    <div className="calendar-date-selector" ref={selectorRef}>
-      <div className={`calendar-date-selector-input-wrap ${isDropdownOpen ? 'calendar-date-selector-input-wrap-open' : ''}`}>
+    <div className={`calendar-date-selector${isCalendarAlwaysExpanded ? ' is-calendar-always-expanded' : ''}`} ref={selectorRef}>
+      <div className={`calendar-date-selector-input-wrap ${isCalendarVisible ? 'calendar-date-selector-input-wrap-open' : ''}`}>
         <input
           className="calendar-date-selector-input"
           value={inputText}
@@ -159,19 +162,21 @@ const DateSelector = observer(({
         >
           <CrossIcon size={12} color="#777" strokeWidth={2} />
         </button>
-        <button
-          type="button"
-          className="calendar-date-selector-calendar-button"
-          onClick={handleToggleDropdown}
-          disabled={isDisabled}
-          aria-label="Open calendar"
-        >
-          <CalendarIcon width={16} height={16} />
-        </button>
+        {!isCalendarAlwaysExpanded ? (
+          <button
+            type="button"
+            className="calendar-date-selector-calendar-button"
+            onClick={handleToggleDropdown}
+            disabled={isDisabled}
+            aria-label="Open calendar"
+          >
+            <CalendarIcon width={16} height={16} />
+          </button>
+        ) : null}
       </div>
 
-      {isDropdownOpen ? (
-        <div className="calendar-date-selector-dropdown">
+      {isCalendarVisible ? (
+        <div className={`calendar-date-selector-dropdown${isCalendarAlwaysExpanded ? ' is-inline' : ''}`}>
           <DateView
             data={{
               visibleYear,

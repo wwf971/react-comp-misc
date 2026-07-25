@@ -505,7 +505,7 @@ const ItemsListView = observer(({
       ) : null}
       {colResizeIndicatorLeft !== null ? (
         <div
-          className="folder-column-resize-indicator"
+            className="folder-col-resize-indicator"
           style={{ left: `${colResizeIndicatorLeft}px` }}
         />
       ) : null}

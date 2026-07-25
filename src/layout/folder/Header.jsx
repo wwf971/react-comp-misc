@@ -19,6 +19,7 @@ const Header = observer(({
   const colWidthById = data?.colWidthById || {};
 
   const colSizeById = config?.colSizeById || {};
+  const isLocked = config?.isLocked === true;
   const isColReorderAllowed = config?.isColReorderAllowed === true;
   const isLastColFilled = config?.isLastColFilled !== false;
   const compByColId = config?.compByColId;
@@ -49,7 +50,6 @@ const Header = observer(({
   };
 
   const handleResizeStart = (e, colId, colIndex) => {
-    e.preventDefault();
     if (!headerRef.current) {
       return;
     }
@@ -367,7 +367,13 @@ const Header = observer(({
               onDragEnd={handleColumnDragEnd}
             >
               <div className="folder-header-content">
-                <CellComp data={column.data} colId={colId} align={align} />
+                <CellComp
+                  data={column.data}
+                  colId={colId}
+                  align={align}
+                  isDisabled={isLocked}
+                  onEvent={(eventType, eventData) => emitFolderEvent(onEvent, eventType, eventData)}
+                />
               </div>
               {isResizable ? (
                 <div
@@ -381,7 +387,7 @@ const Header = observer(({
 
         {colResizeIndicatorLeft !== null ? (
           <div
-            className="folder-column-resize-indicator"
+            className="folder-col-resize-indicator"
             style={{ left: `${colResizeIndicatorLeft}px` }}
           />
         ) : null}

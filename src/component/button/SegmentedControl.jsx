@@ -12,6 +12,7 @@ const SegmentedControl = ({
     valueSelected,
     segList,
     isDisabled,
+    isInitialAnimationEnabled,
     colorHighlight,
     widthModeSegment,
     durationTransitionMs,
@@ -27,6 +28,17 @@ const SegmentedControl = ({
   const trackRef = useRef(null);
   const itemRefs = useRef([]);
   const [highlightMetrics, setHighlightMetrics] = useState({ left: 2, width: 0 });
+  const [isAnimationReady, setIsAnimationReady] = useState(isInitialAnimationEnabled);
+
+  useLayoutEffect(() => {
+    if (isInitialAnimationEnabled) {
+      setIsAnimationReady(true);
+      return undefined;
+    }
+    setIsAnimationReady(false);
+    const frameId = window.requestAnimationFrame(() => setIsAnimationReady(true));
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isInitialAnimationEnabled]);
 
   useLayoutEffect(() => {
     if (!isAutoWidthMode || !hasSelection) {
@@ -50,6 +62,7 @@ const SegmentedControl = ({
   const trackClassName = [
     'segmented-control-track',
     isDisabled ? 'is-disabled' : '',
+    isAnimationReady ? '' : 'is-initial-transition-disabled',
     classNameTrack,
   ].filter(Boolean).join(' ');
 

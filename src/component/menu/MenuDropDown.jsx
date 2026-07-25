@@ -24,6 +24,7 @@ const MenuDropDown = ({
         itemClassName: config?.itemClassName,
         disabledItemClassName: config?.disabledItemClassName,
         isClickPropagationStopped: config?.isClickPropagationStopped,
+        isViewportYClamped: config?.isViewportYClamped,
         itemHoverId: config?.itemHoverId,
         submenuPosOpen: config?.submenuPosOpen,
       }}

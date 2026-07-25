@@ -36,7 +36,7 @@ const getCompStyle = (item) => {
   return style;
 };
 
-const resolvePos = (pos = {}, menuEl = null) => {
+const resolvePos = (pos = {}, menuEl = null, isViewportYClamped = true) => {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
   const rect = menuEl?.getBoundingClientRect?.();
@@ -46,7 +46,9 @@ const resolvePos = (pos = {}, menuEl = null) => {
   const y = Number(pos.y ?? 0);
   return {
     x: Math.max(2, Math.min(x, viewportWidth - width - 2)),
-    y: Math.max(2, Math.min(y, viewportHeight - height - 2)),
+    y: isViewportYClamped
+      ? Math.max(2, Math.min(y, viewportHeight - height - 2))
+      : y,
   };
 };
 
@@ -93,6 +95,7 @@ const MenuCore = ({
   const itemClassName = `${config?.itemClassName ?? ''}`.trim();
   const disabledItemClassName = `${config?.disabledItemClassName ?? ''}`.trim();
   const isClickPropagationStopped = Boolean(config?.isClickPropagationStopped);
+  const isViewportYClamped = config?.isViewportYClamped !== false;
   const isHoverControlled = config && ('itemHoverId' in config || 'submenuPosOpen' in config);
   const itemHoverId = isHoverControlled ? (config?.itemHoverId ?? null) : itemHoverIdInternal;
   const submenuPosOpen = isHoverControlled ? (config?.submenuPosOpen ?? null) : submenuPosOpenInternal;
@@ -172,8 +175,8 @@ const MenuCore = ({
     const menuEl = menuRef.current;
     if (!menuEl) return;
     const resolvedPos = hasAnchor ? trackedPos : posOpen;
-    setAdjustPos(resolvePos(resolvedPos, menuEl));
-  }, [hasAnchor, posOpen.x, posOpen.y, trackedPos.x, trackedPos.y, items.length]);
+    setAdjustPos(resolvePos(resolvedPos, menuEl, isViewportYClamped));
+  }, [hasAnchor, posOpen.x, posOpen.y, trackedPos.x, trackedPos.y, items.length, isViewportYClamped]);
 
   const requestItemClick = (item, event) => {
     if (isClickPropagationStopped) {
@@ -221,24 +224,35 @@ const MenuCore = ({
           const children = getItemChildren(item);
           const isDisabled = isItemDisabled(item);
           const ItemComp = item?.comp ?? null;
+          const isContainer = ItemComp && item?.isContainer === true;
+          const itemContent = (
+            <span className="menu-core-item-label">
+              {ItemComp ? (
+                <span className="menu-core-item-component" style={getCompStyle(item)}>
+                  <ItemComp {...(item?.compProps ?? {})} />
+                </span>
+              ) : getItemLabel(item)}
+            </span>
+          );
           return (
             <React.Fragment key={itemId}>
-              <button
+              {isContainer ? (
+                <div
+                  className={`menu-core-item is-container ${itemClassName}`.trim()}
+                  onMouseEnter={() => requestItemHoverChange(null, null)}
+                >
+                  {itemContent}
+                </div>
+              ) : <button
                 className={`menu-core-item ${itemClassName} ${children.length > 0 ? 'has-submenu' : ''} ${isDisabled ? `disabled ${disabledItemClassName}` : ''}`}
                 type="button"
                 aria-disabled={isDisabled ? 'true' : 'false'}
                 onClick={(event) => requestItemClick(item, event)}
                 onMouseEnter={(event) => requestItemHover(item, index, event)}
               >
-                <span className="menu-core-item-label">
-                  {ItemComp ? (
-                    <span className="menu-core-item-component" style={getCompStyle(item)}>
-                      <ItemComp {...(item?.compProps ?? {})} />
-                    </span>
-                  ) : getItemLabel(item)}
-                </span>
+                {itemContent}
                 {children.length > 0 ? <SubmenuIcon /> : null}
-              </button>
+              </button>}
               {itemHoverId === itemId && submenuPosOpen && children.length > 0 ? (
                 <MenuCore
                   data={{

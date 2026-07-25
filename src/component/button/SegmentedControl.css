@@ -47,6 +47,10 @@
     opacity calc(var(--segment-control-duration-transition-ms, 250ms) * 0.8) ease;
 }
 
+.segmented-control-track.is-initial-transition-disabled .segmented-control-highlight {
+  transition: none;
+}
+
 .segmented-control-segment {
   position: relative;
   z-index: 1;

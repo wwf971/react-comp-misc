@@ -4,6 +4,10 @@ import InfoIcon from './InfoIcon';
 
 /**
  * InfoIcon with custom tooltip on hover
+ *
+ * This tooltip closes when the mouse leaves the icon. If the mouse must be able
+ * to move from the icon into the panel, use a hoverable popover that keeps open
+ * while either the icon or panel is hovered; do not solve that with close timers.
  * 
  * @param {Object} props
  * @param {string} props.tooltipText - The text to display in the tooltip

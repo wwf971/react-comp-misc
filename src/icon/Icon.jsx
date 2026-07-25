@@ -32,6 +32,7 @@ import CheckIcon from './CheckIcon';
 import CalendarIcon from './CalendarIcon';
 import SettingIcon from './SettingIcon';
 import FilterIcon from './FilterIcon';
+import FilterIconEnabled from './FilterIconEnabled';
 
 export {
 	FileIcon,
@@ -65,5 +66,6 @@ export {
 	CheckIcon,
 	CalendarIcon,
 	SettingIcon,
-	FilterIcon
+	FilterIcon,
+	FilterIconEnabled
 }

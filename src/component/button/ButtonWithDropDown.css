@@ -4,6 +4,10 @@
   align-items: center;
 }
 
+.button-with-dropdown-root.is-open {
+  z-index: 4000;
+}
+
 .button-with-dropdown-button-base {
   display: inline-flex;
   align-items: center;
@@ -31,15 +35,6 @@
 
 .button-with-dropdown-button:hover {
   background: #f6f6f6;
-}
-
-.button-with-dropdown-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 3998;
 }
 
 .button-with-dropdown-example-root {

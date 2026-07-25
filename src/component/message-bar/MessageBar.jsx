@@ -190,7 +190,7 @@ function renderContentItem(item, index, context) {
         key={key}
         type="button"
         className={className}
-        disabled={isBusy || item.isDisabled === true}
+        disabled={item.isDisabled === true || (isBusy && !isBuiltInDismiss)}
         onClick={() => onEvent?.(eventType, { itemId: item.id, itemData: item.data, ...(item.eventData || {}) })}
       >
         {item.text || item.labelText || (isBuiltInDismiss ? 'Dismiss' : 'Action')}

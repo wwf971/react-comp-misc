@@ -9,6 +9,8 @@ const ButtonWithDropDown = ({
   onEvent,
 }) => {
   const rootRef = useRef(null);
+  const menuPortalRef = useRef(null);
+  const isOpenBeforeClickRef = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosOpen, setMenuPosOpen] = useState({ x: 0, y: 0 });
   const label = typeof data?.label === 'string'
@@ -23,6 +25,11 @@ const ButtonWithDropDown = ({
   const menuAlign = config?.menuAlign === 'right' ? 'right' : 'left';
   const minWidth = config?.minWidth ?? 130;
   const isClickPropagationStopped = Boolean(config?.isClickPropagationStopped);
+  const isTriggerCloseDisabled = Boolean(config?.isTriggerCloseDisabled);
+  const isTriggerDoubleClickEnabled = Boolean(config?.isTriggerDoubleClickEnabled);
+  const isBackdropCloseDisabled = Boolean(config?.isBackdropCloseDisabled);
+  const isOpenControlled = Object.prototype.hasOwnProperty.call(config ?? {}, 'isOpen');
+  const isOpenEffective = isOpenControlled ? config.isOpen === true : isOpen;
   const title = `${config?.title ?? ''}`.trim();
   const hasCustomButtonClass = Boolean(buttonClassName);
   const buttonClassNames = [
@@ -41,14 +48,19 @@ const ButtonWithDropDown = ({
     });
   }, [menuAlign, minWidth]);
 
+  const openSet = (isOpenNext) => {
+    if (!isOpenControlled) setIsOpen(isOpenNext);
+    onEvent?.('openChange', { isOpen: isOpenNext });
+  };
+
   const requestMenuEvent = (eventType, eventData) => {
     if (eventType !== 'itemClick') return;
-    setIsOpen(false);
+    openSet(false);
     onEvent?.(eventType, eventData);
   };
 
   useEffect(() => {
-    if (!isOpen) return undefined;
+    if (!isOpenEffective) return undefined;
     updateMenuPosOpen();
     window.addEventListener('scroll', updateMenuPosOpen, true);
     window.addEventListener('resize', updateMenuPosOpen);
@@ -56,26 +68,30 @@ const ButtonWithDropDown = ({
       window.removeEventListener('scroll', updateMenuPosOpen, true);
       window.removeEventListener('resize', updateMenuPosOpen);
     };
-  }, [isOpen, updateMenuPosOpen]);
+  }, [isOpenEffective, updateMenuPosOpen]);
 
-  const overlayContent = isOpen ? (
-    <>
-      <div
-        className="button-with-dropdown-backdrop"
-        onClick={(event) => {
-          if (isClickPropagationStopped) {
-            event.stopPropagation();
-          }
-          setIsOpen(false);
-        }}
-        onContextMenu={(event) => {
-          event.preventDefault();
-          if (isClickPropagationStopped) {
-            event.stopPropagation();
-          }
-          setIsOpen(false);
-        }}
-      />
+  useEffect(() => {
+    if (!isOpenEffective || isBackdropCloseDisabled) return undefined;
+    const closeOnOutsidePointer = (event) => {
+      const target = event.target;
+      if (rootRef.current?.contains(target) || menuPortalRef.current?.contains(target)) return;
+      openSet(false);
+    };
+    const closeOnOutsideContextMenu = (event) => {
+      const target = event.target;
+      if (rootRef.current?.contains(target) || menuPortalRef.current?.contains(target)) return;
+      openSet(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePointer, true);
+    document.addEventListener('contextmenu', closeOnOutsideContextMenu, true);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer, true);
+      document.removeEventListener('contextmenu', closeOnOutsideContextMenu, true);
+    };
+  }, [isOpenEffective, isBackdropCloseDisabled]);
+
+  const overlayContent = isOpenEffective ? (
+    <div ref={menuPortalRef}>
       <MenuDropDown
         data={{
           items,
@@ -88,16 +104,17 @@ const ButtonWithDropDown = ({
           itemClassName: config?.itemClassName,
           disabledItemClassName: config?.disabledItemClassName,
           isClickPropagationStopped,
+          isViewportYClamped: config?.isViewportYClamped,
         }}
         onEvent={requestMenuEvent}
       />
-    </>
+    </div>
   ) : null;
 
   return (
     <div
       ref={rootRef}
-      className={`button-with-dropdown-root ${className}`}
+      className={`button-with-dropdown-root${isOpenEffective ? ' is-open' : ''} ${className}`}
     >
       <button
         className={buttonClassNames}
@@ -109,10 +126,19 @@ const ButtonWithDropDown = ({
             event.stopPropagation();
           }
           if (isDisabled) return;
-          if (!isOpen) {
+          if (isTriggerDoubleClickEnabled && event.detail === 1) isOpenBeforeClickRef.current = isOpenEffective;
+          if (isOpenEffective && isTriggerCloseDisabled) return;
+          if (!isOpenEffective) {
             updateMenuPosOpen();
           }
-          setIsOpen((prevValue) => !prevValue);
+          openSet(!isOpenEffective);
+        }}
+        onDoubleClick={(event) => {
+          if (isClickPropagationStopped) event.stopPropagation();
+          if (isDisabled || !isTriggerDoubleClickEnabled) return;
+          const isOpenBeforeDoubleClick = isOpenBeforeClickRef.current;
+          openSet(isOpenBeforeDoubleClick);
+          onEvent?.('triggerDoubleClick', { isOpenBeforeDoubleClick });
         }}
       >
         {label}

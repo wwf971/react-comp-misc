@@ -23,7 +23,8 @@ import {
   EditIconNotepad,
   EditIconPen,
   SettingIcon,
-  FilterIcon
+  FilterIcon,
+  FilterIconEnabled
 } from './Icon.jsx';
 
 const IconGallery = () => {
@@ -54,6 +55,7 @@ const IconGallery = () => {
     { name: 'DragIcon', component: DragIcon, description: 'Drag/grip lines' },
     { name: 'SettingIcon', component: SettingIcon, description: 'Settings/gear' },
     { name: 'FilterIcon', component: FilterIcon, description: 'Filter/funnel' },
+    { name: 'FilterIconEnabled', component: FilterIconEnabled, description: 'Filter/funnel enabled state' },
   ];
 
   const filteredIcons = useMemo(() => {

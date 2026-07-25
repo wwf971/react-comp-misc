@@ -246,7 +246,7 @@
   pointer-events: none;
 }
 
-.folder-column-resize-indicator {
+.folder-col-resize-indicator {
   position: absolute;
   top: 0;
   bottom: 0;

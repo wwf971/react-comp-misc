@@ -50,6 +50,7 @@ export const MinusIcon: ComponentType<any>;
 export const DragIcon: ComponentType<any>;
 export const SettingIcon: ComponentType<any>;
 export const FilterIcon: ComponentType<any>;
+export const FilterIconEnabled: ComponentType<any>;
 export const PdfIcon: ComponentType<any>;
 export const RefreshIcon: ComponentType<any>;
 export const CheckIcon: ComponentType<any>;
@@ -364,6 +365,7 @@ export type SegmentedControlData = {
 };
 export type SegmentedControlConfig = {
   isDisabled?: boolean;
+  isInitialAnimationEnabled?: boolean;
   colorHighlight?: string;
   widthModeSegment?: 'auto' | 'equal';
   durationTransitionMs?: number;
@@ -741,6 +743,7 @@ export type FolderHeaderData = {
 };
 export type FolderHeaderConfig = {
   colSizeById?: Record<string, FolderColSizeDef>;
+  isLocked?: boolean;
   isColReorderAllowed?: boolean;
   isLastColFilled?: boolean;
   colResizeDragMode?: 'preview' | 'immediate';
@@ -921,6 +924,11 @@ export type ButtonWithDropDownProps = {
     minWidth?: number;
     menuAlign?: 'left' | 'right';
     isClickPropagationStopped?: boolean;
+    isTriggerCloseDisabled?: boolean;
+    isTriggerDoubleClickEnabled?: boolean;
+    isBackdropCloseDisabled?: boolean;
+    isViewportYClamped?: boolean;
+    isOpen?: boolean;
     title?: string;
   };
   onEvent?: (eventType: string, eventData: any) => void;
@@ -935,6 +943,7 @@ export type MenuItemData = {
   children?: MenuItemData[];
   comp?: ComponentType<any>;
   compProps?: Record<string, unknown>;
+  isContainer?: boolean;
   preferredWidth?: number;
   preferredHeight?: number;
   [key: string]: unknown;
@@ -976,6 +985,7 @@ export type MenuCompConfig = {
   itemClassName?: string;
   disabledItemClassName?: string;
   isClickPropagationStopped?: boolean;
+  isViewportYClamped?: boolean;
   isBackdropScrollPassThrough?: boolean;
 };
 

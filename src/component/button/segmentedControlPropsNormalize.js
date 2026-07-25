@@ -21,6 +21,7 @@ export function normalizeSegmentedControlProps(props = {}) {
     valueSelected: dataInput.valueSelected ?? dataInput.value ?? dataInput.data ?? null,
     segList,
     isDisabled: Boolean(configInput.isDisabled ?? configInput.disabled),
+    isInitialAnimationEnabled: configInput.isInitialAnimationEnabled === true,
     colorHighlight: configInput.colorHighlight ?? configInput.color ?? '#3b82f6',
     widthModeSegment: WIDTH_MODE_SEGMENT_SET.has(widthModeSegmentRaw) ? widthModeSegmentRaw : 'auto',
     durationTransitionMs: Number.isFinite(configInput.durationTransitionMs)
