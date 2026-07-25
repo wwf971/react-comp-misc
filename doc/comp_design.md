@@ -46,6 +46,46 @@ Render Components might emit multiple types of events to parent and mobx store. 
 
 In a clean render component design, the render component receives only three major props: data, config, and onEvent. data is the object containing the content to be rendered. config contains variables that records component's current operation status, such as selected rows' id for a table component, and things like isLocked/isEditable. onEvent is a unified callback function through which the component notifies about edit request. data and config can be deeply nested objects, since mobx observer will automatically trace change of subscribed properties and trigger re-render correctly. 
 
+### Container components must preserve the communication path
+
+A render component is often rendered through one or more container components. For example, a folder view renders a custom column header, and the custom column header renders a property editor.
+
+Every container in this path must forward both directions of communication:
+
+```text
+MobX store
+  -> data and config
+  -> FolderView
+  -> custom column header
+  -> property editor
+
+property editor
+  -> onEvent(change attempt)
+  -> custom column header
+  -> FolderView
+  -> MobX store
+```
+
+The container should not become an accidental endpoint. When it renders a custom child component, it should normally pass:
+
+- `data`: accepted values and display state;
+- `config`: operation state such as `isLocked` or `isDisabled`;
+- `onEvent`: the callback that returns the child's change attempt to the parent or store.
+
+For example:
+
+```jsx
+<CellComp
+  data={column.data}
+  config={{ isLocked }}
+  onEvent={(eventType, eventData) => onEvent?.(eventType, eventData)}
+/>
+```
+
+This forwarding is especially important for render slots such as `compHeaderByColId`, `compBodyByColId`, popup content, and custom property values. The component type can be supplied correctly while its communication props are still missing.
+
+If a controlled editor is visible and editable, but clicking does nothing, entered text returns to the old value, and rejection messages never appear, check the complete `onEvent` path first. These symptoms often mean the change attempt never reached the store. The input component itself may be working correctly: because the store remains the source of truth, the next render simply restores the last accepted value.
+
 ## Data organization inside mobx store
 
 The architecture should be fully data-driven. So mobx store should not only hold data of resource objects, but also operational states of components. Typical operation states includes but are not limited to:
@@ -138,4 +178,4 @@ New components should be `.jsx` and root-exported only. Migrating legacy `.tsx` 
 
 # Test Examples
 
-See `/doc/test_example.md`.
+See `/doc/comp_test_example.md`.

@@ -75,6 +75,14 @@
   color: #9e2f2f;
 }
 
+.metadata-kv-btn:disabled,
+.metadata-kv-dismiss-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.metadata-kv-actions.is-locked,
 .metadata-kv-table.is-locked {
-  opacity: 0.9;
+  opacity: 0.72;
+  pointer-events: none;
 }

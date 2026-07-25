@@ -6,9 +6,58 @@ import PropEditor from './PropEditor.jsx';
 import { createPropEditorDemoStore } from './propEditorStore.js';
 import './examplePropEditor.css';
 
+const DemoCustomItem = observer(function DemoCustomItem({ data = {}, config = {}, onEvent }) {
+  return (
+    <div className="demo-prop-editor-custom-item">
+      <span className="demo-prop-editor-custom-main">
+        <strong>{data.label}</strong>
+        <small>{data.detail}</small>
+      </span>
+      <button type="button" disabled={config.isReadOnly === true} onClick={() => onEvent?.('toggle', {})}>
+        {data.isEnabled ? 'Enabled' : 'Disabled'}
+      </button>
+    </div>
+  );
+});
+
+function DemoHeaderAction({ data = {}, config = {}, onEvent }) {
+  return <button type="button" disabled={config.isReadOnly === true} onClick={() => onEvent?.('activate', {})}>{data.label || 'Action'}</button>;
+}
+
+function DemoInspectIcon({ width = 13, height = 13, className = '' }) {
+  return (
+    <svg className={className} width={width} height={height} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function DemoLeadingFlag({ data = {}, config = {}, onEvent }) {
+  return (
+    <button
+      type="button"
+      className={`demo-prop-editor-leading-flag ${data.isActive ? 'is-active' : ''}`.trim()}
+      disabled={config.isReadOnly === true}
+      title={data.isActive ? 'Marked' : 'Not marked'}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onEvent?.('toggle', {});
+      }}
+    >
+      {data.label || '*'}
+    </button>
+  );
+}
+
 const compByName = {
   folder: FolderIcon,
   file: FileIcon,
+  demoCustomItem: DemoCustomItem,
+  demoHeaderAction: DemoHeaderAction,
+  demoInspectIcon: DemoInspectIcon,
+  demoLeadingFlag: DemoLeadingFlag,
 };
 
 const DemoPropEditor = observer(() => {

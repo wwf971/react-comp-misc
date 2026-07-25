@@ -230,6 +230,11 @@
   white-space: nowrap;
 }
 
+.folder-body-cell-content-custom {
+  width: 100%;
+  min-width: 0;
+}
+
 .folder-body-separator-indicator {
   position: absolute;
   left: 0;

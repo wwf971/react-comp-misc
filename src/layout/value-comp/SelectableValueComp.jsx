@@ -205,10 +205,7 @@ const SelectableValueComp = ({
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           suppressContentEditableWarning={true}
-          style={{
-            ...(isSubmitting || isShowingError ? { pointerEvents: 'none', opacity: 0.7 } : {}),
-            ...(isEditing ? { minWidth: '100px' } : {})
-          }}
+          style={isSubmitting || isShowingError ? { pointerEvents: 'none', opacity: 0.7 } : undefined}
         >
           {getCurrentLabel()}
         </span>

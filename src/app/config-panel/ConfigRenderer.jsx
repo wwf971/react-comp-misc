@@ -10,7 +10,6 @@ import SegmentedControl from '../../component/button/SegmentedControl.jsx';
 import SpinningCircle from '../../icon/SpinningCircle.jsx';
 import baseStyles from './Config.module.css';
 import tabGroupStyles from './ConfigTabGroup.module.css';
-import tabStyles from './ConfigTab.module.css';
 import subtabStyles from './ConfigSubtab.module.css';
 import {
   ConfigRuntimeProvider,
@@ -270,6 +269,7 @@ const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, mis
       {(items ?? []).map((item) => {
         const itemPath = appendConfigPath(compPath, item.id);
         if (item.type === 'group') {
+          const isFrameVisible = item.isFrameVisible !== false;
           return (
             <div key={item.id} className={baseStyles.configGroup}>
               <div className={baseStyles.configGroupTitle}>{item.label}</div>
@@ -277,8 +277,16 @@ const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, mis
                 items={getItemChildren(item)}
                 compPath={itemPath}
                 mode="fields"
-                listClassName={baseStyles.configGroupItems}
-                itemClassName={baseStyles.configGroupItem}
+                listClassName={
+                  isFrameVisible
+                    ? baseStyles.configGroupItems
+                    : baseStyles.configGroupItemsNoFrame
+                }
+                itemClassName={
+                  isFrameVisible
+                    ? baseStyles.configGroupItem
+                    : baseStyles.configGroupItemNoFrame
+                }
               />
             </div>
           );

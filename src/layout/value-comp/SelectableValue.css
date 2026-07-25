@@ -28,18 +28,43 @@
 }
 
 .selectable-value-fixed-wrapper {
-  display: inline-block;
-  vertical-align: baseline;
-  /* Fixed line-height to prevent jittering */
-  line-height: 1.2;
-  min-height: 1.2em;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 1.3;
+  min-height: 21px;
+  box-sizing: border-box;
+}
+
+.selectable-value-fixed-wrapper .editable-value-text {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  line-height: inherit;
+  min-height: 21px;
+  padding: 1px 2px;
+  margin: 0;
+  border: 1px solid transparent;
+  outline: none;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.selectable-value-fixed-wrapper .editable-value-text.editing,
+.selectable-value-fixed-wrapper .editable-value-text.selectable-editing {
+  border-color: #2196F3;
+  background: #ffffff;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .selectable-value-text {
   display: inline-block;
   vertical-align: baseline;
   line-height: inherit;
-  /* Always have the same box model to prevent jittering */
   padding: 0 2px;
   margin: 0 -2px;
   outline: 1px solid transparent;
@@ -48,7 +73,6 @@
 }
 
 .selectable-editing {
-  /* Only change the outline color, not the dimensions */
   outline-color: #2196F3;
 }
 

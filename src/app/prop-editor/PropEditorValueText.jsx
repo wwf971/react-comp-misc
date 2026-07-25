@@ -10,9 +10,10 @@ const PropEditorValueText = observer(function PropEditorValueText({ data, itemRe
     <ValueShell itemRef={itemRef}>
       <EditableValue
         value={data}
-        className="prop-editor-editable-text"
+        className={`prop-editor-editable-text${itemRef?.valueConfig?.isEditAppearanceAlways === true ? ' is-edit-appearance-always' : ''}`}
         align={alignValue}
         isLocked={isLocked}
+        placeholder={itemRef?.valueConfig?.placeholder ?? ''}
         onCommit={(valueNext) => onChangeAttempt?.(index, 'value', valueNext)}
       />
     </ValueShell>

@@ -173,6 +173,8 @@ export type ConfigItem = {
   comp?: ComponentType<ConfigCustomControlProps> | ReactNode;
   compName?: string;
   compProps?: Record<string, unknown>;
+  isFullWidth?: boolean;
+  isFrameVisible?: boolean;
   [key: string]: unknown;
 };
 export type ConfigOperationState = {
@@ -415,16 +417,108 @@ export const ColorPickerStore: new (...args: any[]) => any;
 export function createColorPickerStore(...args: any[]): any;
 export const colorPickerModeOptions: ColorPickerModeOption[];
 export const swatchGridDefault: ColorPickerSwatchGrid;
+export type PropEditorDirectItemCheckboxData = {
+  isChecked?: boolean;
+  isDisabled?: boolean;
+  isEffectDisabled?: boolean;
+  title?: string;
+  ariaLabel?: string;
+  [key: string]: unknown;
+};
+export type PropEditorLeadingControlBase = {
+  id: string;
+  type: string;
+  title?: string;
+  ariaLabel?: string;
+  isDisabled?: boolean;
+  className?: string;
+  [key: string]: unknown;
+};
+export type PropEditorDragLeadingControl = PropEditorLeadingControlBase & {
+  type: 'drag';
+};
+export type PropEditorCheckboxLeadingControl = PropEditorLeadingControlBase & {
+  type: 'checkbox';
+  data?: PropEditorDirectItemCheckboxData;
+};
+export type PropEditorActionLeadingControl = PropEditorLeadingControlBase & {
+  type: 'action';
+  actionId?: string;
+  iconName?: string;
+  iconCompName?: string;
+  kind?: string;
+  label?: string;
+};
+export type PropEditorCustomLeadingControl = PropEditorLeadingControlBase & {
+  type: 'custom';
+  compName: string;
+  data?: Record<string, unknown>;
+  config?: Record<string, unknown>;
+};
+export type PropEditorLeadingControl =
+  | PropEditorDragLeadingControl
+  | PropEditorCheckboxLeadingControl
+  | PropEditorActionLeadingControl
+  | PropEditorCustomLeadingControl
+  | PropEditorLeadingControlBase;
+export type PropEditorDirectItemAction = {
+  id: string;
+  actionId?: string;
+  iconName?: string;
+  iconCompName?: string;
+  kind?: string;
+  title?: string;
+  label?: string;
+  ariaLabel?: string;
+  isDisabled?: boolean;
+  [key: string]: unknown;
+};
+export type PropEditorDirectNodeFields = {
+  checkboxData?: PropEditorDirectItemCheckboxData;
+  actionList?: PropEditorDirectItemAction[];
+  leadingControlList?: PropEditorLeadingControl[];
+};
+export type PropEditorPropertyNode = PropEditorDirectNodeFields & {
+  id: string;
+  type?: 'property';
+  propertyId?: string;
+  label?: string;
+  valueType?: string;
+  displayType?: string;
+  optionList?: Record<string, unknown>[];
+  valueCompName?: string;
+  [key: string]: unknown;
+};
+export type PropEditorGroupNode = PropEditorDirectNodeFields & {
+  id: string;
+  type: 'group';
+  label: string;
+  isCollapsible?: boolean;
+  isChildrenDraggable?: boolean;
+  headerRight?: Record<string, unknown>;
+  children?: PropEditorNode[];
+  [key: string]: unknown;
+};
 export type PropEditorData = {
   levelLeftSelectedId?: string;
   levelTopSelectedId?: string;
-  levelLeftList?: Record<string, unknown>[];
-  levelTopList?: Record<string, unknown>[];
-  panelList?: Record<string, unknown>[];
+  levelLeftList?: PropEditorNode[];
+  levelTopList?: PropEditorNode[];
+  panelList?: PropEditorNode[];
   propertyById?: Record<string, unknown>;
   dragStateByGroupPath?: Record<string, unknown>;
   [key: string]: unknown;
 };
+export type PropEditorCustomItemNode = PropEditorDirectNodeFields & {
+  id: string;
+  type: 'custom';
+  compName: string;
+  data?: Record<string, unknown>;
+  config?: Record<string, unknown>;
+  className?: string;
+  children?: PropEditorNode[];
+};
+export type PropEditorNode = PropEditorPropertyNode | PropEditorGroupNode | PropEditorCustomItemNode | Record<string, unknown>;
 export type PropEditorConfig = {
   titleText?: string;
   width?: string;

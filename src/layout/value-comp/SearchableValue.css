@@ -1,5 +1,12 @@
 .searchable-value-wrapper {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 21px;
+  max-width: 100%;
+  box-sizing: border-box;
+  vertical-align: middle;
 }
 
 .searchable-value-fixed-wrapper {

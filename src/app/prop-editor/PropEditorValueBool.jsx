@@ -7,10 +7,21 @@ const PropEditorValueBool = observer(function PropEditorValueBool({ data, itemRe
   if (displayType === 'checkbox') {
     return (
       <ValueShell itemRef={itemRef}>
-        <label className="prop-editor-checkbox">
-          <input type="checkbox" checked={Boolean(data)} disabled={isLocked} onChange={() => onChangeAttempt?.(index, 'value', !data)} />
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={Boolean(data)}
+          className={`prop-editor-checkbox${data ? ' is-checked' : ''}${itemRef?.uiState?.isEffectDisabled ? ' is-effect-disabled' : ''}`}
+          disabled={isLocked}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (itemRef?.onValueChangeAttempt) itemRef.onValueChangeAttempt(!Boolean(data));
+            else onChangeAttempt?.(index, 'value', !Boolean(data));
+          }}
+        >
+          <span className="prop-editor-checkbox-mark" aria-hidden="true" />
           <span>{data ? 'On' : 'Off'}</span>
-        </label>
+        </button>
       </ValueShell>
     );
   }
@@ -20,7 +31,10 @@ const PropEditorValueBool = observer(function PropEditorValueBool({ data, itemRe
         type="button"
         className={`prop-editor-bool ${data ? 'is-on' : ''}`}
         disabled={isLocked}
-        onClick={() => onChangeAttempt?.(index, 'value', !data)}
+        onClick={() => {
+          if (itemRef?.onValueChangeAttempt) itemRef.onValueChangeAttempt(!Boolean(data));
+          else onChangeAttempt?.(index, 'value', !data);
+        }}
       >
         {data ? 'On' : 'Off'}
       </button>

@@ -474,7 +474,9 @@ const ItemsListView = observer(({
                   }}
                 >
                   <div
-                    className="folder-body-cell-content"
+                    className={`folder-body-cell-content ${
+                      CustomComp ? 'folder-body-cell-content-custom' : ''
+                    }`}
                     style={{
                       textAlign: align,
                       width: align === 'left' ? undefined : '100%',

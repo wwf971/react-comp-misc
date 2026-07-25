@@ -3,6 +3,15 @@ import { makeAutoObservable } from 'mobx';
 function nodeClone(node) {
   return {
     ...node,
+    data: node.data ? { ...node.data } : undefined,
+    config: node.config ? { ...node.config } : undefined,
+    checkboxData: node.checkboxData ? { ...node.checkboxData } : undefined,
+    actionList: node.actionList ? node.actionList.map((action) => ({ ...action })) : undefined,
+    leadingControlList: node.leadingControlList ? node.leadingControlList.map((control) => ({
+      ...control,
+      data: control.data ? { ...control.data } : undefined,
+      config: control.config ? { ...control.config } : undefined,
+    })) : undefined,
     children: node.children ? node.children.map(nodeClone) : undefined,
   };
 }
@@ -28,6 +37,19 @@ function nodeListByPathGet(data, groupPathRaw) {
     nodeList = node.children ?? [];
   }
   return nodeList;
+}
+
+function nodeByIdGet(nodes, nodeId) {
+  for (const node of nodes ?? []) {
+    if (node.id === nodeId) return node;
+    const nodeFound = nodeByIdGet(node.children, nodeId);
+    if (nodeFound) return nodeFound;
+  }
+  return null;
+}
+
+function leadingControlByIdGet(node, controlId) {
+  return (node?.leadingControlList ?? []).find((control) => control.id === controlId) ?? null;
 }
 
 function nodeMoveById(nodeList, itemId, indexDropRaw) {
@@ -356,6 +378,82 @@ const editorDataDeletable = {
   },
 };
 
+const editorDataCustomItems = {
+  dragStateByGroupPath: {},
+  header: {
+    label: 'Custom component areas',
+    hint: 'Root and group headers can render application-owned controls.',
+    right: { id: 'rootAction', compName: 'demoHeaderAction', data: { label: 'Root action' } },
+  },
+  panelList: [
+    {
+      id: 'customRows',
+      label: 'Custom Rows',
+      type: 'group',
+      isChildrenDraggable: true,
+      headerRight: { id: 'groupAction', compName: 'demoHeaderAction', data: { label: 'Group action' } },
+      children: [
+        {
+          id: 'customGroup',
+          label: 'Nested Group',
+          type: 'group',
+          leadingControlList: [
+            { id: 'drag', type: 'drag', title: 'Move group' },
+            { id: 'delete', type: 'action', iconName: 'delete', kind: 'danger', title: 'Delete group' },
+            { id: 'inspect', type: 'action', iconCompName: 'demoInspectIcon', title: 'Inspect group' },
+            { id: 'mark', type: 'custom', compName: 'demoLeadingFlag', data: { label: 'G', isActive: false } },
+          ],
+          children: [
+            { id: 'custom.group.title', type: 'property' },
+          ],
+        },
+        {
+          id: 'customA',
+          type: 'custom',
+          compName: 'demoCustomItem',
+          data: { label: 'Alpha column', detail: 'alpha_logical · Text', isEnabled: true },
+          leadingControlList: [
+            { id: 'drag', type: 'drag', title: 'Move Alpha column' },
+            { id: 'enabled', type: 'checkbox', data: { isChecked: true, title: 'Enable Alpha column' } },
+            { id: 'delete', type: 'action', iconName: 'delete', kind: 'danger', title: 'Delete row' },
+            { id: 'inspect', type: 'action', iconCompName: 'demoInspectIcon', title: 'Inspect row' },
+            { id: 'mark', type: 'custom', compName: 'demoLeadingFlag', data: { label: 'A', isActive: true } },
+          ],
+        },
+        {
+          id: 'customB',
+          type: 'custom',
+          compName: 'demoCustomItem',
+          data: { label: 'Beta column', detail: 'beta_logical · Number', isEnabled: false },
+          checkboxData: { isChecked: false, title: 'Enable Beta column' },
+          actionList: [{ id: 'delete', iconName: 'delete', kind: 'danger', title: 'Delete row' }],
+        },
+        {
+          id: 'customC',
+          type: 'custom',
+          compName: 'demoCustomItem',
+          data: { label: 'Gamma column', detail: 'gamma_logical · Choice', isEnabled: true },
+          checkboxData: { isChecked: false, isDisabled: true, title: 'Gamma column cannot be enabled' },
+          actionList: [{ id: 'delete', iconName: 'delete', kind: 'danger', title: 'Delete row' }],
+        },
+        {
+          id: 'customRows.note',
+          type: 'property',
+          leadingControlList: [
+            { id: 'drag', type: 'drag', title: 'Move note' },
+            { id: 'inspect', type: 'action', iconCompName: 'demoInspectIcon', title: 'Inspect note' },
+            { id: 'mark', type: 'custom', compName: 'demoLeadingFlag', data: { label: 'N', isActive: false } },
+          ],
+        },
+      ],
+    },
+  ],
+  propertyById: {
+    'custom.group.title': { id: 'custom.group.title', label: 'Group Title', valueType: 'text', value: 'Nested custom group' },
+    'customRows.note': { id: 'customRows.note', label: 'Note', valueType: 'text', value: 'Property row with custom leading controls' },
+  },
+};
+
 const editorDataEnumViews = {
   panelList: [
     { id: 'enum.vertical', type: 'property' },
@@ -463,6 +561,13 @@ const exampleListDefault = [
     secondaryConfig: { titleText: 'Removable Blocks', width: 'min(330px, 100%)', embeddedWidth: 360, popupWidth: 330, isLevelLeftShown: false, isLevelTopShown: false, keyColWidth: 'min', keyColMinWidth: '48px', keyColMaxWidth: '82px', requestTimeoutMs: 1800, serverSimulation: { delayMinMs: 120, delayMaxMs: 360, errorRate: 0.08, timeoutRate: 0.03 } },
   },
   {
+    id: 'customItems',
+    label: 'Custom Item Rows',
+    description: 'A subgroup can contain custom render components. Direct items independently combine reorder handles, leading checkboxes, standard actions, and custom content.',
+    data: editorDataCustomItems,
+    config: { titleText: 'Custom Rows', width: 'min(360px, 100%)', embeddedWidth: 390, popupWidth: 360, isLevelLeftShown: false, isLevelTopShown: false, requestTimeoutMs: 1800 },
+  },
+  {
     id: 'enumViews',
     label: 'Enum Radio Views',
     description: 'Enum values can render as vertical radio lists or horizontal wheel-scrolled radio groups. The horizontal offset is owned by MobX data.',
@@ -551,6 +656,33 @@ class PropEditorDemoStore {
       return { code: 0 };
     }
 
+    if (eventType === 'customItemEvent') {
+      const node = nodeByIdGet(data.panelList ?? data.levelTopList ?? [], eventData.itemId);
+      if (!node) return { code: -1, message: 'Custom item not found.' };
+      if (eventData.eventType === 'toggle') {
+        node.data.isEnabled = node.data.isEnabled !== true;
+        this.messageText = `${node.id} = ${node.data.isEnabled ? 'enabled' : 'disabled'}`;
+        return { code: 0 };
+      }
+      return { code: 1, message: `Unsupported custom item event: ${eventData.eventType}` };
+    }
+
+    if (eventType === 'customAreaEvent') {
+      this.messageText = `${eventData.area}: ${eventData.nodeId} / ${eventData.eventType}`;
+      return { code: 0 };
+    }
+
+    if (eventType === 'propertyDirectItemCheckChange') {
+      const node = nodeByIdGet(data.panelList ?? data.levelTopList ?? [], eventData.itemId);
+      const control = leadingControlByIdGet(node, eventData.controlId);
+      const checkboxData = control?.data ?? node?.checkboxData;
+      if (!checkboxData || checkboxData.isDisabled === true) return { code: -1, message: 'Checkbox is disabled.' };
+      checkboxData.isChecked = eventData.isChecked === true;
+      if (node.data) node.data.isEnabled = checkboxData.isChecked;
+      this.messageText = `${node.id} = ${checkboxData.isChecked ? 'checked' : 'unchecked'}`;
+      return { code: 0 };
+    }
+
     if (eventType === 'propertyDirectDragStart') {
       if (!data.dragStateByGroupPath) data.dragStateByGroupPath = {};
       data.dragStateByGroupPath[eventData.groupPath] = {
@@ -583,6 +715,10 @@ class PropEditorDemoStore {
     }
 
     if (eventType === 'propertyDirectItemAction') {
+      if (eventData.actionId === 'inspect') {
+        this.messageText = `inspect ${eventData.itemId}`;
+        return { code: 0 };
+      }
       if (eventData.actionId !== 'delete') return { code: 1, message: `Unsupported action: ${eventData.actionId}` };
       const nodeList = nodeListByPathGet(data, eventData.groupPath);
       const node = nodeList?.find((item) => item.id === eventData.itemId);
@@ -590,6 +726,20 @@ class PropEditorDemoStore {
       propertyRemoveByNode(node, data.propertyById);
       nodeRemoveById(nodeList, eventData.itemId);
       this.messageText = `deleted ${eventData.itemId}`;
+      return { code: 0 };
+    }
+
+    if (eventType === 'propertyDirectLeadingControlEvent') {
+      const node = nodeByIdGet(data.panelList ?? data.levelTopList ?? [], eventData.itemId);
+      const control = leadingControlByIdGet(node, eventData.controlId);
+      if (!node || !control) return { code: -1, message: 'Leading control not found.' };
+      if (eventData.eventType === 'toggle') {
+        if (!control.data) control.data = {};
+        control.data.isActive = control.data.isActive !== true;
+        this.messageText = `${node.id}/${control.id} = ${control.data.isActive ? 'active' : 'inactive'}`;
+        return { code: 0 };
+      }
+      this.messageText = `${node.id}/${control.id}: ${eventData.eventType}`;
       return { code: 0 };
     }
 

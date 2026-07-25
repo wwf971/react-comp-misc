@@ -390,6 +390,14 @@
   background: #ffffff;
 }
 
+.configGroupItemsNoFrame {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+}
+
 .configGroupItem {
   position: relative;
   border: 0;
@@ -411,6 +419,20 @@
   background: #e5e7eb;
   content: "";
   pointer-events: none;
+}
+
+.configGroupItemNoFrame {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.configGroupItemNoFrame:hover {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 /* ============================================================

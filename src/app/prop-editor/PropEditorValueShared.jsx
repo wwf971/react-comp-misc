@@ -31,7 +31,7 @@ function RequestStatus({ requestState, onDismiss }) {
   };
   const panelHide = () => panelRectSet(null);
   return (
-    <span ref={anchorRef} className="prop-editor-request-status is-error" onMouseEnter={panelShow} onMouseLeave={panelHide}>
+    <span ref={anchorRef} className="prop-editor-request-status is-error" role="alert" onMouseEnter={panelShow} onMouseLeave={panelHide}>
       <span className="prop-editor-error-inline">{messageText}</span>
       {panelRect ? createPortal(
         <span className="prop-editor-error-panel is-fixed" style={{ left: panelRect.left, top: panelRect.top, width: panelRect.width }} onMouseEnter={panelShow} onMouseLeave={panelHide}>
@@ -65,7 +65,7 @@ function selectEditableContents(element) {
   selection?.addRange(range);
 }
 
-const EditableValue = forwardRef(function EditableValue({ value, className, onCommit, align = 'left', isLocked = false, isTextSyncedWhileEditing = false }, ref) {
+const EditableValue = forwardRef(function EditableValue({ value, className, onCommit, align = 'left', isLocked = false, isTextSyncedWhileEditing = false, placeholder = '' }, ref) {
   const valueText = String(value ?? '');
   const editRef = useRef(null);
   const valueOriginalRef = useRef(valueText);
@@ -141,6 +141,7 @@ const EditableValue = forwardRef(function EditableValue({ value, className, onCo
       contentEditable={isEditing && !isLocked}
       suppressContentEditableWarning
       spellCheck={false}
+      data-placeholder={placeholder}
       style={{ textAlign: align }}
       onClick={editStart}
       onBlur={editCommit}

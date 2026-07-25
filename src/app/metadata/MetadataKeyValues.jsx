@@ -18,6 +18,7 @@ const MetadataKeyValues = ({
   const isMessageVisible = config?.isMessageVisible !== false;
   const keyColWidth = config?.keyColWidth || '180px';
   const requestTimeoutMs = config?.requestTimeoutMs ?? 8000;
+  const [isRequestPending, setIsRequestPending] = useState(false);
   const [pendingCell, setPendingCell] = useState(null);
   const [internalMessageState, setInternalMessageState] = useState({ status: 'idle', messageText: '' });
   const requestSequenceRef = useRef(0);
@@ -35,7 +36,6 @@ const MetadataKeyValues = ({
   };
 
   const effectiveMessageState = messageState ?? internalMessageState;
-  const isRequestPending = pendingCell !== null;
   const effectiveLocked = isLocked || isRequestPending;
 
   const selectedRowIndex = selectedRowId === null
@@ -45,6 +45,99 @@ const MetadataKeyValues = ({
   const isMoveDownDisabled = selectedRowIndex < 0 || selectedRowIndex >= rows.length - 1;
   const isDeleteDisabled = selectedRowIndex < 0;
   const isActionDisabled = effectiveLocked || !isEditable;
+
+  const getTimeoutMsNormalized = () => (
+    Number.isFinite(requestTimeoutMs)
+      ? Math.max(500, Math.min(30000, Math.floor(requestTimeoutMs)))
+      : 8000
+  );
+
+  const beginPendingRequest = (requestMeta = {}) => {
+    const requestId = requestSequenceRef.current + 1;
+    requestSequenceRef.current = requestId;
+    setIsRequestPending(true);
+    if (requestMeta.rowId && requestMeta.field) {
+      setPendingCell({ rowId: requestMeta.rowId, field: requestMeta.field });
+    } else {
+      setPendingCell(null);
+    }
+    emitEvent('requestStateChange', { isPending: true, ...requestMeta });
+    setEffectiveMessageState({
+      status: 'loading',
+      messageText: 'Request sent. Waiting for server response',
+    });
+    return requestId;
+  };
+
+  const endPendingRequest = (requestId) => {
+    if (requestSequenceRef.current !== requestId) {
+      return;
+    }
+    setIsRequestPending(false);
+    setPendingCell(null);
+    emitEvent('requestStateChange', {
+      isPending: false,
+      rowId: null,
+      field: null,
+      eventType: null,
+    });
+  };
+
+  const runPendingRequest = async (eventType, eventData = {}, requestMeta = {}) => {
+    if (!onEvent || isLocked || isRequestPending) {
+      return null;
+    }
+    const requestId = beginPendingRequest({ eventType, ...requestMeta });
+    const abortController = new AbortController();
+    const normalizedTimeoutMs = getTimeoutMsNormalized();
+    const timeoutHandle = window.setTimeout(() => {
+      abortController.abort();
+    }, normalizedTimeoutMs);
+    try {
+      const result = await Promise.race([
+        Promise.resolve(emitEvent(eventType, {
+          ...eventData,
+          requestContext: {
+            signal: abortController.signal,
+            timeoutMs: normalizedTimeoutMs,
+          },
+        })),
+        new Promise((resolve) => {
+          abortController.signal.addEventListener('abort', () => {
+            resolve({
+              code: -1,
+              message: `request timeout (${normalizedTimeoutMs}ms)`,
+            });
+          }, { once: true });
+        }),
+      ]);
+      if (eventType === 'cellUpdate') {
+        const normalizedResult = result || { code: -1, message: 'unknown error' };
+        if (normalizedResult.code === 0) {
+          setEffectiveMessageState({
+            status: 'success',
+            messageText: String(normalizedResult.message || 'Update success'),
+          });
+          return { code: 0, message: String(normalizedResult.message || 'ok') };
+        }
+        setEffectiveMessageState({
+          status: 'error',
+          messageText: String(normalizedResult.message || 'Update failed'),
+        });
+        return { code: -1, message: String(normalizedResult.message || 'error') };
+      }
+      if (result && typeof result === 'object' && Number(result.code) < 0) {
+        setEffectiveMessageState({
+          status: 'error',
+          messageText: String(result.message || 'Request failed'),
+        });
+      }
+      return result;
+    } finally {
+      window.clearTimeout(timeoutHandle);
+      endPendingRequest(requestId);
+    }
+  };
 
   const tableData = useMemo(() => rows.map((row) => ({
     id: row.id,
@@ -66,66 +159,14 @@ const MetadataKeyValues = ({
         && pendingCell?.rowId === rowId
         && pendingCell?.field === field
       }
-      onUpdate={async (_key, nextValue) => {
-        if (!onEvent || !rowId) {
-          return { code: 0, message: 'noop' };
-        }
-        const requestId = requestSequenceRef.current + 1;
-        requestSequenceRef.current = requestId;
-        setPendingCell({ rowId, field });
-        emitEvent('requestStateChange', { isPending: true, rowId, field });
-        setEffectiveMessageState({
-          status: 'loading',
-          messageText: 'Request sent. Waiting for server response',
-        });
-        const abortController = new AbortController();
-        const normalizedTimeoutMs = Number.isFinite(requestTimeoutMs)
-          ? Math.max(500, Math.min(30000, Math.floor(requestTimeoutMs)))
-          : 8000;
-        const timeoutHandle = window.setTimeout(() => {
-          abortController.abort();
-        }, normalizedTimeoutMs);
-        try {
-          const result = await Promise.race([
-            Promise.resolve(emitEvent('cellUpdate', {
-              rowId: String(rowId),
-              field: String(field),
-              nextValue: String(nextValue ?? ''),
-              requestContext: {
-                signal: abortController.signal,
-                timeoutMs: normalizedTimeoutMs,
-              },
-            })),
-            new Promise((resolve) => {
-              abortController.signal.addEventListener('abort', () => {
-                resolve({
-                  code: -1,
-                  message: `request timeout (${normalizedTimeoutMs}ms)`,
-                });
-              }, { once: true });
-            }),
-          ]);
-          const normalizedResult = result || { code: -1, message: 'unknown error' };
-          if (normalizedResult.code === 0) {
-            setEffectiveMessageState({
-              status: 'success',
-              messageText: String(normalizedResult.message || 'Update success'),
-            });
-            return { code: 0, message: String(normalizedResult.message || 'ok') };
-          }
-          setEffectiveMessageState({
-            status: 'error',
-            messageText: String(normalizedResult.message || 'Update failed'),
-          });
-          return { code: -1, message: String(normalizedResult.message || 'error') };
-        } finally {
-          window.clearTimeout(timeoutHandle);
-          if (requestSequenceRef.current === requestId) {
-            setPendingCell(null);
-            emitEvent('requestStateChange', { isPending: false, rowId: null, field: null });
-          }
-        }
-      }}
+      onUpdate={async (_key, nextValue) => runPendingRequest('cellUpdate', {
+        rowId: String(rowId),
+        field: String(field),
+        nextValue: String(nextValue ?? ''),
+      }, {
+        rowId: String(rowId),
+        field: String(field),
+      })}
     />
   );
 
@@ -155,12 +196,12 @@ const MetadataKeyValues = ({
           </div>
         </div>
       ) : null}
-      <div className="metadata-kv-actions">
+      <div className={`metadata-kv-actions ${effectiveLocked ? 'is-locked' : ''}`}>
         <button
           type="button"
           className="metadata-kv-btn"
           disabled={isActionDisabled}
-          onClick={() => emitEvent('addAtEnd', { selectedRowId })}
+          onClick={() => runPendingRequest('addAtEnd', { selectedRowId })}
         >
           Add at End
         </button>
@@ -168,7 +209,7 @@ const MetadataKeyValues = ({
           type="button"
           className="metadata-kv-btn"
           disabled={isActionDisabled || isDeleteDisabled}
-          onClick={() => emitEvent('addAbove', { selectedRowId })}
+          onClick={() => runPendingRequest('addAbove', { selectedRowId })}
         >
           Add Above
         </button>
@@ -176,7 +217,7 @@ const MetadataKeyValues = ({
           type="button"
           className="metadata-kv-btn"
           disabled={isActionDisabled || isDeleteDisabled}
-          onClick={() => emitEvent('addBelow', { selectedRowId })}
+          onClick={() => runPendingRequest('addBelow', { selectedRowId })}
         >
           Add Below
         </button>
@@ -184,7 +225,7 @@ const MetadataKeyValues = ({
           type="button"
           className="metadata-kv-btn"
           disabled={isActionDisabled || isMoveUpDisabled}
-          onClick={() => emitEvent('moveUp', { selectedRowId })}
+          onClick={() => runPendingRequest('moveUp', { selectedRowId })}
         >
           Up
         </button>
@@ -192,7 +233,7 @@ const MetadataKeyValues = ({
           type="button"
           className="metadata-kv-btn"
           disabled={isActionDisabled || isMoveDownDisabled}
-          onClick={() => emitEvent('moveDown', { selectedRowId })}
+          onClick={() => runPendingRequest('moveDown', { selectedRowId })}
         >
           Down
         </button>
@@ -200,7 +241,7 @@ const MetadataKeyValues = ({
           type="button"
           className="metadata-kv-btn danger"
           disabled={isActionDisabled || isDeleteDisabled}
-          onClick={() => emitEvent('delete', { selectedRowId })}
+          onClick={() => runPendingRequest('delete', { selectedRowId })}
         >
           Delete
         </button>
@@ -226,6 +267,9 @@ const MetadataKeyValues = ({
           }}
           onEvent={(eventType, eventData) => {
             if (eventType === 'selectedRowIdChange') {
+              if (effectiveLocked) {
+                return;
+              }
               emitEvent('selectedRowIdChange', eventData);
             }
           }}

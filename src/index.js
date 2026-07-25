@@ -119,8 +119,8 @@ export { default as NumValue } from "./component/button/NumValue.jsx";
 export { default as SegmentedControl } from "./component/button/SegmentedControl.jsx";
 export { default as ColorPicker } from "./app/color-picker/ColorPicker.jsx";
 export { default as ColorPickerStore, createColorPickerStore, colorPickerModeOptions, swatchGridDefault } from "./app/color-picker/colorPickerStore.js";
-export { default as PropEditor } from "./app/property-editor/PropEditor.jsx";
-export { default as PropEditorStore, createPropEditorDemoStore } from "./app/property-editor/propEditorStore.js";
+export { default as PropEditor } from "./app/prop-editor/PropEditor.jsx";
+export { default as PropEditorStore, createPropEditorDemoStore } from "./app/prop-editor/propEditorStore.js";
 
 export { default as FolderView } from "./layout/folder/FolderView.jsx";
 export { default as FolderHeader } from "./layout/folder/Header.jsx";
