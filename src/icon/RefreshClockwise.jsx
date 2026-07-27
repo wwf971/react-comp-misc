@@ -1,6 +1,6 @@
-import React from 'react'
+import React from 'react';
 
-const Refresh = ({ width = 24, height = 24, className = '', style = {} }) => {
+function RefreshClockwise({ width = 24, height = 24, className = '', style = {} }) {
   return (
     <svg
       width={width}
@@ -22,5 +22,5 @@ const Refresh = ({ width = 24, height = 24, className = '', style = {} }) => {
   )
 }
 
-export default Refresh
-
+export default RefreshClockwise;
+export { RefreshClockwise };

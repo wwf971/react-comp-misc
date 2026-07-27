@@ -2,20 +2,25 @@ import React from 'react';
 
 /**
  * PlusIcon - Plus/Add icon (+ mark)
+ * Also exported as AddIcon.
  */
-const PlusIcon = ({ 
-  width = 16, 
+const PlusIcon = ({
+  width = 16,
   height = 16,
+  size,
   color = 'currentColor',
   strokeWidth = 2,
   className = '',
   style = {},
-  ...props 
+  ...props
 }) => {
+  const resolvedWidth = size ?? width;
+  const resolvedHeight = size ?? height;
+
   return (
     <svg
-      width={width}
-      height={height}
+      width={resolvedWidth}
+      height={resolvedHeight}
       viewBox="0 0 16 16"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -45,5 +50,7 @@ const PlusIcon = ({
   );
 };
 
-export default PlusIcon;
+const AddIcon = PlusIcon;
 
+export { PlusIcon, AddIcon };
+export default PlusIcon;

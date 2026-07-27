@@ -1,7 +1,7 @@
 import React, { useState, useImperativeHandle, forwardRef, useMemo } from 'react';
 import './TabsOnTop.css';
 import CrossIcon from '../../icon/CrossIcon';
-import AddIcon from '../../icon/AddIcon';
+import { AddIcon } from '../../icon/PlusIcon';
 
 const LINE_MODES = ['single', 'wrap'];
 

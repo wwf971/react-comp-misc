@@ -5,7 +5,7 @@ import PlusIcon from '../../icon/PlusIcon';
 import MinusIcon from '../../icon/MinusIcon';
 import SpinningCircle from '../../icon/SpinningCircle';
 import CrossIcon from '../../icon/CrossIcon';
-import RefreshIcon from '../../icon/RefreshIcon';
+import RefreshClockwise from '../../icon/RefreshClockwise';
 import './tree.css';
 
 const createItemDragState = () => ({
@@ -329,7 +329,7 @@ const TreeItemNode = observer(({
               {itemData.childrenErrorMessage || 'Failed to load'}
             </span>
             <button type="button" className="tree-view-refresh-btn" onClick={handleReloadClick} aria-label="Retry loading">
-              <RefreshIcon width={12} height={12} />
+              <RefreshClockwise width={12} height={12} />
             </button>
           </div>
         ) : null}

@@ -3,7 +3,9 @@ export {
     FileIcon,
     DeleteIcon,
     SearchIcon,
-    ClearIcon,
+    RefreshClockwise,
+    RefreshCounterClockwise,
+    RefreshIcon,
     InfoIcon,
     InfoIconWithTooltip,
     SuccessIcon,
@@ -15,6 +17,19 @@ export {
     RightIcon,
     UpIcon,
     DownIcon,
+    UpDownIcon,
+    ChevronUp,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    ChevronUpDown,
+    CollapseIconHorizontal,
+    CollapseIconVertical,
+    ExpandIconHorizontal,
+    ExpandIconVertical,
+    ExpandIcon,
+    SortIconBidirection,
+    SortIcon,
     EyeIcon,
     EyeOffIcon,
     CrossIcon,
@@ -28,11 +43,17 @@ export {
     MinusIcon,
     SettingIcon,
     FilterIcon,
-    FilterIconEnabled
+    FilterIconEnabled,
+    PinIcon,
+    PinIconEnabled,
+    ThumbstackIcon,
+    ThumbstackIconEnabled,
+    FavoriteIcon,
+    FavoriteIconEnabled,
+    ThreeDotsIcon,
 } from "./icon/Icon.jsx";
 
 export { default as PdfIcon } from "./icon/PdfIcon.jsx";
-export { default as RefreshIcon } from "./icon/RefreshIcon.jsx";
 export { default as CheckIcon } from "./icon/CheckIcon.jsx";
 export { default as CalendarIcon } from "./icon/CalendarIcon.jsx";
 

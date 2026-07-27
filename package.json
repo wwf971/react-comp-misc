@@ -23,7 +23,7 @@
     "./KeyValues.css": "./src/component/key-value/KeyValues.css",
     "./Icon": "./src/icon/Icon.jsx",
     "./SpinningCircle": "./src/icon/SpinningCircle.jsx",
-    "./RefreshIcon": "./src/icon/RefreshIcon.jsx",
+    "./RefreshIcon": "./src/icon/RefreshCounterClockwise.jsx",
     "./PdfIcon": "./src/icon/PdfIcon.jsx",
     "./CrossIcon": "./src/icon/CrossIcon.jsx",
     "./DragIcon": "./src/icon/DragIcon.jsx",
