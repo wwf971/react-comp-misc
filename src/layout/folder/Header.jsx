@@ -1,6 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { DEFAULT_COL_MIN_WIDTH, emitFolderEvent } from './folderUtils.js';
+import {
+  DEFAULT_COL_MIN_WIDTH,
+  DEFAULT_COL_RESIZE_TOLERANCE,
+  emitFolderEvent,
+} from './folderUtils.js';
 import './folder.css';
 
 const DefaultHeaderTextComp = ({ data }) => <>{data}</>;
@@ -26,6 +30,7 @@ const Header = observer(({
   const headerPageUtils = config?.headerPageUtils;
   const colResizeDragMode = config?.colResizeDragMode || 'preview';
   const colResizeWidthMode = config?.colResizeWidthMode || 'natural';
+  const colResizeTolerance = config?.colResizeTolerance ?? DEFAULT_COL_RESIZE_TOLERANCE;
 
   const headerRef = useRef(null);
   const [resizing, setResizing] = useState(null);
@@ -50,9 +55,13 @@ const Header = observer(({
   };
 
   const handleResizeStart = (e, colId, colIndex) => {
-    if (!headerRef.current) {
+    if (e.button !== 0 || !headerRef.current) {
       return;
     }
+    // block text selection, and block native drag start on browsers
+    // that decide drag eligibility at mousedown
+    e.preventDefault();
+    e.stopPropagation();
 
     const headerRect = headerRef.current.getBoundingClientRect();
     const edges = [];
@@ -84,6 +93,13 @@ const Header = observer(({
 
   const handleResizeMove = (e) => {
     if (!resizing || resizingColIndex.current < 0 || !headerRef.current) {
+      return;
+    }
+
+    if (e.buttons === 0) {
+      // mouse button already released but mouseup was missed
+      // (e.g. released outside the window); end the resize now
+      handleResizeEnd();
       return;
     }
 
@@ -151,12 +167,10 @@ const Header = observer(({
   };
 
   const handleResizeEnd = () => {
-    if (isColResizePreview && pendingColWidthById.current) {
-      emitFolderEvent(onEvent, 'colResize', {
-        colId: resizing,
-        colWidthByIdNext: pendingColWidthById.current,
-      });
-    }
+    const colIdResized = resizing;
+    const colWidthByIdPending = pendingColWidthById.current;
+    // clear resize state first, so a throwing event handler
+    // cannot leave the resize stuck in active state
     setResizing(null);
     resizingColIndex.current = -1;
     edgePosesInitial.current = [];
@@ -164,6 +178,12 @@ const Header = observer(({
     colWidthByIdInitial.current = {};
     pendingColWidthById.current = null;
     handleColResizeIndicatorLeftChange(null);
+    if (isColResizePreview && colWidthByIdPending) {
+      emitFolderEvent(onEvent, 'colResize', {
+        colId: colIdResized,
+        colWidthByIdNext: colWidthByIdPending,
+      });
+    }
   };
 
   useEffect(() => {
@@ -179,6 +199,13 @@ const Header = observer(({
   }, [resizing]);
 
   const handleColumnDragStart = (e, colId) => {
+    if (resizingColIndex.current >= 0) {
+      // mouse went down on the resize handle; without this guard the browser
+      // starts a native column drag, mousemove/mouseup stop firing, and the
+      // resize never ends (indicator keeps following mouse after release)
+      e.preventDefault();
+      return;
+    }
     if (!isColReorderAllowed) {
       return;
     }
@@ -378,6 +405,11 @@ const Header = observer(({
               {isResizable ? (
                 <div
                   className="folder-header-resize-handle"
+                  style={isLastCol
+                    // last border: keep handle inside header, so it adds no scroll width
+                    ? { width: `${colResizeTolerance}px`, right: 0 }
+                    // inner border: handle spans tolerance px on both sides of border
+                    : { width: `${colResizeTolerance * 2}px`, right: `${-colResizeTolerance}px` }}
                   onMouseDown={(e) => handleResizeStart(e, colId, index)}
                 />
               ) : null}

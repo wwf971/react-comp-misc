@@ -55,6 +55,67 @@ function makeCatalogBase(ids) {
   return base;
 }
 
+const COL_RESIZE_DEMO_COLS_ORDER = ['name', 'size', 'type', 'modified'];
+
+const COL_RESIZE_DEMO_COL_SIZE_BY_ID = {
+  name: { width: 160, minWidth: 80, resizable: true },
+  size: { width: 100, minWidth: 60, resizable: true },
+  type: { width: 100, minWidth: 60, resizable: true },
+  modified: { width: 140, minWidth: 80, resizable: true },
+};
+
+const createColResizeDemoStore = () => makeAutoObservable({
+  columns: {
+    name: { data: 'Name', align: 'left' },
+    size: { data: 'Size', align: 'right' },
+    type: { data: 'Type', align: 'left' },
+    modified: { data: 'Modified', align: 'left' },
+  },
+  colsOrder: [...COL_RESIZE_DEMO_COLS_ORDER],
+  colSizeById: { ...COL_RESIZE_DEMO_COL_SIZE_BY_ID },
+  colWidthById: buildColWidthByIdFromSize(COL_RESIZE_DEMO_COLS_ORDER, COL_RESIZE_DEMO_COL_SIZE_BY_ID),
+  rows: [
+    { id: 'r1', data: { name: 'report.pdf', size: '120 KB', type: 'file', modified: '2026-07-20' } },
+    { id: 'r2', data: { name: 'photos', size: '34 items', type: 'folder', modified: '2026-07-18' } },
+    { id: 'r3', data: { name: 'notes.txt', size: '2 KB', type: 'file', modified: '2026-07-15' } },
+  ],
+  applyColResize(colWidthByIdNext) {
+    this.colWidthById = colWidthByIdNext;
+  },
+});
+
+const ColResizeDemoFolder = observer(({ label, store, colResizeDragMode, colResizeWidthMode }) => (
+  <div style={{ marginBottom: '10px' }}>
+    <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '2px' }}>{label}</div>
+    <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px' }}>
+      widths in store: {store.colsOrder.map((colId) => `${colId}=${Math.round(store.colWidthById[colId] || 0)}`).join('  ')}
+    </div>
+    <FolderView
+      data={{
+        columns: store.columns,
+        colsOrder: store.colsOrder,
+        rows: store.rows,
+      }}
+      config={{
+        colSizeById: store.colSizeById,
+        colWidthById: store.colWidthById,
+        colResizeDragMode,
+        colResizeWidthMode,
+        bodyHeight: 90,
+        isStatusBarVisible: false,
+        isListOnly: true,
+      }}
+      onEvent={(eventType, eventData) => {
+        if (eventType === 'colResize') {
+          store.applyColResize(eventData.colWidthByIdNext);
+          return { code: 0 };
+        }
+        return { code: 0 };
+      }}
+    />
+  </div>
+));
+
 const TextWithInfoIconComp = observer(({ data }) => (
   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
     <span>{data.text}</span>
@@ -264,14 +325,14 @@ const FolderExamplesPanel = observer(() => {
 
   const [viewSwitchIsLocked, setViewSwitchIsLocked] = useState(false);
   const [viewSwitchFeedback, setViewSwitchFeedback] = useState(null);
-  const [colResizeDragMode, setColResizeDragMode] = useState('preview');
-  const [colResizeWidthMode, setColResizeWidthMode] = useState('natural');
   const viewSwitchFeedbackTimer = useRef(null);
 
-  const sharedColResizeConfig = {
-    colResizeDragMode,
-    colResizeWidthMode,
-  };
+  const [colResizeDemoStoreByLabel] = useState(() => ({
+    dragModePreview: createColResizeDemoStore(),
+    dragModeImmediate: createColResizeDemoStore(),
+    widthModeNatural: createColResizeDemoStore(),
+    widthModeLocal: createColResizeDemoStore(),
+  }));
 
   const showViewSwitchFeedback = (feedback) => {
     if (viewSwitchFeedbackTimer.current) clearTimeout(viewSwitchFeedbackTimer.current);
@@ -487,37 +548,42 @@ const FolderExamplesPanel = observer(() => {
 
   return (
     <div>
-      <div style={{ marginBottom: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-        <button
-          type="button"
-          onClick={() => setColResizeDragMode((prev) => (prev === 'preview' ? 'immediate' : 'preview'))}
-          style={{
-            minHeight: '24px',
-            padding: '2px 8px',
-            border: '1px solid #d0d0d0',
-            borderRadius: '2px',
-            background: '#ffffff',
-            fontSize: '12px',
-            cursor: 'pointer',
-          }}
-        >
-          {colResizeDragMode === 'preview' ? 'resize mode: preview-on-release' : 'resize mode: immediate'}
-        </button>
-        <button
-          type="button"
-          onClick={() => setColResizeWidthMode((prev) => (prev === 'natural' ? 'local' : 'natural'))}
-          style={{
-            minHeight: '24px',
-            padding: '2px 8px',
-            border: '1px solid #d0d0d0',
-            borderRadius: '2px',
-            background: '#ffffff',
-            fontSize: '12px',
-            cursor: 'pointer',
-          }}
-        >
-          {colResizeWidthMode === 'natural' ? 'width mode: natural' : 'width mode: local'}
-        </button>
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Column Resize Drag Mode: preview-on-release vs immediate</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          Drag a column border in each folder below. In preview-on-release mode, only the blue indicator
+          line moves while dragging, and column widths update on mouse release. In immediate mode, column
+          widths update while dragging. Watch the widths line above each folder to see when the store updates.
+        </div>
+        <ColResizeDemoFolder
+          label="colResizeDragMode: preview (default)"
+          store={colResizeDemoStoreByLabel.dragModePreview}
+          colResizeDragMode="preview"
+        />
+        <ColResizeDemoFolder
+          label="colResizeDragMode: immediate"
+          store={colResizeDemoStoreByLabel.dragModeImmediate}
+          colResizeDragMode="immediate"
+        />
+      </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Column Resize Width Mode: natural vs local</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          Drag the border between Name and Size in each folder below. In natural mode, the dragged column
+          takes space from or gives space to the last column, and columns in between keep their widths.
+          In local mode, only the two columns adjacent to the dragged border change width.
+        </div>
+        <ColResizeDemoFolder
+          label="colResizeWidthMode: natural (default)"
+          store={colResizeDemoStoreByLabel.widthModeNatural}
+          colResizeWidthMode="natural"
+        />
+        <ColResizeDemoFolder
+          label="colResizeWidthMode: local"
+          store={colResizeDemoStoreByLabel.widthModeLocal}
+          colResizeWidthMode="local"
+        />
       </div>
 
       <div style={{ marginBottom: '30px' }}>
@@ -535,7 +601,6 @@ const FolderExamplesPanel = observer(() => {
             config={{
               colSizeById: basicData.colSizeById,
               isColReorderAllowed: true,
-              ...sharedColResizeConfig,
             }}
             onEvent={handleBasicHeaderEvent}
           />
@@ -557,7 +622,6 @@ const FolderExamplesPanel = observer(() => {
             config={{
               colSizeById: customData.colSizeById,
               compByColId: compHeaderByColId,
-              ...sharedColResizeConfig,
             }}
             onEvent={handleCustomHeaderEvent}
           />
@@ -612,7 +676,6 @@ const FolderExamplesPanel = observer(() => {
               bodyHeight: 300,
               isStatusItemCountVisible: false,
               compBodyByColId: compBodyByColId,
-              ...sharedColResizeConfig,
             }}
             onEvent={handleExplorerFolderEvent}
           />
@@ -636,7 +699,6 @@ const FolderExamplesPanel = observer(() => {
             bodyHeight: 140,
             isStatusBarVisible: false,
             isListOnly: true,
-            ...sharedColResizeConfig,
           }}
         />
       </div>
@@ -670,7 +732,6 @@ const FolderExamplesPanel = observer(() => {
             selectionMode: 'multiple',
             bodyHeight: 200,
             isStatusBarVisible: false,
-            ...sharedColResizeConfig,
           }}
           onEvent={handleRowReorderDemoEvent}
         />
@@ -712,7 +773,6 @@ const FolderExamplesPanel = observer(() => {
             bodyHeight: 140,
             isStatusBarVisible: false,
             isListOnly: true,
-            ...sharedColResizeConfig,
           }}
           onEvent={handleCellDropdownEvent}
         />
@@ -742,7 +802,6 @@ const FolderExamplesPanel = observer(() => {
             isRowDataObservable: true,
             bodyHeight: 200,
             isStatusBarVisible: false,
-            ...sharedColResizeConfig,
           }}
           onEvent={(eventType, eventData) => {
             if (eventType === 'rowInteraction') {
@@ -779,7 +838,6 @@ const FolderExamplesPanel = observer(() => {
             isRowDataObservable: true,
             bodyHeight: 220,
             isStatusBarVisible: false,
-            ...sharedColResizeConfig,
           }}
           onEvent={(eventType, eventData) => {
             if (eventType === 'rowInteraction') {
@@ -842,7 +900,6 @@ const FolderExamplesPanel = observer(() => {
             isRowDataObservable: true,
             bodyHeight: 200,
             isStatusBarVisible: false,
-            ...sharedColResizeConfig,
           }}
           onEvent={(eventType, eventData) => {
             if (eventType === 'rowIdsSelectedChange') {
@@ -906,7 +963,6 @@ const FolderExamplesPanel = observer(() => {
             isLocked: viewSwitchIsLocked,
             bodyHeight: 260,
             isStatusBarVisible: false,
-            ...sharedColResizeConfig,
           }}
           onEvent={handleViewSwitchEvent}
         />

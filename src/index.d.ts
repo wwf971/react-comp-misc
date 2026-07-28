@@ -746,6 +746,7 @@ export type FolderViewConfig = {
   viewDefault?: 'list' | 'icon';
   colResizeDragMode?: 'preview' | 'immediate';
   colResizeWidthMode?: 'natural' | 'local';
+  colResizeTolerance?: number;
   headerPageUtils?: Record<string, unknown>;
   compHeaderByColId?: (colId: string) => ComponentType<any> | undefined;
   compBodyByColId?: (colId: string, rowId?: string) => ComponentType<any> | undefined;
@@ -769,6 +770,7 @@ export type FolderHeaderConfig = {
   isLastColFilled?: boolean;
   colResizeDragMode?: 'preview' | 'immediate';
   colResizeWidthMode?: 'natural' | 'local';
+  colResizeTolerance?: number;
   compByColId?: (colId: string) => ComponentType<any> | undefined;
   headerPageUtils?: Record<string, unknown>;
 };

@@ -54,7 +54,9 @@
 .folder-header-cell {
   position: relative;
   padding: 6px 8px;
-  overflow: hidden;
+  /* no overflow: hidden here: the resize handle extends beyond the cell right
+     edge to cover both sides of the column border; text clipping is done by
+     .folder-header-content */
   flex-shrink: 0;
   border-right: 1px solid #e0e0e0;
   box-sizing: border-box;
@@ -77,8 +79,7 @@
 .folder-header-resize-handle {
   position: absolute;
   top: 0;
-  right: -3px;
-  width: 6px;
+  /* width and right offset are set inline from config.colResizeTolerance */
   height: 100%;
   cursor: col-resize;
   z-index: 10;

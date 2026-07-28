@@ -58,6 +58,7 @@ const ViewSwitcher = observer(({
     headerPageUtils: config.headerPageUtils,
     colResizeDragMode: config.colResizeDragMode,
     colResizeWidthMode: config.colResizeWidthMode,
+    colResizeTolerance: config.colResizeTolerance,
   };
 
   const listData = {

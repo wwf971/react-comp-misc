@@ -1,5 +1,8 @@
 export const DEFAULT_COL_MIN_WIDTH = 40;
 
+// distance in px from column border, within which mouse press triggers drag-to-resize
+export const DEFAULT_COL_RESIZE_TOLERANCE = 5;
+
 export const resolveColAlign = (align) => {
   const value = `${align ?? ''}`.trim();
   if (value === 'center' || value === 'right') {
