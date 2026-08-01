@@ -20,11 +20,28 @@
   vertical-align: middle;
 }
 
-.editable-value-container.has-trailing-icon .editable-value-content-row {
+.editable-value-container.has-trailing-icon:not(.has-inline-status) .editable-value-content-row {
   display: flex;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   box-sizing: border-box;
-  padding-right: 18px;
+}
+
+.editable-value-container.has-trailing-icon.is-icon-pinned {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editable-value-container.has-trailing-icon.is-icon-pinned:not(.has-configured-width) {
+  width: auto;
+  max-width: 100%;
+}
+
+.editable-value-trailing-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .editable-value-text {
@@ -38,7 +55,6 @@
   border: 1px solid transparent;
   border-radius: 1px;
   padding: 1px 2px;
-  vertical-align: middle;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -56,8 +72,53 @@
 .editable-value-text.editing {
   background: #ffffff;
   border-color: #2196f3;
-  overflow: visible;
-  white-space: pre-wrap;
+  overflow-x: hidden;
+  white-space: nowrap;
+  text-overflow: clip;
+  width: max-content;
+  max-width: 100%;
+  flex: 0 1 auto;
+  scrollbar-width: none;
+}
+
+.editable-value-text.editing::-webkit-scrollbar {
+  display: none;
+}
+
+.editable-value-container.has-configured-width {
+  max-width: 100%;
+}
+
+.editable-value-container.has-configured-width .editable-value-content-row {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.value-text-viewport {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.editable-value-container.has-trailing-icon .value-text-viewport,
+.editable-value-container.has-configured-width .value-text-viewport {
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.editable-value-container.has-trailing-icon .value-text-viewport::-webkit-scrollbar,
+.editable-value-container.has-configured-width .value-text-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.editable-value-container.has-trailing-icon .value-text-viewport .editable-value-text,
+.editable-value-container.has-configured-width .value-text-viewport .editable-value-text {
+  display: inline-block;
+  width: max-content;
+  max-width: none;
   text-overflow: clip;
 }
 
@@ -70,6 +131,11 @@
   border-color: #cfcfcf;
 }
 
+.editable-value-text:empty::before {
+  content: attr(data-placeholder);
+  color: #999;
+}
+
 .editable-value-icon {
   display: inline-flex;
   align-items: center;
@@ -77,12 +143,20 @@
   line-height: 1;
 }
 
-.editable-value-icon-at-cell-end,
 .editable-value-icon-status {
+  gap: 4px;
+}
+
+.editable-value-icon-at-cell-end {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.editable-value-icon-at-content.is-measure-only {
   position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .editable-value-icon.is-inactive {
@@ -159,5 +233,11 @@
 .editable-value-loading {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+}
+
+.editable-value-status-text {
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
 }

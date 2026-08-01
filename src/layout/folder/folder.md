@@ -83,7 +83,7 @@ Props for `Header` (`FolderHeader` export):
 ## config fields
 
 - `colSizeById`: `{ width, minWidth, resizable }` per col
-- `colWidthById`: current pixel width per col (operational state)
+- `colWidthById`: current pixel width per col (ui state)
 - `isColReorderAllowed`, `isRowReorderAllowed`, `isLastColFilled`, `isLocked`
 - `compHeaderByColId`, `compBodyByColId`
 - `selectionMode`: `'none' | 'single' | 'multiple'`

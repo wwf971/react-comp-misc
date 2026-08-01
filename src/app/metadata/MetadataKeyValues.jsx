@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import KeyValuesComp from '../../component/key-value/KeyValuesComp.jsx';
-import EditableValueComp from '../../layout/value-comp/EditableValueComp.jsx';
+import EditableValueComp from '../../component/value/EditableValueComp.jsx';
+import { createValueCompOnEvent } from '../../component/value/valueCompEvent.js';
 import SpinningCircle from '../../icon/SpinningCircle.jsx';
 import './MetadataKeyValues.css';
 
@@ -149,23 +150,28 @@ const MetadataKeyValues = ({
 
   const EditableMetadataComp = ({ data, field, rowId, isEditable: isEditableFromList }) => (
     <EditableValueComp
-      data={String(data ?? '')}
-      configKey={`${field}_${String(rowId || '')}`}
-      valueType="text"
-      isNotSet={false}
-      isEditable={Boolean(isEditableFromList) && !effectiveLocked}
-      isExternalSubmitting={
-        isRequestPending
-        && pendingCell?.rowId === rowId
-        && pendingCell?.field === field
-      }
-      onUpdate={async (_key, nextValue) => runPendingRequest('cellUpdate', {
-        rowId: String(rowId),
-        field: String(field),
-        nextValue: String(nextValue ?? ''),
-      }, {
-        rowId: String(rowId),
-        field: String(field),
+      data={{ value: String(data ?? '') }}
+      config={{
+        configKey: `${field}_${String(rowId || '')}`,
+        valueType: 'text',
+        isNotSet: false,
+        isEditable: Boolean(isEditableFromList) && !effectiveLocked,
+        isExternalSubmitting:
+          isRequestPending
+          && pendingCell?.rowId === rowId
+          && pendingCell?.field === field,
+        field,
+        rowId,
+      }}
+      onEvent={createValueCompOnEvent({
+        onUpdate: async (_key, nextValue) => runPendingRequest('cellUpdate', {
+          rowId: String(rowId),
+          field: String(field),
+          nextValue: String(nextValue ?? ''),
+        }, {
+          rowId: String(rowId),
+          field: String(field),
+        }),
       })}
     />
   );

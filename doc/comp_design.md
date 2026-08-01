@@ -88,7 +88,7 @@ If a controlled editor is visible and editable, but clicking does nothing, enter
 
 ## Data organization inside mobx store
 
-The architecture should be fully data-driven. So mobx store should not only hold data of resource objects, but also operational states of components. Typical operation states includes but are not limited to:
+The architecture should be fully data-driven. So mobx store should not only hold data of resource objects, but also ui states/operational data of frontend components. Typical operation states includes but are not limited to:
 
 - the current mode of component, such as display mode/edit mode/drag mode(some child components inside the component is being dragged to reorder/change its location), and pending mode where a change request has been submitted, but is waiting for server confirmation.
 

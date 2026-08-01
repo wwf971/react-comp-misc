@@ -11,7 +11,7 @@ import { menuExamples } from '../component/menu/exampleMenu.jsx';
 import { jsonExamples } from '../layout/json/exampleJson.jsx';
 // import { jsonJotaiExamples } from '../layout/json-jotai/exampleJsonJotai.jsx';
 import { jsonMobxExamples } from '../layout/json-mobx/exampleJsonMobx.jsx';
-import { valueCompExamples } from '../layout/value-comp/exampleValueComp.jsx';
+import { valueCompExamples } from '../component/value/exampleValueComp.jsx';
 import { buttonExamples } from '../component/button/exampleButton.jsx';
 import { panelExamples } from '../layout/panel/examplePanel.jsx';
 import { popupExamples } from '../component/popup/examplePopup.jsx';

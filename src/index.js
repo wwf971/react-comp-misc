@@ -100,12 +100,13 @@ export { default as KeyValuesComp } from "./component/key-value/KeyValuesComp.js
 export { default as MetadataKeyValues } from "./app/metadata/MetadataKeyValues.jsx";
 export { default as ButtonWithDropDown } from "./component/button/ButtonWithDropDown.jsx";
 
-export { default as EditableValueComp } from "./layout/value-comp/EditableValueComp.jsx";
-export { default as EditableValueWithInfo } from "./layout/value-comp/EditableValueWithInfo.jsx";
-export { default as SelectableValue } from "./layout/value-comp/SelectableValue.jsx";
-export { default as SelectableValueComp } from "./layout/value-comp/SelectableValueComp.jsx";
-export { default as SearchableValue } from "./layout/value-comp/SearchableValue.jsx";
-export { default as SearchableValueComp } from "./layout/value-comp/SearchableValueComp.jsx";
+export { default as EditableValueComp } from "./component/value/EditableValueComp.jsx";
+export { default as EditableValueWithInfo } from "./component/value/EditableValueWithInfo.jsx";
+export { default as SelectableValue } from "./component/value/SelectableValue.jsx";
+export { default as SelectableValueComp } from "./component/value/SelectableValueComp.jsx";
+export { default as SearchableValue } from "./component/value/SearchableValue.jsx";
+export { default as SearchableValueComp } from "./component/value/SearchableValueComp.jsx";
+export { createValueCompOnEvent } from "./component/value/valueCompEvent.js";
 export { default as PanelToggle } from "./layout/panel/PanelToggle.jsx";
 export { default as PanelDual } from "./layout/panel/PanelDual.jsx";
 export { default as PanelPopup } from "./component/popup/PanelPopup.jsx";

@@ -2,7 +2,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import KeyValuesComp from './KeyValuesComp.jsx';
-import EditableValueComp from '../../layout/value-comp/EditableValueComp.jsx';
+import EditableValueComp from '../value/EditableValueComp.jsx';
+import { createValueCompOnEvent } from '../value/valueCompEvent.js';
 
 const ClickingOutsidePanel = observer(() => {
   const wait = (ms) => new Promise((resolve) => {
@@ -45,19 +46,23 @@ const ClickingOutsidePanel = observer(() => {
 
   const EditableAsyncComp = ({ data, field, index, itemRef }) => (
     <EditableValueComp
-      data={String(data || '')}
-      configKey={`${field}_${String(itemRef?.id || index)}`}
-      onUpdate={async (_key, val) => {
-        await wait(500);
-        runInAction(() => {
-          itemRef[field] = String(val || '');
-        });
-        return { code: 0, message: 'Updated' };
+      data={{ value: String(data || '') }}
+      config={{
+        configKey: `${field}_${String(itemRef?.id || index)}`,
+        valueType: 'text',
+        isNotSet: false,
+        index,
+        field,
       }}
-      valueType="text"
-      isNotSet={false}
-      index={index}
-      field={field}
+      onEvent={createValueCompOnEvent({
+        onUpdate: async (_key, val) => {
+          await wait(500);
+          runInAction(() => {
+            itemRef[field] = String(val || '');
+          });
+          return { code: 0, message: 'Updated' };
+        },
+      })}
     />
   );
 

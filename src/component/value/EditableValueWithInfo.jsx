@@ -2,27 +2,19 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { InfoIcon } from '../../icon/Icon.jsx';
 
-/**
- * Editable Value Component with Info Icon
- * Displays text with an info icon that shows a tooltip on hover
- * Supports inline editing with click-to-edit functionality
- * 
- * @param {Object} props
- * @param {any} props.data - The text data to display
- * @param {Function} props.onChangeAttempt - Callback when user attempts to change: (index, field, newValue) => void
- * @param {boolean} props.isEditable - Whether the text is editable
- * @param {string} props.field - The field name (key or value)
- * @param {number} props.index - The index of the item in the list
- * @param {string} props.tooltipText - Custom tooltip text (optional)
- */
 const EditableValueWithInfo = ({ 
-  data, 
-  onChangeAttempt, 
-  isEditable, 
-  field, 
-  index,
-  tooltipText = 'Additional information about this field.'
+  data,
+  config = {},
+  onEvent,
 }) => {
+  const value = data && typeof data === 'object' && !Array.isArray(data)
+    ? data.value ?? data.text ?? ''
+    : data;
+  const index = config.index ?? data?.index;
+  const field = config.field ?? data?.field;
+  const configKey = config.configKey ?? data?.configKey;
+  const isEditable = config.isEditable === undefined ? true : Boolean(config.isEditable);
+  const tooltipText = config.tooltipText ?? data?.tooltipText ?? 'Additional information about this field.';
   const [showPopup, setShowPopup] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
@@ -98,7 +90,7 @@ const EditableValueWithInfo = ({
       return;
     }
     
-    originalValueRef.current = String(data);
+    originalValueRef.current = String(value);
     clickPositionRef.current = e.pageX;
     setIsEditing(true);
   };
@@ -108,9 +100,14 @@ const EditableValueWithInfo = ({
       const newValue = editRef.current.textContent;
       
       if (newValue !== originalValueRef.current) {
-        if (onChangeAttempt) {
-          onChangeAttempt(index, field, newValue);
-        }
+        onEvent?.('valueCommit', {
+          configKey,
+          index,
+          field,
+          valuePrevious: originalValueRef.current,
+          valueNext: newValue,
+          source: 'text',
+        });
       }
     }
     
@@ -159,7 +156,7 @@ const EditableValueWithInfo = ({
         suppressContentEditableWarning={true}
         style={{ display: 'inline' }}
       >
-        {data}
+        {value}
       </span>
       <span 
         ref={infoIconRef}

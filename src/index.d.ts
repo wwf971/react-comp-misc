@@ -288,12 +288,98 @@ export const KeyValues: ComponentType<KeyValuesCompProps>;
 export const KeyValuesComp: ComponentType<KeyValuesCompProps>;
 export const MetadataKeyValues: ComponentType<MetadataKeyValuesProps>;
 export const ButtonWithDropDown: ComponentType<ButtonWithDropDownProps>;
-export const EditableValueComp: ComponentType<any>;
-export const EditableValueWithInfo: ComponentType<any>;
-export const SelectableValue: ComponentType<any>;
-export const SelectableValueComp: ComponentType<any>;
-export const SearchableValue: ComponentType<any>;
-export const SearchableValueComp: ComponentType<any>;
+export type ValueCompEventResult = { code: number; message?: string; data?: unknown };
+export type ValueCompOnEvent = (
+  eventType: string,
+  eventData: Record<string, unknown>
+) => Promise<ValueCompEventResult | void> | ValueCompEventResult | void;
+export type EditableValueObjectData = {
+  value?: unknown;
+  text?: ReactNode;
+  style?: Record<string, unknown>;
+  messageState?: {
+    status?: 'idle' | 'loading' | 'success' | 'error' | string;
+    messageText?: string;
+  } | null;
+  tooltipText?: string;
+  index?: number;
+  rowId?: string | number;
+  field?: string;
+  category?: string;
+  configKey?: string;
+  valueType?: 'text' | 'boolean' | string;
+  isNotSet?: boolean;
+};
+export type EditableValueData = EditableValueObjectData | string | number | boolean | null;
+export type EditableValueConfig = {
+  configKey?: string;
+  index?: number;
+  rowId?: string | number;
+  field?: string;
+  category?: string;
+  valueType?: 'text' | 'boolean' | string;
+  isNotSet?: boolean;
+  isEditable?: boolean;
+  isExternalSubmitting?: boolean;
+  isEditing?: boolean;
+  errorDisplayMs?: number;
+  isFocusOnEdit?: boolean;
+  isEditIconVisible?: boolean;
+  width?: number | string;
+  className?: string;
+  textClassName?: string;
+  placeholder?: string;
+  editElementRef?: unknown;
+  commitRootRef?: unknown;
+  renderText?: (text: string) => ReactNode;
+  tooltipText?: string;
+  messageConfig?: {
+    isVisible?: boolean;
+    textByStatus?: Record<string, string>;
+    colorByStatus?: Record<string, string>;
+  };
+};
+export type ValueOptionData = {
+  value?: unknown;
+  label?: ReactNode;
+  description?: ReactNode;
+  compName?: string;
+  [key: string]: unknown;
+};
+export type SelectableValueData = EditableValueObjectData & {
+  valuePending?: unknown;
+  options?: ValueOptionData[];
+};
+export type SelectableValueConfig = EditableValueConfig & {
+  getComp?: (compName: string, context?: Record<string, unknown>) => ComponentType<any> | null | undefined;
+  optionCompNameField?: string;
+};
+export type SearchableValueConfig = EditableValueConfig & {
+  getComp?: (compName: string, context?: Record<string, unknown>) => ComponentType<any> | null | undefined;
+  searchItemCompNameField?: string;
+  strictValidation?: boolean;
+  searchDebounce?: number;
+  validationDebounce?: number;
+};
+export type ValueCompProps<TData = EditableValueData, TConfig = EditableValueConfig> = {
+  data?: TData;
+  config?: TConfig;
+  onEvent?: ValueCompOnEvent;
+};
+export const EditableValueComp: ComponentType<ValueCompProps>;
+export const EditableValueWithInfo: ComponentType<ValueCompProps>;
+export const SelectableValue: ComponentType<ValueCompProps<SelectableValueData, SelectableValueConfig>>;
+export const SelectableValueComp: ComponentType<ValueCompProps<SelectableValueData, SelectableValueConfig>>;
+export const SearchableValue: ComponentType<ValueCompProps<EditableValueData, SearchableValueConfig>>;
+export const SearchableValueComp: ComponentType<ValueCompProps<EditableValueData, SearchableValueConfig>>;
+export function createValueCompOnEvent(handlers?: {
+  onUpdate?: (configKey: string | undefined, valueNext: unknown, eventData?: Record<string, unknown>) => Promise<unknown> | unknown;
+  onAction?: (action: string, eventData?: Record<string, unknown>) => Promise<unknown> | unknown;
+  onSearch?: (value: unknown, version: unknown, eventData?: Record<string, unknown>) => Promise<unknown> | unknown;
+  onValidate?: (value: unknown, version: unknown, eventData?: Record<string, unknown>) => Promise<unknown> | unknown;
+  onEditingChange?: (isEditing: boolean, eventData?: Record<string, unknown>) => void;
+  onCancel?: (eventData?: Record<string, unknown>) => void;
+}): ValueCompOnEvent;
 export const PanelToggle: ComponentType<any>;
 export const PanelDual: ComponentType<any>;
 export const PanelPopup: ComponentType<any>;

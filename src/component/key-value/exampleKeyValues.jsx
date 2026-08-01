@@ -3,8 +3,9 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import KeyValues from './KeyValues.jsx';
 import KeyValuesComp from './KeyValuesComp.jsx';
-import EditableValueWithInfo from '../../layout/value-comp/EditableValueWithInfo.jsx';
-import EditableValueComp from '../../layout/value-comp/EditableValueComp.jsx';
+import EditableValueWithInfo from '../value/EditableValueWithInfo.jsx';
+import EditableValueComp from '../value/EditableValueComp.jsx';
+import { createValueCompOnEvent } from '../value/valueCompEvent.js';
 import PlusIcon from '../../icon/PlusIcon.jsx';
 import DeleteIcon from '../../icon/DeleteIcon.jsx';
 import { UpIcon, DownIcon } from '../../icon/DirectionIcons.jsx';
@@ -245,20 +246,24 @@ const DictExamplesPanel = observer(() => {
 
   const EditableValueWithActionsComp = ({ data, field, index, itemRef }) => (
     <EditableValueComp
-      data={data}
-      configKey={`${field}_${String(itemRef?.id || index)}`}
-      onUpdate={async (key, val) => {
-        await wait(500);
-        runInAction(() => {
-          itemRef[field] = val;
-        });
-        return { code: 0, message: 'Updated' };
+      data={{ value: data }}
+      config={{
+        configKey: `${field}_${String(itemRef?.id || index)}`,
+        valueType: 'text',
+        isNotSet: false,
+        index,
+        field,
       }}
-      onAction={handleAction}
-      valueType="text"
-      isNotSet={false}
-      index={index}
-      field={field}
+      onEvent={createValueCompOnEvent({
+        onUpdate: async (_key, val) => {
+          await wait(500);
+          runInAction(() => {
+            itemRef[field] = val;
+          });
+          return { code: 0, message: 'Updated' };
+        },
+        onAction: handleAction,
+      })}
     />
   );
 
