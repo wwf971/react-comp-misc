@@ -40,7 +40,7 @@ const Header = observer(({
   const resizingColIndex = useRef(-1);
   const pendingColWidthById = useRef(null);
   const colWidthByIdInitial = useRef({});
-  const [colResizeIndicatorLeft, setColResizeIndicatorLeft] = useState(null);
+  const colResizeIndicatorRef = useRef(null);
 
   const [draggingColId, setDraggingColId] = useState(null);
   const [dragOverSeparatorIndex, setDragOverSeparatorIndex] = useState(null);
@@ -49,8 +49,21 @@ const Header = observer(({
   const isColResizePreview = colResizeDragMode !== 'immediate';
   const isColResizeNaturalMode = colResizeWidthMode !== 'local';
 
+  // the indicator position is updated on every mousemove during resize, so it
+  // must not go through React state: a state update here would re-render the
+  // header (and, via the colResizeIndicatorChange event, the whole body) per
+  // mousemove, making dragging sluggish when the body has many rows. The
+  // indicator element stays mounted and is moved by direct style mutation.
   const handleColResizeIndicatorLeftChange = (left) => {
-    setColResizeIndicatorLeft(left);
+    const indicatorEl = colResizeIndicatorRef.current;
+    if (indicatorEl) {
+      if (left === null) {
+        indicatorEl.style.display = 'none';
+      } else {
+        indicatorEl.style.left = `${left}px`;
+        indicatorEl.style.display = 'block';
+      }
+    }
     emitFolderEvent(onEvent, 'colResizeIndicatorChange', { left });
   };
 
@@ -417,12 +430,11 @@ const Header = observer(({
           );
         })}
 
-        {colResizeIndicatorLeft !== null ? (
-          <div
-            className="folder-col-resize-indicator"
-            style={{ left: `${colResizeIndicatorLeft}px` }}
-          />
-        ) : null}
+        <div
+          className="folder-col-resize-indicator"
+          ref={colResizeIndicatorRef}
+          style={{ display: 'none' }}
+        />
         {dragOverSeparatorIndex !== null ? (
           <div
             className="folder-header-separator-indicator"

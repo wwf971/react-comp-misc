@@ -1,5 +1,5 @@
 
-The following are the points to be careful about, when utilizing FolderView.jsx and the series of componetns in the same folder.
+The following are the points to be careful about, or that are recommended, when utilizing FolderView.jsx and the series of componetns in the same folder.
 
 You can also refer to ./example.jsx, for exmaples that demonstrate how some features can be implemented when using this series of components.
 
@@ -40,3 +40,7 @@ When a context menu is open, right-clicking another item should close the old me
 ### Click empty space inside the folder view
 
 Clicking empty space inside the folder view should clear selection. In list view, this means the blank area below rows and the blank area to the right of cells should belong to the folder body. With `config.bodyHeight` set, keep the body filling the available content area, so empty-space click can be handled by `ItemsListView`.
+
+### User selectable if possible
+
+If possible, always try to make user able to select content of a cell, or across cell if possible, if there is no other dragging behavior specified. This would make it convenient for copying content for debugging or sharing.

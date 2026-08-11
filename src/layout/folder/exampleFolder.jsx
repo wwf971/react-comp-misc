@@ -64,7 +64,7 @@ const COL_RESIZE_DEMO_COL_SIZE_BY_ID = {
   modified: { width: 140, minWidth: 80, resizable: true },
 };
 
-const createColResizeDemoStore = () => makeAutoObservable({
+const createColResizeDemoStore = (rows) => makeAutoObservable({
   columns: {
     name: { data: 'Name', align: 'left' },
     size: { data: 'Size', align: 'right' },
@@ -74,7 +74,7 @@ const createColResizeDemoStore = () => makeAutoObservable({
   colsOrder: [...COL_RESIZE_DEMO_COLS_ORDER],
   colSizeById: { ...COL_RESIZE_DEMO_COL_SIZE_BY_ID },
   colWidthById: buildColWidthByIdFromSize(COL_RESIZE_DEMO_COLS_ORDER, COL_RESIZE_DEMO_COL_SIZE_BY_ID),
-  rows: [
+  rows: rows || [
     { id: 'r1', data: { name: 'report.pdf', size: '120 KB', type: 'file', modified: '2026-07-20' } },
     { id: 'r2', data: { name: 'photos', size: '34 items', type: 'folder', modified: '2026-07-18' } },
     { id: 'r3', data: { name: 'notes.txt', size: '2 KB', type: 'file', modified: '2026-07-15' } },
@@ -84,7 +84,22 @@ const createColResizeDemoStore = () => makeAutoObservable({
   },
 });
 
-const ColResizeDemoFolder = observer(({ label, store, colResizeDragMode, colResizeWidthMode }) => (
+const makeColResizePerfDemoRows = (rowCount) => (
+  Array.from({ length: rowCount }, (unused, index) => {
+    const num = index + 1;
+    return {
+      id: `perf-r${num}`,
+      data: {
+        name: `file-${String(num).padStart(3, '0')}.txt`,
+        size: `${((num * 7) % 900) + 1} KB`,
+        type: num % 5 === 0 ? 'folder' : 'file',
+        modified: `2026-0${(num % 9) + 1}-${String((num % 28) + 1).padStart(2, '0')}`,
+      },
+    };
+  })
+);
+
+const ColResizeDemoFolder = observer(({ label, store, colResizeDragMode, colResizeWidthMode, bodyHeight = 90 }) => (
   <div style={{ marginBottom: '10px' }}>
     <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '2px' }}>{label}</div>
     <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px' }}>
@@ -101,7 +116,7 @@ const ColResizeDemoFolder = observer(({ label, store, colResizeDragMode, colResi
         colWidthById: store.colWidthById,
         colResizeDragMode,
         colResizeWidthMode,
-        bodyHeight: 90,
+        bodyHeight,
         isStatusBarVisible: false,
         isListOnly: true,
       }}
@@ -332,6 +347,7 @@ const FolderExamplesPanel = observer(() => {
     dragModeImmediate: createColResizeDemoStore(),
     widthModeNatural: createColResizeDemoStore(),
     widthModeLocal: createColResizeDemoStore(),
+    perfManyRows: createColResizeDemoStore(makeColResizePerfDemoRows(200)),
   }));
 
   const showViewSwitchFeedback = (feedback) => {
@@ -549,9 +565,9 @@ const FolderExamplesPanel = observer(() => {
   return (
     <div>
       <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Column Resize Drag Mode: preview-on-release vs immediate</div>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Column Resize Drag Mode: preview vs immediate</div>
         <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          Drag a column border in each folder below. In preview-on-release mode, only the blue indicator
+          Drag a column border in each folder below. In preview mode, only the blue indicator
           line moves while dragging, and column widths update on mouse release. In immediate mode, column
           widths update while dragging. Watch the widths line above each folder to see when the store updates.
         </div>
@@ -564,6 +580,21 @@ const FolderExamplesPanel = observer(() => {
           label="colResizeDragMode: immediate"
           store={colResizeDemoStoreByLabel.dragModeImmediate}
           colResizeDragMode="immediate"
+        />
+      </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>Column Resize Performance: 200 rows</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          This folder has 200 rows. In preview mode, dragging a column border must stay as smooth
+          as with a few rows: while dragging, only the indicator line moves and no row re-renders,
+          so row count must not affect drag smoothness.
+        </div>
+        <ColResizeDemoFolder
+          label="200 rows, colResizeDragMode: preview"
+          store={colResizeDemoStoreByLabel.perfManyRows}
+          colResizeDragMode="preview"
+          bodyHeight={240}
         />
       </div>
 

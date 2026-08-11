@@ -238,10 +238,10 @@ const PathBar = observer(function PathBar({
     }
   };
 
-  const handleSegmentClick = (index) => {
+  const handleSegmentClick = (index, event) => {
     if (isCommitPending) return;
     if (onPathSegClicked) {
-      onPathSegClicked(index);
+      onPathSegClicked(index, event);
     }
   };
 
@@ -293,7 +293,7 @@ const PathBar = observer(function PathBar({
                       className="pathbar-segment"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleSegmentClick(index);
+                        handleSegmentClick(index, e);
                       }}
                     >
                       {segment.name}

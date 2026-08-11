@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Header from './Header';
 import ItemsListView from './ItemsListView';
@@ -22,7 +22,7 @@ const ViewSwitcher = observer(({
   const bodyHeight = config?.bodyHeight;
 
   const [internalViewCurrent, setInternalViewCurrent] = useState(viewDefault);
-  const [colResizeIndicatorLeft, setColResizeIndicatorLeft] = useState(null);
+  const colResizeIndicatorRef = useRef(null);
 
   const viewCurrent = isListOnly
     ? 'list'
@@ -37,7 +37,19 @@ const ViewSwitcher = observer(({
 
   const handleChildEvent = (eventType, eventData) => {
     if (eventType === 'colResizeIndicatorChange') {
-      setColResizeIndicatorLeft(eventData?.left ?? null);
+      // fired per mousemove during column resize; update the body indicator
+      // by direct style mutation so no React re-render happens while dragging
+      // (a re-render here would rebuild every body row on each mousemove)
+      const indicatorEl = colResizeIndicatorRef.current;
+      if (indicatorEl) {
+        const left = eventData?.left ?? null;
+        if (left === null) {
+          indicatorEl.style.display = 'none';
+        } else {
+          indicatorEl.style.left = `${left}px`;
+          indicatorEl.style.display = 'block';
+        }
+      }
       return null;
     }
     return emitFolderEvent(onEvent, eventType, eventData);
@@ -74,7 +86,7 @@ const ViewSwitcher = observer(({
   const listConfig = {
     colSizeById: config.colSizeById,
     isLastColFilled: config.isLastColFilled,
-    colResizeIndicatorLeft,
+    colResizeIndicatorRef,
     selectionMode: config.selectionMode,
     isRowReorderAllowed: config.isRowReorderAllowed,
     isLocked: config.isLocked,

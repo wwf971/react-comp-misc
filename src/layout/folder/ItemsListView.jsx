@@ -74,7 +74,7 @@ const ItemsListView = observer(({
 
   const colSizeById = config?.colSizeById || {};
   const isLastColFilled = config?.isLastColFilled !== false;
-  const colResizeIndicatorLeft = config?.colResizeIndicatorLeft ?? null;
+  const colResizeIndicatorRef = config?.colResizeIndicatorRef;
   const selectionMode = config?.selectionMode || 'single';
   const isRowReorderAllowed = config?.isRowReorderAllowed === true;
   const isLocked = config?.isLocked === true;
@@ -503,10 +503,13 @@ const ItemsListView = observer(({
           style={{ position: 'absolute', top: `${getSeparatorPos(dragOverSeparatorIndex)}px`, left: 0, right: 0 }}
         />
       ) : null}
-      {colResizeIndicatorLeft !== null ? (
+      {colResizeIndicatorRef ? (
+        // always mounted; position is driven by direct style mutation from the
+        // owner of the ref, so column resize dragging never re-renders the rows
         <div
-            className="folder-col-resize-indicator"
-          style={{ left: `${colResizeIndicatorLeft}px` }}
+          className="folder-col-resize-indicator"
+          ref={colResizeIndicatorRef}
+          style={{ display: 'none' }}
         />
       ) : null}
       {contextMenu && contextMenuItems ? (

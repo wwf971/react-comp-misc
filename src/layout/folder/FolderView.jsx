@@ -38,7 +38,7 @@ const FolderView = observer(({
     setInternalColWidthById(colWidthByIdBase);
   }, [colWidthByIdBase, isColWidthControlled]);
 
-  const resolvedColumns = useMemo(() => withResolvedColAlign(columns), [columns]);
+  const resolvedCols = useMemo(() => withResolvedColAlign(columns), [columns]);
 
   const isLocked = config?.isLocked === true;
   const isStatusBarVisible = config?.isStatusBarVisible !== false;
@@ -55,7 +55,7 @@ const FolderView = observer(({
 
   const viewSwitcherData = {
     ...data,
-    columns: resolvedColumns,
+    columns: resolvedCols,
     colWidthById,
   };
 
