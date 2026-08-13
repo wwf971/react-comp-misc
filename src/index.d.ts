@@ -92,6 +92,7 @@ export const MasterDetailInfiLevelPanel: ComponentType<any>;
 export const TabsOnTop: ComponentType<any>;
 export const TabsOnTopTab: ComponentType<any>;
 export const TabsOnTopTabLabel: ComponentType<any>;
+export const TabPanelDeferred: ComponentType<any>;
 
 export const Login: ComponentType<any>;
 export const AuthStatusButton: ComponentType<any>;

@@ -78,6 +78,7 @@ export {
 } from "./layout/master-detail/MasterDetailInfiLevel.jsx";
 
 export { default as TabsOnTop, Tab as TabsOnTopTab, TabLabel as TabsOnTopTabLabel } from "./layout/tab/TabsOnTop.jsx";
+export { default as TabPanelDeferred } from "./layout/tab/TabPanelDeferred.jsx";
 
 export { default as Login } from "./component/auth/Login.jsx";
 export { default as AuthStatusButton } from "./component/auth/AuthStatusButton.jsx";

@@ -318,6 +318,82 @@
   outline: none;
 }
 
+.tab-panel-defer-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 6px;
+}
+
+.tab-panel-defer-error {
+  padding: 6px;
+  font-size: 12px;
+}
+
+.tab-panel-defer-error-title {
+  font-weight: 650;
+  color: #9f2f2f;
+  margin-bottom: 2px;
+}
+
+.tab-panel-defer-error-message {
+  color: #7f1d1d;
+  user-select: text;
+  white-space: pre-wrap;
+  margin-bottom: 4px;
+}
+
+.tab-panel-defer-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 2px 7px;
+  border: 1px solid #c8d4e0;
+  border-radius: 3px;
+  background: #fff;
+  color: #4b5d73;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.tab-panel-defer-retry-btn:hover {
+  border-color: #98afc8;
+  background: #edf4fb;
+  color: #27445f;
+}
+
+.tab-example-defer-controls {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-example-defer-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 2px 7px;
+  border: 1px solid #c8d4e0;
+  border-radius: 3px;
+  background: #fff;
+  color: #4b5d73;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.tab-example-defer-toggle:hover {
+  border-color: #98afc8;
+  background: #edf4fb;
+  color: #27445f;
+}
+
 .tab-example-value-demo {
   display: flex;
   flex-direction: column;

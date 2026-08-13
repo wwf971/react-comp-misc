@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { makeAutoObservable } from 'mobx';
+import { observer } from 'mobx-react-lite';
 import TabsOnTop from './TabsOnTop';
 import CrossIcon from '../../icon/CrossIcon';
 
@@ -147,9 +149,118 @@ const TabsOnTopExamplesPanel = () => {
         </div>
         <TabsSwitchableWithActions />
       </div>
+
+      <div style={{ marginBottom: '30px' }}>
+        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Deferred Tab Panels</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+          deferMount paints a spinner before mounting heavy content, isReady gates on external data, withErrorBoundary catches render crashes with retry.
+        </div>
+        <TabsDeferredDemo />
+      </div>
     </div>
   );
 };
+
+const createTabDeferDemoStore = () => makeAutoObservable({
+  isServerDataReady: false,
+  isServerLoadStarted: false,
+  serverLoadTimer: null,
+  isCrashForced: true,
+  revisionReset: 0,
+  serverLoadBegin() {
+    if (this.isServerLoadStarted) return;
+    this.isServerLoadStarted = true;
+    this.serverLoadTimer = window.setTimeout(this.markServerDataReady, 1800);
+  },
+  markServerDataReady() {
+    this.serverLoadTimer = null;
+    this.isServerDataReady = true;
+  },
+  toggleCrashForced() {
+    this.isCrashForced = !this.isCrashForced;
+  },
+  reset() {
+    if (this.serverLoadTimer !== null) {
+      window.clearTimeout(this.serverLoadTimer);
+      this.serverLoadTimer = null;
+    }
+    this.isServerDataReady = false;
+    this.isServerLoadStarted = false;
+    this.isCrashForced = true;
+    this.revisionReset += 1;
+  },
+}, {}, { autoBind: true });
+
+function PanelHeavyMount() {
+  useMemo(() => {
+    const timeStart = performance.now();
+    while (performance.now() - timeStart < 500) { /* simulate expensive first render */ }
+  }, []);
+  return (
+    <TabDemoPanel
+      title="Heavy Mount"
+      text="This panel blocks around 500ms on first render. With deferMount, the spinner paints first so the tab switch itself stays instant."
+    />
+  );
+}
+
+const PanelServerData = observer(({ store }) => (
+  <TabDemoPanel
+    title="Server Data"
+    text={`Simulated fetch finished. isServerDataReady=${String(store.isServerDataReady)}. The spinner was shown while isReady stayed false.`}
+  />
+));
+
+const PanelCrash = observer(({ store }) => {
+  if (store.isCrashForced) {
+    throw new Error('Simulated render crash: force crash is on.');
+  }
+  return (
+    <TabDemoPanel
+      title="Crash Recovery"
+      text="Render succeeded. Turn force crash back on and press Retry to see the failure again."
+    />
+  );
+});
+
+const TabsDeferredDemo = observer(() => {
+  const [store] = useState(() => createTabDeferDemoStore());
+  return (
+    <div style={{ width: '620px', maxWidth: '100%' }}>
+      <TabsOnTop
+        key={store.revisionReset}
+        defaultTab="plain"
+        onTabChange={(tabKey) => {
+          if (tabKey === 'server-data') store.serverLoadBegin();
+        }}
+      >
+        <TabsOnTop.Tab tabKey="plain" label="Plain">
+          <TabDemoPanel title="Plain" text="Normal tab without defer, mounts immediately with all sibling panels." />
+        </TabsOnTop.Tab>
+        <TabsOnTop.Tab tabKey="heavy" label="Heavy Mount" deferMount={true} deferMountDelayMs={800}>
+          <PanelHeavyMount />
+        </TabsOnTop.Tab>
+        <TabsOnTop.Tab tabKey="server-data" label="Server Data" deferMount={true} isReady={store.isServerDataReady}>
+          <PanelServerData store={store} />
+        </TabsOnTop.Tab>
+        <TabsOnTop.Tab tabKey="crash" label="Crash Recovery" deferMount={true} withErrorBoundary={true}>
+          <PanelCrash store={store} />
+        </TabsOnTop.Tab>
+      </TabsOnTop>
+      <div className="tab-example-defer-controls">
+        <button type="button" className="tab-example-defer-toggle" onClick={store.reset}>
+          Reset deferred demo
+        </button>
+        <button type="button" className="tab-example-defer-toggle" onClick={store.toggleCrashForced}>
+          {store.isCrashForced ? 'Force crash: on' : 'Force crash: off'}
+        </button>
+        <div className="tab-example-value-desc">
+          Reset returns to Plain and clears all mounted/loading state. Crash Recovery throws while force crash is on.
+        </div>
+      </div>
+    </div>
+  );
+});
 
 const tabLongDefaultList = [
   { id: 'overview', label: 'Overview' },
@@ -427,7 +538,7 @@ function TabsWithCustomComponents() {
 export const tabExamples = {
   'TabsOnTop': {
     component: TabsOnTop,
-    description: 'Tabs with close, create, reorder, custom tab components, overflow, multi-line mode, and header actions',
+    description: 'Tabs with close, create, reorder, custom tab components, overflow, multi-line mode, header actions, and deferred panels',
     example: () => <TabsOnTopExamplesPanel />
   },
 };

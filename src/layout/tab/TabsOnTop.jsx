@@ -2,6 +2,8 @@ import React, { useState, useImperativeHandle, forwardRef, useMemo } from 'react
 import './TabsOnTop.css';
 import CrossIcon from '../../icon/CrossIcon';
 import { AddIcon } from '../../icon/PlusIcon';
+import TabPanelDeferred from './TabPanelDeferred';
+import { createTabPanelDeferStore } from './tabPanelDeferStore';
 
 const LINE_MODES = ['single', 'wrap'];
 
@@ -170,6 +172,7 @@ const TabsOnTop = forwardRef(({
     });
     return stateByKey;
   });
+  const [tabPanelDeferStore] = useState(() => createTabPanelDeferStore());
   const [draggingTabKey, setDraggingTabKey] = useState(null);
   const [dragPreview, setDragPreview] = useState(null);
   const [isDragCancelHover, setIsDragCancelHover] = useState(false);
@@ -524,6 +527,26 @@ const TabsOnTop = forwardRef(({
               enhancedContent = React.cloneElement(element, { tabsState, tabKey });
             }
           }
+          const isDeferEnabled = panelData.deferMount === true
+            || panelData.isReady !== undefined
+            || panelData.withErrorBoundary === true;
+          if (isDeferEnabled) {
+            enhancedContent = (
+              <TabPanelDeferred
+                store={tabPanelDeferStore}
+                tabKey={tabKey}
+                isActive={isActive}
+                isReady={panelData.isReady !== false}
+                deferMount={panelData.deferMount === true}
+                deferMountDelayMs={panelData.deferMountDelayMs}
+                deferKey={panelData.deferKey}
+                loadingFallback={panelData.loadingFallback}
+                withErrorBoundary={panelData.withErrorBoundary === true}
+              >
+                {enhancedContent}
+              </TabPanelDeferred>
+            );
+          }
           return (
             <div
               key={tabKey}
@@ -659,7 +682,16 @@ const extractTabConfig = (children) => {
       const tabLabel = child.props.label;
       const keepMounted = child.props.keepMounted;
       tabs.push({ key: tabKey, label: tabLabel, customComponent: pendingTabLabel });
-      panels[tabKey] = { content: child.props.children, keepMounted };
+      panels[tabKey] = {
+        content: child.props.children,
+        keepMounted,
+        deferMount: child.props.deferMount,
+        deferMountDelayMs: child.props.deferMountDelayMs,
+        isReady: child.props.isReady,
+        deferKey: child.props.deferKey,
+        loadingFallback: child.props.loadingFallback,
+        withErrorBoundary: child.props.withErrorBoundary,
+      };
       tabKeyMap[String(tabLabel).toLowerCase()] = tabKey;
       pendingTabLabel = null;
     } else if (child && child.type === React.Fragment) {
@@ -671,7 +703,7 @@ const extractTabConfig = (children) => {
   return { tabs, panels, tabKeyMap };
 };
 
-const TabSlot = ({ tabKey, label, keepMounted, children }) => null;
+const TabSlot = ({ tabKey, label, keepMounted, deferMount, deferMountDelayMs, isReady, deferKey, loadingFallback, withErrorBoundary, children }) => null;
 TabSlot.__isTabOnTopSlot = true;
 
 const TabLabelSlot = ({ children }) => null;
