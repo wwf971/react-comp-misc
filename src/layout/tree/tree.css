@@ -74,6 +74,39 @@
   background: #c62828;
 }
 
+.tree-view.is-drag-active {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.tree-view.is-drag-active .tree-view-row {
+  cursor: grabbing;
+}
+
+.tree-view.is-drag-active.is-drag-blocked {
+  cursor: not-allowed;
+}
+
+.tree-view.is-drag-active.is-drag-blocked .tree-view-row {
+  cursor: not-allowed;
+}
+
+.tree-view-drag-ghost {
+  position: fixed;
+  z-index: 1000;
+  max-width: 240px;
+  padding: 1px 6px;
+  border: 1px solid #90caf9;
+  border-radius: 2px;
+  background: #f2f8ff;
+  color: #1565c0;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
 .tree-view-toggle-btn {
   width: 16px;
   min-width: 16px;
