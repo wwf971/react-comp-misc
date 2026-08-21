@@ -43,6 +43,7 @@ import { SortIconBidirection, SortIcon } from './SortIcon';
 import { CollapseIconHorizontal, CollapseIconVertical } from './CollapseIcon';
 import { ExpandIconHorizontal, ExpandIconVertical, ExpandIcon } from './ExpandIcon';
 import FavoriteIcon, { FavoriteIconEnabled } from './FavoriteIcon';
+import ExternalLinkIcon from './ExternalLinkIcon';
 
 export {
 	FileIcon,
@@ -99,4 +100,5 @@ export {
 	FavoriteIcon,
 	FavoriteIconEnabled,
 	ThreeDotsIcon,
+	ExternalLinkIcon,
 }

@@ -1,0 +1,21 @@
+
+.scroll-horizontal {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.scroll-horizontal-viewport {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  overscroll-behavior-x: contain;
+}
+
+.scroll-horizontal-track {
+  width: max-content;
+  min-width: 100%;
+  display: flex;
+  align-items: stretch;
+  will-change: transform;
+}

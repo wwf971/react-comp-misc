@@ -1,0 +1,137 @@
+.toolbar-demo {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.toolbar-demo-panel {
+  min-width: 0;
+  border-top: 1px solid #d5dde8;
+  padding-top: 12px;
+}
+
+.toolbar-demo-panel.is-narrow {
+  width: min(430px, 100%);
+}
+
+.toolbar-demo-panel-title {
+  margin-bottom: 8px;
+  color: #263b56;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.toolbar-demo-toolbar {
+  border-top: 1px solid #eef2f7;
+  background: #ffffff;
+}
+
+.toolbar-demo-button {
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid #bdcada;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #26405f;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.toolbar-demo-button:hover,
+.toolbar-demo-button:focus-visible {
+  border-color: #7397bb;
+  background: #edf4fb;
+  outline: none;
+}
+
+.toolbar-demo-button.is-active {
+  border-color: #7199c7;
+  background: #e7f1fb;
+  color: #174f75;
+}
+
+.toolbar-demo-button.is-danger {
+  border-color: #d59a9a;
+  color: #842727;
+}
+
+.toolbar-demo-field {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toolbar-demo-field-label {
+  color: #566a82;
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.toolbar-demo-field-value {
+  min-width: 40px;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d3dce8;
+  border-radius: 5px;
+  background: #f7f9fc;
+  color: #253f5f;
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.toolbar-demo-log {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid #d5dde8;
+  padding-top: 10px;
+  color: #53667b;
+  font-size: 12px;
+  user-select: text;
+}
+
+.toolbar-demo-log span {
+  border: 1px solid #d5dde8;
+  border-radius: 5px;
+  padding: 4px 8px;
+  background: #f8fafc;
+}
+
+.toolbar-demo-content-aside-slot {
+  min-width: 190px;
+  min-height: 62px;
+}
+
+.toolbar-demo-content-aside {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  place-items: center;
+  padding: 4px 10px;
+  border: 1px solid #8eb0cf;
+  border-radius: 5px;
+  background: #edf5fc;
+  color: #264f72;
+  cursor: pointer;
+  font: inherit;
+}
+
+.toolbar-demo-content-aside span {
+  align-self: start;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.toolbar-demo-content-aside strong {
+  align-self: end;
+  font-size: 12px;
+}

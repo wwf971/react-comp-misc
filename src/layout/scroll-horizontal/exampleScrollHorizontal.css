@@ -1,0 +1,99 @@
+.scroll-horizontal-demo {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.scroll-horizontal-demo-section {
+  min-width: 0;
+}
+
+.scroll-horizontal-demo-title {
+  margin-bottom: 6px;
+  color: #263b56;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.scroll-horizontal-demo-hint {
+  margin-bottom: 6px;
+  color: #607287;
+  font-size: 11px;
+}
+
+.scroll-horizontal-demo-scroll {
+  width: min(430px, 100%);
+  border: 1px solid #d5dde8;
+  border-radius: 5px;
+  background: #ffffff;
+}
+
+.scroll-horizontal-demo-action-track,
+.scroll-horizontal-demo-item-track {
+  gap: 6px;
+  padding: 6px;
+}
+
+.scroll-horizontal-demo-button,
+.scroll-horizontal-demo-item {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid #bdcada;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #26405f;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.scroll-horizontal-demo-button:hover,
+.scroll-horizontal-demo-button:focus-visible,
+.scroll-horizontal-demo-item:hover,
+.scroll-horizontal-demo-item:focus-visible {
+  border-color: #7397bb;
+  background: #edf4fb;
+  outline: none;
+}
+
+.scroll-horizontal-demo-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 92px;
+}
+
+.scroll-horizontal-demo-item strong {
+  font-size: 12px;
+}
+
+.scroll-horizontal-demo-item span {
+  color: #607287;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.scroll-horizontal-demo-item.is-active {
+  border-color: #7199c7;
+  background: #e7f1fb;
+  color: #174f75;
+}
+
+.scroll-horizontal-demo-state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #53667b;
+  font-size: 12px;
+}
+
+.scroll-horizontal-demo-state span {
+  border: 1px solid #d5dde8;
+  border-radius: 5px;
+  padding: 4px 8px;
+  background: #f8fafc;
+}

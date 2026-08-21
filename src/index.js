@@ -51,6 +51,7 @@ export {
     FavoriteIcon,
     FavoriteIconEnabled,
     ThreeDotsIcon,
+    ExternalLinkIcon,
 } from "./icon/Icon.jsx";
 
 export { default as PdfIcon } from "./icon/PdfIcon.jsx";
@@ -151,6 +152,8 @@ export { default as FolderHeader } from "./layout/folder/Header.jsx";
 export { default as FolderBody } from "./layout/folder/ItemsListView.jsx";
 export { default as CellDropdown } from "./layout/folder/CellEditable.jsx";
 export { default as TreeView } from "./layout/tree/TreeView.jsx";
+export { default as ScrollHorizontal } from "./layout/scroll-horizontal/ScrollHorizontal.jsx";
+export { default as Toolbar } from "./layout/toolbar/Toolbar.jsx";
 export { default as ItemList } from "./app/side-list/ItemList.jsx";
 export { default as ItemTree } from "./app/side-list/ItemTree.jsx";
 export {

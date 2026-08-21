@@ -37,6 +37,7 @@ import {
   FavoriteIcon,
   FavoriteIconEnabled,
   ThreeDotsIcon,
+  ExternalLinkIcon,
 } from './Icon.jsx';
 
 const IconGallery = () => {
@@ -81,6 +82,7 @@ const IconGallery = () => {
     { name: 'PinIconEnabled', component: (props) => <PinIcon {...props} isEnabled={true} />, description: 'PinIcon with isEnabled={true} (also ThumbstackIconEnabled)' },
     { name: 'FavoriteIcon', component: FavoriteIcon, description: 'Favorite/star outline' },
     { name: 'FavoriteIconEnabled', component: FavoriteIconEnabled, description: 'Favorite/star filled (also FavoriteIcon isEnabled={true})' },
+    { name: 'ExternalLinkIcon', component: ExternalLinkIcon, description: 'Open an external link' },
   ];
 
   const filteredIcons = useMemo(() => {

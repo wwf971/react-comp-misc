@@ -1,0 +1,129 @@
+.toolbar-scrollable {
+  position: relative;
+  z-index: 4;
+  flex: 0 0 auto;
+  min-width: 0;
+  display: block;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #d8e1ec;
+}
+
+.toolbar-scrollable.is-bottom-label-visible {
+  padding-bottom: var(--toolbar-bottom-label-edge-gap, 1px);
+}
+
+.toolbar-scrollable.is-group-header-hidden {
+  padding-top: 4px;
+}
+
+.toolbar-scrollable.is-thin {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.toolbar-scrollable-outer {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.toolbar-scrollable-track {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  white-space: nowrap;
+}
+
+.toolbar-scrollable-group {
+  --toolbar-group-header-space: 15px;
+
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  gap: 5px;
+  padding: var(--toolbar-group-header-space) 12px 2px 10px;
+  border-right: 1px solid #c8d2df;
+}
+
+.toolbar-scrollable.is-group-header-hidden .toolbar-scrollable-group {
+  --toolbar-group-header-space: 2px;
+}
+
+.toolbar-scrollable.is-thin .toolbar-scrollable-group {
+  --toolbar-group-header-space: 0px;
+
+  align-items: center;
+  padding: 0 8px;
+}
+
+.toolbar-scrollable-group.is-bottom-label-visible {
+  padding-bottom: 17px;
+}
+
+.toolbar-scrollable-group.is-pagination {
+  gap: 10px;
+}
+
+.toolbar-scrollable-group-label {
+  position: absolute;
+  top: 0;
+  left: 10px;
+  display: inline-flex;
+  max-width: calc(100% - 20px);
+  align-items: baseline;
+  gap: 6px;
+  color: #314a65;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+}
+
+.toolbar-scrollable-group-label small {
+  min-width: 0;
+  max-width: 180px;
+  overflow: hidden;
+  color: #7f8b99;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolbar-scrollable-group-content {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: inherit;
+}
+
+.toolbar-scrollable-group-label-bottom {
+  position: absolute;
+  right: 8px;
+  bottom: 2px;
+  left: 8px;
+  overflow: hidden;
+  color: #9aa6b4;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.15;
+  pointer-events: none;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toolbar-scrollable-group.is-bottom-label-left .toolbar-scrollable-group-label-bottom {
+  text-align: left;
+}
+
+.toolbar-scrollable-group.is-bottom-label-right .toolbar-scrollable-group-label-bottom {
+  text-align: right;
+}
+
+.toolbar-scrollable-group-content-aside {
+  min-width: 0;
+  display: flex;
+  align-self: stretch;
+  margin-top: calc(-1 * var(--toolbar-group-header-space));
+}

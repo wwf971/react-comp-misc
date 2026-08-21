@@ -73,6 +73,7 @@ export const ThumbstackIconEnabled: ComponentType<any>;
 export const FavoriteIcon: ComponentType<any>;
 export const FavoriteIconEnabled: ComponentType<any>;
 export const ThreeDotsIcon: ComponentType<any>;
+export const ExternalLinkIcon: ComponentType<any>;
 export const PdfIcon: ComponentType<any>;
 export const CheckIcon: ComponentType<any>;
 export const CalendarIcon: ComponentType<any>;
@@ -709,6 +710,71 @@ export type TreeViewProps = {
   onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
 };
 export const TreeView: ComponentType<TreeViewProps>;
+
+export type ScrollHorizontalData = {
+  scrollLeft?: number;
+  content?: ReactNode;
+};
+
+export type ScrollHorizontalConfig = {
+  className?: string;
+  classNameViewport?: string;
+  classNameTrack?: string;
+  commitDelayMs?: number;
+  isWheelPropagationStopped?: boolean;
+  ariaLabel?: string;
+};
+
+export type ScrollHorizontalProps = {
+  data?: ScrollHorizontalData;
+  config?: ScrollHorizontalConfig;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => unknown;
+};
+
+export const ScrollHorizontal: ComponentType<ScrollHorizontalProps>;
+
+export type ToolbarGroupData = {
+  id: string;
+  labelText?: string;
+  labelDetailText?: string;
+  labelBottomText?: string;
+  labelBottomTitle?: string;
+  labelBottomAlign?: 'left' | 'right';
+  content?: ReactNode;
+  contentAside?: ReactNode | false | null;
+  ariaLabel?: string;
+  className?: string;
+  classNameLabel?: string;
+  classNameContent?: string;
+  classNameContentAside?: string;
+  classNameLabelBottom?: string;
+};
+
+export type ToolbarData = {
+  groupList?: ToolbarGroupData[];
+  scrollLeft?: number;
+  toolbarState?: { scrollLeft?: number };
+};
+
+export type ToolbarConfig = {
+  isThin?: boolean;
+  isGroupHeaderVisible?: boolean;
+  bottomLabelEdgeGapPx?: number;
+  scrollCommitDelayMs?: number;
+  isWheelPropagationStopped?: boolean;
+  className?: string;
+  classNameOuter?: string;
+  classNameTrack?: string;
+  ariaLabel?: string;
+};
+
+export type ToolbarProps = {
+  data?: ToolbarData;
+  config?: ToolbarConfig;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => unknown;
+};
+
+export const Toolbar: ComponentType<ToolbarProps>;
 export const ItemList: ComponentType<ItemListProps>;
 export const ItemTree: ComponentType<ItemTreeProps>;
 export const HtmlRender: ComponentType<any>;

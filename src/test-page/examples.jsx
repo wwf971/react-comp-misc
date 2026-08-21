@@ -26,6 +26,7 @@ import { sideListExamples } from '../app/side-list/exampleSideList.jsx';
 import { idExamples } from '../app/id/exampleId.jsx';
 import { colorPickerExamples } from '../app/color-picker/exampleColorPicker.jsx';
 import { propEditorExamples } from '../app/prop-editor/examplePropEditor.jsx';
+import { toolbarExamples } from '../layout/toolbar/exampleToolbar.jsx';
 
 // Combine all examples into a single object
 export const components = {
@@ -55,5 +56,6 @@ export const components = {
   ...idExamples,
   ...colorPickerExamples,
   ...propEditorExamples,
+  ...toolbarExamples,
   ...htmlExamples,
 };
