@@ -174,6 +174,31 @@ export { default as DateView } from "./component/calendar/DateView.jsx";
 export { default as Radar } from "./component/stat/Radar.jsx";
 
 export {
+  DemoPanel,
+  Example,
+  Explanation,
+  KeyChip,
+  Controls,
+  ControlGroup,
+  ControlItem,
+  CompDemoArea,
+  MessageAndOutputs,
+} from "./dev/demo/DemoLayout.jsx";
+
+export {
+  ExampleGroup,
+  ExampleSwitcher,
+  ExampleSwitchButtons,
+  ExampleJumpLink,
+  ExampleStackVertical,
+} from "./dev/demo/ExampleGroup.jsx";
+
+export {
+  createStoreExampleGroup,
+  createStoreDemoPanel,
+} from "./dev/demo/demoStores.js";
+
+export {
     parsePathToSegments,
     navigateToPath,
     segmentsToPath,

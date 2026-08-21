@@ -782,6 +782,23 @@ export const DateSelector: ComponentType<any>;
 export const DateView: ComponentType<any>;
 export const Radar: ComponentType<any>;
 
+export const DemoPanel: ComponentType<any>;
+export const Example: ComponentType<any>;
+export const Explanation: ComponentType<any>;
+export const KeyChip: ComponentType<any>;
+export const Controls: ComponentType<any>;
+export const ControlGroup: ComponentType<any>;
+export const ControlItem: ComponentType<any>;
+export const CompDemoArea: ComponentType<any>;
+export const MessageAndOutputs: ComponentType<any>;
+export const ExampleGroup: ComponentType<any>;
+export const ExampleSwitcher: ComponentType<any>;
+export const ExampleSwitchButtons: ComponentType<any>;
+export const ExampleJumpLink: ComponentType<any>;
+export const ExampleStackVertical: ComponentType<any>;
+export function createStoreExampleGroup(options?: { groupId?: string; exampleActiveId?: string }): any;
+export function createStoreDemoPanel(): any;
+
 export function parsePathToSegments(...args: any[]): any;
 export function navigateToPath(...args: any[]): any;
 export function segmentsToPath(...args: any[]): any;

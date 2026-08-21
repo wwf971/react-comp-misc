@@ -1,0 +1,22 @@
+.demo-layout-example-box {
+  transition: width 0.15s, height 0.15s, background 0.15s, border-radius 0.15s;
+}
+
+.demo-layout-example-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #9db4cc;
+  border-radius: 3px;
+  background: #edf4fb;
+  color: #26405f;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.demo-layout-example-tile:hover {
+  border-color: #7397bb;
+  background: #e0edf9;
+}

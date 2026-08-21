@@ -1,0 +1,302 @@
+/* ==== DemoPanel: vertical stack of explanation blocks and example panels ==== */
+
+.demo-panel {
+  display: flex;
+  min-width: 0;
+  max-width: 980px;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 12px;
+}
+
+/* ==== Example / ExampleGroup panels (aws-console-like stacked panels) ==== */
+/* title sits above the bordered body; only the body is a card */
+
+.demo-example,
+.demo-example-group {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.demo-example-title {
+  padding: 0 2px;
+  color: #1f2e3d;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.demo-example-body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px 12px;
+  border: 1px solid #cfd6de;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+/* Examples nested in a switcher/stack: flatten the card to avoid card-in-card-in-card */
+
+.demo-example-switcher-slot .demo-example > .demo-example-body,
+.demo-example-stack .demo-example > .demo-example-body {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.demo-example-switcher-slot .demo-example > .demo-example-title,
+.demo-example-stack .demo-example > .demo-example-title {
+  padding: 0;
+  font-size: 13px;
+}
+
+/* ==== Explanation ==== */
+
+.demo-explanation {
+  min-width: 0;
+  color: #333333;
+  font-size: 13px;
+  user-select: text;
+}
+
+.demo-explanation.tone-green {
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: #e8f5e9;
+}
+
+.demo-explanation.tone-amber {
+  padding: 8px 12px;
+  border: 1px solid #f2c481;
+  border-radius: 4px;
+  background: #fff3e0;
+}
+
+.demo-explanation.tone-plain {
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: #f3f5f8;
+}
+
+.demo-explanation-title {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 13px;
+}
+
+.demo-explanation ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: #555555;
+}
+
+.demo-explanation li {
+  margin: 2px 0;
+}
+
+.demo-key-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 4px;
+  border: 1px solid #c8d3c8;
+  border-radius: 2px;
+  background: #f6fbf6;
+  color: #2f4f36;
+  font-size: 12px;
+}
+
+.demo-explanation.tone-amber .demo-key-chip {
+  border-color: #ddc59d;
+  background: #fffaf2;
+  color: #6b4c1e;
+}
+
+/* ==== Controls: wrap to next row on overflow, never scroll ==== */
+
+.demo-controls {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+}
+
+.demo-control-group {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  align-items: flex-end;
+  padding: 15px 12px 2px 2px;
+  border-right: 1px solid #c8d2df;
+}
+
+.demo-control-group:last-child {
+  border-right: none;
+}
+
+.demo-control-group-label {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  color: #314a65;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.demo-control-group-content {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.demo-control-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #2b3b4e;
+  font-size: 13px;
+}
+
+.demo-control-item-label {
+  white-space: nowrap;
+}
+
+.demo-button {
+  min-height: 26px;
+  padding: 3px 10px;
+  border: 1px solid #bdcada;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #26405f;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.demo-button:hover,
+.demo-button:focus-visible {
+  border-color: #7397bb;
+  background: #edf4fb;
+  outline: none;
+}
+
+.demo-button.is-active {
+  border-color: #7199c7;
+  background: #e7f1fb;
+  color: #174f75;
+}
+
+/* ==== CompDemoArea ==== */
+
+.demo-comp-area {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e2e7ee;
+  border-radius: 4px;
+  background: #f9fafb;
+}
+
+/* ==== MessageAndOutputs ==== */
+
+.demo-message-outputs {
+  min-width: 0;
+  border-top: 1px solid #e2e7ee;
+  padding-top: 6px;
+  color: #53667b;
+  font-size: 12px;
+  user-select: text;
+}
+
+.demo-message-outputs-label {
+  margin-right: 6px;
+  color: #31445a;
+  font-weight: 700;
+}
+
+.demo-message-outputs-content {
+  display: flex;
+  min-width: 0;
+  min-height: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+/* ==== ExampleSwitcher: children stacked on one grid cell for stable height ==== */
+
+.demo-example-switcher {
+  display: grid;
+  min-width: 0;
+}
+
+.demo-example-switcher-slot {
+  grid-area: 1 / 1;
+  min-width: 0;
+  visibility: hidden;
+}
+
+.demo-example-switcher-slot.is-active {
+  visibility: visible;
+}
+
+.demo-example-switch-buttons {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* active state only changes color/background, never font weight or padding,
+   so toggling active status causes no horizontal width jitter */
+.demo-example-jump-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 3px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #1d63a8;
+  cursor: pointer;
+  font: inherit;
+  font-size: inherit;
+  vertical-align: baseline;
+}
+
+.demo-example-jump-link:hover,
+.demo-example-jump-link:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+.demo-example-jump-link.is-active {
+  background: #dcebfa;
+  color: #0b4d8c;
+}
+
+/* ==== ExampleStackVertical ==== */
+
+.demo-example-stack {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.demo-example-stack > :not(:first-child) {
+  border-top: 1px solid #e6eaef;
+  padding-top: 10px;
+}
+
+.demo-example-stack > .demo-explanation {
+  border-top: none;
+}

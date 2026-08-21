@@ -18,6 +18,7 @@ import { popupExamples } from '../component/popup/examplePopup.jsx';
 import { folderExamples } from '../layout/folder/exampleFolder.jsx';
 import { treeViewExamples } from '../layout/tree/exampleTreeView.jsx';
 import { htmlExamples } from '../dev/exampleHtml.jsx';
+import { demoLayoutExamples } from '../dev/demo/exampleDemoLayout.jsx';
 import { calendarExamples } from '../component/calendar/exampleCalendar.jsx';
 import { statExamples } from '../component/stat/exampleStat.jsx';
 import { databaseExamples } from '../database/exampleDatabase.jsx';
@@ -58,4 +59,5 @@ export const components = {
   ...propEditorExamples,
   ...toolbarExamples,
   ...htmlExamples,
+  ...demoLayoutExamples,
 };
