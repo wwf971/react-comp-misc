@@ -4,6 +4,16 @@ import { observer } from 'mobx-react-lite';
 import TreeView, { TreeTextItemComp } from './TreeView';
 import InfoIcon from '../../icon/InfoIcon';
 import Menu from '../../component/menu/Menu';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  Controls,
+  ControlItem,
+  CompDemoArea,
+  MessageAndOutputs,
+} from '../../dev/demo/DemoLayout.jsx';
+import { ExampleGroup, ExampleStackVertical } from '../../dev/demo/ExampleGroup.jsx';
 import './tree.css';
 
 const TREE_NODE_CATALOG = {
@@ -565,220 +575,231 @@ const TreeExamplesPanel = observer(() => {
   };
 
   return (
-    <div>
-      <div className="tree-example-block">
-        <div className="tree-example-title">Tree View with Lazy Loading</div>
-        <div className="tree-example-desc">
-          Expand/collapse requests are sent upward, store decides state changes, and MobX triggers re-render. Expanding components fails once to show load-failed with retry.
-        </div>
-        <div className="tree-example-meta">
-          Selected: {lazyTreeStore.getItemDataById(lazyTreeStore.selectedItemId)?.text || '(none)'}
-        </div>
-        <div className="tree-example-box">
-          {/* Fixed-height viewport avoids panel jitter while tree branches expand/collapse. */}
-          {/* Leaf rows keep the hidden toggle spacer for indentation, but visual highlight starts at the label area. */}
-          <TreeView
-            data={{
-              itemRootIds: lazyTreeStore.rootItemIds,
-              itemDataById: lazyTreeStore.itemDataById,
-              itemSelectedId: lazyTreeStore.selectedItemId,
-            }}
-            config={{
-              className: 'tree-view-fixed-height',
-              getItemComp: getTreeItemComp,
-            }}
-            onEvent={(eventType, eventData) => {
-              if (eventType === 'itemClick') {
-                lazyTreeStore.setSelectedItem(eventData.itemId);
-                return { code: 0 };
-              }
-              if (eventType === 'toggleExpand') {
-                return lazyTreeStore.onTreeDataChangeRequest('toggle-expand', eventData);
-              }
-              if (eventType === 'reloadChildren') {
-                return lazyTreeStore.onTreeDataChangeRequest('reload-children', eventData);
-              }
-              return { code: 0 };
-            }}
-          />
-        </div>
-      </div>
+    <DemoPanel>
+      <Explanation titleText="Tree">
+        Tree view components with lazy loading and text filter.
+      </Explanation>
 
-      <div className="tree-example-block">
-        <div className="tree-example-title">Tree View with Drag Reorder</div>
-        <div className="tree-example-desc">
-          Drag non-root items to sibling positions or under folders. The render component only sends move requests; the store accepts or rejects them.
-        </div>
-        <div className="tree-example-meta">
-          {moveTreeStore.moveLastText}
-        </div>
-        <div className="tree-example-box">
-          <TreeView
-            data={{
-              itemRootIds: moveTreeStore.rootItemIds,
-              itemDataById: moveTreeStore.itemDataById,
-              itemSelectedId: moveTreeStore.selectedItemId,
-            }}
-            config={{
-              className: 'tree-view-fixed-height',
-              getItemComp: getTreeItemComp,
-              isItemDragEnabled: true,
-              getIsItemDraggable: (itemData) => itemData?.id !== 'workspace',
-              getItemDropStatus: ({ itemId, drop }) => ({
-                isDropAllowed: moveTreeStore.getIsTreeDropAllowed(itemId, drop),
-              }),
-            }}
-            onEvent={(eventType, eventData) => {
-              if (eventType === 'itemClick') {
-                moveTreeStore.setSelectedItem(eventData.itemId);
-                return { code: 0 };
-              }
-              if (eventType === 'toggleExpand') {
-                return moveTreeStore.onTreeDataChangeRequest('toggle-expand', eventData);
-              }
-              if (eventType === 'moveItem') {
-                return moveTreeStore.onTreeDataChangeRequest('move-item', eventData);
-              }
-              return { code: 0 };
-            }}
-          />
-        </div>
-      </div>
+      <ExampleGroup title="Variants">
+        <ExampleStackVertical>
+          <Example title="Tree View with Lazy Loading">
+            <Explanation>
+              Expand/collapse requests are sent upward, store decides state changes, and MobX triggers re-render. Expanding components fails once to show load-failed with retry.
+            </Explanation>
+            <CompDemoArea>
+              {/* Fixed-height viewport avoids panel jitter while tree branches expand/collapse. */}
+              {/* Leaf rows keep the hidden toggle spacer for indentation, but visual highlight starts at the label area. */}
+              <TreeView
+                data={{
+                  itemRootIds: lazyTreeStore.rootItemIds,
+                  itemDataById: lazyTreeStore.itemDataById,
+                  itemSelectedId: lazyTreeStore.selectedItemId,
+                }}
+                config={{
+                  className: 'tree-view-fixed-height',
+                  getItemComp: getTreeItemComp,
+                }}
+                onEvent={(eventType, eventData) => {
+                  if (eventType === 'itemClick') {
+                    lazyTreeStore.setSelectedItem(eventData.itemId);
+                    return { code: 0 };
+                  }
+                  if (eventType === 'toggleExpand') {
+                    return lazyTreeStore.onTreeDataChangeRequest('toggle-expand', eventData);
+                  }
+                  if (eventType === 'reloadChildren') {
+                    return lazyTreeStore.onTreeDataChangeRequest('reload-children', eventData);
+                  }
+                  return { code: 0 };
+                }}
+              />
+            </CompDemoArea>
+            <MessageAndOutputs labelText="Selected:">
+              <span>{lazyTreeStore.getItemDataById(lazyTreeStore.selectedItemId)?.text || '(none)'}</span>
+            </MessageAndOutputs>
+          </Example>
 
-      <div className="tree-example-block">
-        <div className="tree-example-title">Tree View with Context Menus</div>
-        <div className="tree-example-desc">
-          Right click on row for item menu. Right click on empty area for panel menu. Right click again while menu is open repositions and retargets correctly. The tree below scrolls inside a fixed-height container: right click a row, keep the menu open, then scroll to verify the menu stays aligned with the clicked item.
-        </div>
-        <div className="tree-example-meta">
-          Context target: {`${treeContextMenuState?.menuType ?? '-'}`}{treeContextMenuState?.itemId ? ` (${treeContextMenuState.itemId})` : ''}
-        </div>
-        <div
-          ref={treeContextWrapRef}
-          className="tree-example-box tree-context-wrap"
-          data-tree-context-wrap="true"
-          onContextMenu={(event) => {
-            const isOnTreeRow = Boolean(event.target?.closest?.('.tree-view-row'));
-            if (isOnTreeRow) return;
-            event.preventDefault();
-            event.stopPropagation();
-            openTreeContextMenuForEmptyArea(event);
-          }}
-        >
-          {/* Same row-highlight rule here: child/leaf rows highlight from label edge, not from toggle spacer area. */}
-          <TreeView
-            data={{
-              itemRootIds: contextTreeStore.rootItemIds,
-              itemDataById: contextTreeStore.itemDataById,
-              itemSelectedId: contextTreeStore.selectedItemId,
-            }}
-            config={{
-              className: 'tree-view-context-scroll',
-              getItemComp: getTreeItemComp,
-            }}
-            onEvent={(eventType, eventData) => {
-              if (eventType === 'itemClick') {
-                contextTreeStore.setSelectedItem(eventData.itemId);
-                return { code: 0 };
-              }
-              if (eventType === 'itemContextMenu') {
-                openTreeContextMenuForItem(eventData.itemId, eventData.event);
-                return { code: 0 };
-              }
-              if (eventType === 'toggleExpand') {
-                return contextTreeStore.onTreeDataChangeRequest('toggle-expand', eventData);
-              }
-              return { code: 0 };
-            }}
-          />
-        </div>
-        {treeContextMenuState ? (
-          <Menu
-            data={{
-              items: (() => {
-                if (treeContextMenuState.menuType === 'empty') {
-                  return [
-                    { id: 'create-root-folder', label: 'Create Root Folder', data: { action: 'create-root-folder' } },
-                    { id: 'refresh-tree', label: 'Refresh Tree', data: { action: 'refresh-tree' } },
-                  ];
-                }
-                const itemData = contextTreeStore.getItemDataById(treeContextMenuState.itemId);
-                if (!itemData) return [];
-                const typeText = itemData.isLeaf ? 'File' : 'Folder';
-                return [
-                  { id: 'info', label: `${typeText} Info`, data: { action: 'info', itemId: itemData.id } },
-                  { id: 'rename', label: `Rename ${typeText}`, data: { action: 'rename', itemId: itemData.id } },
-                  { id: 'delete', label: `Delete ${typeText}`, data: { action: 'delete', itemId: itemData.id } },
-                ];
-              })(),
-            }}
-            config={{
-              isOpen: true,
-              posOpen: { x: 0, y: 0 },
-              anchor: treeContextMenuState.anchor,
-              isBackdropScrollPassThrough: true,
-            }}
-            onEvent={(eventType, eventData) => {
-              if (eventType === 'closeRequest') {
-                setTreeContextMenuState(null);
-                return;
-              }
-              if (eventType === 'itemClick') {
-                setTreeContextMenuState((prevState) => prevState ? { ...prevState, lastAction: eventData.item?.data?.action ?? '' } : null);
-              }
-            }}
-          />
-        ) : null}
-        <div className="tree-example-desc">
-          Gap-safe behavior: avoid external row margins, keep spacing inside row hit area, and bind row-level onContextMenu.
-        </div>
-      </div>
+          <Example title="Tree View with Drag Reorder">
+            <Explanation>
+              Drag non-root items to sibling positions or under folders. The render component only sends move requests; the store accepts or rejects them.
+            </Explanation>
+            <CompDemoArea>
+              <TreeView
+                data={{
+                  itemRootIds: moveTreeStore.rootItemIds,
+                  itemDataById: moveTreeStore.itemDataById,
+                  itemSelectedId: moveTreeStore.selectedItemId,
+                }}
+                config={{
+                  className: 'tree-view-fixed-height',
+                  getItemComp: getTreeItemComp,
+                  isItemDragEnabled: true,
+                  getIsItemDraggable: (itemData) => itemData?.id !== 'workspace',
+                  getItemDropStatus: ({ itemId, drop }) => ({
+                    isDropAllowed: moveTreeStore.getIsTreeDropAllowed(itemId, drop),
+                  }),
+                }}
+                onEvent={(eventType, eventData) => {
+                  if (eventType === 'itemClick') {
+                    moveTreeStore.setSelectedItem(eventData.itemId);
+                    return { code: 0 };
+                  }
+                  if (eventType === 'toggleExpand') {
+                    return moveTreeStore.onTreeDataChangeRequest('toggle-expand', eventData);
+                  }
+                  if (eventType === 'moveItem') {
+                    return moveTreeStore.onTreeDataChangeRequest('move-item', eventData);
+                  }
+                  return { code: 0 };
+                }}
+              />
+            </CompDemoArea>
+            <MessageAndOutputs>
+              <span>{moveTreeStore.moveLastText}</span>
+            </MessageAndOutputs>
+          </Example>
 
-      <div className="tree-example-block">
-        <div className="tree-example-title">Tree View with Leaf Text Filter</div>
-        <div className="tree-example-desc">
-          Filter matches only leaf items by substring. Ancestors of each matched leaf stay visible to preserve the path.
-        </div>
-        <div className="tree-filter-toolbar">
-          <input
-            className="tree-filter-input"
-            value={treeFilterText}
-            onChange={(event) => setTreeFilterText(event.target.value)}
-            placeholder="Filter leaf text, for example: jsx or readme"
-          />
-          <div className="tree-filter-count">
-            Matched leaf count: {filteredTreeData.matchedLeafItemIds.length}
-          </div>
-        </div>
-        <div className="tree-example-meta">
-          Selected: {filteredTreeRenderData.itemDataById[treeFilterSelectedItemId]?.text || '(none)'}
-        </div>
-        <div className="tree-example-box">
-          {/* Filter demo follows the same background-area rule so leaf highlight behavior stays consistent across examples. */}
-          <TreeView
-            data={{
-              itemRootIds: filteredTreeRenderData.rootItemIds,
-              itemDataById: filteredTreeRenderData.itemDataById,
-              itemSelectedId: treeFilterSelectedItemId,
-            }}
-            config={{
-              className: 'tree-view-fixed-height',
-              getItemComp: getTreeFilterItemComp,
-            }}
-            onEvent={(eventType, eventData) => {
-              if (eventType === 'itemClick') {
-                setTreeFilterSelectedItemId(eventData.itemId);
-                return { code: 0 };
-              }
-              if (eventType === 'toggleExpand') {
-                return handleTreeFilterDataChangeRequest('toggle-expand', eventData);
-              }
-              return { code: 0 };
-            }}
-          />
-        </div>
-      </div>
-    </div>
+          <Example title="Tree View with Context Menus">
+            <Explanation>
+              Right click on row for item menu. Right click on empty area for panel menu. Right click again while menu is open repositions and retargets correctly. The tree below scrolls inside a fixed-height container: right click a row, keep the menu open, then scroll to verify the menu stays aligned with the clicked item.
+            </Explanation>
+            <CompDemoArea>
+              <div
+                ref={treeContextWrapRef}
+                className="tree-context-wrap"
+                data-tree-context-wrap="true"
+                onContextMenu={(event) => {
+                  const isOnTreeRow = Boolean(event.target?.closest?.('.tree-view-row'));
+                  if (isOnTreeRow) return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  openTreeContextMenuForEmptyArea(event);
+                }}
+              >
+                {/* Same row-highlight rule here: child/leaf rows highlight from label edge, not from toggle spacer area. */}
+                <TreeView
+                  data={{
+                    itemRootIds: contextTreeStore.rootItemIds,
+                    itemDataById: contextTreeStore.itemDataById,
+                    itemSelectedId: contextTreeStore.selectedItemId,
+                  }}
+                  config={{
+                    className: 'tree-view-context-scroll',
+                    getItemComp: getTreeItemComp,
+                  }}
+                  onEvent={(eventType, eventData) => {
+                    if (eventType === 'itemClick') {
+                      contextTreeStore.setSelectedItem(eventData.itemId);
+                      return { code: 0 };
+                    }
+                    if (eventType === 'itemContextMenu') {
+                      openTreeContextMenuForItem(eventData.itemId, eventData.event);
+                      return { code: 0 };
+                    }
+                    if (eventType === 'toggleExpand') {
+                      return contextTreeStore.onTreeDataChangeRequest('toggle-expand', eventData);
+                    }
+                    return { code: 0 };
+                  }}
+                />
+              </div>
+              {treeContextMenuState ? (
+                <Menu
+                  data={{
+                    items: (() => {
+                      if (treeContextMenuState.menuType === 'empty') {
+                        return [
+                          { id: 'create-root-folder', label: 'Create Root Folder', data: { action: 'create-root-folder' } },
+                          { id: 'refresh-tree', label: 'Refresh Tree', data: { action: 'refresh-tree' } },
+                        ];
+                      }
+                      const itemData = contextTreeStore.getItemDataById(treeContextMenuState.itemId);
+                      if (!itemData) return [];
+                      const typeText = itemData.isLeaf ? 'File' : 'Folder';
+                      return [
+                        { id: 'info', label: `${typeText} Info`, data: { action: 'info', itemId: itemData.id } },
+                        { id: 'rename', label: `Rename ${typeText}`, data: { action: 'rename', itemId: itemData.id } },
+                        { id: 'delete', label: `Delete ${typeText}`, data: { action: 'delete', itemId: itemData.id } },
+                      ];
+                    })(),
+                  }}
+                  config={{
+                    isOpen: true,
+                    posOpen: { x: 0, y: 0 },
+                    anchor: treeContextMenuState.anchor,
+                    isBackdropScrollPassThrough: true,
+                  }}
+                  onEvent={(eventType, eventData) => {
+                    if (eventType === 'closeRequest') {
+                      setTreeContextMenuState(null);
+                      return;
+                    }
+                    if (eventType === 'itemClick') {
+                      setTreeContextMenuState((prevState) => prevState ? { ...prevState, lastAction: eventData.item?.data?.action ?? '' } : null);
+                    }
+                  }}
+                />
+              ) : null}
+            </CompDemoArea>
+            <MessageAndOutputs labelText="Context target:">
+              <span>
+                {`${treeContextMenuState?.menuType ?? '-'}`}
+                {treeContextMenuState?.itemId ? ` (${treeContextMenuState.itemId})` : ''}
+              </span>
+            </MessageAndOutputs>
+            <Explanation>
+              Gap-safe behavior: avoid external row margins, keep spacing inside row hit area, and bind row-level onContextMenu.
+            </Explanation>
+          </Example>
+
+          <Example title="Tree View with Leaf Text Filter">
+            <Explanation>
+              Filter matches only leaf items by substring. Ancestors of each matched leaf stay visible to preserve the path.
+            </Explanation>
+            <Controls>
+              <ControlItem labelText="Filter:">
+                <input
+                  className="tree-filter-input"
+                  value={treeFilterText}
+                  onChange={(event) => setTreeFilterText(event.target.value)}
+                  placeholder="Filter leaf text, for example: jsx or readme"
+                />
+              </ControlItem>
+            </Controls>
+            <CompDemoArea>
+              {/* Filter demo follows the same background-area rule so leaf highlight behavior stays consistent across examples. */}
+              <TreeView
+                data={{
+                  itemRootIds: filteredTreeRenderData.rootItemIds,
+                  itemDataById: filteredTreeRenderData.itemDataById,
+                  itemSelectedId: treeFilterSelectedItemId,
+                }}
+                config={{
+                  className: 'tree-view-fixed-height',
+                  getItemComp: getTreeFilterItemComp,
+                }}
+                onEvent={(eventType, eventData) => {
+                  if (eventType === 'itemClick') {
+                    setTreeFilterSelectedItemId(eventData.itemId);
+                    return { code: 0 };
+                  }
+                  if (eventType === 'toggleExpand') {
+                    return handleTreeFilterDataChangeRequest('toggle-expand', eventData);
+                  }
+                  return { code: 0 };
+                }}
+              />
+            </CompDemoArea>
+            <MessageAndOutputs labelText="Selected:">
+              <span>{filteredTreeRenderData.itemDataById[treeFilterSelectedItemId]?.text || '(none)'}</span>
+            </MessageAndOutputs>
+            <MessageAndOutputs labelText="Matched leaf count:">
+              <span>{filteredTreeData.matchedLeafItemIds.length}</span>
+            </MessageAndOutputs>
+          </Example>
+        </ExampleStackVertical>
+      </ExampleGroup>
+    </DemoPanel>
   );
 });
 

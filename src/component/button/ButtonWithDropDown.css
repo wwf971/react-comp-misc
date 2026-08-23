@@ -36,28 +36,3 @@
 .button-with-dropdown-button:hover {
   background: #f6f6f6;
 }
-
-.button-with-dropdown-example-root {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 640px;
-  padding: 8px;
-}
-
-.button-with-dropdown-example-title {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.button-with-dropdown-example-row {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.button-with-dropdown-example-status {
-  min-height: 18px;
-  color: #555555;
-  font-size: 12px;
-}

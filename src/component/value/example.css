@@ -1,0 +1,54 @@
+.value-example-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.value-example-row-label {
+  font-weight: bold;
+}
+
+.value-example-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.value-example-custom-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.value-example-custom-item-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.value-example-custom-item-dot.tone-neutral {
+  background: #999;
+}
+
+.value-example-custom-item-dot.tone-ok {
+  background: #2e7d32;
+}
+
+.value-example-custom-item-dot.tone-info {
+  background: #1565c0;
+}
+
+.value-example-custom-item-dot.tone-warn {
+  background: #ef6c00;
+}
+
+.value-example-custom-item-label {
+  font-size: 12px;
+  color: #333;
+}
+
+.value-example-custom-item-description {
+  font-size: 11px;
+  color: #777;
+}

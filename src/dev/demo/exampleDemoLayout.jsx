@@ -20,12 +20,21 @@ import {
   ExampleStackVertical,
 } from './ExampleGroup.jsx';
 import { createStoreExampleGroup } from './demoStores.js';
-import { createStoreDemoLayoutExample, boxColorHexById, boxSizePxById } from './exampleDemoLayoutStore.js';
+import { createStoreSimServer } from './simServerStore.js';
+import SimServerControl from './SimServerControl.jsx';
+import {
+  createStoreDemoLayoutExample,
+  createStoreSimRequestExample,
+  boxColorHexById,
+  boxSizePxById,
+} from './exampleDemoLayoutStore.js';
 import './exampleDemoLayout.css';
 
 const DemoLayoutExamplesPanel = observer(function DemoLayoutExamplesPanel() {
   const storeShared = useMemo(() => createStoreDemoLayoutExample(), []);
   const storeGroupSwitch = useMemo(() => createStoreExampleGroup({ groupId: 'tile-switch', exampleActiveId: 'tile-tall' }), []);
+  const storeSimServerPage = useMemo(() => createStoreSimServer({ delayAvgMs: 400, failRatePercent: 25 }), []);
+  const storeSimServerGroup = useMemo(() => createStoreSimServer({ delayAvgMs: 900, failRatePercent: 50 }), []);
 
   return (
     <DemoPanel>
@@ -40,8 +49,13 @@ const DemoLayoutExamplesPanel = observer(function DemoLayoutExamplesPanel() {
           <li>
             Related examples form an <strong>ExampleGroup</strong>, shown one at a time via <strong>ExampleSwitcher</strong>, or all at once via <strong>ExampleStackVertical</strong>.
           </li>
+          <li>
+            The <strong>SimServerControl</strong> below is placed at page level; example A of the simulated server group further down runs through it.
+          </li>
         </ul>
       </Explanation>
+
+      <SimServerControl labelText="Sim server (page)" store={storeSimServerPage} />
 
       <ExampleBoxTune store={storeShared} />
 
@@ -92,6 +106,38 @@ const DemoLayoutExamplesPanel = observer(function DemoLayoutExamplesPanel() {
         </ExampleStackVertical>
       </ExampleGroup>
 
+      <ExampleGroup title="Simulated server (SimServerControl)">
+        <Explanation>
+          <ul>
+            <li>
+              Examples simulating server round trips use the standard <strong>SimServerControl</strong>, one per level: <strong>example A</strong> runs through the page level control at the top of this page, <strong>example B</strong> through this group&apos;s control below, <strong>example C</strong> owns its control.
+            </li>
+            <li>
+              Each request resolves after a uniform 0.5x-1.5x of the average delay, and fails at the given rate; the control shows the live pending count of its server.
+            </li>
+          </ul>
+        </Explanation>
+        <Controls>
+          <SimServerControl labelText="Sim server (group)" store={storeSimServerGroup} />
+        </Controls>
+        <ExampleStackVertical>
+          <ExampleSimRequest
+            title="Example A (page sim server)"
+            storeSimServer={storeSimServerPage}
+            footText="Requests from this example go through the page level sim server at the top of the page."
+          />
+          <ExampleSimRequest
+            title="Example B (group sim server)"
+            storeSimServer={storeSimServerGroup}
+            footText="Requests from this example go through the group sim server tuned above."
+          />
+          <ExampleSimRequest
+            title="Example C (own sim server)"
+            footText="This example owns its sim server and shows its own control; other examples are unaffected."
+          />
+        </ExampleStackVertical>
+      </ExampleGroup>
+
       <Explanation tone="amber" titleText="Conventions">
         <ul>
           <li>
@@ -105,6 +151,9 @@ const DemoLayoutExamplesPanel = observer(function DemoLayoutExamplesPanel() {
           </li>
           <li>
             Explanation content is plain text for one-liners, or ul/li/strong for lists, plus <strong>KeyChip</strong> for keys, e.g. <KeyChip>Shift</KeyChip> + <KeyChip>Click</KeyChip>.
+          </li>
+          <li>
+            Examples simulating server delay and chance failure use <strong>SimServerControl</strong> with a store from createStoreSimServer, placed at page, group, or example level; never implement ad hoc delay/failure controls per example.
           </li>
         </ul>
       </Explanation>
@@ -158,7 +207,7 @@ const ExampleBoxTune = observer(function ExampleBoxTune({ store }) {
           />
         </ControlItem>
       </Controls>
-      <CompDemoArea>
+      <CompDemoArea footText="This line is the optional footText of CompDemoArea, for short notes under the component.">
         <div
           className="demo-layout-example-box"
           style={{
@@ -173,6 +222,49 @@ const ExampleBoxTune = observer(function ExampleBoxTune({ store }) {
         {storeUsed.logList.length
           ? storeUsed.logList.map((logItem) => <span key={logItem.id}>{logItem.text}</span>)
           : <span>No changes yet</span>}
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+// Example sending requests through a sim server store. When the storeSimServer
+// prop is absent, the example owns its sim server and shows its own control.
+const ExampleSimRequest = observer(function ExampleSimRequest({ title, storeSimServer, footText }) {
+  const storeSimServerOwn = useMemo(
+    () => (storeSimServer ? null : createStoreSimServer({ delayAvgMs: 600, failRatePercent: 50 })),
+    [storeSimServer],
+  );
+  const storeSimServerUsed = storeSimServer || storeSimServerOwn;
+  const storeExample = useMemo(
+    () => createStoreSimRequestExample({ storeSimServer: storeSimServerUsed }),
+    [storeSimServerUsed],
+  );
+
+  return (
+    <Example title={title}>
+      {storeSimServerOwn ? (
+        <Controls>
+          <SimServerControl labelText="Sim server (example)" store={storeSimServerOwn} />
+        </Controls>
+      ) : null}
+      <CompDemoArea footText={footText}>
+        <button
+          type="button"
+          className="demo-layout-example-tile"
+          style={{ width: 110, height: 30 }}
+          onClick={() => storeExample.handleEvent('requestSend')}
+        >
+          Send request
+        </button>
+      </CompDemoArea>
+      <MessageAndOutputs labelText="Responses:">
+        {storeExample.responseList.length
+          ? storeExample.responseList.map((responseItem) => (
+            <span key={responseItem.id} className={responseItem.isFail ? 'demo-layout-example-response-fail' : ''}>
+              {responseItem.text}
+            </span>
+          ))
+          : <span>No responses yet</span>}
       </MessageAndOutputs>
     </Example>
   );

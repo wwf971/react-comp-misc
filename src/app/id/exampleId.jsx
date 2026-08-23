@@ -1,10 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { makeAutoObservable } from 'mobx';
+import { observer } from 'mobx-react-lite';
 import {
   createMs48Id,
   detectMs48StringEncoding,
   formatTimestamp10Ms,
   parseMs48Id,
 } from './idUtils.js';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  CompDemoArea,
+} from '../../dev/demo/DemoLayout.jsx';
 import './example.css';
 
 const timezoneHourOffset = 9;
@@ -139,123 +147,127 @@ const EncodingCandidates = ({ encodingState }) => {
   );
 };
 
-const IdExamplePanel = () => {
-  const [parseIdText, setParseIdText] = useState(() => createMs48Id());
-  const [timeText, setTimeText] = useState(() => formatTimestamp10Ms(Date.now(), timezoneHourOffset));
-  const [offsetText, setOffsetText] = useState('');
-  const [generatedIdText, setGeneratedIdText] = useState('');
-  const [generateErrorText, setGenerateErrorText] = useState('');
-  const timeInputState = useMemo(() => {
-    try {
-      const timeMs = parseTimestamp10Ms(timeText, timezoneHourOffset);
-      return {
-        timeMs,
-        errorText: '',
-      };
-    } catch (error) {
-      return {
-        timeMs: null,
-        errorText: error instanceof Error ? error.message : 'invalid time',
-      };
-    }
-  }, [timeText]);
-  const offsetInputState = useMemo(() => {
-    try {
-      return {
-        offset: parseOffsetInput(offsetText),
-        errorText: '',
-      };
-    } catch (error) {
-      return {
-        offset: null,
-        errorText: error instanceof Error ? error.message : 'invalid offset',
-      };
-    }
-  }, [offsetText]);
-  const parsedIdState = useMemo(() => {
-    try {
-      const encodingState = detectMs48StringEncoding(parseIdText, {
-        timezoneHourOffset,
-      });
-      if (encodingState.errorText) throw new Error(encodingState.errorText);
-      return {
-        parsedId: parseMs48Id(parseIdText, {
-          form: encodingState.encoding,
-          timezoneHourOffset,
-        }),
-        encodingState,
-        errorText: '',
-      };
-    } catch (error) {
-      const encodingState = detectMs48StringEncoding(parseIdText, {
-        timezoneHourOffset,
-      });
-      const isAmbiguous = `${encodingState.errorText ?? ''}`.startsWith('ambiguous id');
-      return {
-        parsedId: isAmbiguous
-          ? parseMs48Id(parseIdText, { form: 'base36-low', timezoneHourOffset })
-          : null,
-        encodingState,
-        errorText: error instanceof Error ? error.message : 'invalid id',
-      };
-    }
-  }, [parseIdText]);
-  const generatedIdState = useMemo(() => {
-    if (!generatedIdText) return null;
-    return parseMs48Id(generatedIdText, {
-      form: 'base36-low',
+const IdTextGrid = ({ parsedId, firstLabelText = 'base36' }) => (
+  <div className="id-example-grid">
+    <div className="id-example-label">{firstLabelText}</div>
+    <div className="id-example-value">{parsedId.base36Text}</div>
+    <div className="id-example-label">base36 high</div>
+    <div className="id-example-value">{parsedId.base36HighText}</div>
+    <div className="id-example-label">decimal</div>
+    <div className="id-example-value">{parsedId.decimalText}</div>
+  </div>
+);
+
+function createStoreIdExample() {
+  return makeAutoObservable({
+    parseIdText: createMs48Id(),
+    timeText: formatTimestamp10Ms(Date.now(), timezoneHourOffset),
+    offsetText: '',
+    generatedIdText: '',
+    generateErrorText: '',
+    parseIdTextSet(text) {
+      this.parseIdText = text;
+    },
+    timeTextSet(text) {
+      this.timeText = text;
+    },
+    offsetTextSet(text) {
+      this.offsetText = text;
+    },
+    useCurrentTime() {
+      this.timeText = formatTimestamp10Ms(Date.now(), timezoneHourOffset);
+    },
+    generateFromInput() {
+      try {
+        const timeMs = parseTimestamp10Ms(this.timeText, timezoneHourOffset);
+        const offset = parseOffsetInput(this.offsetText);
+        const options = {
+          timeMs,
+          ...(offset === null ? {} : { offset }),
+        };
+        const nextId = createMs48Id(options);
+        this.generateErrorText = '';
+        this.generatedIdText = nextId;
+        this.parseIdText = nextId;
+      } catch (error) {
+        this.generateErrorText = error instanceof Error ? error.message : 'failed to generate id';
+      }
+    },
+    generateErrorClear() {
+      this.generateErrorText = '';
+    },
+  }, {}, { autoBind: true });
+}
+
+const getTimeInputState = (timeText) => {
+  try {
+    return {
+      timeMs: parseTimestamp10Ms(timeText, timezoneHourOffset),
+      errorText: '',
+    };
+  } catch (error) {
+    return {
+      timeMs: null,
+      errorText: error instanceof Error ? error.message : 'invalid time',
+    };
+  }
+};
+
+const getOffsetInputState = (offsetText) => {
+  try {
+    return {
+      offset: parseOffsetInput(offsetText),
+      errorText: '',
+    };
+  } catch (error) {
+    return {
+      offset: null,
+      errorText: error instanceof Error ? error.message : 'invalid offset',
+    };
+  }
+};
+
+const getParsedIdState = (parseIdText) => {
+  try {
+    const encodingState = detectMs48StringEncoding(parseIdText, {
       timezoneHourOffset,
     });
-  }, [generatedIdText]);
-  const fixedId = useMemo(() => parseMs48Id(createMs48Id({
-    timeMs: Date.UTC(2026, 4, 20, 14, 25, 5, 300),
-    offset: 42,
-  }), {
-    form: 'base36-low',
-    timezoneHourOffset,
-  }), []);
+    if (encodingState.errorText) throw new Error(encodingState.errorText);
+    return {
+      parsedId: parseMs48Id(parseIdText, {
+        form: encodingState.encoding,
+        timezoneHourOffset,
+      }),
+      encodingState,
+      errorText: '',
+    };
+  } catch (error) {
+    const encodingState = detectMs48StringEncoding(parseIdText, {
+      timezoneHourOffset,
+    });
+    const isAmbiguous = `${encodingState.errorText ?? ''}`.startsWith('ambiguous id');
+    return {
+      parsedId: isAmbiguous
+        ? parseMs48Id(parseIdText, { form: 'base36-low', timezoneHourOffset })
+        : null,
+      encodingState,
+      errorText: error instanceof Error ? error.message : 'invalid id',
+    };
+  }
+};
 
-  useEffect(() => {
-    if (timeInputState.errorText || offsetInputState.errorText) return;
-    setGenerateErrorText('');
-  }, [timeInputState.errorText, offsetInputState.errorText]);
-
-  const requestUseCurrentTime = () => {
-    setTimeText(formatTimestamp10Ms(Date.now(), timezoneHourOffset));
-  };
-
-  const requestGenerateFromInput = () => {
-    try {
-      if (timeInputState.errorText) throw new Error(timeInputState.errorText);
-      if (offsetInputState.errorText) throw new Error(offsetInputState.errorText);
-      const options = {
-        timeMs: timeInputState.timeMs,
-        ...(offsetInputState.offset === null ? {} : { offset: offsetInputState.offset }),
-      };
-      const nextId = createMs48Id(options);
-      setGenerateErrorText('');
-      setGeneratedIdText(nextId);
-      setParseIdText(nextId);
-    } catch (error) {
-      setGenerateErrorText(error instanceof Error ? error.message : 'failed to generate id');
-    }
-  };
+const ExampleIdParse = observer(function ExampleIdParse({ store }) {
+  const parsedIdState = getParsedIdState(store.parseIdText);
 
   return (
-    <div className="id-example-root">
-      <div className="id-example-title">ms_48 id</div>
-      <div className="id-example-desc">
-        The id is a 64 bit integer. The high 48 bits store unix milliseconds. The low 16 bits store an offset.
-      </div>
-
-      <div className="id-example-card">
-        <div className="id-example-card-title">Parse an id</div>
+    <Example title="Parse an id">
+      <CompDemoArea>
         <div className="id-example-field-line">
           <div className="id-example-field-label">id</div>
           <EditableText
-            value={parseIdText}
+            value={store.parseIdText}
             placeholder="base36 or decimal id"
-            onChange={setParseIdText}
+            onChange={store.parseIdTextSet}
           />
         </div>
         {parsedIdState.errorText ? (
@@ -273,39 +285,51 @@ const IdExamplePanel = () => {
             </div>
             <IdStructure parsedId={parsedIdState.parsedId} />
             <EncodingCandidates encodingState={parsedIdState.encodingState} />
-            <div className="id-example-grid">
-              <div className="id-example-label">base36 low</div>
-              <div className="id-example-value">{parsedIdState.parsedId.base36Text}</div>
-              <div className="id-example-label">base36 high</div>
-              <div className="id-example-value">{parsedIdState.parsedId.base36HighText}</div>
-              <div className="id-example-label">decimal</div>
-              <div className="id-example-value">{parsedIdState.parsedId.decimalText}</div>
-            </div>
+            <IdTextGrid parsedId={parsedIdState.parsedId} firstLabelText="base36 low" />
           </>
         )}
-      </div>
+      </CompDemoArea>
+    </Example>
+  );
+});
 
-      <div className="id-example-card">
-        <div className="id-example-card-title">Generate from parts</div>
+const ExampleIdGenerate = observer(function ExampleIdGenerate({ store }) {
+  const timeInputState = getTimeInputState(store.timeText);
+  const offsetInputState = getOffsetInputState(store.offsetText);
+  const generatedIdState = store.generatedIdText
+    ? parseMs48Id(store.generatedIdText, {
+      form: 'base36-low',
+      timezoneHourOffset,
+    })
+    : null;
+
+  useEffect(() => {
+    if (timeInputState.errorText || offsetInputState.errorText) return;
+    store.generateErrorClear();
+  }, [store, timeInputState.errorText, offsetInputState.errorText]);
+
+  return (
+    <Example title="Generate from parts">
+      <CompDemoArea>
         <div className="id-example-field-line">
           <div className="id-example-field-label">time</div>
           <EditableText
-            value={timeText}
+            value={store.timeText}
             placeholder="20260520_23250530+09"
-            onChange={setTimeText}
+            onChange={store.timeTextSet}
           />
-          <button className="id-example-btn" type="button" onClick={requestUseCurrentTime}>
+          <button className="id-example-btn" type="button" onClick={store.useCurrentTime}>
             Current Time
           </button>
         </div>
         <div className="id-example-field-line">
           <div className="id-example-field-label">offset</div>
           <EditableText
-            value={offsetText}
+            value={store.offsetText}
             placeholder="empty means random"
-            onChange={setOffsetText}
+            onChange={store.offsetTextSet}
           />
-          <button className="id-example-btn" type="button" onClick={requestGenerateFromInput}>
+          <button className="id-example-btn" type="button" onClick={store.generateFromInput}>
             Generate
           </button>
         </div>
@@ -315,45 +339,60 @@ const IdExamplePanel = () => {
         {offsetInputState.errorText ? (
           <div className="id-example-error">{offsetInputState.errorText}</div>
         ) : null}
-        {generateErrorText ? (
-          <div className="id-example-error">{generateErrorText}</div>
+        {store.generateErrorText ? (
+          <div className="id-example-error">{store.generateErrorText}</div>
         ) : null}
         {generatedIdState ? (
           <>
             <IdStructure parsedId={generatedIdState} />
-            <div className="id-example-grid">
-              <div className="id-example-label">base36</div>
-              <div className="id-example-value">{generatedIdState.base36Text}</div>
-              <div className="id-example-label">base36 high</div>
-              <div className="id-example-value">{generatedIdState.base36HighText}</div>
-              <div className="id-example-label">decimal</div>
-              <div className="id-example-value">{generatedIdState.decimalText}</div>
-            </div>
+            <IdTextGrid parsedId={generatedIdState} />
           </>
         ) : null}
-      </div>
+      </CompDemoArea>
+    </Example>
+  );
+});
 
-      <div className="id-example-card">
-        <div className="id-example-card-title">Fixed structure example</div>
+const ExampleIdFixed = () => {
+  const fixedId = useMemo(() => parseMs48Id(createMs48Id({
+    timeMs: Date.UTC(2026, 4, 20, 14, 25, 5, 300),
+    offset: 42,
+  }), {
+    form: 'base36-low',
+    timezoneHourOffset,
+  }), []);
+
+  return (
+    <Example title="Fixed structure example">
+      <CompDemoArea>
         <IdStructure parsedId={fixedId} />
-        <div className="id-example-grid">
-          <div className="id-example-label">base36</div>
-          <div className="id-example-value">{fixedId.base36Text}</div>
-          <div className="id-example-label">base36 high</div>
-          <div className="id-example-value">{fixedId.base36HighText}</div>
-          <div className="id-example-label">decimal</div>
-          <div className="id-example-value">{fixedId.decimalText}</div>
-        </div>
-      </div>
-    </div>
+        <IdTextGrid parsedId={fixedId} />
+      </CompDemoArea>
+    </Example>
   );
 };
+
+const IdExamplePanel = observer(function IdExamplePanel({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreIdExample()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <DemoPanel>
+      <Explanation titleText="ms_48 id">
+        The id is a 64 bit integer. The high 48 bits store unix milliseconds. The low 16 bits store an offset.
+      </Explanation>
+      <ExampleIdParse store={storeUsed} />
+      <ExampleIdGenerate store={storeUsed} />
+      <ExampleIdFixed />
+    </DemoPanel>
+  );
+});
 
 const idExamples = {
   'ID Utilities': {
     component: null,
     description: 'ms_48 id generation, conversion, and timestamp parsing',
-    example: () => <IdExamplePanel />,
+    example: IdExamplePanel,
   },
 };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import TreeView from '../../layout/tree/TreeView';
 import {
   SideListItemContent,
@@ -74,6 +74,24 @@ const buildVisibleFilteredTree = (normalizedFilterText, treeData) => {
   };
 };
 
+const listVisibleLeafItems = (rootItemIds, itemDataById) => {
+  const leafItems = [];
+  const walkVisibleItems = (itemIds) => {
+    itemIds.forEach((itemId) => {
+      const itemData = itemDataById[itemId];
+      if (!itemData) return;
+      if (itemData.isLeaf === true) {
+        leafItems.push(itemData);
+        return;
+      }
+      if (itemData.isExpanded !== true) return;
+      walkVisibleItems(itemData.childrenIds || []);
+    });
+  };
+  walkVisibleItems(rootItemIds);
+  return leafItems;
+};
+
 const ItemTree = ({
   data = {},
   config = {},
@@ -96,6 +114,7 @@ const ItemTree = ({
   const [searchText, setSearchText] = useState('');
   const [expandedById, setExpandedById] = useState({});
   const [selectedItemIdInternal, setSelectedItemIdInternal] = useState(resolvedSelectedItemKey);
+  const treeWrapRef = useRef(null);
 
   useEffect(() => {
     setSelectedItemIdInternal(resolvedSelectedItemKey);
@@ -189,6 +208,37 @@ const ItemTree = ({
     }
   };
 
+  const scrollItemIntoView = (itemId) => {
+    const wrapEl = treeWrapRef.current;
+    if (!wrapEl || !itemId) return;
+    const rowEl = wrapEl.querySelector(`.tree-view-row[data-tree-item-id="${CSS.escape(String(itemId))}"]`);
+    rowEl?.scrollIntoView({ block: 'nearest' });
+  };
+
+  const focusTreeWrap = () => {
+    treeWrapRef.current?.focus({ preventScroll: true });
+  };
+
+  const selectVisibleLeafByOffset = (offset) => {
+    const leafItems = listVisibleLeafItems(
+      renderTreeData.rootItemIds,
+      renderTreeData.itemDataById,
+    );
+    if (leafItems.length === 0) return false;
+    const currentIndex = leafItems.findIndex((item) => item.id === selectedItemIdInternal);
+    let nextIndex;
+    if (currentIndex < 0) {
+      nextIndex = offset > 0 ? 0 : leafItems.length - 1;
+    } else {
+      nextIndex = Math.max(0, Math.min(leafItems.length - 1, currentIndex + offset));
+    }
+    const nextItem = leafItems[nextIndex];
+    if (!nextItem || nextItem.id === selectedItemIdInternal) return false;
+    emitSelect(nextItem.id, nextItem);
+    requestAnimationFrame(() => scrollItemIntoView(nextItem.id));
+    return true;
+  };
+
   const expandAll = () => {
     const nextExpandedById = {};
     Object.values(treeData.itemDataById).forEach((itemData) => {
@@ -233,6 +283,19 @@ const ItemTree = ({
                 onEvent('searchTextChange', { searchText: nextSearchText });
               }
             }}
+            onKeyDown={(event) => {
+              if (event.key !== 'ArrowDown') return;
+              if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+              const firstLeafItem = listVisibleLeafItems(
+                renderTreeData.rootItemIds,
+                renderTreeData.itemDataById,
+              )[0];
+              if (!firstLeafItem) return;
+              event.preventDefault();
+              emitSelect(firstLeafItem.id, firstLeafItem);
+              focusTreeWrap();
+              requestAnimationFrame(() => scrollItemIntoView(firstLeafItem.id));
+            }}
             placeholder={resolvedSearchPlaceholder}
           />
         </div>
@@ -245,7 +308,18 @@ const ItemTree = ({
           Collapse All
         </button>
       </div>
-      <div className="side-list-tree-wrap">
+      <div
+        className="side-list-tree-wrap"
+        ref={treeWrapRef}
+        tabIndex={0}
+        onClick={focusTreeWrap}
+        onKeyDown={(event) => {
+          if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+          if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+          event.preventDefault();
+          selectVisibleLeafByOffset(event.key === 'ArrowDown' ? 1 : -1);
+        }}
+      >
         <TreeView
           data={{
             itemRootIds: renderTreeData.rootItemIds,

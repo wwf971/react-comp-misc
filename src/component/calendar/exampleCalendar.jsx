@@ -1,8 +1,16 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import DateSelector from './DateSelector.jsx';
-import './calendar.css';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  Controls,
+  ControlGroup,
+  CompDemoArea,
+  MessageAndOutputs,
+} from '../../dev/demo/DemoLayout.jsx';
 
 function pad2(value) {
   return String(value).padStart(2, '0');
@@ -144,89 +152,88 @@ function createCalendarDemoStore() {
   }, {}, { autoBind: true });
 }
 
-const CalendarExamplesPanel = observer(() => {
-  const [calendarStore] = useState(() => createCalendarDemoStore());
+const CalendarExamplesPanel = observer(function CalendarExamplesPanel({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createCalendarDemoStore()), [store]);
+  const storeUsed = store || storeLocal;
+
   return (
-    <div className="calendar-demo-root">
-      <div className="calendar-demo-title">Date Selector</div>
-
-      <div className="calendar-demo-row">
-        <button
-          type="button"
-          className={`calendar-demo-button ${calendarStore.selectionMode === 'single' ? 'calendar-demo-button-active' : ''}`}
-          onClick={() => calendarStore.onDataChangeRequest('set-selection-mode', { selectionMode: 'single' })}
-        >
-          Single
-        </button>
-        <button
-          type="button"
-          className={`calendar-demo-button ${calendarStore.selectionMode === 'multiple' ? 'calendar-demo-button-active' : ''}`}
-          onClick={() => calendarStore.onDataChangeRequest('set-selection-mode', { selectionMode: 'multiple' })}
-        >
-          Multiple
-        </button>
-        <button
-          type="button"
-          className={`calendar-demo-button ${calendarStore.selectionMode === 'range' ? 'calendar-demo-button-active' : ''}`}
-          onClick={() => calendarStore.onDataChangeRequest('set-selection-mode', { selectionMode: 'range' })}
-        >
-          Range
-        </button>
-      </div>
-
-      <div className="calendar-demo-row">
-        <button
-          type="button"
-          className={`calendar-demo-button ${calendarStore.firstDayOfWeek === 'monday' ? 'calendar-demo-button-active' : ''}`}
-          onClick={() => calendarStore.onDataChangeRequest('set-first-day-of-week', { firstDayOfWeek: 'monday' })}
-        >
-          Monday First
-        </button>
-        <button
-          type="button"
-          className={`calendar-demo-button ${calendarStore.firstDayOfWeek === 'sunday' ? 'calendar-demo-button-active' : ''}`}
-          onClick={() => calendarStore.onDataChangeRequest('set-first-day-of-week', { firstDayOfWeek: 'sunday' })}
-        >
-          Sunday First
-        </button>
-      </div>
-
-      <div className="calendar-demo-row">
-        <button
-          type="button"
-          className={`calendar-demo-button ${calendarStore.isRangeAllowSameDay ? 'calendar-demo-button-active' : ''}`}
-          onClick={() => calendarStore.onDataChangeRequest('set-range-allow-same-day', { isRangeAllowSameDay: true })}
-        >
-          Range Same Day On
-        </button>
-        <button
-          type="button"
-          className={`calendar-demo-button ${!calendarStore.isRangeAllowSameDay ? 'calendar-demo-button-active' : ''}`}
-          onClick={() => calendarStore.onDataChangeRequest('set-range-allow-same-day', { isRangeAllowSameDay: false })}
-        >
-          Range Same Day Off
-        </button>
-      </div>
-
-      <DateSelector
-        data={calendarStore}
-        onDataChangeRequest={calendarStore.onDataChangeRequest}
-      />
-
-      <div className="calendar-demo-row">
-        <div className="calendar-demo-value">Mode: {calendarStore.selectionMode}</div>
-        <div className="calendar-demo-value">First Column: {calendarStore.firstDayOfWeek}</div>
-      </div>
-      <div className="calendar-demo-row">
-        <div className="calendar-demo-value">Selection Count: {calendarStore.selectedDates.length}</div>
-      </div>
-      <div className="calendar-demo-row">
-        <div className="calendar-demo-value">Range Begin: {calendarStore.rangeBeginDate ? dateObjToKey(calendarStore.rangeBeginDate) : '(null)'}</div>
-      </div>
-      <div className="calendar-demo-row">
-        <div className="calendar-demo-value">Range End: {calendarStore.rangeEndDate ? dateObjToKey(calendarStore.rangeEndDate) : '(null)'}</div>
-      </div>
-    </div>
+    <DemoPanel>
+      <Explanation titleText="Date Selector">
+        Date selector and date view with single, multiple, and range selection.
+      </Explanation>
+      <Example title="DateSelector">
+        <Controls>
+          <ControlGroup labelText="Selection">
+            <button
+              type="button"
+              className={`demo-button${storeUsed.selectionMode === 'single' ? ' is-active' : ''}`}
+              onClick={() => storeUsed.onDataChangeRequest('set-selection-mode', { selectionMode: 'single' })}
+            >
+              Single
+            </button>
+            <button
+              type="button"
+              className={`demo-button${storeUsed.selectionMode === 'multiple' ? ' is-active' : ''}`}
+              onClick={() => storeUsed.onDataChangeRequest('set-selection-mode', { selectionMode: 'multiple' })}
+            >
+              Multiple
+            </button>
+            <button
+              type="button"
+              className={`demo-button${storeUsed.selectionMode === 'range' ? ' is-active' : ''}`}
+              onClick={() => storeUsed.onDataChangeRequest('set-selection-mode', { selectionMode: 'range' })}
+            >
+              Range
+            </button>
+          </ControlGroup>
+          <ControlGroup labelText="Week start">
+            <button
+              type="button"
+              className={`demo-button${storeUsed.firstDayOfWeek === 'monday' ? ' is-active' : ''}`}
+              onClick={() => storeUsed.onDataChangeRequest('set-first-day-of-week', { firstDayOfWeek: 'monday' })}
+            >
+              Monday First
+            </button>
+            <button
+              type="button"
+              className={`demo-button${storeUsed.firstDayOfWeek === 'sunday' ? ' is-active' : ''}`}
+              onClick={() => storeUsed.onDataChangeRequest('set-first-day-of-week', { firstDayOfWeek: 'sunday' })}
+            >
+              Sunday First
+            </button>
+          </ControlGroup>
+          <ControlGroup labelText="Range same day">
+            <button
+              type="button"
+              className={`demo-button${storeUsed.isRangeAllowSameDay ? ' is-active' : ''}`}
+              onClick={() => storeUsed.onDataChangeRequest('set-range-allow-same-day', { isRangeAllowSameDay: true })}
+            >
+              On
+            </button>
+            <button
+              type="button"
+              className={`demo-button${!storeUsed.isRangeAllowSameDay ? ' is-active' : ''}`}
+              onClick={() => storeUsed.onDataChangeRequest('set-range-allow-same-day', { isRangeAllowSameDay: false })}
+            >
+              Off
+            </button>
+          </ControlGroup>
+        </Controls>
+        <CompDemoArea>
+          <DateSelector
+            data={storeUsed}
+            onDataChangeRequest={storeUsed.onDataChangeRequest}
+          />
+        </CompDemoArea>
+        <MessageAndOutputs>
+          <span>Mode: {storeUsed.selectionMode}</span>
+          <span>First Column: {storeUsed.firstDayOfWeek}</span>
+          <span>Selection Count: {storeUsed.selectedDates.length}</span>
+          <span>Range Begin: {storeUsed.rangeBeginDate ? dateObjToKey(storeUsed.rangeBeginDate) : '(null)'}</span>
+          <span>Range End: {storeUsed.rangeEndDate ? dateObjToKey(storeUsed.rangeEndDate) : '(null)'}</span>
+        </MessageAndOutputs>
+      </Example>
+    </DemoPanel>
   );
 });
 
@@ -234,7 +241,8 @@ export const calendarExamples = {
   Calendar: {
     component: null,
     description: 'Date selector and date view with single, multiple, and range selection',
-    example: () => <CalendarExamplesPanel />,
+    example: CalendarExamplesPanel,
   },
 };
 
+export default CalendarExamplesPanel;

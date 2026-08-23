@@ -1,8 +1,19 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
+import { makeAutoObservable, runInAction } from 'mobx';
+import { observer } from 'mobx-react-lite';
 import EditableValueComp from './EditableValueComp.jsx';
 import EditableValueWithInfo from './EditableValueWithInfo.jsx';
 import SelectableValueComp from './SelectableValueComp.jsx';
 import SearchableValueComp from './SearchableValueComp.jsx';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  CompDemoArea,
+  MessageAndOutputs,
+} from '../../dev/demo/DemoLayout.jsx';
+import { ExampleGroup, ExampleStackVertical } from '../../dev/demo/ExampleGroup.jsx';
+import './example.css';
 
 const renderMatchedText = (rawText, matchText) => {
   const text = String(rawText ?? '');
@@ -59,31 +70,19 @@ const customSearchItems = [
   { value: 'osaka', label: 'Osaka', description: 'Japan', tone: 'neutral', compName: 'customDropDownItem' }
 ];
 
+const validCities = mockCities.map((city) => city.value);
+
 const CustomDropdownItem = ({ data, config = {} }) => {
   const item = data;
   const searchText = config.searchText ?? '';
   const tone = item?.tone || 'neutral';
-  const toneColorMap = {
-    neutral: '#999',
-    ok: '#2e7d32',
-    info: '#1565c0',
-    warn: '#ef6c00'
-  };
   const labelText = item?.label || item?.value;
   return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-      <span
-        style={{
-          width: '6px',
-          height: '6px',
-          borderRadius: '50%',
-          background: toneColorMap[tone] || toneColorMap.neutral,
-          flexShrink: 0
-        }}
-      />
-      <span style={{ fontSize: '12px', color: '#333' }}>{renderMatchedText(labelText, searchText)}</span>
+    <div className="value-example-custom-item">
+      <span className={`value-example-custom-item-dot tone-${tone}`} />
+      <span className="value-example-custom-item-label">{renderMatchedText(labelText, searchText)}</span>
       {item?.description ? (
-        <span style={{ fontSize: '11px', color: '#777' }}>{renderMatchedText(item.description, searchText)}</span>
+        <span className="value-example-custom-item-description">{renderMatchedText(item.description, searchText)}</span>
       ) : null}
     </div>
   );
@@ -96,565 +95,653 @@ const getCustomComp = (name) => {
   return null;
 };
 
-// Example 1: Basic EditableValueComp
-const EditableValueExample = () => {
-  const [value, setValue] = useState('Hello World');
-  const [messageState, setMessageState] = useState({ status: 'idle', messageText: '' });
-
-  const handleUpdate = async (configKey, newValue) => {
-    console.log('Update:', configKey, newValue);
-    setMessageState({
-      status: 'loading',
-      messageText: 'Saving value...',
-    });
-    // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    if (String(newValue).toLowerCase() === 'error') {
-      const nextMessageState = {
-        status: 'error',
-        messageText: 'Server rejected this value',
+function createStoreEditableValueTextExample() {
+  return makeAutoObservable({
+    value: 'Hello World',
+    messageState: { status: 'idle', messageText: '' },
+    async handleUpdate(configKey, newValue) {
+      console.log('Update:', configKey, newValue);
+      this.messageState = {
+        status: 'loading',
+        messageText: 'Saving value...',
       };
-      setMessageState(nextMessageState);
-      return { code: -1, message: nextMessageState.messageText };
-    }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    setValue(newValue);
-    setMessageState({
-      status: 'success',
-      messageText: 'Saved successfully',
-    });
-    setTimeout(() => {
-      setMessageState({ status: 'idle', messageText: '' });
-    }, 2500);
-    return { code: 0, message: 'Success' };
-  };
+      if (String(newValue).toLowerCase() === 'error') {
+        const nextMessageState = {
+          status: 'error',
+          messageText: 'Server rejected this value',
+        };
+        runInAction(() => {
+          this.messageState = nextMessageState;
+        });
+        return { code: -1, message: nextMessageState.messageText };
+      }
 
-  return (
-    <div style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '8px' }}>
-      <h4>EditableValueComp - Text Mode</h4>
-      <div style={{ marginTop: '6px' }}>
-        <label style={{ marginRight: '6px', fontWeight: 'bold' }}>Value:</label>
-        <EditableValueComp
-          data={{
-            value,
-            messageState,
-          }}
-          config={{
-            configKey: 'example.text',
-            valueType: 'text',
-            isExternalSubmitting: messageState.status === 'loading',
-            messageConfig: {
-              textByStatus: {
-                loading: 'Saving value...',
-                success: 'Saved successfully',
-                error: 'Save failed',
-              },
-              colorByStatus: {
-                success: '#2e7d32',
-                error: '#d32f2f',
-              },
-            },
-          }}
-          onEvent={(eventType, eventData) => {
-            if (eventType === 'valueCommit') {
-              return handleUpdate(eventData.configKey, eventData.valueNext);
-            }
-            return { code: 0 };
-          }}
-        />
-      </div>
-    </div>
-  );
-};
+      runInAction(() => {
+        this.value = newValue;
+        this.messageState = {
+          status: 'success',
+          messageText: 'Saved successfully',
+        };
+      });
+      setTimeout(() => {
+        runInAction(() => {
+          this.messageState = { status: 'idle', messageText: '' };
+        });
+      }, 2500);
+      return { code: 0, message: 'Success' };
+    },
+  }, {}, { autoBind: true });
+}
 
-// Example 2: EditableValueComp with Boolean
-const EditableValueBooleanExample = () => {
-  const [value, setValue] = useState('true');
-
-  const handleUpdate = async (configKey, newValue) => {
-    console.log('Update:', configKey, newValue);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    if (newValue === 'rust') {
-      return { code: -1, message: 'Rust is rejected in this demo' };
-    }
-    if (newValue === 'java') {
-      return { code: -1, message: 'Request timeout. Keeping original value.' };
-    }
-    setValue(newValue);
-    return { code: 0, message: 'Success' };
-  };
-
-  return (
-    <div style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '8px' }}>
-      <h4>EditableValueComp - Boolean Mode</h4>
-      <div style={{ marginTop: '6px' }}>
-        <label style={{ marginRight: '6px', fontWeight: 'bold' }}>Enabled:</label>
-        <EditableValueComp
-          data={{ value }}
-          config={{
-            configKey: 'example.boolean',
-            valueType: 'boolean',
-          }}
-          onEvent={(eventType, eventData) => {
-            if (eventType === 'valueCommit') {
-              return handleUpdate(eventData.configKey, eventData.valueNext);
-            }
-            return { code: 0 };
-          }}
-        />
-      </div>
-    </div>
-  );
-};
-
-// Example 3: SelectableValueComp
-const SelectableValueExample = () => {
-  const [value, setValue] = useState('javascript');
-  const [valuePending, setValuePending] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleUpdate = async (configKey, newValue) => {
-    console.log('Update:', configKey, newValue);
-    setValuePending(newValue);
-    setIsSubmitting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800));
+function createStoreEditableValueBooleanExample() {
+  return makeAutoObservable({
+    value: 'true',
+    async handleUpdate(configKey, newValue) {
+      console.log('Update:', configKey, newValue);
+      await new Promise((resolve) => setTimeout(resolve, 800));
       if (newValue === 'rust') {
         return { code: -1, message: 'Rust is rejected in this demo' };
       }
       if (newValue === 'java') {
         return { code: -1, message: 'Request timeout. Keeping original value.' };
       }
-      setValue(newValue);
+      runInAction(() => {
+        this.value = newValue;
+      });
       return { code: 0, message: 'Success' };
-    } finally {
-      setValuePending(null);
-      setIsSubmitting(false);
-    }
-  };
+    },
+  }, {}, { autoBind: true });
+}
+
+function createStoreSelectableValueExample() {
+  return makeAutoObservable({
+    value: 'javascript',
+    valuePending: null,
+    isSubmitting: false,
+    async handleUpdate(configKey, newValue) {
+      console.log('Update:', configKey, newValue);
+      this.valuePending = newValue;
+      this.isSubmitting = true;
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        if (newValue === 'rust') {
+          return { code: -1, message: 'Rust is rejected in this demo' };
+        }
+        if (newValue === 'java') {
+          return { code: -1, message: 'Request timeout. Keeping original value.' };
+        }
+        runInAction(() => {
+          this.value = newValue;
+        });
+        return { code: 0, message: 'Success' };
+      } finally {
+        runInAction(() => {
+          this.valuePending = null;
+          this.isSubmitting = false;
+        });
+      }
+    },
+  }, {}, { autoBind: true });
+}
+
+function createStoreSearchableValueAnyExample() {
+  return makeAutoObservable({
+    value: 'new-york',
+    async handleSearch(searchValue, version) {
+      console.log('Search:', searchValue, 'version:', version);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const filtered = mockCities.filter((city) => (
+        city.label.toLowerCase().includes(searchValue.toLowerCase())
+        || city.value.toLowerCase().includes(searchValue.toLowerCase())
+      ));
+      return { code: 0, data: filtered };
+    },
+    async handleUpdate(configKey, newValue) {
+      console.log('Update:', configKey, newValue);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      runInAction(() => {
+        this.value = newValue;
+      });
+      return { code: 0, message: 'Success' };
+    },
+  }, {}, { autoBind: true });
+}
+
+function createStoreSearchableValueStrictExample() {
+  return makeAutoObservable({
+    value: 'chicago',
+    async handleSearch(searchValue, version) {
+      console.log('Search:', searchValue, 'version:', version);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const filtered = mockCities.filter((city) => (
+        city.label.toLowerCase().includes(searchValue.toLowerCase())
+        || city.value.toLowerCase().includes(searchValue.toLowerCase())
+      ));
+      return { code: 0, data: filtered };
+    },
+    async handleValidate(searchValue, version) {
+      console.log('Validate:', searchValue, 'version:', version);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const isValid = validCities.includes(searchValue);
+      return { code: 0, data: isValid };
+    },
+    async handleUpdate(configKey, newValue) {
+      console.log('Update:', configKey, newValue);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (!validCities.includes(newValue)) {
+        setTimeout(() => {
+          runInAction(() => {
+            this.value = '';
+          });
+        }, 1000);
+        return { code: -1, message: 'Invalid city. Please select from dropdown.' };
+      }
+      runInAction(() => {
+        this.value = newValue;
+      });
+      return { code: 0, message: 'Success' };
+    },
+  }, {}, { autoBind: true });
+}
+
+function createStoreSearchableValueRaceExample() {
+  return makeAutoObservable({
+    value: 'test',
+    async handleSearch(searchValue, version) {
+      console.log('Search started:', searchValue, 'version:', version);
+      const delay = searchValue.length < 3 ? 800 : 200;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      console.log('Search completed:', searchValue, 'version:', version);
+      const filtered = mockCities.filter((city) => (
+        city.label.toLowerCase().includes(searchValue.toLowerCase())
+      ));
+      return { code: 0, data: filtered };
+    },
+    async handleUpdate(configKey, newValue) {
+      console.log('Update:', configKey, newValue);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      runInAction(() => {
+        this.value = newValue;
+      });
+      return { code: 0, message: 'Success' };
+    },
+  }, {}, { autoBind: true });
+}
+
+function createStoreValueCompCustomItemExample() {
+  return makeAutoObservable({
+    selectableValue: 'balanced',
+    searchableValue: 'tokyo',
+    async handleUpdateSelectable(_configKey, newValue) {
+      this.selectableValue = newValue;
+      return { code: 0, message: 'Success' };
+    },
+    async handleUpdateSearchable(_configKey, newValue) {
+      this.searchableValue = newValue;
+      return { code: 0, message: 'Success' };
+    },
+    async handleSearch(searchValue) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const lower = (searchValue || '').toLowerCase();
+      const filtered = customSearchItems.filter((item) => (
+        item.label.toLowerCase().includes(lower) || item.value.toLowerCase().includes(lower)
+      ));
+      return { code: 0, data: filtered };
+    },
+  }, {}, { autoBind: true });
+}
+
+function createStoreValueCompFixedWidthExample() {
+  return makeAutoObservable({
+    editableValue: 'A long editable value that exceeds the configured width',
+    selectableValue: 'philadelphia',
+    searchableValue: 'san-diego',
+    editableValueSet(newValue) {
+      this.editableValue = String(newValue ?? '');
+    },
+    selectableValueSet(newValue) {
+      this.selectableValue = String(newValue ?? '');
+    },
+    searchableValueSet(newValue) {
+      this.searchableValue = String(newValue ?? '');
+    },
+    async handleSearch(searchValue) {
+      const query = String(searchValue ?? '').toLowerCase();
+      const results = mockCities.filter((city) => (
+        city.label.toLowerCase().includes(query)
+        || city.value.toLowerCase().includes(query)
+        || city.description.toLowerCase().includes(query)
+      ));
+      return { code: 0, data: results };
+    },
+  }, {}, { autoBind: true });
+}
+
+function createStoreEditableValueWithInfoExample() {
+  return makeAutoObservable({
+    value: 'Sample Value',
+    handleChangeAttempt(index, field, newValue) {
+      console.log('Change attempt:', { index, field, newValue });
+      this.value = newValue;
+    },
+  }, {}, { autoBind: true });
+}
+
+const EditableValueExample = observer(function EditableValueExample({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreEditableValueTextExample()), [store]);
+  const storeUsed = store || storeLocal;
 
   return (
-    <div style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '8px' }}>
-      <h4>SelectableValueComp</h4>
-      <p style={{ fontSize: '11px', color: '#666', margin: '3px 0' }}>
-        Type to filter options; matched text is highlighted in yellow. Selection is shown immediately. Java simulates timeout; Rust simulates rejection.
-      </p>
-      <div style={{ marginTop: '6px' }}>
-        <label style={{ marginRight: '6px', fontWeight: 'bold' }}>Language:</label>
-        <SelectableValueComp
-          data={{
-            value,
-            valuePending,
-            options: mockLanguages,
-          }}
-          config={{
-            configKey: 'example.language',
-            isExternalSubmitting: isSubmitting,
-          }}
-          onEvent={(eventType, eventData) => {
-            if (eventType === 'valueCommit') {
-              return handleUpdate(eventData.configKey, eventData.valueNext);
-            }
-            return { code: 0 };
-          }}
-        />
-      </div>
-    </div>
-  );
-};
-
-// Example 4: SearchableValueComp - Any input valid
-const SearchableValueAnyExample = () => {
-  const [value, setValue] = useState('new-york');
-
-  const handleSearch = async (searchValue, version) => {
-    console.log('Search:', searchValue, 'version:', version);
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Filter cities based on search value
-    const filtered = mockCities.filter(city => 
-      city.label.toLowerCase().includes(searchValue.toLowerCase()) ||
-      city.value.toLowerCase().includes(searchValue.toLowerCase())
-    );
-    
-    return { code: 0, data: filtered };
-  };
-
-  const handleUpdate = async (configKey, newValue) => {
-    console.log('Update:', configKey, newValue);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setValue(newValue);
-    return { code: 0, message: 'Success' };
-  };
-
-  return (
-    <div style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '8px' }}>
-      <h4>SearchableValueComp - Any Input Valid</h4>
-      <p style={{ fontSize: '11px', color: '#666', margin: '3px 0' }}>
-        Type to search cities. Any input is valid.
-      </p>
-      <div style={{ marginTop: '6px' }}>
-        <label style={{ marginRight: '6px', fontWeight: 'bold' }}>City:</label>
-        <SearchableValueComp
-          data={{ value }}
-          config={{
-            configKey: 'example.city.any',
-            strictValidation: false,
-          }}
-          onEvent={(eventType, eventData) => {
-            if (eventType === 'valueCommit') {
-              return handleUpdate(eventData.configKey, eventData.valueNext);
-            }
-            if (eventType === 'searchRequest') {
-              return handleSearch(eventData.value, eventData.version);
-            }
-            return { code: 0 };
-          }}
-        />
-      </div>
-    </div>
-  );
-};
-
-// Example 5: SearchableValueComp - Strict validation
-const SearchableValueStrictExample = () => {
-  const [value, setValue] = useState('chicago');
-  const validCities = mockCities.map(c => c.value);
-
-  const handleSearch = async (searchValue, version) => {
-    console.log('Search:', searchValue, 'version:', version);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const filtered = mockCities.filter(city => 
-      city.label.toLowerCase().includes(searchValue.toLowerCase()) ||
-      city.value.toLowerCase().includes(searchValue.toLowerCase())
-    );
-    
-    return { code: 0, data: filtered };
-  };
-
-  const handleValidate = async (searchValue, version) => {
-    console.log('Validate:', searchValue, 'version:', version);
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    // Check if value is in the valid list
-    const isValid = validCities.includes(searchValue);
-    return { code: 0, data: isValid };
-  };
-
-  const handleUpdate = async (configKey, newValue) => {
-    console.log('Update:', configKey, newValue);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Check if value is valid
-    if (!validCities.includes(newValue)) {
-      // Reject invalid value and schedule clearing after 1 seconds
-      setTimeout(() => {
-        setValue('');
-      }, 1000);
-      return { code: -1, message: 'Invalid city. Please select from dropdown.' };
-    }
-    
-    setValue(newValue);
-    return { code: 0, message: 'Success' };
-  };
-
-  return (
-    <div style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '8px' }}>
-      <h4>SearchableValueComp - Strict Validation</h4>
-      <p style={{ fontSize: '11px', color: '#666', margin: '3px 0' }}>
-        Type to search cities. Only values selected from dropdown are valid.
-        Watch for validation icon (✓ or ✗) to the left of edit icon.
-      </p>
-      <div style={{ marginTop: '6px' }}>
-        <label style={{ marginRight: '6px', fontWeight: 'bold' }}>City:</label>
-        <SearchableValueComp
-          data={{ value }}
-          config={{
-            configKey: 'example.city.strict',
-            strictValidation: true,
-          }}
-          onEvent={(eventType, eventData) => {
-            if (eventType === 'valueCommit') {
-              return handleUpdate(eventData.configKey, eventData.valueNext);
-            }
-            if (eventType === 'searchRequest') {
-              return handleSearch(eventData.value, eventData.version);
-            }
-            if (eventType === 'validateRequest') {
-              return handleValidate(eventData.value, eventData.version);
-            }
-            return { code: 0 };
-          }}
-        />
-      </div>
-    </div>
-  );
-};
-
-// Example 6: SearchableValueComp with race condition demo
-const SearchableValueRaceConditionExample = () => {
-  const [value, setValue] = useState('test');
-
-  const handleSearch = async (searchValue, version) => {
-    console.log('Search started:', searchValue, 'version:', version);
-    
-    // Simulate variable network delays to demonstrate race condition handling
-    const delay = searchValue.length < 3 ? 800 : 200;
-    await new Promise(resolve => setTimeout(resolve, delay));
-    
-    console.log('Search completed:', searchValue, 'version:', version);
-    
-    const filtered = mockCities.filter(city => 
-      city.label.toLowerCase().includes(searchValue.toLowerCase())
-    );
-    
-    return { code: 0, data: filtered };
-  };
-
-  const handleUpdate = async (configKey, newValue) => {
-    console.log('Update:', configKey, newValue);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setValue(newValue);
-    return { code: 0, message: 'Success' };
-  };
-
-  return (
-    <div style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '8px' }}>
-      <h4>SearchableValueComp - Race Condition Handling</h4>
-      <p style={{ fontSize: '11px', color: '#666', margin: '3px 0' }}>
-        Type quickly to see race condition handling. 
-        Short queries have longer delay, but results are correctly ordered by version.
-        Check console to see request/response timing.
-      </p>
-      <div style={{ marginTop: '6px' }}>
-        <label style={{ marginRight: '6px', fontWeight: 'bold' }}>Query:</label>
-        <SearchableValueComp
-          data={{ value }}
-          config={{
-            configKey: 'example.race',
-            strictValidation: false,
-            searchDebounce: 150,
-          }}
-          onEvent={(eventType, eventData) => {
-            if (eventType === 'valueCommit') {
-              return handleUpdate(eventData.configKey, eventData.valueNext);
-            }
-            if (eventType === 'searchRequest') {
-              return handleSearch(eventData.value, eventData.version);
-            }
-            return { code: 0 };
-          }}
-        />
-      </div>
-    </div>
-  );
-};
-
-// Example 7: callback-based custom dropdown item components
-const ValueCompCustomItemExample = () => {
-  const [selectableValue, setSelectableValue] = useState('balanced');
-  const [searchableValue, setSearchableValue] = useState('tokyo');
-
-  const handleUpdateSelectable = async (_configKey, newValue) => {
-    setSelectableValue(newValue);
-    return { code: 0, message: 'Success' };
-  };
-
-  const handleUpdateSearchable = async (_configKey, newValue) => {
-    setSearchableValue(newValue);
-    return { code: 0, message: 'Success' };
-  };
-
-  const handleSearch = async (searchValue) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const lower = (searchValue || '').toLowerCase();
-    const filtered = customSearchItems.filter(item => {
-      return item.label.toLowerCase().includes(lower) || item.value.toLowerCase().includes(lower);
-    });
-    return { code: 0, data: filtered };
-  };
-
-  return (
-    <div style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '8px' }}>
-      <h4>Selectable and Searchable with getComp callback</h4>
-      <p style={{ fontSize: '11px', color: '#666', margin: '3px 0' }}>
-        Dropdown items are resolved by component name through getComp(name, context), not by storing component instances in data.
-      </p>
-      <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <div>
-          <label style={{ marginRight: '6px', fontWeight: 'bold' }}>Mode:</label>
-          <SelectableValueComp
+    <Example title="EditableValueComp - Text Mode">
+      <CompDemoArea>
+        <div className="value-example-row">
+          <label className="value-example-row-label">Value:</label>
+          <EditableValueComp
             data={{
-              value: selectableValue,
-              options: customSelectableOptions,
+              value: storeUsed.value,
+              messageState: storeUsed.messageState,
             }}
             config={{
-              configKey: 'example.custom.selectable',
-              getComp: getCustomComp,
+              configKey: 'example.text',
+              valueType: 'text',
+              isExternalSubmitting: storeUsed.messageState.status === 'loading',
+              messageConfig: {
+                textByStatus: {
+                  loading: 'Saving value...',
+                  success: 'Saved successfully',
+                  error: 'Save failed',
+                },
+                colorByStatus: {
+                  success: '#2e7d32',
+                  error: '#d32f2f',
+                },
+              },
             }}
             onEvent={(eventType, eventData) => {
               if (eventType === 'valueCommit') {
-                return handleUpdateSelectable(eventData.configKey, eventData.valueNext);
+                return storeUsed.handleUpdate(eventData.configKey, eventData.valueNext);
               }
               return { code: 0 };
             }}
           />
         </div>
-        <div>
-          <label style={{ marginRight: '6px', fontWeight: 'bold' }}>City:</label>
-          <SearchableValueComp
-            data={{ value: searchableValue }}
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.value}</span>
+        {storeUsed.messageState.messageText ? <span>{storeUsed.messageState.messageText}</span> : null}
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const EditableValueBooleanExample = observer(function EditableValueBooleanExample({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreEditableValueBooleanExample()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="EditableValueComp - Boolean Mode">
+      <CompDemoArea>
+        <div className="value-example-row">
+          <label className="value-example-row-label">Enabled:</label>
+          <EditableValueComp
+            data={{ value: storeUsed.value }}
             config={{
-              configKey: 'example.custom.searchable',
-              getComp: getCustomComp,
+              configKey: 'example.boolean',
+              valueType: 'boolean',
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'valueCommit') {
+                return storeUsed.handleUpdate(eventData.configKey, eventData.valueNext);
+              }
+              return { code: 0 };
+            }}
+          />
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.value}</span>
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const SelectableValueExample = observer(function SelectableValueExample({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreSelectableValueExample()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="SelectableValueComp">
+      <Explanation>
+        Type to filter options; matched text is highlighted in yellow. Selection is shown immediately. Java simulates timeout; Rust simulates rejection.
+      </Explanation>
+      <CompDemoArea>
+        <div className="value-example-row">
+          <label className="value-example-row-label">Language:</label>
+          <SelectableValueComp
+            data={{
+              value: storeUsed.value,
+              valuePending: storeUsed.valuePending,
+              options: mockLanguages,
+            }}
+            config={{
+              configKey: 'example.language',
+              isExternalSubmitting: storeUsed.isSubmitting,
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'valueCommit') {
+                return storeUsed.handleUpdate(eventData.configKey, eventData.valueNext);
+              }
+              return { code: 0 };
+            }}
+          />
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.valuePending ? `${storeUsed.value} → ${storeUsed.valuePending}` : storeUsed.value}</span>
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const SearchableValueAnyExample = observer(function SearchableValueAnyExample({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreSearchableValueAnyExample()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="SearchableValueComp - Any Input Valid">
+      <Explanation>
+        Type to search cities. Any input is valid.
+      </Explanation>
+      <CompDemoArea>
+        <div className="value-example-row">
+          <label className="value-example-row-label">City:</label>
+          <SearchableValueComp
+            data={{ value: storeUsed.value }}
+            config={{
+              configKey: 'example.city.any',
               strictValidation: false,
             }}
             onEvent={(eventType, eventData) => {
               if (eventType === 'valueCommit') {
-                return handleUpdateSearchable(eventData.configKey, eventData.valueNext);
+                return storeUsed.handleUpdate(eventData.configKey, eventData.valueNext);
               }
               if (eventType === 'searchRequest') {
-                return handleSearch(eventData.value, eventData.version);
+                return storeUsed.handleSearch(eventData.value, eventData.version);
               }
               return { code: 0 };
             }}
           />
         </div>
-      </div>
-    </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.value}</span>
+      </MessageAndOutputs>
+    </Example>
   );
-};
+});
 
-// Example 8: fixed-width values with wheel scrolling
-const ValueCompFixedWidthExample = () => {
-  const [editableValue, setEditableValue] = useState('A long editable value that exceeds the configured width');
-  const [selectableValue, setSelectableValue] = useState('philadelphia');
-  const [searchableValue, setSearchableValue] = useState('san-diego');
-
-  const handleSearch = async (searchValue) => {
-    const query = String(searchValue ?? '').toLowerCase();
-    const results = mockCities.filter((city) => (
-      city.label.toLowerCase().includes(query)
-      || city.value.toLowerCase().includes(query)
-      || city.description.toLowerCase().includes(query)
-    ));
-    return { code: 0, data: results };
-  };
+const SearchableValueStrictExample = observer(function SearchableValueStrictExample({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreSearchableValueStrictExample()), [store]);
+  const storeUsed = store || storeLocal;
 
   return (
-    <div style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '8px' }}>
-      <h4>Fixed width and horizontal wheel scrolling</h4>
-      <p style={{ fontSize: '11px', color: '#666', margin: '3px 0' }}>
+    <Example title="SearchableValueComp - Strict Validation">
+      <Explanation>
+        Type to search cities. Only values selected from dropdown are valid.
+        Watch for validation icon (✓ or ✗) to the left of edit icon.
+      </Explanation>
+      <CompDemoArea>
+        <div className="value-example-row">
+          <label className="value-example-row-label">City:</label>
+          <SearchableValueComp
+            data={{ value: storeUsed.value }}
+            config={{
+              configKey: 'example.city.strict',
+              strictValidation: true,
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'valueCommit') {
+                return storeUsed.handleUpdate(eventData.configKey, eventData.valueNext);
+              }
+              if (eventType === 'searchRequest') {
+                return storeUsed.handleSearch(eventData.value, eventData.version);
+              }
+              if (eventType === 'validateRequest') {
+                return storeUsed.handleValidate(eventData.value, eventData.version);
+              }
+              return { code: 0 };
+            }}
+          />
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.value}</span>
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const SearchableValueRaceConditionExample = observer(function SearchableValueRaceConditionExample({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreSearchableValueRaceExample()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="SearchableValueComp - Race Condition Handling">
+      <Explanation>
+        Type quickly to see race condition handling.
+        Short queries have longer delay, but results are correctly ordered by version.
+        Check console to see request/response timing.
+      </Explanation>
+      <CompDemoArea>
+        <div className="value-example-row">
+          <label className="value-example-row-label">Query:</label>
+          <SearchableValueComp
+            data={{ value: storeUsed.value }}
+            config={{
+              configKey: 'example.race',
+              strictValidation: false,
+              searchDebounce: 150,
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'valueCommit') {
+                return storeUsed.handleUpdate(eventData.configKey, eventData.valueNext);
+              }
+              if (eventType === 'searchRequest') {
+                return storeUsed.handleSearch(eventData.value, eventData.version);
+              }
+              return { code: 0 };
+            }}
+          />
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.value}</span>
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const ValueCompCustomItemExample = observer(function ValueCompCustomItemExample({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreValueCompCustomItemExample()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="Selectable and Searchable with getComp callback">
+      <Explanation>
+        Dropdown items are resolved by component name through getComp(name, context), not by storing component instances in data.
+      </Explanation>
+      <CompDemoArea>
+        <div className="value-example-stack">
+          <div className="value-example-row">
+            <label className="value-example-row-label">Mode:</label>
+            <SelectableValueComp
+              data={{
+                value: storeUsed.selectableValue,
+                options: customSelectableOptions,
+              }}
+              config={{
+                configKey: 'example.custom.selectable',
+                getComp: getCustomComp,
+              }}
+              onEvent={(eventType, eventData) => {
+                if (eventType === 'valueCommit') {
+                  return storeUsed.handleUpdateSelectable(eventData.configKey, eventData.valueNext);
+                }
+                return { code: 0 };
+              }}
+            />
+          </div>
+          <div className="value-example-row">
+            <label className="value-example-row-label">City:</label>
+            <SearchableValueComp
+              data={{ value: storeUsed.searchableValue }}
+              config={{
+                configKey: 'example.custom.searchable',
+                getComp: getCustomComp,
+                strictValidation: false,
+              }}
+              onEvent={(eventType, eventData) => {
+                if (eventType === 'valueCommit') {
+                  return storeUsed.handleUpdateSearchable(eventData.configKey, eventData.valueNext);
+                }
+                if (eventType === 'searchRequest') {
+                  return storeUsed.handleSearch(eventData.value, eventData.version);
+                }
+                return { code: 0 };
+              }}
+            />
+          </div>
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>Mode: {storeUsed.selectableValue}</span>
+        <span>City: {storeUsed.searchableValue}</span>
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const ValueCompFixedWidthExample = observer(function ValueCompFixedWidthExample({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreValueCompFixedWidthExample()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="Fixed width and horizontal wheel scrolling">
+      <Explanation>
         Each value is 150px wide. Hover a clipped value and use the mouse wheel to scroll it horizontally.
         Search results highlight every matching query segment in yellow.
-      </p>
-      <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <EditableValueComp
-          data={{ value: editableValue }}
-          config={{ configKey: 'example.width.editable', width: 150 }}
-          onEvent={(eventType, eventData) => {
-            if (eventType === 'valueCommit') {
-              setEditableValue(String(eventData.valueNext ?? ''));
-            }
-            return { code: 0 };
-          }}
-        />
-        <SelectableValueComp
-          data={{ value: selectableValue, options: mockCities }}
-          config={{ configKey: 'example.width.selectable', width: 150 }}
-          onEvent={(eventType, eventData) => {
-            if (eventType === 'valueCommit') {
-              setSelectableValue(String(eventData.valueNext ?? ''));
-            }
-            return { code: 0 };
-          }}
-        />
-        <SearchableValueComp
-          data={{ value: searchableValue }}
-          config={{
-            configKey: 'example.width.searchable',
-            width: 150,
-            searchDebounce: 0,
-          }}
-          onEvent={(eventType, eventData) => {
-            if (eventType === 'valueCommit') {
-              setSearchableValue(String(eventData.valueNext ?? ''));
+      </Explanation>
+      <CompDemoArea>
+        <div className="value-example-stack">
+          <EditableValueComp
+            data={{ value: storeUsed.editableValue }}
+            config={{ configKey: 'example.width.editable', width: 150 }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'valueCommit') {
+                storeUsed.editableValueSet(eventData.valueNext);
+              }
               return { code: 0 };
-            }
-            if (eventType === 'searchRequest') {
-              return handleSearch(eventData.value);
-            }
-            return { code: 0 };
-          }}
-        />
-      </div>
-    </div>
+            }}
+          />
+          <SelectableValueComp
+            data={{ value: storeUsed.selectableValue, options: mockCities }}
+            config={{ configKey: 'example.width.selectable', width: 150 }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'valueCommit') {
+                storeUsed.selectableValueSet(eventData.valueNext);
+              }
+              return { code: 0 };
+            }}
+          />
+          <SearchableValueComp
+            data={{ value: storeUsed.searchableValue }}
+            config={{
+              configKey: 'example.width.searchable',
+              width: 150,
+              searchDebounce: 0,
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'valueCommit') {
+                storeUsed.searchableValueSet(eventData.valueNext);
+                return { code: 0 };
+              }
+              if (eventType === 'searchRequest') {
+                return storeUsed.handleSearch(eventData.value);
+              }
+              return { code: 0 };
+            }}
+          />
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.editableValue}</span>
+        <span>{storeUsed.selectableValue}</span>
+        <span>{storeUsed.searchableValue}</span>
+      </MessageAndOutputs>
+    </Example>
   );
-};
+});
 
-// Example 9: EditableValueWithInfo
-const EditableValueWithInfoExample = () => {
-  const [value, setValue] = useState('Sample Value');
-
-  const handleChangeAttempt = (index, field, newValue) => {
-    console.log('Change attempt:', { index, field, newValue });
-    setValue(newValue);
-  };
+const EditableValueWithInfoExample = observer(function EditableValueWithInfoExample({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreEditableValueWithInfoExample()), [store]);
+  const storeUsed = store || storeLocal;
 
   return (
-    <div style={{ padding: '8px', border: '1px solid #ddd', marginBottom: '8px' }}>
-      <h4>EditableValueWithInfo</h4>
-      <p style={{ fontSize: '11px', color: '#666', margin: '3px 0' }}>
+    <Example title="EditableValueWithInfo">
+      <Explanation>
         Hover over the info icon to see tooltip.
-      </p>
-      <div style={{ marginTop: '6px' }}>
-        <label style={{ marginRight: '6px', fontWeight: 'bold' }}>Field:</label>
-        <EditableValueWithInfo
-          data={{
-            value,
-            tooltipText: 'This is a sample field with additional information displayed in a tooltip.',
-          }}
-          config={{
-            isEditable: true,
-            field: 'sampleField',
-            index: 0,
-          }}
-          onEvent={(eventType, eventData) => {
-            if (eventType === 'valueCommit') {
-              handleChangeAttempt(eventData.index, eventData.field, eventData.valueNext);
-            }
-            return { code: 0 };
-          }}
-        />
-      </div>
-    </div>
+      </Explanation>
+      <CompDemoArea>
+        <div className="value-example-row">
+          <label className="value-example-row-label">Field:</label>
+          <EditableValueWithInfo
+            data={{
+              value: storeUsed.value,
+              tooltipText: 'This is a sample field with additional information displayed in a tooltip.',
+            }}
+            config={{
+              isEditable: true,
+              field: 'sampleField',
+              index: 0,
+            }}
+            onEvent={(eventType, eventData) => {
+              if (eventType === 'valueCommit') {
+                storeUsed.handleChangeAttempt(eventData.index, eventData.field, eventData.valueNext);
+              }
+              return { code: 0 };
+            }}
+          />
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.value}</span>
+      </MessageAndOutputs>
+    </Example>
   );
-};
+});
 
-// Main component that shows all examples
-const ValueCompExamples = () => {
-  return (
-    <div style={{ padding: '8px', fontFamily: 'sans-serif' }}>
-      <h1>Value Component Examples</h1>
-      <p style={{ color: '#666', marginBottom: '8px' }}>
-        Various examples demonstrating different value component types
-      </p>
-      
-      <EditableValueExample />
-      <EditableValueBooleanExample />
-      <SelectableValueExample />
-      <SearchableValueAnyExample />
-      <SearchableValueStrictExample />
-      <SearchableValueRaceConditionExample />
-      <ValueCompCustomItemExample />
-      <ValueCompFixedWidthExample />
-      <EditableValueWithInfoExample />
-    </div>
-  );
-};
+const ValueCompExamples = () => (
+  <DemoPanel>
+    <Explanation titleText="Value Components">
+      Various examples demonstrating different value component types
+    </Explanation>
+    <ExampleGroup title="Variants">
+      <ExampleStackVertical>
+        <EditableValueExample />
+        <EditableValueBooleanExample />
+        <SelectableValueExample />
+        <SearchableValueAnyExample />
+        <SearchableValueStrictExample />
+        <SearchableValueRaceConditionExample />
+        <ValueCompCustomItemExample />
+        <ValueCompFixedWidthExample />
+        <EditableValueWithInfoExample />
+      </ExampleStackVertical>
+    </ExampleGroup>
+  </DemoPanel>
+);
 
 export const valueCompExamples = {
   'Value Components': {
@@ -663,4 +750,3 @@ export const valueCompExamples = {
     example: ValueCompExamples,
   },
 };
-

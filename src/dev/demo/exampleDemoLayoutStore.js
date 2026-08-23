@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable, runInAction } from 'mobx';
 
 const boxColorHexById = {
   blue: '#4f83c2',
@@ -73,9 +73,43 @@ class StoreDemoLayoutExample {
   }
 }
 
+// Store of one simulated-request example: sends requests through the given
+// sim server store (createStoreSimServer), keeps latest responses for display.
+class StoreSimRequestExample {
+  storeSimServer = null;
+
+  requestSeq = 0;
+
+  responseList = []; // [{ id, text, isFail }], newest first
+
+  constructor({ storeSimServer }) {
+    this.storeSimServer = storeSimServer;
+    makeAutoObservable(this, { storeSimServer: false }, { autoBind: true });
+  }
+
+  async requestSend() {
+    this.requestSeq += 1;
+    const result = await this.storeSimServer.requestRun(`request #${this.requestSeq}`);
+    runInAction(() => {
+      this.responseList.unshift({ id: `${Date.now()}-${Math.random()}`, text: result.message, isFail: result.code !== 0 });
+      this.responseList = this.responseList.slice(0, 4);
+    });
+    return result;
+  }
+
+  handleEvent(eventType) {
+    if (eventType === 'requestSend') return this.requestSend();
+    return { code: -1, message: `Unsupported event: ${eventType}` };
+  }
+}
+
 function createStoreDemoLayoutExample() {
   return new StoreDemoLayoutExample();
 }
 
-export { createStoreDemoLayoutExample, boxColorHexById, boxSizePxById };
+function createStoreSimRequestExample(options) {
+  return new StoreSimRequestExample(options);
+}
+
+export { createStoreDemoLayoutExample, createStoreSimRequestExample, boxColorHexById, boxSizePxById };
 export default StoreDemoLayoutExample;

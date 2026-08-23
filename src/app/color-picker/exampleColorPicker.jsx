@@ -4,6 +4,13 @@ import { observer } from 'mobx-react-lite';
 import EditIcon from '../../icon/EditIcon.jsx';
 import ColorPicker from './ColorPicker.jsx';
 import { createColorPickerStore, colorPickerModeOptions, swatchGridDefault } from './colorPickerStore.js';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  CompDemoArea,
+  MessageAndOutputs,
+} from '../../dev/demo/DemoLayout.jsx';
 import './exampleColorPicker.css';
 
 const swatchGridMapBlock = {
@@ -168,12 +175,14 @@ const ColorFieldDemo = observer(({ store, targetId }) => {
     <div className="demo-color-picker-field">
       <div className="demo-color-picker-chip" style={buildAlphaBg(store.colorValueById[targetId])} />
       <div className="demo-color-picker-value">
-        <div className="demo-color-picker-label">{pickerConfig.label}</div>
+        <div className="demo-color-picker-label-row">
+          <div className="demo-color-picker-label">{pickerConfig.label}</div>
+          <button type="button" className="demo-color-picker-edit" onClick={() => store.openPicker(targetId)} aria-label={`Edit ${pickerConfig.label}`}>
+            <EditIcon width={18} height={18} />
+          </button>
+        </div>
         <div className="demo-color-picker-hex">{store.colorValueById[targetId]}</div>
       </div>
-      <button type="button" className="demo-color-picker-edit" onClick={() => store.openPicker(targetId)} aria-label={`Edit ${pickerConfig.label}`}>
-        <EditIcon width={18} height={18} />
-      </button>
     </div>
   );
 });
@@ -213,95 +222,118 @@ const ModePickerPanel = observer(({ titleText, descriptionText, valueText, picke
   </div>
 ));
 
-const ColorPickerModeComparison = observer(() => {
-  const store = useMemo(() => new StoreColorPickerModeComparison(), []);
-  return (
-    <div className="demo-color-picker-mode-section">
-      <div className="demo-color-picker-section-title">Commit Mode Comparison</div>
-      <div className="demo-color-picker-section-desc">Immediate mode updates the committed value on every picker change. Apply mode keeps a draft until Apply.</div>
-      <div className="demo-color-picker-mode-grid">
-        <ModePickerPanel
-          titleText="Immediate Mode"
-          descriptionText="Picker changes are committed immediately. Restore sends the value back to the opening value."
-          valueText={store.immediateValue}
-          pickerStore={store.immediatePickerStore}
-          onEvent={store.handleImmediateEvent}
-          actions={<button type="button" onClick={store.restoreImmediate}>Restore</button>}
-        />
-        <ModePickerPanel
-          titleText="Apply Mode"
-          descriptionText="Picker changes stay as a draft until Apply. Cancel discards the draft."
-          valueText={store.applyValue}
-          pickerStore={store.applyPickerStore}
-          onEvent={store.handleApplyEvent}
-          actions={(
-            <>
-              <button type="button" onClick={store.cancelApply}>Cancel</button>
-              <button type="button" className="is-primary" onClick={store.applyDraft}>Apply</button>
-            </>
-          )}
-        />
-      </div>
-      <div className="demo-color-picker-event">{store.eventText}</div>
-    </div>
-  );
-});
-
-const DemoColorPicker = observer(() => {
-  const store = useMemo(() => new StoreDemoColorPicker(), []);
-  const pickerStore = store.pickerStore;
-  const pickerConfig = store.pickerConfigCurrent;
+const ExampleColorFields = observer(function ExampleColorFields({ store }) {
+  const storeLocal = useMemo(() => (store ? null : new StoreDemoColorPicker()), [store]);
+  const storeUsed = store || storeLocal;
+  const pickerStore = storeUsed.pickerStore;
+  const pickerConfig = storeUsed.pickerConfigCurrent;
 
   return (
-    <div className="demo-color-picker-root">
-      <div className="demo-color-picker-example-list">
-        <ColorFieldDemo store={store} targetId="default" />
-        <ColorFieldDemo store={store} targetId="mapBlock" />
-      </div>
-      <div className="demo-color-picker-event">{store.eventLastText}</div>
-      <ColorPickerModeComparison />
-
-      {pickerStore && pickerConfig ? (
-        <div className="demo-color-picker-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) store.cancelPicker();
-        }}>
-          <div className="demo-color-picker-popup" role="dialog" aria-modal="true" aria-label="Color picker">
-            <ColorPicker
-              data={{
-                modeOptions: colorPickerModeOptions,
-                swatchGrid: pickerStore.swatchGrid,
-              }}
-              config={{
-                modeCurrent: pickerStore.modeCurrent,
-                hue: pickerStore.hue,
-                saturation: pickerStore.saturation,
-                value: pickerStore.value,
-                alpha: pickerStore.alpha,
-                colorCurrentValue: pickerStore.colorCurrentValue,
-                colorCurrentCss: pickerStore.colorCurrentCss,
-                hueColorHex: pickerStore.hueColorHex,
-                isSwatchGapShown: pickerStore.isSwatchGapShown,
-                swatchCellShape: pickerStore.swatchCellShape,
-              }}
-              onEvent={pickerStore.handleEvent}
-            />
-            <div className="demo-color-picker-actions">
-              <button type="button" onClick={() => pickerStore.handleEvent('restoreInitial', {})}>Restore</button>
-              <button type="button" onClick={store.cancelPicker}>Cancel</button>
-              <button type="button" className="is-primary" onClick={store.applyPicker}>Apply</button>
+    <Example title="Field pickers">
+      <Explanation>
+        Click the edit icon next to a color field to open the picker popup.
+      </Explanation>
+      <CompDemoArea>
+        <div className="demo-color-picker-example-list">
+          <ColorFieldDemo store={storeUsed} targetId="default" />
+          <ColorFieldDemo store={storeUsed} targetId="mapBlock" />
+        </div>
+        {pickerStore && pickerConfig ? (
+          <div className="demo-color-picker-backdrop" role="presentation" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) storeUsed.cancelPicker();
+          }}>
+            <div className="demo-color-picker-popup" role="dialog" aria-modal="true" aria-label="Color picker">
+              <ColorPicker
+                data={{
+                  modeOptions: colorPickerModeOptions,
+                  swatchGrid: pickerStore.swatchGrid,
+                }}
+                config={{
+                  modeCurrent: pickerStore.modeCurrent,
+                  hue: pickerStore.hue,
+                  saturation: pickerStore.saturation,
+                  value: pickerStore.value,
+                  alpha: pickerStore.alpha,
+                  colorCurrentValue: pickerStore.colorCurrentValue,
+                  colorCurrentCss: pickerStore.colorCurrentCss,
+                  hueColorHex: pickerStore.hueColorHex,
+                  isSwatchGapShown: pickerStore.isSwatchGapShown,
+                  swatchCellShape: pickerStore.swatchCellShape,
+                }}
+                onEvent={pickerStore.handleEvent}
+              />
+              <div className="demo-color-picker-actions">
+                <button type="button" onClick={() => pickerStore.handleEvent('restoreInitial', {})}>Restore</button>
+                <button type="button" onClick={storeUsed.cancelPicker}>Cancel</button>
+                <button type="button" className="is-primary" onClick={storeUsed.applyPicker}>Apply</button>
+              </div>
             </div>
           </div>
-        </div>
-      ) : null}
-    </div>
+        ) : null}
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.eventLastText}</span>
+      </MessageAndOutputs>
+    </Example>
   );
 });
+
+const ExampleColorCommitModes = observer(function ExampleColorCommitModes({ store }) {
+  const storeLocal = useMemo(() => (store ? null : new StoreColorPickerModeComparison()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="Commit mode comparison">
+      <Explanation>
+        Immediate mode updates the committed value on every picker change. Apply mode keeps a draft until Apply.
+      </Explanation>
+      <CompDemoArea>
+        <div className="demo-color-picker-mode-grid">
+          <ModePickerPanel
+            titleText="Immediate Mode"
+            descriptionText="Picker changes are committed immediately. Restore sends the value back to the opening value."
+            valueText={storeUsed.immediateValue}
+            pickerStore={storeUsed.immediatePickerStore}
+            onEvent={storeUsed.handleImmediateEvent}
+            actions={<button type="button" onClick={storeUsed.restoreImmediate}>Restore</button>}
+          />
+          <ModePickerPanel
+            titleText="Apply Mode"
+            descriptionText="Picker changes stay as a draft until Apply. Cancel discards the draft."
+            valueText={storeUsed.applyValue}
+            pickerStore={storeUsed.applyPickerStore}
+            onEvent={storeUsed.handleApplyEvent}
+            actions={(
+              <>
+                <button type="button" onClick={storeUsed.cancelApply}>Cancel</button>
+                <button type="button" className="is-primary" onClick={storeUsed.applyDraft}>Apply</button>
+              </>
+            )}
+          />
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.eventText}</span>
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const DemoColorPicker = () => (
+  <DemoPanel>
+    <Explanation titleText="Color Picker">
+      HSV and swatch color picker.
+    </Explanation>
+    <ExampleColorFields />
+    <ExampleColorCommitModes />
+  </DemoPanel>
+);
 
 export const colorPickerExamples = {
   'Color Picker': {
     component: null,
     description: 'HSV and swatch color picker',
-    example: () => <DemoColorPicker />,
+    example: DemoColorPicker,
   },
 };
 

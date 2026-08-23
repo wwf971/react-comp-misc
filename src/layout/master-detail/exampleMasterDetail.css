@@ -1,0 +1,24 @@
+.master-detail-example-frame {
+  height: 420px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.master-detail-example-frame .master-detail-container {
+  height: 100%;
+}
+
+.master-detail-example-panel-body {
+  padding: 12px;
+}
+
+.master-detail-example-panel-title {
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.master-detail-example-panel-text {
+  color: #555555;
+  font-size: 12px;
+}

@@ -1,8 +1,17 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import Login from './Login.jsx';
 import AuthStatusButton from './AuthStatusButton.jsx';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  Controls,
+  ControlItem,
+  CompDemoArea,
+  MessageAndOutputs,
+} from '../../dev/demo/DemoLayout.jsx';
 import './example.css';
 
 function createLoginDemoStore() {
@@ -137,60 +146,69 @@ function createLoginDemoStore() {
   return observableStore;
 }
 
-const LoginExamplePanel = observer(() => {
-  const [loginStore] = useState(() => createLoginDemoStore());
+const LoginExamplePanel = observer(function LoginExamplePanel({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createLoginDemoStore()), [store]);
+  const storeUsed = store || storeLocal;
+
   return (
-    <div className="auth-login-demo-root">
-      <div className="auth-login-demo-header-row">
-        <div className="auth-login-demo-header-title">Auth status button</div>
-        <AuthStatusButton
-          data={{
-            isLoggedIn: loginStore.isLoggedIn,
-            username: loginStore.username,
-          }}
-          config={{
-            minWidth: 170,
-            menuAlign: 'right',
-          }}
-          onEvent={(eventType) => {
-            if (eventType === 'go-login') {
-              loginStore.goToLoginPage();
-            }
-            if (eventType === 'sign-out') {
-              loginStore.logout();
-            }
-          }}
-        />
-      </div>
-      <div className="auth-login-demo-box">
-        <Login
-          title="Login"
-          data={loginStore}
-          onDataChangeRequest={loginStore.onDataChangeRequest}
-          useAuthToken={true}
-          showTokenAtLogin={true}
-        />
-      </div>
-      <div className="auth-login-demo-state">
-        <span className="auth-login-demo-state-label">Current user state:</span>
-        <span className="auth-login-demo-state-value">{loginStore.userState}</span>
-      </div>
-      <button
-        type="button"
-        className="auth-login-demo-logout-button"
-        onClick={() => loginStore.logout()}
-      >
-        Logout
-      </button>
-    </div>
+    <DemoPanel>
+      <Explanation titleText="Login">
+        Render-only login view driven by a MobX store.
+      </Explanation>
+      <Example title="Login and auth status">
+        <Controls>
+          <ControlItem labelText="Auth status:">
+            <AuthStatusButton
+              data={{
+                isLoggedIn: storeUsed.isLoggedIn,
+                username: storeUsed.username,
+              }}
+              config={{
+                minWidth: 170,
+                menuAlign: 'right',
+              }}
+              onEvent={(eventType) => {
+                if (eventType === 'go-login') {
+                  storeUsed.goToLoginPage();
+                }
+                if (eventType === 'sign-out') {
+                  storeUsed.logout();
+                }
+              }}
+            />
+          </ControlItem>
+          <ControlItem>
+            <button type="button" className="demo-button" onClick={() => storeUsed.logout()}>
+              Logout
+            </button>
+          </ControlItem>
+        </Controls>
+        <CompDemoArea>
+          <div className="auth-login-demo-box">
+            <Login
+              title="Login"
+              data={storeUsed}
+              onDataChangeRequest={storeUsed.onDataChangeRequest}
+              useAuthToken={true}
+              showTokenAtLogin={true}
+            />
+          </div>
+        </CompDemoArea>
+        <MessageAndOutputs labelText="Current user state:">
+          <span>{storeUsed.userState}</span>
+          {storeUsed.message ? <span>{storeUsed.message}</span> : null}
+        </MessageAndOutputs>
+      </Example>
+    </DemoPanel>
   );
 });
 
 export const authExamples = {
-  'Login': {
+  Login: {
     component: Login,
     description: 'Render-only login view driven by a MobX store',
-    example: () => <LoginExamplePanel />
+    example: LoginExamplePanel,
   },
 };
 
+export default LoginExamplePanel;

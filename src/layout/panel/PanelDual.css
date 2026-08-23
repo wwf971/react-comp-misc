@@ -54,28 +54,15 @@
   user-select: none;
 }
 
-.panel-dual-examples {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 900px;
-}
-
-.panel-dual-examples-title {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.panel-dual-examples-desc {
-  font-size: 12px;
-  color: #666;
-}
-
 .panel-dual-example-section {
   display: flex;
   flex-direction: column;
   gap: 6px;
   margin-top: 6px;
+}
+
+.panel-dual-example-section:first-child {
+  margin-top: 0;
 }
 
 .panel-dual-example-label {

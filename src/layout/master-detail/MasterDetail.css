@@ -93,6 +93,7 @@
   text-align: left;
   cursor: pointer;
   font-size: 13px;
+  font-weight: 500;
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -106,11 +107,13 @@
 .master-detail-tree-label-btn.active {
   background: #e3f2fd;
   color: #1565c0;
-  font-weight: 600;
+  font-weight: 500;
+  text-shadow: 0.45px 0 0 currentColor;
 }
 
 .master-detail-tree-label-btn.is-in-path {
-  font-weight: 600;
+  font-weight: 500;
+  text-shadow: 0.45px 0 0 currentColor;
 }
 
 .master-detail-tree-label-btn.is-branch {

@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useRef } from 'react';
-import { DemoPanelContext, ExampleGroupContext, ExplanationPlainContext, createStoreDemoPanel } from './demoStores.js';
+import { observer } from 'mobx-react-lite';
+import { DemoPanelContext, ExampleGroupContext, ExplanationPlainContext, createStoreDemoPanel, createStoreJsonDisplay } from './demoStores.js';
 import './DemoLayout.css';
 
 // DemoPanel: root container of one dev page entry.
@@ -88,8 +89,12 @@ const ControlItem = ({ labelText, children }) => (
 );
 
 // CompDemoArea: the area holding the demonstrated component itself.
-const CompDemoArea = ({ children }) => (
-  <div className="demo-comp-area">{children}</div>
+// Optional footText renders a short note under the component, inside the area.
+const CompDemoArea = ({ footText, children }) => (
+  <div className="demo-comp-area">
+    {children}
+    {footText ? <div className="demo-comp-area-foot">{footText}</div> : null}
+  </div>
 );
 
 // MessageAndOutputs: selectable area for change messages, action logs, state dumps.
@@ -99,6 +104,76 @@ const MessageAndOutputs = ({ labelText, children }) => (
     <div className="demo-message-outputs-content">{children}</div>
   </div>
 );
+
+// JsonDisplay: standard block for showing json data (state dumps, payloads),
+// typically inside MessageAndOutputs. Pass the value itself via the data prop;
+// the component stringifies and renders it in the unified sans-serif style.
+// config sets the initial display state: { indentSize, isCollapsed }.
+// The controls in the top right corner switch pretty/one-line mode and tune
+// the indent width; this ui state lives in a StoreJsonDisplay, created locally
+// when the store prop is absent. Accepted changes are reported through onEvent.
+const JsonDisplay = observer(({ data, config = {}, store, onEvent }) => {
+  const storeOwn = useMemo(
+    () => (store ? null : createStoreJsonDisplay({ indentSize: config.indentSize, isCollapsed: config.isCollapsed })),
+    [store],
+  );
+  const storeUsed = store || storeOwn;
+  const controlEventHandle = (eventType, eventData = {}) => {
+    const result = storeUsed.handleEvent(eventType, eventData);
+    if (result.code === 0) onEvent?.(eventType, eventData);
+    return result;
+  };
+  const jsonText = storeUsed.isCollapsed
+    ? JSON.stringify(data)
+    : JSON.stringify(data, null, storeUsed.indentSize);
+  return (
+    <div className="demo-json-display">
+      <div className="demo-json-display-controls">
+        <button
+          type="button"
+          className={`demo-json-display-control-button${storeUsed.isCollapsed ? '' : ' is-active'}`}
+          title="Pretty print with indent"
+          onClick={() => controlEventHandle('jsonCollapsedSet', { isCollapsed: false })}
+        >
+          pretty
+        </button>
+        <button
+          type="button"
+          className={`demo-json-display-control-button${storeUsed.isCollapsed ? ' is-active' : ''}`}
+          title="Collapse to one line"
+          onClick={() => controlEventHandle('jsonCollapsedSet', { isCollapsed: true })}
+        >
+          1 line
+        </button>
+        <span className="demo-json-display-indent">
+          <span className="demo-json-display-indent-label">indent</span>
+          <button
+            type="button"
+            className="demo-json-display-control-button"
+            title="Decrease indent"
+            disabled={storeUsed.isCollapsed || storeUsed.indentSize <= 1}
+            onClick={() => controlEventHandle('jsonIndentSizeSet', { indentSize: storeUsed.indentSize - 1 })}
+          >
+            -
+          </button>
+          <span className={`demo-json-display-indent-count${storeUsed.isCollapsed ? ' is-disabled' : ''}`}>
+            {storeUsed.indentSize}
+          </span>
+          <button
+            type="button"
+            className="demo-json-display-control-button"
+            title="Increase indent"
+            disabled={storeUsed.isCollapsed || storeUsed.indentSize >= 8}
+            onClick={() => controlEventHandle('jsonIndentSizeSet', { indentSize: storeUsed.indentSize + 1 })}
+          >
+            +
+          </button>
+        </span>
+      </div>
+      <pre className="demo-json-display-text">{jsonText}</pre>
+    </div>
+  );
+});
 
 export {
   DemoPanel,
@@ -110,4 +185,5 @@ export {
   ControlItem,
   CompDemoArea,
   MessageAndOutputs,
+  JsonDisplay,
 };

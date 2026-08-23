@@ -1,0 +1,49 @@
+.icon-example-search-input {
+  min-width: 180px;
+  padding: 3px 6px;
+  border: 1px solid #bdcada;
+  border-radius: 3px;
+  font: inherit;
+  font-size: 12px;
+}
+
+.icon-example-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.icon-example-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  background: #fafafa;
+}
+
+.icon-example-card-icons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-example-card-name {
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.icon-example-card-desc {
+  color: #666666;
+  font-size: 11px;
+  text-align: center;
+}
+
+.icon-example-empty {
+  padding: 16px;
+  color: #999999;
+  text-align: center;
+}

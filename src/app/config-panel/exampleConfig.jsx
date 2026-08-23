@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import ConfigPanel from './Config.jsx';
@@ -6,6 +6,24 @@ import ConfigPanelWithTabs from './ConfigTab.jsx';
 import ConfigPanelWithTabGroups from './ConfigTabGroup.jsx';
 import ConfigPanelWithSubtabs from './ConfigSubtab.jsx';
 import styles from './Config.module.css';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  Controls,
+  ControlItem,
+  CompDemoArea,
+  MessageAndOutputs,
+  JsonDisplay,
+} from '../../dev/demo/DemoLayout.jsx';
+import {
+  ExampleGroup,
+  ExampleSwitcher,
+  ExampleSwitchButtons,
+  ExampleJumpLink,
+} from '../../dev/demo/ExampleGroup.jsx';
+import { createStoreSimServer } from '../../dev/demo/simServerStore.js';
+import SimServerControl from '../../dev/demo/SimServerControl.jsx';
 
 const ConfigPermissionMultiControl = observer(({ value, isDisabled, onValueChange, item }) => {
   const optionList = item.options ?? [];
@@ -43,34 +61,38 @@ function createConfigExampleConfig(configInput) {
   }, {}, { deep: true, autoBind: true });
 }
 
-function waitMs(ms) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, ms);
-  });
-}
-
-async function simulateConfigServer(simulationConfig) {
-  const meanDelayMs = Math.max(0, Number(simulationConfig.meanDelayMs) || 0);
-  const failureChance = Math.max(0, Math.min(100, Number(simulationConfig.failureChance) || 0));
-  const delayMs = Math.round(meanDelayMs * (0.5 + Math.random()));
-  await waitMs(delayMs);
-  if (Math.random() * 100 < failureChance) {
-    return {
-      code: -1,
-      message: `simulated server failure after ${delayMs}ms`
-    };
-  }
+function useStoreSimServerLocal(storeSimServer) {
+  const storeSimServerOwn = useMemo(
+    () => (storeSimServer ? null : createStoreSimServer({ delayAvgMs: 600, failRatePercent: 20 })),
+    [storeSimServer],
+  );
   return {
-    code: 0,
-    message: `server ok (${delayMs}ms)`
+    storeSimServerOwn,
+    storeSimServerUsed: storeSimServer || storeSimServerOwn,
   };
 }
 
+const ExampleMessageAndValues = observer(({ message, configData }) => (
+  <MessageAndOutputs>
+    {message ? <span>{message}</span> : <span>No changes yet</span>}
+    <JsonDisplay data={configData} />
+  </MessageAndOutputs>
+));
+
+const ExampleSimServerOwnControl = ({ storeSimServerOwn }) => (
+  storeSimServerOwn ? (
+    <Controls>
+      <SimServerControl labelText="Sim server (example)" store={storeSimServerOwn} />
+    </Controls>
+  ) : null
+);
+
 // Example 1: Basic ConfigPanel
-const BasicConfigPanelExample = observer(({ simulationConfig }) => {
+const BasicConfigPanelExample = observer(({ storeSimServer }) => {
+  const { storeSimServerOwn, storeSimServerUsed } = useStoreSimServerLocal(storeSimServer);
   const [message, setMessage] = useState('');
-  
-  const [config] = useState(() => createConfigExampleConfig({
+
+  const config = useMemo(() => createConfigExampleConfig({
     compPath: ['root'],
     operationStateByPath: {
       root: {
@@ -136,21 +158,18 @@ const BasicConfigPanelExample = observer(({ simulationConfig }) => {
     getComp: (compName) => (
       compName === 'permissionMulti' ? ConfigPermissionMultiControl : null
     )
-  }));
+  }), []);
 
-  const [configData] = useState(() => {
-    const data = {
-      enable_feature: true,
-      username: 'john_doe',
-        accent_tone: 'clear',
-        permission_set: ['read'],
-      theme: 'light'
-    };
-    return makeAutoObservable(data, {}, { deep: true });
-  });
+  const configData = useMemo(() => makeAutoObservable({
+    enable_feature: true,
+    username: 'john_doe',
+    accent_tone: 'clear',
+    permission_set: ['read'],
+    theme: 'light'
+  }, {}, { deep: true }), []);
 
   const handleEvent = (eventType, eventData) => {
-    return handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData);
+    return handleConfigExampleEvent(configData, config, setMessage, storeSimServerUsed, eventType, eventData);
   };
 
   const handleExternalUpdate = () => {
@@ -159,32 +178,36 @@ const BasicConfigPanelExample = observer(({ simulationConfig }) => {
   };
 
   return (
-    <div>
-      <ConfigPanel
-        data={configData}
-        config={config}
-        onEvent={handleEvent}
-      />
-      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-        <button onClick={handleExternalUpdate} style={{ padding: '8px 12px', cursor: 'pointer' }}>
-          External Update
-        </button>
-      </div>
-      {message && (
-        <div style={{ marginTop: '10px', padding: '8px', background: '#e0f2fe', border: '1px solid #0ea5e9', borderRadius: '4px', fontSize: '13px' }}>
-          {message}
+    <Example title="Basic ConfigPanel">
+      <Explanation>Simple configuration panel with groups and basic field types.</Explanation>
+      <Controls>
+        {storeSimServerOwn ? (
+          <SimServerControl labelText="Sim server (example)" store={storeSimServerOwn} />
+        ) : null}
+        <ControlItem>
+          <button type="button" className="demo-button" onClick={handleExternalUpdate}>
+            External Update
+          </button>
+        </ControlItem>
+      </Controls>
+      <CompDemoArea>
+        <div style={{ maxWidth: '500px' }}>
+          <ConfigPanel
+            data={configData}
+            config={config}
+            onEvent={handleEvent}
+          />
         </div>
-      )}
-      <div style={{ marginTop: '10px', fontSize: '12px', background: '#f0f0f0', padding: '8px', borderRadius: '4px' }}>
-        <strong>Values:</strong> {JSON.stringify(configData)}
-      </div>
-    </div>
+      </CompDemoArea>
+      <ExampleMessageAndValues message={message} configData={configData} />
+    </Example>
   );
 });
 
-const NarrowConfigPanelExample = observer(({ simulationConfig }) => {
+const NarrowConfigPanelExample = observer(({ storeSimServer }) => {
+  const { storeSimServerOwn, storeSimServerUsed } = useStoreSimServerLocal(storeSimServer);
   const [message, setMessage] = useState('');
-  const [config] = useState(() => createConfigExampleConfig({
+  const config = useMemo(() => createConfigExampleConfig({
     compPath: ['narrow'],
     operationStateByPath: {
       narrow: {
@@ -235,33 +258,39 @@ const NarrowConfigPanelExample = observer(({ simulationConfig }) => {
     getComp: (compName) => (
       compName === 'permissionMulti' ? ConfigPermissionMultiControl : null
     )
-  }));
-  const [configData] = useState(() => makeAutoObservable({
+  }), []);
+  const configData = useMemo(() => makeAutoObservable({
     enable_compact_feature: true,
     account_identifier: 'account-with-a-long-readable-identifier',
     display_density: 'balanced',
     permission_set_narrow: ['read', 'write']
-  }, {}, { deep: true }));
+  }, {}, { deep: true }), []);
 
   return (
-    <div>
-      <ConfigPanel
-        data={configData}
-        config={config}
-        onEvent={(eventType, eventData) => (
-          handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData)
-        )}
-      />
-      {message ? <div className={styles.configDemoMessage}>{message}</div> : null}
-      <div className={styles.configDemoValues}>{JSON.stringify(configData, null, 2)}</div>
-    </div>
+    <Example title="Narrow ConfigPanel">
+      <Explanation>Wheel-scroll the clipped text and control regions independently.</Explanation>
+      <ExampleSimServerOwnControl storeSimServerOwn={storeSimServerOwn} />
+      <CompDemoArea>
+        <div className={styles.configDemoNarrow}>
+          <ConfigPanel
+            data={configData}
+            config={config}
+            onEvent={(eventType, eventData) => (
+              handleConfigExampleEvent(configData, config, setMessage, storeSimServerUsed, eventType, eventData)
+            )}
+          />
+        </div>
+      </CompDemoArea>
+      <ExampleMessageAndValues message={message} configData={configData} />
+    </Example>
   );
 });
 
 // Example 2: ConfigPanel with Tabs
-const ConfigPanelWithTabsExample = observer(({ simulationConfig }) => {
+const ConfigPanelWithTabsExample = observer(({ storeSimServer }) => {
+  const { storeSimServerOwn, storeSimServerUsed } = useStoreSimServerLocal(storeSimServer);
   const [message, setMessage] = useState('');
-  
+
   // Reusable config items
   const items = {
     enable_notifications: { id: 'enable_notifications', label: 'Enable Notifications', description: 'Receive notifications for important events', type: 'boolean', defaultValue: true },
@@ -282,7 +311,7 @@ const ConfigPanelWithTabsExample = observer(({ simulationConfig }) => {
     performance: { id: 'performance_group', label: 'Performance', type: 'group', children: [items.cache_size] }
   };
 
-  const [config] = useState(() => createConfigExampleConfig({
+  const config = useMemo(() => createConfigExampleConfig({
     compPath: ['root'],
     operationStateByPath: {
       root: {
@@ -294,52 +323,47 @@ const ConfigPanelWithTabsExample = observer(({ simulationConfig }) => {
       { id: 'appearance_tab', name: 'Appearance', type: 'tab', children: [groups.ui] },
       { id: 'advanced_tab', name: 'Advanced', type: 'tab', children: [groups.debug, groups.performance] }
     ]
-  }));
+  }), []);
 
-  const [configData] = useState(() => {
-    const data = {
-      enable_notifications: true,
-      app_name: 'My App',
-      max_connections: 10,
-      theme: 'light',
-      font_size: 'medium',
-      compact_mode: false,
-      debug_mode: false,
-      log_level: 'info',
-      cache_size: 100
-    };
-    return makeAutoObservable(data, {}, { deep: true });
-  });
+  const configData = useMemo(() => makeAutoObservable({
+    enable_notifications: true,
+    app_name: 'My App',
+    max_connections: 10,
+    theme: 'light',
+    font_size: 'medium',
+    compact_mode: false,
+    debug_mode: false,
+    log_level: 'info',
+    cache_size: 100
+  }, {}, { deep: true }), []);
 
   const handleEvent = (eventType, eventData) => {
-    return handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData);
+    return handleConfigExampleEvent(configData, config, setMessage, storeSimServerUsed, eventType, eventData);
   };
 
   return (
-    <div>
-      <div style={{ height: '500px', maxWidth: '100%' }}>
-        <ConfigPanelWithTabs
-          data={configData}
-          config={config}
-          onEvent={handleEvent}
-        />
-      </div>
-      {message && (
-        <div style={{ marginTop: '20px', padding: '8px', background: '#e0f2fe', border: '1px solid #0ea5e9', borderRadius: '4px', fontSize: '13px' }}>
-          {message}
+    <Example title="ConfigPanel with Tabs">
+      <Explanation>Configuration panel with vertical tabs for organizing multiple sections.</Explanation>
+      <ExampleSimServerOwnControl storeSimServerOwn={storeSimServerOwn} />
+      <CompDemoArea>
+        <div style={{ height: '500px', maxWidth: '100%' }}>
+          <ConfigPanelWithTabs
+            data={configData}
+            config={config}
+            onEvent={handleEvent}
+          />
         </div>
-      )}
-      <div style={{ marginTop: '10px', fontSize: '12px', background: '#f0f0f0', padding: '8px', borderRadius: '4px' }}>
-        <strong>Values:</strong> {JSON.stringify(configData, null, 2)}
-      </div>
-    </div>
+      </CompDemoArea>
+      <ExampleMessageAndValues message={message} configData={configData} />
+    </Example>
   );
 });
 
 // Example 3: ConfigPanel with Tab Groups
-const ConfigPanelWithTabGroupsExample = observer(({ simulationConfig }) => {
+const ConfigPanelWithTabGroupsExample = observer(({ storeSimServer }) => {
+  const { storeSimServerOwn, storeSimServerUsed } = useStoreSimServerLocal(storeSimServer);
   const [message, setMessage] = useState('');
-  
+
   // Define reusable config items
   const items = {
     enable_notifications: { id: 'enable_notifications', label: 'Enable Notifications', description: 'Receive notifications for important events', type: 'boolean', defaultValue: true },
@@ -380,7 +404,7 @@ const ConfigPanelWithTabGroupsExample = observer(({ simulationConfig }) => {
   };
 
   // Compose into tab groups
-  const [config] = useState(() => createConfigExampleConfig({
+  const config = useMemo(() => createConfigExampleConfig({
     compPath: ['root'],
     operationStateByPath: {
       root: {
@@ -402,52 +426,47 @@ const ConfigPanelWithTabGroupsExample = observer(({ simulationConfig }) => {
       // Invalid entry for testing
       { id: 'invalid_group', name: 'Invalid', type: 'invalid_type', children: [] }
     ]
-  }));
+  }), []);
 
-  const [configData] = useState(() => {
-    const data = {
-      enable_notifications: true,
-      app_name: 'My App',
-      theme: 'light',
-      font_size: 14,
-      compact_mode: false,
-      debug_mode: false,
-      log_level: 'info',
-      cache_size: 100,
-      version: '1.0.0'
-    };
-    return makeAutoObservable(data, {}, { deep: true });
-  });
+  const configData = useMemo(() => makeAutoObservable({
+    enable_notifications: true,
+    app_name: 'My App',
+    theme: 'light',
+    font_size: 14,
+    compact_mode: false,
+    debug_mode: false,
+    log_level: 'info',
+    cache_size: 100,
+    version: '1.0.0'
+  }, {}, { deep: true }), []);
 
   const handleEvent = (eventType, eventData) => {
-    return handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData);
+    return handleConfigExampleEvent(configData, config, setMessage, storeSimServerUsed, eventType, eventData);
   };
 
   return (
-    <div>
-      <div style={{ height: '600px', maxWidth: '100%' }}>
-        <ConfigPanelWithTabGroups
-          data={configData}
-          config={config}
-          onEvent={handleEvent}
-        />
-      </div>
-      {message && (
-        <div style={{ marginTop: '20px', padding: '8px', background: '#e0f2fe', border: '1px solid #0ea5e9', borderRadius: '4px', fontSize: '13px' }}>
-          {message}
+    <Example title="ConfigPanel with Tab Groups">
+      <Explanation>Configuration panel with grouped tabs, supports subtabs and simple tabs.</Explanation>
+      <ExampleSimServerOwnControl storeSimServerOwn={storeSimServerOwn} />
+      <CompDemoArea>
+        <div style={{ height: '600px', maxWidth: '100%' }}>
+          <ConfigPanelWithTabGroups
+            data={configData}
+            config={config}
+            onEvent={handleEvent}
+          />
         </div>
-      )}
-      <div style={{ marginTop: '10px', fontSize: '12px', background: '#f0f0f0', padding: '8px', borderRadius: '4px' }}>
-        <strong>Values:</strong> {JSON.stringify(configData, null, 2)}
-      </div>
-    </div>
+      </CompDemoArea>
+      <ExampleMessageAndValues message={message} configData={configData} />
+    </Example>
   );
 });
 
 // Example 4: ConfigPanel with Subtabs
-const ConfigPanelWithSubtabsExample = observer(({ simulationConfig }) => {
+const ConfigPanelWithSubtabsExample = observer(({ storeSimServer }) => {
+  const { storeSimServerOwn, storeSimServerUsed } = useStoreSimServerLocal(storeSimServer);
   const [message, setMessage] = useState('');
-  
+
   // Reusable config items
   const items = {
     app_name: { id: 'app_name', label: 'Application Name', type: 'string', defaultValue: 'My App' },
@@ -463,7 +482,7 @@ const ConfigPanelWithSubtabsExample = observer(({ simulationConfig }) => {
     advanced: { id: 'advanced_group', label: 'Advanced Options', type: 'group', children: [items.debug_mode] }
   };
 
-  const [config] = useState(() => createConfigExampleConfig({
+  const config = useMemo(() => createConfigExampleConfig({
     compPath: ['root'],
     operationStateByPath: {
       root: {
@@ -475,125 +494,86 @@ const ConfigPanelWithSubtabsExample = observer(({ simulationConfig }) => {
       { id: 'display_subtab', name: 'Display', type: 'subtab', children: [groups.display] },
       { id: 'advanced_subtab', name: 'Advanced', type: 'subtab', children: [groups.advanced] }
     ]
-  }));
+  }), []);
 
-  const [configData] = useState(() => {
-    const data = {
-      app_name: 'My App',
-      enable_notifications: true,
-      theme: 'light',
-      font_size: 14,
-      debug_mode: false
-    };
-    return makeAutoObservable(data, {}, { deep: true });
-  });
+  const configData = useMemo(() => makeAutoObservable({
+    app_name: 'My App',
+    enable_notifications: true,
+    theme: 'light',
+    font_size: 14,
+    debug_mode: false
+  }, {}, { deep: true }), []);
 
   const handleEvent = (eventType, eventData) => {
-    return handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData);
+    return handleConfigExampleEvent(configData, config, setMessage, storeSimServerUsed, eventType, eventData);
   };
 
   return (
-    <div>
-      <div style={{ height: '500px', maxWidth: '100%', border: '1px solid #e5e7eb', borderRadius: '2px', overflow: 'hidden' }}>
-        <ConfigPanelWithSubtabs
-          data={configData}
-          config={config}
-          onEvent={handleEvent}
-        />
-      </div>
-      {message && (
-        <div style={{ marginTop: '20px', padding: '8px', background: '#e0f2fe', border: '1px solid #0ea5e9', borderRadius: '4px', fontSize: '13px' }}>
-          {message}
+    <Example title="ConfigPanel with Subtabs">
+      <Explanation>Configuration panel with horizontal subtabs at the top.</Explanation>
+      <ExampleSimServerOwnControl storeSimServerOwn={storeSimServerOwn} />
+      <CompDemoArea>
+        <div style={{ height: '500px', maxWidth: '100%' }}>
+          <ConfigPanelWithSubtabs
+            data={configData}
+            config={config}
+            onEvent={handleEvent}
+          />
         </div>
-      )}
-      <div style={{ marginTop: '10px', fontSize: '12px', background: '#f0f0f0', padding: '8px', borderRadius: '4px' }}>
-        <strong>Values:</strong> {JSON.stringify(configData, null, 2)}
-      </div>
-    </div>
+      </CompDemoArea>
+      <ExampleMessageAndValues message={message} configData={configData} />
+    </Example>
   );
 });
 
 // Consolidated examples panel
 const ConfigPanelExamplesPanel = observer(() => {
-  const [simulationConfig] = useState(() => makeAutoObservable({
-    failureChance: 20,
-    meanDelayMs: 600
-  }));
+  const storeSimServer = useMemo(() => createStoreSimServer({ delayAvgMs: 600, failRatePercent: 20 }), []);
 
   return (
-    <div className={styles.configDemoPanel}>
-      <div className={styles.configDemoTitle}>Config Panel Component Examples</div>
+    <DemoPanel>
+      <Explanation titleText="Config Panel">
+        Configuration UI components with various layouts: basic, tabs, tab groups, and subtabs. Value changes show pending state, then success or hoverable error.
+      </Explanation>
 
-      <div className={styles.configDemoSimulationPanel}>
-        <label className={styles.configDemoSimulationLabel}>
-          Failure chance (%)
-          <input
-            className={styles.configDemoSimulationInput}
-            type="number"
-            min="0"
-            max="100"
-            value={simulationConfig.failureChance}
-            onChange={(event) => { simulationConfig.failureChance = Number(event.target.value); }}
-          />
-        </label>
-        <label className={styles.configDemoSimulationLabel}>
-          Mean delay (ms)
-          <input
-            className={styles.configDemoSimulationInput}
-            type="number"
-            min="0"
-            step="50"
-            value={simulationConfig.meanDelayMs}
-            onChange={(event) => { simulationConfig.meanDelayMs = Number(event.target.value); }}
-          />
-        </label>
-        <div className={styles.configDemoSimulationHint}>Value changes show pending state, then success or hoverable error.</div>
-      </div>
+      <SimServerControl labelText="Sim server" store={storeSimServer} />
 
-      <div className={styles.configDemoSection}>
-        <div className={styles.configDemoSectionTitle}>1. Basic ConfigPanel</div>
-        <div className={styles.configDemoSectionDescription}>Simple configuration panel with groups and basic field types.</div>
-        <div style={{ maxWidth: '500px' }}>
-          <BasicConfigPanelExample simulationConfig={simulationConfig} />
-        </div>
-      </div>
-
-      <div className={styles.configDemoSection}>
-        <div className={styles.configDemoSectionTitle}>2. ConfigPanel with Tabs</div>
-        <div className={styles.configDemoSectionDescription}>Configuration panel with vertical tabs for organizing multiple sections.</div>
-        <div style={{ maxWidth: '900px' }}>
-          <ConfigPanelWithTabsExample simulationConfig={simulationConfig} />
-        </div>
-      </div>
-
-      <div className={styles.configDemoSection}>
-        <div className={styles.configDemoSectionTitle}>3. ConfigPanel with Tab Groups</div>
-        <div className={styles.configDemoSectionDescription}>Configuration panel with grouped tabs, supports subtabs and simple tabs.</div>
-        <div style={{ maxWidth: '900px' }}>
-          <ConfigPanelWithTabGroupsExample simulationConfig={simulationConfig} />
-        </div>
-      </div>
-
-      <div className={styles.configDemoSection}>
-        <div className={styles.configDemoSectionTitle}>4. ConfigPanel with Subtabs</div>
-        <div className={styles.configDemoSectionDescription}>Configuration panel with horizontal subtabs at the top.</div>
-        <div style={{ maxWidth: '900px' }}>
-          <ConfigPanelWithSubtabsExample simulationConfig={simulationConfig} />
-        </div>
-      </div>
-
-      <div className={styles.configDemoSection}>
-        <div className={styles.configDemoSectionTitle}>5. Narrow ConfigPanel</div>
-        <div className={styles.configDemoSectionDescription}>Wheel-scroll the clipped text and control regions independently.</div>
-        <div className={styles.configDemoNarrow}>
-          <NarrowConfigPanelExample simulationConfig={simulationConfig} />
-        </div>
-      </div>
-    </div>
+      <ExampleGroup title="Layouts">
+        <Explanation>
+          <ul>
+            <li>
+              <ExampleJumpLink data={{ exampleId: 'basic' }}>Basic</ExampleJumpLink> is a simple panel with groups and basic field types.
+            </li>
+            <li>
+              <ExampleJumpLink data={{ exampleId: 'tabs' }}>Tabs</ExampleJumpLink> uses vertical tabs for multiple sections.
+            </li>
+            <li>
+              <ExampleJumpLink data={{ exampleId: 'tab-groups' }}>Tab Groups</ExampleJumpLink> groups tabs and can include subtabs.
+            </li>
+            <li>
+              <ExampleJumpLink data={{ exampleId: 'subtabs' }}>Subtabs</ExampleJumpLink> uses horizontal subtabs at the top.
+            </li>
+            <li>
+              <ExampleJumpLink data={{ exampleId: 'narrow' }}>Narrow</ExampleJumpLink> clips text and controls so each region wheel-scrolls on its own.
+            </li>
+          </ul>
+        </Explanation>
+        <Controls>
+          <ExampleSwitchButtons />
+        </Controls>
+        <ExampleSwitcher>
+          <BasicConfigPanelExample exampleId="basic" labelText="Basic" storeSimServer={storeSimServer} />
+          <ConfigPanelWithTabsExample exampleId="tabs" labelText="Tabs" storeSimServer={storeSimServer} />
+          <ConfigPanelWithTabGroupsExample exampleId="tab-groups" labelText="Tab Groups" storeSimServer={storeSimServer} />
+          <ConfigPanelWithSubtabsExample exampleId="subtabs" labelText="Subtabs" storeSimServer={storeSimServer} />
+          <NarrowConfigPanelExample exampleId="narrow" labelText="Narrow" storeSimServer={storeSimServer} />
+        </ExampleSwitcher>
+      </ExampleGroup>
+    </DemoPanel>
   );
 });
 
-async function handleConfigExampleEvent(configData, config, setMessage, simulationConfig, eventType, eventData) {
+async function handleConfigExampleEvent(configData, config, setMessage, storeSimServer, eventType, eventData) {
   if (eventType === 'valueDefaultSetAttempt') {
     configData[eventData.valueId] = eventData.value;
     setMessage(`Changed ${eventData.valueId} to ${JSON.stringify(eventData.value)}`);
@@ -610,7 +590,7 @@ async function handleConfigExampleEvent(configData, config, setMessage, simulati
       valueNext: eventData.value,
       message: ''
     };
-    const result = await simulateConfigServer(simulationConfig);
+    const result = await storeSimServer.requestRun(eventData.valueId);
     if (result.code === 0) {
       configData[eventData.valueId] = eventData.value;
       delete config.requestStateByPath[itemPathText];

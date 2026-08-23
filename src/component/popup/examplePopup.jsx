@@ -1,103 +1,111 @@
-import React, { useState } from 'react';
+import { useMemo } from 'react';
+import { makeAutoObservable, runInAction } from 'mobx';
+import { observer } from 'mobx-react-lite';
 import PanelPopup from './PanelPopup.jsx';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  CompDemoArea,
+  MessageAndOutputs,
+} from '../../dev/demo/DemoLayout.jsx';
+import { ExampleGroup, ExampleStackVertical } from '../../dev/demo/ExampleGroup.jsx';
+import './example.css';
 
-const PopupTrigger = ({ label, popupProps, btnStyle }) => {
-  const [open, setOpen] = useState(false);
-  const [lastAction, setLastAction] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+function createStorePopupTrigger() {
+  return makeAutoObservable({
+    isOpen: false,
+    lastAction: null,
+    isLoading: false,
+    open() {
+      this.isOpen = true;
+      this.lastAction = null;
+    },
+    confirm(value, { simulateLoading = false } = {}) {
+      if (simulateLoading) {
+        this.isLoading = true;
+        window.setTimeout(() => {
+          runInAction(() => {
+            this.isLoading = false;
+            this.isOpen = false;
+            this.lastAction = value !== undefined ? `Confirmed: "${value}"` : 'Confirmed';
+          });
+        }, 1500);
+        return { code: 0 };
+      }
+      this.isOpen = false;
+      this.lastAction = value !== undefined ? `Confirmed: "${value}"` : 'Confirmed';
+      return { code: 0 };
+    },
+    cancel() {
+      this.isOpen = false;
+      this.lastAction = 'Cancelled';
+      return { code: 0 };
+    },
+  }, {}, { autoBind: true });
+}
 
-  const handleConfirm = (value) => {
-    if (popupProps.simulateLoading) {
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        setOpen(false);
-        setLastAction(value !== undefined ? `Confirmed: "${value}"` : 'Confirmed');
-      }, 1500);
-    } else {
-      setOpen(false);
-      setLastAction(value !== undefined ? `Confirmed: "${value}"` : 'Confirmed');
-    }
-  };
-
-  const handleCancel = () => {
-    setOpen(false);
-    setLastAction('Cancelled');
-  };
-
-  return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-      <button
-        onClick={() => {
-          setOpen(true);
-          setLastAction(null);
-        }}
-        style={{
-          padding: '6px 14px',
-          fontSize: '13px',
-          borderRadius: '4px',
-          border: '1px solid #ccc',
-          cursor: 'pointer',
-          ...btnStyle,
-        }}
-      >
-        {label}
-      </button>
-      {lastAction && (
-        <span style={{ fontSize: '12px', color: '#666', fontStyle: 'italic' }}>{lastAction}</span>
-      )}
-      {open && (
-        <PanelPopup
-          {...popupProps}
-          isLoading={popupProps.simulateLoading ? isLoading : popupProps.isLoading}
-          onConfirm={handleConfirm}
-          onCancel={handleCancel}
-        />
-      )}
-    </div>
-  );
-};
-
-const PopupExamplesPanel = () => {
-  const row = (label, content) => (
-    <div style={{ marginBottom: '16px' }}>
-      <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px', fontWeight: 500 }}>{label}</div>
-      {content}
-    </div>
-  );
+const ExamplePopupVariant = observer(function ExamplePopupVariant({
+  title,
+  label,
+  popupProps,
+  buttonClassName = '',
+  store,
+}) {
+  const storeLocal = useMemo(() => (store ? null : createStorePopupTrigger()), [store]);
+  const storeUsed = store || storeLocal;
 
   return (
-    <div style={{ maxWidth: '600px' }}>
-      <div style={{ fontSize: '15px', fontWeight: 600 }}>PanelPopup</div>
+    <Example title={title}>
+      <CompDemoArea>
+        <button
+          type="button"
+          className={`demo-button${buttonClassName ? ` ${buttonClassName}` : ''}`}
+          onClick={() => storeUsed.open()}
+        >
+          {label}
+        </button>
+        {storeUsed.isOpen ? (
+          <PanelPopup
+            {...popupProps}
+            isLoading={popupProps.simulateLoading ? storeUsed.isLoading : popupProps.isLoading}
+            onConfirm={(value) => storeUsed.confirm(value, { simulateLoading: popupProps.simulateLoading })}
+            onCancel={() => storeUsed.cancel()}
+          />
+        ) : null}
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.lastAction || 'No action yet'}</span>
+      </MessageAndOutputs>
+    </Example>
+  );
+});
 
-      {row(
-        'Confirm (default)',
-        <PopupTrigger
+const PopupExamplesPanel = () => (
+  <DemoPanel>
+    <Explanation titleText="PanelPopup">
+      Popup dialogs for confirm, alert, and input, including danger, loading, disabled confirm, and status message.
+    </Explanation>
+    <ExampleGroup title="Variants">
+      <ExampleStackVertical>
+        <ExamplePopupVariant
+          title="Confirm (default)"
           label="Open Confirm"
           popupProps={{ type: 'confirm', title: 'Confirm Action', message: 'Are you sure you want to proceed?' }}
         />
-      )}
-
-      {row(
-        'Confirm — danger style',
-        <PopupTrigger
+        <ExamplePopupVariant
+          title="Confirm — danger style"
           label="Delete Item"
-          btnStyle={{ background: '#fff1f0', borderColor: '#ff4d4f', color: '#cf1322' }}
+          buttonClassName="popup-example-button-danger"
           popupProps={{ type: 'confirm', isDanger: true, title: 'Delete Item', message: 'Delete "my-item"? This cannot be undone.', confirmText: 'Delete' }}
         />
-      )}
-
-      {row(
-        'Alert (no cancel button)',
-        <PopupTrigger
+        <ExamplePopupVariant
+          title="Alert (no cancel button)"
           label="Open Alert"
           popupProps={{ type: 'alert', title: 'Notice', message: 'Operation completed successfully.' }}
         />
-      )}
-
-      {row(
-        'Input prompt',
-        <PopupTrigger
+        <ExamplePopupVariant
+          title="Input prompt"
           label="Rename…"
           popupProps={{
             type: 'input',
@@ -107,27 +115,18 @@ const PopupExamplesPanel = () => {
             inputProps: { placeholder: 'New name', defaultValue: 'my-file', required: true },
           }}
         />
-      )}
-
-      {row(
-        'isLoading — disables all buttons (shows "Loading...")',
-        <PopupTrigger
+        <ExamplePopupVariant
+          title="isLoading — disables all buttons (shows &quot;Loading...&quot;)"
           label="Open (simulates loading)"
           popupProps={{ type: 'confirm', title: 'Processing', message: 'Click Confirm to simulate a 1.5 s loading state.', simulateLoading: true }}
         />
-      )}
-
-      {row(
-        'isConfirmDisabled — confirm greyed out, cancel still works',
-        <PopupTrigger
+        <ExamplePopupVariant
+          title="isConfirmDisabled — confirm greyed out, cancel still works"
           label="Open (confirm disabled)"
           popupProps={{ type: 'confirm', title: 'Confirm', message: 'Confirm button is disabled. Cancel still works.', isConfirmDisabled: true }}
         />
-      )}
-
-      {row(
-        'statusMessage — locks all buttons until dismissed',
-        <PopupTrigger
+        <ExamplePopupVariant
+          title="statusMessage — locks all buttons until dismissed"
           label="Open with status"
           popupProps={{
             type: 'confirm',
@@ -137,10 +136,10 @@ const PopupExamplesPanel = () => {
             statusType: 'error',
           }}
         />
-      )}
-    </div>
-  );
-};
+      </ExampleStackVertical>
+    </ExampleGroup>
+  </DemoPanel>
+);
 
 export const popupExamples = {
   Popup: {
@@ -149,3 +148,5 @@ export const popupExamples = {
     example: PopupExamplesPanel,
   },
 };
+
+export default PopupExamplesPanel;

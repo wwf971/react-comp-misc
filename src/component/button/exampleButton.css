@@ -1,67 +1,47 @@
-.button-example-panel {
-  padding: 20px;
-  max-width: 400px;
-}
-
 .button-example-row {
   display: flex;
-  gap: 15px;
+  gap: 8px;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+}
+
+.button-example-row:last-child {
+  margin-bottom: 0;
 }
 
 .button-example-row-label {
-  font-size: 14px;
-}
-
-.num-value-example-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 420px;
+  font-size: 13px;
 }
 
 .num-value-example-item {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-}
-
-.num-value-example-note {
-  color: #64748b;
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.button-example-section {
-  margin-bottom: 30px;
-}
-
-.button-example-section-title {
-  font-size: 16px;
-  font-weight: 600;
+  gap: 3px;
   margin-bottom: 8px;
 }
 
-.button-example-section-desc {
-  font-size: 13px;
-  color: #666666;
-  margin-bottom: 12px;
+.num-value-example-item:last-child {
+  margin-bottom: 0;
 }
 
-.segmented-control-example-root {
-  max-width: 420px;
+.num-value-example-note {
+  color: #6b7a8c;
+  font-size: 12px;
+}
+
+.button-with-dropdown-example-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
 
 .segmented-control-example-block {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
-.segmented-control-example-caption {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 6px;
+.segmented-control-example-block:last-child {
+  margin-bottom: 0;
 }
 
 .segmented-control-example-icon-text {

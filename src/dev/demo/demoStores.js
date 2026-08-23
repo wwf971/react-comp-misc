@@ -128,8 +128,44 @@ class StoreDemoPanel {
   }
 }
 
+// Ui state of one JsonDisplay block: pretty/one-line mode and indent width.
+class StoreJsonDisplay {
+  indentSize = 2;
+
+  isCollapsed = false;
+
+  constructor({ indentSize = 2, isCollapsed = false } = {}) {
+    this.indentSize = indentSize;
+    this.isCollapsed = isCollapsed;
+    makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+  indentSizeSet(indentSize) {
+    if (!Number.isInteger(indentSize) || indentSize < 1 || indentSize > 8) {
+      return { code: -1, message: `Invalid indent size: ${indentSize}` };
+    }
+    this.indentSize = indentSize;
+    return { code: 0 };
+  }
+
+  collapsedSet(isCollapsed) {
+    this.isCollapsed = isCollapsed === true;
+    return { code: 0 };
+  }
+
+  handleEvent(eventType, eventData = {}) {
+    if (eventType === 'jsonIndentSizeSet') return this.indentSizeSet(eventData.indentSize);
+    if (eventType === 'jsonCollapsedSet') return this.collapsedSet(eventData.isCollapsed);
+    return { code: -1, message: `Unsupported event: ${eventType}` };
+  }
+}
+
 function createStoreExampleGroup(options) {
   return new StoreExampleGroup(options);
+}
+
+function createStoreJsonDisplay(options) {
+  return new StoreJsonDisplay(options);
 }
 
 function createStoreDemoPanel() {
@@ -161,8 +197,10 @@ const useDemoEventDispatch = () => {
 export {
   StoreExampleGroup,
   StoreDemoPanel,
+  StoreJsonDisplay,
   createStoreExampleGroup,
   createStoreDemoPanel,
+  createStoreJsonDisplay,
   DemoPanelContext,
   ExampleGroupContext,
   ExplanationPlainContext,

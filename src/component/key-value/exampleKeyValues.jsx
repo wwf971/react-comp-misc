@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useLayoutEffect, useRef, useMemo } from 'react';
 import { makeAutoObservable, runInAction } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import KeyValues from './KeyValues.jsx';
@@ -9,6 +9,39 @@ import { createValueCompOnEvent } from '../value/valueCompEvent.js';
 import PlusIcon from '../../icon/PlusIcon.jsx';
 import DeleteIcon from '../../icon/DeleteIcon.jsx';
 import { UpIcon, DownIcon } from '../../icon/DirectionIcons.jsx';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  Controls,
+  ControlItem,
+  CompDemoArea,
+  MessageAndOutputs,
+  JsonDisplay,
+} from '../../dev/demo/DemoLayout.jsx';
+import { ExampleGroup, ExampleStackVertical } from '../../dev/demo/ExampleGroup.jsx';
+import { ClickingOutsidePanel } from './exampleClickingOutside.jsx';
+
+function createStoreKeyValuesExampleChrome() {
+  return makeAutoObservable({
+    isAutoUpdate: false,
+    autoUpdateCounter: 0,
+    selectedActionRowId: null,
+    actionButtonsTop: 0,
+    autoUpdateToggle() {
+      this.isAutoUpdate = !this.isAutoUpdate;
+    },
+    autoUpdateTick() {
+      this.autoUpdateCounter += 1;
+    },
+    selectedActionRowIdSet(selectedActionRowId) {
+      this.selectedActionRowId = selectedActionRowId;
+    },
+    actionButtonsTopSet(actionButtonsTop) {
+      this.actionButtonsTop = actionButtonsTop;
+    },
+  }, {}, { autoBind: true });
+}
 
 const DictExamplesPanel = observer(() => {
   const wait = (ms) => new Promise((resolve) => {
@@ -54,10 +87,7 @@ const DictExamplesPanel = observer(() => {
     return makeAutoObservable(store, {}, { deep: true });
   });
 
-  const [isAutoUpdate, setIsAutoUpdate] = useState(false);
-  const [autoUpdateCounter, setAutoUpdateCounter] = useState(0);
-  const [selectedActionRowId, setSelectedActionRowId] = useState(null);
-  const [actionButtonsTop, setActionButtonsTop] = useState(0);
+  const storeChrome = useMemo(() => createStoreKeyValuesExampleChrome(), []);
   const actionPanelRef = useRef(null);
   const actionButtonsRef = useRef(null);
   const nextActionRowIdRef = useRef(4);
@@ -96,23 +126,20 @@ const DictExamplesPanel = observer(() => {
   };
 
   useEffect(() => {
-    if (!isAutoUpdate) return;
+    if (!storeChrome.isAutoUpdate) return;
     
     const interval = setInterval(() => {
-      setAutoUpdateCounter(prev => {
-        const next = prev + 1;
-        runInAction(() => {
-          const ageItem = store.basicData.find(item => item.key === 'age');
-          if (ageItem) {
-            ageItem.value = String(30 + next);
-          }
-        });
-        return next;
+      runInAction(() => {
+        storeChrome.autoUpdateTick();
+        const ageItem = store.basicData.find(item => item.key === 'age');
+        if (ageItem) {
+          ageItem.value = String(30 + storeChrome.autoUpdateCounter);
+        }
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isAutoUpdate, store.basicData]);
+  }, [storeChrome.isAutoUpdate, store, storeChrome]);
 
   const handleAddEntry = () => {
     runInAction(() => {
@@ -159,10 +186,10 @@ const DictExamplesPanel = observer(() => {
   };
 
   const handleSelectedRowAction = async (action) => {
-    if (selectedActionRowId === null) return;
-    const selectedActionRowIndex = store.dataWithActions.findIndex((item) => item.id === selectedActionRowId);
+    if (storeChrome.selectedActionRowId === null) return;
+    const selectedActionRowIndex = store.dataWithActions.findIndex((item) => item.id === storeChrome.selectedActionRowId);
     if (selectedActionRowIndex < 0) {
-      setSelectedActionRowId(null);
+      storeChrome.selectedActionRowIdSet(null);
       return;
     }
     if (action === 'moveUp') {
@@ -187,33 +214,33 @@ const DictExamplesPanel = observer(() => {
     }
     if (action === 'addEntryAbove') {
       const result = await handleAction('addEntryAbove', {
-        rowId: selectedActionRowId
+        rowId: storeChrome.selectedActionRowId
       });
       if (result.code === 0 && result.rowId) {
-        setSelectedActionRowId(result.rowId);
+        storeChrome.selectedActionRowIdSet(result.rowId);
       }
       return;
     }
     if (action === 'addEntryBelow') {
       const result = await handleAction('addEntryBelow', {
-        rowId: selectedActionRowId
+        rowId: storeChrome.selectedActionRowId
       });
       if (result.code === 0 && result.rowId) {
-        setSelectedActionRowId(result.rowId);
+        storeChrome.selectedActionRowIdSet(result.rowId);
       }
       return;
     }
     const result = await handleAction(action, {
-      rowId: selectedActionRowId
+      rowId: storeChrome.selectedActionRowId
     });
     if (result.code === 0 && action === 'deleteEntry') {
-      setSelectedActionRowId(null);
+      storeChrome.selectedActionRowIdSet(null);
     }
   };
 
-  const selectedActionRowIndex = selectedActionRowId === null
+  const selectedActionRowIndex = storeChrome.selectedActionRowId === null
     ? -1
-    : store.dataWithActions.findIndex((item) => item.id === selectedActionRowId);
+    : store.dataWithActions.findIndex((item) => item.id === storeChrome.selectedActionRowId);
   const isMoveUpDisabled = selectedActionRowIndex <= 0;
   const isMoveDownDisabled = selectedActionRowIndex < 0 || selectedActionRowIndex >= store.dataWithActions.length - 1;
 
@@ -226,8 +253,8 @@ const DictExamplesPanel = observer(() => {
     const rowRect = selectedRowElement.getBoundingClientRect();
     const actionGroupHeight = actionButtonsRef.current?.offsetHeight || 30;
     const centeredTop = rowRect.top - panelRect.top + Math.max(0, (rowRect.height - actionGroupHeight) / 2);
-    setActionButtonsTop(centeredTop);
-  }, [selectedActionRowIndex]);
+    storeChrome.actionButtonsTopSet(centeredTop);
+  }, [selectedActionRowIndex, storeChrome]);
 
   useLayoutEffect(() => {
     syncActionButtonsTop();
@@ -291,333 +318,340 @@ const DictExamplesPanel = observer(() => {
 
   const handleActionPanelEvent = useCallback((eventType, eventData) => {
     if (eventType === 'selectedRowIdChange') {
-      setSelectedActionRowId(eventData.selectedRowId);
+      storeChrome.selectedActionRowIdSet(eventData.selectedRowId);
     }
-  }, []);
+  }, [storeChrome]);
 
   return (
-    <div style={{ maxWidth: '900px', padding: '12px' }}>
-      <div style={{ marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
-        KeyValues - Basic
-      </div>
-      
-      <div style={{ marginBottom: '12px', padding: '10px', background: '#e3f2fd', borderRadius: '2px', fontSize: '13px' }}>
-        Edit values directly or use buttons. Data mutates in-place.
-      </div>
+    <DemoPanel>
+      <Explanation titleText="KeyValues">
+        Key-value pairs display with MobX support for in-place mutations.
+      </Explanation>
 
-      <div style={{ marginBottom: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <button
-          onClick={handleIncrementAge}
-          style={{ padding: '6px 12px', fontSize: '13px', cursor: 'pointer', border: '1px solid #ccc', background: '#fff', borderRadius: '2px' }}
-        >
-          Increment Age
-        </button>
-        <button
-          onClick={handleChangeName}
-          style={{ padding: '6px 12px', fontSize: '13px', cursor: 'pointer', border: '1px solid #ccc', background: '#fff', borderRadius: '2px' }}
-        >
-          Change Name
-        </button>
-        <button
-          onClick={() => setIsAutoUpdate(!isAutoUpdate)}
-          style={{ padding: '6px 12px', fontSize: '13px', cursor: 'pointer', border: '1px solid #ccc', background: isAutoUpdate ? '#4caf50' : '#fff', color: isAutoUpdate ? '#fff' : '#000', borderRadius: '2px' }}
-        >
-          {isAutoUpdate ? 'Stop' : 'Start'} Auto Update
-        </button>
-      </div>
+      <ExampleGroup title="Variants">
+        <ExampleStackVertical>
+          <Example title="KeyValues - Basic">
+            <Explanation>
+              Edit values directly or use buttons. Data mutates in-place.
+            </Explanation>
+            <Controls>
+              <ControlItem>
+                <button type="button" className="demo-button" onClick={handleIncrementAge}>
+                  Increment Age
+                </button>
+                <button type="button" className="demo-button" onClick={handleChangeName}>
+                  Change Name
+                </button>
+                <button
+                  type="button"
+                  className={`demo-button${storeChrome.isAutoUpdate ? ' is-active' : ''}`}
+                  onClick={() => storeChrome.autoUpdateToggle()}
+                >
+                  {storeChrome.isAutoUpdate ? 'Stop' : 'Start'} Auto Update
+                </button>
+              </ControlItem>
+            </Controls>
+            <CompDemoArea>
+              <KeyValues
+                data={{ rows: store.basicData }}
+                config={{ isKeyEditable: true }}
+                onEvent={handleBasicCellUpdate}
+              />
+            </CompDemoArea>
+          </Example>
 
-      <KeyValues
-        data={{ rows: store.basicData }}
-        config={{ isKeyEditable: true }}
-        onEvent={handleBasicCellUpdate}
-      />
+          <Example title="KeyValues - Column Alignment Options">
+            <Explanation>
+              alignCol controls whether all rows share one key column width and show a vertical divider between key and value.
+              This is different from keyCellContentAlign, which only controls text alignment inside each key cell.
+            </Explanation>
+            <Explanation>
+              Auto width (keyColWidth=&quot;min&quot;). Key column width follows the widest key. Vertical divider is shown.
+            </Explanation>
+            <CompDemoArea>
+              <KeyValues
+                data={{ rows: store.basicData }}
+                config={{ keyColWidth: 'min' }}
+              />
+            </CompDemoArea>
+            <Explanation>
+              Fixed width (keyColWidth=&quot;200px&quot;). All rows use the same key column width. Vertical divider is shown.
+            </Explanation>
+            <CompDemoArea>
+              <KeyValues
+                data={{ rows: store.basicData }}
+                config={{ keyColWidth: '200px' }}
+              />
+            </CompDemoArea>
+          </Example>
 
-      <div style={{ marginTop: '20px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
-        KeyValues - Column Alignment Options
-      </div>
+          <Example title="KeyValues - Key Cell Content Alignment">
+            <Explanation>
+              Default is right. With fixed width and clip mode, long key text is hidden instead of wrapping.
+            </Explanation>
+            <CompDemoArea>
+              <KeyValues
+                data={{
+                  rows: [
+                    { key: 'short', value: 'Default right alignment' },
+                    { key: 'very_long_key_name_hidden_by_fixed_width', value: 'Long key is clipped' },
+                  ],
+                }}
+                config={{ keyColWidth: '130px' }}
+              />
+            </CompDemoArea>
+            <Explanation>
+              Left
+            </Explanation>
+            <CompDemoArea>
+              <KeyValues
+                data={{
+                  rows: [
+                    { key: 'short', value: 'Left aligned key' },
+                    { key: 'very_long_key_name_hidden_by_fixed_width', value: 'Long key is clipped' },
+                  ],
+                }}
+                config={{ keyColWidth: '130px', keyCellContentAlign: 'left' }}
+              />
+            </CompDemoArea>
+            <Explanation>
+              Center
+            </Explanation>
+            <CompDemoArea>
+              <KeyValues
+                data={{
+                  rows: [
+                    { key: 'short', value: 'Center aligned key' },
+                    { key: 'very_long_key_name_hidden_by_fixed_width', value: 'Long key is clipped' },
+                  ],
+                }}
+                config={{ keyColWidth: '130px', keyCellContentAlign: 'center' }}
+              />
+            </CompDemoArea>
+            <Explanation>
+              No column alignment (alignCol=false). Each row sizes its key cell independently, so key columns do not line up across rows. Vertical divider is not shown in this mode.
+            </Explanation>
+            <CompDemoArea>
+              <KeyValues
+                data={{ rows: store.basicData }}
+                config={{ alignCol: false }}
+              />
+            </CompDemoArea>
+          </Example>
 
-      <div style={{ marginBottom: '10px', fontSize: '12px', color: '#666' }}>
-        alignCol controls whether all rows share one key column width and show a vertical divider between key and value.
-        This is different from keyCellContentAlign, which only controls text alignment inside each key cell.
-      </div>
-      
-      <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        Auto width (keyColWidth="min"). Key column width follows the widest key. Vertical divider is shown.
-      </div>
-      <KeyValues
-        data={{ rows: store.basicData }}
-        config={{ keyColWidth: 'min' }}
-      />
+          <Example title="KeyValuesComp - With Custom Components">
+            <Explanation>
+              Custom components with info icons
+            </Explanation>
+            <CompDemoArea>
+              <KeyValuesComp
+                data={{ rows: store.dataWithComp }}
+                config={{ isValueEditable: true, compResolveFn: getComp }}
+              />
+            </CompDemoArea>
+          </Example>
 
-      <div style={{ marginTop: '16px', marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        Fixed width (keyColWidth="200px"). All rows use the same key column width. Vertical divider is shown.
-      </div>
-      <KeyValues
-        data={{ rows: store.basicData }}
-        config={{ keyColWidth: '200px' }}
-      />
+          <Example title="KeyValuesComp - Row Selection and Quick Actions">
+            <Explanation>
+              Select a row to show quick actions on the right, or right-click a value for the context menu
+            </Explanation>
+            <CompDemoArea>
+              <div ref={actionPanelRef} style={{ position: 'relative', paddingRight: '126px' }}>
+                <KeyValuesComp
+                  data={{
+                    rows: store.dataWithActions,
+                    selectedRowId: storeChrome.selectedActionRowId,
+                  }}
+                  config={{
+                    isValueEditable: true,
+                    compResolveFn: getComp,
+                    selectionMode: 'single',
+                  }}
+                  onEvent={handleActionPanelEvent}
+                />
 
-      <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
-        KeyValues - Key Cell Content Alignment
-      </div>
+                {selectedActionRowIndex >= 0 && (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0px',
+                    position: 'absolute',
+                    right: '0px',
+                    top: `${storeChrome.actionButtonsTop}px`,
+                    padding: '1px 2px',
+                    border: '1px solid #ccc',
+                    borderRadius: '3px',
+                    background: '#fff'
+                  }}
+                    ref={actionButtonsRef}
+                    onMouseDown={(event) => {
+                      event.stopPropagation();
+                    }}
+                  >
+                    <button
+                      onClick={() => handleSelectedRowAction('addEntryAbove')}
+                      title="Add entry above selected row"
+                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: 'pointer' }}
+                      onMouseEnter={(event) => {
+                        event.currentTarget.style.background = '#ededed';
+                      }}
+                      onMouseLeave={(event) => {
+                        event.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <span style={{ position: 'relative', display: 'inline-flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                        <PlusIcon width={16} height={16} />
+                        <span style={{ position: 'absolute', top: '-2px', right: '-5px', lineHeight: 0 }}>
+                          <UpIcon width={9} height={9} />
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => handleSelectedRowAction('addEntryBelow')}
+                      title="Add entry below selected row"
+                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: 'pointer' }}
+                      onMouseEnter={(event) => {
+                        event.currentTarget.style.background = '#ededed';
+                      }}
+                      onMouseLeave={(event) => {
+                        event.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <span style={{ position: 'relative', display: 'inline-flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
+                        <PlusIcon width={16} height={16} />
+                        <span style={{ position: 'absolute', top: '-2px', right: '-5px', lineHeight: 0 }}>
+                          <DownIcon width={9} height={9} />
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => handleSelectedRowAction('moveUp')}
+                      title="Move selected row up"
+                      disabled={isMoveUpDisabled}
+                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: isMoveUpDisabled ? 'default' : 'pointer', opacity: isMoveUpDisabled ? 0.45 : 1 }}
+                      onMouseEnter={(event) => {
+                        if (isMoveUpDisabled) return;
+                        event.currentTarget.style.background = '#ededed';
+                      }}
+                      onMouseLeave={(event) => {
+                        event.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <UpIcon width={16} height={16} />
+                    </button>
+                    <button
+                      onClick={() => handleSelectedRowAction('moveDown')}
+                      title="Move selected row down"
+                      disabled={isMoveDownDisabled}
+                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: isMoveDownDisabled ? 'default' : 'pointer', opacity: isMoveDownDisabled ? 0.45 : 1 }}
+                      onMouseEnter={(event) => {
+                        if (isMoveDownDisabled) return;
+                        event.currentTarget.style.background = '#ededed';
+                      }}
+                      onMouseLeave={(event) => {
+                        event.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <DownIcon width={16} height={16} />
+                    </button>
+                    <button
+                      onClick={() => handleSelectedRowAction('deleteEntry')}
+                      title="Delete selected row"
+                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#a33', cursor: 'pointer' }}
+                      onMouseEnter={(event) => {
+                        event.currentTarget.style.background = '#f3e6e6';
+                      }}
+                      onMouseLeave={(event) => {
+                        event.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <DeleteIcon width={16} height={16} />
+                    </button>
+                  </div>
+                )}
 
-      <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        Default is right. With fixed width and clip mode, long key text is hidden instead of wrapping.
-      </div>
-      <KeyValues
-        data={{
-          rows: [
-            { key: 'short', value: 'Default right alignment' },
-            { key: 'very_long_key_name_hidden_by_fixed_width', value: 'Long key is clipped' },
-          ],
-        }}
-        config={{ keyColWidth: '130px' }}
-      />
+                <div style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  marginTop: '8px',
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                  color: '#666',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  transition: 'all 0.2s',
+                  width: 'fit-content'
+                }}
+                  onClick={handleAddEntry}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#333';
+                    e.currentTarget.style.borderColor = '#999';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#666';
+                    e.currentTarget.style.borderColor = '#ccc';
+                  }}
+                >
+                  <PlusIcon width={16} height={16} />
+                  <span style={{ fontSize: '13px' }}>Add Entry</span>
+                </div>
+              </div>
+            </CompDemoArea>
+          </Example>
 
-      <div style={{ marginTop: '12px', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
-        Left
-      </div>
-      <KeyValues
-        data={{
-          rows: [
-            { key: 'short', value: 'Left aligned key' },
-            { key: 'very_long_key_name_hidden_by_fixed_width', value: 'Long key is clipped' },
-          ],
-        }}
-        config={{ keyColWidth: '130px', keyCellContentAlign: 'left' }}
-      />
+          <Example title="KeyValues - Content Overflow: wrap vs clip">
+            <Explanation>
+              Clip (default)
+            </Explanation>
+            <CompDemoArea>
+              <KeyValues
+                data={{
+                  rows: [
+                    { key: 'short_key', value: 'Short value' },
+                    { key: 'a_very_long_key_name_that_overflows', value: 'A value that is also quite long and would normally overflow the available cell width' },
+                  ],
+                }}
+                config={{ keyColWidth: '120px' }}
+              />
+            </CompDemoArea>
+            <Explanation>
+              Wrap (isWrap=true)
+            </Explanation>
+            <CompDemoArea>
+              <KeyValues
+                data={{
+                  rows: [
+                    { key: 'short_key', value: 'Short value' },
+                    { key: 'a_very_long_key_name_that_overflows', value: 'A value that is also quite long and would normally overflow the available cell width' },
+                  ],
+                }}
+                config={{ keyColWidth: '120px', isWrap: true }}
+              />
+            </CompDemoArea>
+          </Example>
 
-      <div style={{ marginTop: '12px', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
-        Center
-      </div>
-      <KeyValues
-        data={{
-          rows: [
-            { key: 'short', value: 'Center aligned key' },
-            { key: 'very_long_key_name_hidden_by_fixed_width', value: 'Long key is clipped' },
-          ],
-        }}
-        config={{ keyColWidth: '130px', keyCellContentAlign: 'center' }}
-      />
+          <Example title="KeyValuesComp - Draggable Divider">
+            <Explanation>
+              Hover the divider line and drag to resize columns
+            </Explanation>
+            <CompDemoArea>
+              <KeyValuesComp
+                data={{ rows: store.basicData }}
+                config={{ isKeyEditable: true, isDividerDraggable: true }}
+                onEvent={handleBasicCellUpdate}
+              />
+            </CompDemoArea>
+          </Example>
 
-      <div style={{ marginTop: '16px', marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        No column alignment (alignCol=false). Each row sizes its key cell independently, so key columns do not line up across rows. Vertical divider is not shown in this mode.
-      </div>
-      <KeyValues
-        data={{ rows: store.basicData }}
-        config={{ alignCol: false }}
-      />
+          <ClickingOutsidePanel />
+        </ExampleStackVertical>
+      </ExampleGroup>
 
-      <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
-        KeyValuesComp - With Custom Components
-      </div>
-
-      <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        Custom components with info icons
-      </div>
-      <KeyValuesComp
-        data={{ rows: store.dataWithComp }}
-        config={{ isValueEditable: true, compResolveFn: getComp }}
-      />
-
-      <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
-        KeyValuesComp - Row Selection and Quick Actions
-      </div>
-
-      <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        Select a row to show quick actions on the right, or right-click a value for the context menu
-      </div>
-      
-      <div ref={actionPanelRef} style={{ position: 'relative', paddingRight: '126px' }}>
-        <KeyValuesComp
-          data={{
-            rows: store.dataWithActions,
-            selectedRowId: selectedActionRowId,
-          }}
-          config={{
-            isValueEditable: true,
-            compResolveFn: getComp,
-            selectionMode: 'single',
-          }}
-          onEvent={handleActionPanelEvent}
-        />
-
-        {selectedActionRowIndex >= 0 && (
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0px',
-            position: 'absolute',
-            right: '0px',
-            top: `${actionButtonsTop}px`,
-            padding: '1px 2px',
-            border: '1px solid #ccc',
-            borderRadius: '3px',
-            background: '#fff'
-          }}
-            ref={actionButtonsRef}
-            onMouseDown={(event) => {
-              event.stopPropagation();
-            }}
-          >
-            <button
-              onClick={() => handleSelectedRowAction('addEntryAbove')}
-              title="Add entry above selected row"
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: 'pointer' }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.background = '#ededed';
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <span style={{ position: 'relative', display: 'inline-flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
-                <PlusIcon width={16} height={16} />
-                <span style={{ position: 'absolute', top: '-2px', right: '-5px', lineHeight: 0 }}>
-                  <UpIcon width={9} height={9} />
-                </span>
-              </span>
-            </button>
-            <button
-              onClick={() => handleSelectedRowAction('addEntryBelow')}
-              title="Add entry below selected row"
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: 'pointer' }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.background = '#ededed';
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <span style={{ position: 'relative', display: 'inline-flex', width: '16px', height: '16px', alignItems: 'center', justifyContent: 'center' }}>
-                <PlusIcon width={16} height={16} />
-                <span style={{ position: 'absolute', top: '-2px', right: '-5px', lineHeight: 0 }}>
-                  <DownIcon width={9} height={9} />
-                </span>
-              </span>
-            </button>
-            <button
-              onClick={() => handleSelectedRowAction('moveUp')}
-              title="Move selected row up"
-              disabled={isMoveUpDisabled}
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: isMoveUpDisabled ? 'default' : 'pointer', opacity: isMoveUpDisabled ? 0.45 : 1 }}
-              onMouseEnter={(event) => {
-                if (isMoveUpDisabled) return;
-                event.currentTarget.style.background = '#ededed';
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <UpIcon width={16} height={16} />
-            </button>
-            <button
-              onClick={() => handleSelectedRowAction('moveDown')}
-              title="Move selected row down"
-              disabled={isMoveDownDisabled}
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#555', cursor: isMoveDownDisabled ? 'default' : 'pointer', opacity: isMoveDownDisabled ? 0.45 : 1 }}
-              onMouseEnter={(event) => {
-                if (isMoveDownDisabled) return;
-                event.currentTarget.style.background = '#ededed';
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <DownIcon width={16} height={16} />
-            </button>
-            <button
-              onClick={() => handleSelectedRowAction('deleteEntry')}
-              title="Delete selected row"
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '24px', padding: '0', border: 'none', borderRadius: '2px', background: 'transparent', color: '#a33', cursor: 'pointer' }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.background = '#f3e6e6';
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <DeleteIcon width={16} height={16} />
-            </button>
-          </div>
-        )}
-        
-        <div style={{ 
-          display: 'inline-flex', 
-          alignItems: 'center', 
-          gap: '6px',
-          marginTop: '8px',
-          padding: '6px 10px',
-          cursor: 'pointer',
-          color: '#666',
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-          transition: 'all 0.2s',
-          width: 'fit-content'
-        }}
-          onClick={handleAddEntry}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#333';
-            e.currentTarget.style.borderColor = '#999';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#666';
-            e.currentTarget.style.borderColor = '#ccc';
-          }}
-        >
-          <PlusIcon width={16} height={16} />
-          <span style={{ fontSize: '13px' }}>Add Entry</span>
-        </div>
-      </div>
-
-      <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
-        KeyValues - Content Overflow: wrap vs clip
-      </div>
-
-      <div style={{ marginBottom: '4px', fontSize: '12px', color: '#666' }}>
-        Clip (default)
-      </div>
-      <KeyValues
-        data={{
-          rows: [
-            { key: 'short_key', value: 'Short value' },
-            { key: 'a_very_long_key_name_that_overflows', value: 'A value that is also quite long and would normally overflow the available cell width' },
-          ],
-        }}
-        config={{ keyColWidth: '120px' }}
-      />
-
-      <div style={{ marginTop: '12px', marginBottom: '4px', fontSize: '12px', color: '#666' }}>
-        Wrap (isWrap=true)
-      </div>
-      <KeyValues
-        data={{
-          rows: [
-            { key: 'short_key', value: 'Short value' },
-            { key: 'a_very_long_key_name_that_overflows', value: 'A value that is also quite long and would normally overflow the available cell width' },
-          ],
-        }}
-        config={{ keyColWidth: '120px', isWrap: true }}
-      />
-
-      <div style={{ marginTop: '24px', marginBottom: '6px', fontSize: '14px', fontWeight: 'bold' }}>
-        KeyValuesComp - Draggable Divider
-      </div>
-
-      <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
-        Hover the divider line and drag to resize columns
-      </div>
-      <KeyValuesComp
-        data={{ rows: store.basicData }}
-        config={{ isKeyEditable: true, isDividerDraggable: true }}
-        onEvent={handleBasicCellUpdate}
-      />
-
-      <div className="keyvalues-example-data-panel">
-        <div className="keyvalues-example-data-title">Current Data:</div>
-        <div className="keyvalues-example-json-text">{JSON.stringify(store.basicData, null, 2)}</div>
-      </div>
-    </div>
+      <MessageAndOutputs labelText="Current Data:">
+        <JsonDisplay data={store.basicData} />
+      </MessageAndOutputs>
+    </DemoPanel>
   );
 });
 

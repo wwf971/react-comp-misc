@@ -1,6 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { makeAutoObservable, runInAction } from 'mobx';
+import { observer } from 'mobx-react-lite';
 import Radar from './Radar.jsx';
 import BoolSlider from '../button/BoolSlider.jsx';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  Controls,
+  ControlItem,
+  CompDemoArea,
+  MessageAndOutputs,
+} from '../../dev/demo/DemoLayout.jsx';
 import './example.css';
 
 const DEFAULT_AXIS_ITEMS = [
@@ -57,234 +68,213 @@ const CornerPlain = ({ axis }) => (
   <div className="radar-demo-corner-plain">{axis.label}</div>
 );
 
-const RadarExamplesPanel = () => {
-  const [axisCount, setAxisCount] = useState(5);
-  const [radarData, setRadarData] = useState(() => ({
-    axisItems: keepAxisCount(DEFAULT_AXIS_ITEMS, 5),
-  }));
-  const [radarConfig, setRadarConfig] = useState(() => ({
-    size: 280,
-    ringCount: 5,
-    rotationOffsetDeg: 0,
-    isShowValues: true,
-    isValueEditable: true,
-    labelOffset: 18,
-  }));
-  const [isApplying, setIsApplying] = useState(false);
-  const [lastFeedback, setLastFeedback] = useState('');
+function getCornerComp(componentKey) {
+  if (componentKey === 'tag') return CornerTag;
+  if (componentKey === 'badge') return CornerBadge;
+  if (componentKey === 'plain') return CornerPlain;
+  return null;
+}
 
-  const axisPreview = useMemo(
-    () => keepAxisCount(radarData.axisItems || [], axisCount),
-    [radarData.axisItems, axisCount],
-  );
+function createStoreRadarDemo() {
+  return makeAutoObservable({
+    axisCount: 5,
+    radarData: {
+      axisItems: keepAxisCount(DEFAULT_AXIS_ITEMS, 5),
+    },
+    radarConfig: {
+      size: 280,
+      ringCount: 5,
+      rotationOffsetDeg: 0,
+      isShowValues: true,
+      isValueEditable: true,
+      labelOffset: 18,
+    },
+    isApplying: false,
+    lastFeedback: '',
+    get axisPreview() {
+      return keepAxisCount(this.radarData.axisItems || [], this.axisCount);
+    },
+    async onEvent(eventType, eventData) {
+      if (eventType !== 'dataChangeRequest') {
+        return { code: 0 };
+      }
+      const requestType = eventData?.requestType;
+      const requestData = eventData?.requestData || {};
 
-  const getCornerComp = (componentKey) => {
-    if (componentKey === 'tag') return CornerTag;
-    if (componentKey === 'badge') return CornerBadge;
-    if (componentKey === 'plain') return CornerPlain;
-    return null;
-  };
-
-  const onEvent = async (eventType, eventData) => {
-    if (eventType !== 'dataChangeRequest') {
-      return { code: 0 };
-    }
-    const requestType = eventData?.requestType;
-    const requestData = eventData?.requestData || {};
-
-    if (requestType === 'axis-count') {
-      const nextCount = Math.max(3, Math.min(12, Math.floor(toSafeNumber(requestData?.nextAxisCount, axisCount))));
-      setAxisCount(nextCount);
-      setRadarData((current) => ({
-        ...current,
-        axisItems: keepAxisCount(current.axisItems || [], nextCount),
-      }));
-      setLastFeedback(`Axis count updated: ${nextCount}`);
-      return { code: 0 };
-    }
-
-    if (requestType === 'rotation-offset') {
-      const nextOffset = toSafeNumber(requestData?.nextOffsetDeg, 0);
-      setRadarConfig((current) => ({
-        ...current,
-        rotationOffsetDeg: nextOffset,
-      }));
-      setLastFeedback(`Rotation updated: ${nextOffset} deg`);
-      return { code: 0 };
-    }
-
-    if (requestType === 'toggle-show-values') {
-      setRadarConfig((current) => ({
-        ...current,
-        isShowValues: requestData?.nextIsShowValues === true,
-      }));
-      return { code: 0 };
-    }
-
-    if (requestType === 'toggle-value-editable') {
-      setRadarConfig((current) => ({
-        ...current,
-        isValueEditable: requestData?.nextIsValueEditable === true,
-      }));
-      return { code: 0 };
-    }
-
-    if (requestType === 'update-axis') {
-      const targetIndex = requestData?.index;
-      if (targetIndex === undefined || targetIndex < 0 || targetIndex >= axisPreview.length) {
-        return { code: -1, message: 'invalid axis index' };
+      if (requestType === 'axis-count') {
+        const nextCount = Math.max(3, Math.min(12, Math.floor(toSafeNumber(requestData?.nextAxisCount, this.axisCount))));
+        this.axisCount = nextCount;
+        this.radarData.axisItems = keepAxisCount(this.radarData.axisItems || [], nextCount);
+        this.lastFeedback = `Axis count updated: ${nextCount}`;
+        return { code: 0 };
       }
 
-      const current = axisPreview[targetIndex];
-      const nextAxis = {
-        ...current,
-        ...(requestData?.patch || {}),
-      };
+      if (requestType === 'rotation-offset') {
+        const nextOffset = toSafeNumber(requestData?.nextOffsetDeg, 0);
+        this.radarConfig.rotationOffsetDeg = nextOffset;
+        this.lastFeedback = `Rotation updated: ${nextOffset} deg`;
+        return { code: 0 };
+      }
 
-      const nextMin = toSafeNumber(nextAxis.min, 0);
-      const nextMax = toSafeNumber(nextAxis.max, 1);
-      const nextValue = toSafeNumber(nextAxis.value, nextMin);
+      if (requestType === 'toggle-show-values') {
+        this.radarConfig.isShowValues = requestData?.nextIsShowValues === true;
+        return { code: 0 };
+      }
 
-      if (nextMax <= nextMin) return { code: -1, message: 'max must be greater than min' };
-      if (nextValue < nextMin || nextValue > nextMax) return { code: -1, message: 'value must be in range' };
+      if (requestType === 'toggle-value-editable') {
+        this.radarConfig.isValueEditable = requestData?.nextIsValueEditable === true;
+        return { code: 0 };
+      }
 
-      setIsApplying(true);
-      await new Promise((resolve) => setTimeout(resolve, 120));
-      setRadarData((currentData) => {
-        const nextList = keepAxisCount(currentData.axisItems || [], axisCount);
-        nextList[targetIndex] = {
-          ...nextAxis,
-          min: nextMin,
-          max: nextMax,
-          value: nextValue,
+      if (requestType === 'update-axis') {
+        const targetIndex = requestData?.index;
+        if (targetIndex === undefined || targetIndex < 0 || targetIndex >= this.axisPreview.length) {
+          return { code: -1, message: 'invalid axis index' };
+        }
+
+        const current = this.axisPreview[targetIndex];
+        const nextAxis = {
+          ...current,
+          ...(requestData?.patch || {}),
         };
-        return {
-          ...currentData,
-          axisItems: nextList,
-        };
-      });
-      setIsApplying(false);
-      setLastFeedback(`Axis ${targetIndex + 1} updated`);
-      return { code: 0 };
-    }
 
-    if (requestType === 'update-axis-value') {
-      const targetIndex = requestData?.index;
-      const nextValueInput = requestData?.nextValue;
-      if (targetIndex === undefined || targetIndex < 0 || targetIndex >= axisPreview.length) {
-        return { code: -1, message: 'invalid axis index' };
+        const nextMin = toSafeNumber(nextAxis.min, 0);
+        const nextMax = toSafeNumber(nextAxis.max, 1);
+        const nextValue = toSafeNumber(nextAxis.value, nextMin);
+
+        if (nextMax <= nextMin) return { code: -1, message: 'max must be greater than min' };
+        if (nextValue < nextMin || nextValue > nextMax) return { code: -1, message: 'value must be in range' };
+
+        this.isApplying = true;
+        await new Promise((resolve) => setTimeout(resolve, 120));
+        runInAction(() => {
+          const nextList = keepAxisCount(this.radarData.axisItems || [], this.axisCount);
+          nextList[targetIndex] = {
+            ...nextAxis,
+            min: nextMin,
+            max: nextMax,
+            value: nextValue,
+          };
+          this.radarData.axisItems = nextList;
+          this.isApplying = false;
+          this.lastFeedback = `Axis ${targetIndex + 1} updated`;
+        });
+        return { code: 0 };
       }
-      const targetAxis = axisPreview[targetIndex];
-      const nextValue = toSafeNumber(nextValueInput, targetAxis.value);
-      if (nextValue < targetAxis.min || nextValue > targetAxis.max) {
-        return { code: -1, message: 'value must be in range' };
-      }
-      setRadarData((currentData) => {
-        const nextList = keepAxisCount(currentData.axisItems || [], axisCount);
+
+      if (requestType === 'update-axis-value') {
+        const targetIndex = requestData?.index;
+        const nextValueInput = requestData?.nextValue;
+        if (targetIndex === undefined || targetIndex < 0 || targetIndex >= this.axisPreview.length) {
+          return { code: -1, message: 'invalid axis index' };
+        }
+        const targetAxis = this.axisPreview[targetIndex];
+        const nextValue = toSafeNumber(nextValueInput, targetAxis.value);
+        if (nextValue < targetAxis.min || nextValue > targetAxis.max) {
+          return { code: -1, message: 'value must be in range' };
+        }
+        const nextList = keepAxisCount(this.radarData.axisItems || [], this.axisCount);
         const currentAxis = nextList[targetIndex];
         nextList[targetIndex] = {
           ...currentAxis,
           value: nextValue,
         };
-        return {
-          ...currentData,
-          axisItems: nextList,
-        };
-      });
-      return { code: 0 };
-    }
+        this.radarData.axisItems = nextList;
+        return { code: 0 };
+      }
 
-    return { code: 0 };
-  };
+      return { code: 0 };
+    },
+  }, {}, { autoBind: true });
+}
+
+const RadarExamplesPanel = observer(function RadarExamplesPanel({ store }) {
+  const storeOwn = useMemo(() => (store ? null : createStoreRadarDemo()), [store]);
+  const storeUsed = store || storeOwn;
 
   return (
-    <div className="radar-demo-root">
-      <div className="radar-demo-block">
-        <div className="radar-demo-title">Radar</div>
-        <div className="radar-demo-desc">
-          Render-only component. Parent controls axis count, rotation, ranges, values, and corner components.
-        </div>
-        <div className="radar-demo-chart-wrap">
-          <Radar
-            data={{
-              axisItems: axisPreview,
-            }}
-            config={{
-              ...radarConfig,
-              getComp: getCornerComp,
-            }}
-            onEvent={onEvent}
-          />
-        </div>
-        <div className="radar-demo-feedback">{isApplying ? 'Applying update...' : (lastFeedback || 'Ready')}</div>
-      </div>
-
-      <div className="radar-demo-block">
-        <div className="radar-demo-title">Controls</div>
-        <div className="radar-demo-row">
-          <div className="radar-demo-label">Axis Count</div>
-          <input
-            className="radar-demo-input"
-            type="number"
-            min="3"
-            max="12"
-            value={axisCount}
-            onChange={async (event) => {
-              await onEvent('dataChangeRequest', {
-                requestType: 'axis-count',
-                requestData: { nextAxisCount: event.target.value },
-              });
-            }}
-          />
-        </div>
-        <div className="radar-demo-row">
-          <div className="radar-demo-label">Rotation Offset (clockwise deg)</div>
-          <input
-            className="radar-demo-input"
-            type="number"
-            step="1"
-            value={radarConfig.rotationOffsetDeg}
-            onChange={async (event) => {
-              await onEvent('dataChangeRequest', {
-                requestType: 'rotation-offset',
-                requestData: { nextOffsetDeg: event.target.value },
-              });
-            }}
-          />
-        </div>
-        <div className="radar-demo-row">
-          <div className="radar-demo-label">Show Axis Values</div>
-          <div className="radar-demo-toggle-wrap">
-            <BoolSlider
-              checked={radarConfig.isShowValues}
-              onChange={async (nextIsShowValues) => {
-                await onEvent('dataChangeRequest', {
-                  requestType: 'toggle-show-values',
-                  requestData: { nextIsShowValues },
+    <DemoPanel>
+      <Explanation titleText="Radar">
+        Render-only component. Parent controls axis count, rotation, ranges, values, and corner components.
+      </Explanation>
+      <Example title="Radar">
+        <Controls>
+          <ControlItem labelText="Axis Count">
+            <input
+              className="radar-demo-input"
+              style={{ width: 72 }}
+              type="number"
+              min="3"
+              max="12"
+              value={storeUsed.axisCount}
+              onChange={async (event) => {
+                await storeUsed.onEvent('dataChangeRequest', {
+                  requestType: 'axis-count',
+                  requestData: { nextAxisCount: event.target.value },
                 });
               }}
             />
-            <div className="radar-demo-toggle-text">{radarConfig.isShowValues ? 'on' : 'off'}</div>
-          </div>
-        </div>
-        <div className="radar-demo-row">
-          <div className="radar-demo-label">Value Editable</div>
-          <div className="radar-demo-toggle-wrap">
-            <BoolSlider
-              checked={radarConfig.isValueEditable}
-              onChange={async (nextIsValueEditable) => {
-                await onEvent('dataChangeRequest', {
-                  requestType: 'toggle-value-editable',
-                  requestData: { nextIsValueEditable },
+          </ControlItem>
+          <ControlItem labelText="Rotation Offset (clockwise deg)">
+            <input
+              className="radar-demo-input"
+              style={{ width: 72 }}
+              type="number"
+              step="1"
+              value={storeUsed.radarConfig.rotationOffsetDeg}
+              onChange={async (event) => {
+                await storeUsed.onEvent('dataChangeRequest', {
+                  requestType: 'rotation-offset',
+                  requestData: { nextOffsetDeg: event.target.value },
                 });
               }}
             />
-            <div className="radar-demo-toggle-text">{radarConfig.isValueEditable ? 'on' : 'off'}</div>
+          </ControlItem>
+          <ControlItem labelText="Show Axis Values">
+            <span className="radar-demo-toggle-wrap">
+              <BoolSlider
+                checked={storeUsed.radarConfig.isShowValues}
+                onChange={async (nextIsShowValues) => {
+                  await storeUsed.onEvent('dataChangeRequest', {
+                    requestType: 'toggle-show-values',
+                    requestData: { nextIsShowValues },
+                  });
+                }}
+              />
+              <span className="radar-demo-toggle-text">{storeUsed.radarConfig.isShowValues ? 'on' : 'off'}</span>
+            </span>
+          </ControlItem>
+          <ControlItem labelText="Value Editable">
+            <span className="radar-demo-toggle-wrap">
+              <BoolSlider
+                checked={storeUsed.radarConfig.isValueEditable}
+                onChange={async (nextIsValueEditable) => {
+                  await storeUsed.onEvent('dataChangeRequest', {
+                    requestType: 'toggle-value-editable',
+                    requestData: { nextIsValueEditable },
+                  });
+                }}
+              />
+              <span className="radar-demo-toggle-text">{storeUsed.radarConfig.isValueEditable ? 'on' : 'off'}</span>
+            </span>
+          </ControlItem>
+        </Controls>
+        <CompDemoArea>
+          <div className="radar-demo-chart-wrap">
+            <Radar
+              data={{
+                axisItems: storeUsed.axisPreview,
+              }}
+              config={{
+                ...storeUsed.radarConfig,
+                getComp: getCornerComp,
+              }}
+              onEvent={storeUsed.onEvent}
+            />
           </div>
-        </div>
-
+        </CompDemoArea>
         <div className="radar-demo-axis-list">
-          {axisPreview.map((axis, index) => (
+          {storeUsed.axisPreview.map((axis, index) => (
             <div key={axis.id} className="radar-demo-axis-item">
               <div className="radar-demo-axis-head">Axis {index + 1}</div>
               <div className="radar-demo-grid">
@@ -293,7 +283,7 @@ const RadarExamplesPanel = () => {
                   type="text"
                   value={axis.label}
                   onChange={async (event) => {
-                    await onEvent('dataChangeRequest', {
+                    await storeUsed.onEvent('dataChangeRequest', {
                       requestType: 'update-axis',
                       requestData: {
                         index,
@@ -306,7 +296,7 @@ const RadarExamplesPanel = () => {
                   className="radar-demo-input"
                   value={axis.component || 'plain'}
                   onChange={async (event) => {
-                    await onEvent('dataChangeRequest', {
+                    await storeUsed.onEvent('dataChangeRequest', {
                       requestType: 'update-axis',
                       requestData: {
                         index,
@@ -324,14 +314,14 @@ const RadarExamplesPanel = () => {
                   type="number"
                   value={axis.min}
                   onChange={async (event) => {
-                    const result = await onEvent('dataChangeRequest', {
+                    const result = await storeUsed.onEvent('dataChangeRequest', {
                       requestType: 'update-axis',
                       requestData: {
                         index,
                         patch: { min: event.target.value },
                       },
                     });
-                    if (result.code !== 0) setLastFeedback(result.message || 'rejected');
+                    if (result.code !== 0) storeUsed.lastFeedback = result.message || 'rejected';
                   }}
                 />
                 <input
@@ -339,14 +329,14 @@ const RadarExamplesPanel = () => {
                   type="number"
                   value={axis.max}
                   onChange={async (event) => {
-                    const result = await onEvent('dataChangeRequest', {
+                    const result = await storeUsed.onEvent('dataChangeRequest', {
                       requestType: 'update-axis',
                       requestData: {
                         index,
                         patch: { max: event.target.value },
                       },
                     });
-                    if (result.code !== 0) setLastFeedback(result.message || 'rejected');
+                    if (result.code !== 0) storeUsed.lastFeedback = result.message || 'rejected';
                   }}
                 />
                 <input
@@ -354,14 +344,14 @@ const RadarExamplesPanel = () => {
                   type="number"
                   value={axis.value}
                   onChange={async (event) => {
-                    const result = await onEvent('dataChangeRequest', {
+                    const result = await storeUsed.onEvent('dataChangeRequest', {
                       requestType: 'update-axis',
                       requestData: {
                         index,
                         patch: { value: event.target.value },
                       },
                     });
-                    if (result.code !== 0) setLastFeedback(result.message || 'rejected');
+                    if (result.code !== 0) storeUsed.lastFeedback = result.message || 'rejected';
                   }}
                 />
               </div>
@@ -371,16 +361,19 @@ const RadarExamplesPanel = () => {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+        <MessageAndOutputs>
+          <span>{storeUsed.isApplying ? 'Applying update...' : (storeUsed.lastFeedback || 'Ready')}</span>
+        </MessageAndOutputs>
+      </Example>
+    </DemoPanel>
   );
-};
+});
 
 export const statExamples = {
   Radar: {
     component: null,
     description: 'Radar chart with dynamic axes and custom corner components',
-    example: () => <RadarExamplesPanel />,
+    example: RadarExamplesPanel,
     routeAliases: ['stat', 'chart'],
   },
 };

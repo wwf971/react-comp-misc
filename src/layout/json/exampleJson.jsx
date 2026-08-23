@@ -1,6 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import JsonComp from './JsonComp';
 import { parsePathToSegments, navigateToPath } from './pathUtils';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  CompDemoArea,
+  MessageAndOutputs,
+} from '../../dev/demo/DemoLayout.jsx';
+import { ExampleGroup, ExampleStackVertical } from '../../dev/demo/ExampleGroup.jsx';
 
 /**
  * Consolidated JSON examples in a single panel
@@ -647,98 +655,94 @@ const JsonExamplesPanel = () => {
   // Old handlers removed - using unified handler above
 
   return (
-    <div style={{ maxWidth: '900px' }}>
-      <h3 style={{ marginTop: 0, marginBottom: '8px' }}>1. Simple Nested Object (Read-Only)</h3>
-      <div style={{ background: '#f9f9f9', padding: '12px', borderRadius: '3px', marginBottom: '20px' }}>
-        <JsonComp 
-          data={simpleData} 
-          isEditable={false}
-        />
-      </div>
-
-      <h3 style={{ marginBottom: '8px' }}>2. Editable Values (Keys Read-Only)</h3>
-      <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '8px' }}>
-        Click on values to edit. Boolean values toggle on click. Press Enter or blur to submit. 20% simulated failure rate.
-      </p>
-      <div style={{ background: '#f9f9f9', padding: '12px', borderRadius: '3px', marginBottom: '20px' }}>
-        <JsonComp 
-          data={valueOnlyEditableData} 
-          isEditable={true}
-          isKeyEditable={false}
-          isValueEditable={true}
-          onChange={handleValueOnlyEditableChange}
-        />
-      </div>
-
-      <h3 style={{ marginBottom: '8px' }}>3. Complex Nested Structure with Arrays</h3>
-      <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '8px' }}>
-        Supports deeply nested objects and arrays. Keys and values are editable.
-      </p>
-      <div style={{ background: '#f9f9f9', padding: '12px', borderRadius: '3px', marginBottom: '20px' }}>
-        <JsonComp 
-          data={fullyEditableData} 
-          isEditable={true}
-          isKeyEditable={true}
-          isValueEditable={true}
-          onChange={handleFullyEditableChange}
-        />
-      </div>
-
-      <h3 style={{ marginBottom: '8px' }}>4. Array with Mixed Types</h3>
-      <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '8px' }}>
-        Root level array with various data types including nested structures.
-      </p>
-      <div style={{ background: '#f9f9f9', padding: '12px', borderRadius: '3px', marginBottom: '20px' }}>
-        <JsonComp 
-          data={arrayData} 
-          isEditable={true}
-          onChange={handleArrayChange}
-        />
-      </div>
-
-      <h3 style={{ marginBottom: '8px' }}>5. MongoDB Document Editor</h3>
-      <p style={{ fontSize: '13px', color: '#666', marginTop: 0, marginBottom: '8px' }}>
-        Simulates editing a MongoDB document. Try editing comments, metadata, or user information.
-      </p>
-      <div style={{ background: '#f9f9f9', padding: '12px', borderRadius: '3px', marginBottom: '20px' }}>
-        <JsonComp 
-          data={mongoDoc} 
-          isEditable={true}
-          isKeyEditable={false}
-          isValueEditable={true}
-          onChange={handleMongoChange}
-        />
-      </div>
-
-      {message && (
-        <div style={{ 
-          marginTop: '16px', 
-          padding: '8px 12px', 
-          background: message.startsWith('✓') ? '#e8f5e9' : message.startsWith('✗') ? '#ffebee' : '#f5f5f5',
-          border: `1px solid ${message.startsWith('✓') ? '#4caf50' : message.startsWith('✗') ? '#f44336' : '#ddd'}`,
-          borderRadius: '2px', 
-          fontSize: '13px' 
-        }}>
-          {message}
-        </div>
-      )}
-
-      <div style={{ marginTop: '16px', padding: '10px 12px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: '2px', fontSize: '12px' }}>
-        <strong>Features:</strong>
-        <ul style={{ margin: '4px 0', paddingLeft: '18px' }}>
+    <DemoPanel>
+      <Explanation titleText="JsonComp">
+        Display and edit deeply nested JSON-like objects with async updates.
+      </Explanation>
+      <ExampleGroup title="Variants">
+        <ExampleStackVertical>
+          <Example title="Simple Nested Object (Read-Only)">
+            <CompDemoArea>
+              <JsonComp
+                data={simpleData}
+                isEditable={false}
+              />
+            </CompDemoArea>
+          </Example>
+          <Example title="Editable Values (Keys Read-Only)">
+            <Explanation>
+              Click on values to edit. Boolean values toggle on click. Press Enter or blur to submit. 20% simulated failure rate.
+            </Explanation>
+            <CompDemoArea>
+              <JsonComp
+                data={valueOnlyEditableData}
+                isEditable={true}
+                isKeyEditable={false}
+                isValueEditable={true}
+                onChange={handleValueOnlyEditableChange}
+              />
+            </CompDemoArea>
+          </Example>
+          <Example title="Complex Nested Structure with Arrays">
+            <Explanation>
+              Supports deeply nested objects and arrays. Keys and values are editable.
+            </Explanation>
+            <CompDemoArea>
+              <JsonComp
+                data={fullyEditableData}
+                isEditable={true}
+                isKeyEditable={true}
+                isValueEditable={true}
+                onChange={handleFullyEditableChange}
+              />
+            </CompDemoArea>
+          </Example>
+          <Example title="Array with Mixed Types">
+            <Explanation>
+              Root level array with various data types including nested structures.
+            </Explanation>
+            <CompDemoArea>
+              <JsonComp
+                data={arrayData}
+                isEditable={true}
+                onChange={handleArrayChange}
+              />
+            </CompDemoArea>
+          </Example>
+          <Example title="MongoDB Document Editor">
+            <Explanation>
+              Simulates editing a MongoDB document. Try editing comments, metadata, or user information.
+            </Explanation>
+            <CompDemoArea>
+              <JsonComp
+                data={mongoDoc}
+                isEditable={true}
+                isKeyEditable={false}
+                isValueEditable={true}
+                onChange={handleMongoChange}
+              />
+            </CompDemoArea>
+          </Example>
+        </ExampleStackVertical>
+      </ExampleGroup>
+      <MessageAndOutputs>
+        <span>{message || 'No update yet'}</span>
+      </MessageAndOutputs>
+      <Explanation tone="amber" titleText="Features">
+        <ul>
           <li>Recursively renders deeply nested JSON objects and arrays</li>
           <li>Click on text/number values to edit, booleans toggle on click (distinct monospace font)</li>
           <li>Right-click values to convert types (string ↔ number ↔ boolean ↔ null)</li>
           <li>Spinning circle shows next to value during async update</li>
-          <li>Component locks during submission, doesn't update value until parent updates data</li>
-          <li>No request sent if value hasn't changed</li>
-          <li>Path notation: <code>user.name</code>, <code>tags..0</code>, <code>items..1.name</code> (.. for array indices)</li>
-          <li>Structured change data: <code>{`{ old: { type, value }, new: { type, value } }`}</code></li>
+          <li>Component locks during submission, doesn&apos;t update value until parent updates data</li>
+          <li>No request sent if value hasn&apos;t changed</li>
+          <li>Path notation: user.name, tags..0, items..1.name (.. for array indices)</li>
+          <li>Structured change data: {'{ old: { type, value }, new: { type, value } }'}</li>
           <li>Sans-serif font, reduced indentation (12px), no quote marks</li>
           <li>Configurable editability for keys and values separately</li>
         </ul>
-      </div>
-    </div>
+      </Explanation>
+    </DemoPanel>
   );
 };
 

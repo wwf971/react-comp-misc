@@ -1,34 +1,12 @@
-.message-bar-example-root {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 560px;
-}
-
-.message-bar-example-section {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  border: 1px solid #d5e0ef;
+.message-bar-example-button {
+  min-height: 22px;
+  padding: 2px 8px;
+  border: 1px solid #b8c9df;
   border-radius: 2px;
-  padding: 6px;
   background: #ffffff;
-}
-
-.message-bar-example-title {
-  font-weight: 600;
   color: #1f3761;
-}
-
-.message-bar-example-btn-row {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-
-.message-bar-example-meta {
-  color: #607496;
   font-size: 12px;
+  cursor: pointer;
 }
 
 .message-bar-example-meter {

@@ -205,6 +205,55 @@
   background: #f9fafb;
 }
 
+.demo-comp-area-foot {
+  margin-top: 8px;
+  border-top: 1px dashed #dde3ea;
+  padding-top: 5px;
+  color: #6b7a8c;
+  font-size: 12px;
+  user-select: text;
+}
+
+/* ==== SimServerControl ==== */
+
+.demo-sim-server {
+  display: inline-flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 4px 8px;
+  border: 1px dashed #aebccd;
+  border-radius: 4px;
+  background: #f6f8fb;
+}
+
+/* at page level the panel column must not stretch the control to full width */
+.demo-panel > .demo-sim-server {
+  align-self: flex-start;
+}
+
+.demo-sim-server-label {
+  color: #314a65;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+/* min-width keeps the control width stable when the count changes */
+.demo-sim-server-pending {
+  min-width: 68px;
+  color: #8795a6;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.demo-sim-server-pending.is-busy {
+  color: #b26a00;
+  font-weight: 600;
+}
+
 /* ==== MessageAndOutputs ==== */
 
 .demo-message-outputs {
@@ -229,6 +278,93 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 10px;
+}
+
+/* ==== JsonDisplay: unified sans-serif json block ==== */
+
+.demo-json-display {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid #e2e7ee;
+  border-radius: 3px;
+  background: #f7f9fb;
+}
+
+/* controls row at the top right corner of the block */
+.demo-json-display-controls {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 2px 4px 0;
+}
+
+.demo-json-display-control-button {
+  min-width: 16px;
+  padding: 0 4px;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  color: #6b7a8c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.demo-json-display-control-button:hover:not(:disabled),
+.demo-json-display-control-button:focus-visible {
+  background: #e9eef4;
+  color: #26405f;
+  outline: none;
+}
+
+.demo-json-display-control-button.is-active {
+  background: #e7f1fb;
+  color: #174f75;
+}
+
+.demo-json-display-control-button:disabled {
+  color: #becad5;
+  cursor: default;
+}
+
+.demo-json-display-indent {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 6px;
+}
+
+.demo-json-display-indent-label {
+  margin-right: 2px;
+  color: #8795a6;
+  font-size: 11px;
+}
+
+.demo-json-display-indent-count {
+  min-width: 12px;
+  color: #2b3b4e;
+  font-size: 11px;
+  text-align: center;
+}
+
+.demo-json-display-indent-count.is-disabled {
+  color: #becad5;
+}
+
+.demo-json-display-text {
+  min-width: 0;
+  margin: 0;
+  padding: 0 8px 5px;
+  color: #2b3b4e;
+  font-family: system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
 }
 
 /* ==== ExampleSwitcher: children stacked on one grid cell for stable height ==== */

@@ -94,56 +94,11 @@
   white-space: nowrap;
 }
 
-.menu-examples-all {
-  max-width: 900px;
-  padding: 20px;
-}
-
-.menu-example-intro {
-  margin-bottom: 16px;
-  padding: 12px;
-  border-radius: 3px;
-  background: #e8f5e9;
-  color: #333333;
-  font-size: 13px;
-}
-
-.menu-example-intro-title {
-  font-weight: 600;
-}
-
-.menu-example-guidance-list {
-  margin: 6px 0 0;
-  padding-left: 18px;
-  color: #555555;
-  font-size: 13px;
-}
-
-.menu-example-guidance-list li {
-  margin: 2px 0;
-}
-
-.menu-example-section {
-  margin-bottom: 16px;
-  padding: 12px;
-  border-radius: 3px;
-  background: #f9f9f9;
-}
-
-.menu-example-title {
-  color: #333333;
-  font-weight: 600;
-}
-
 .menu-example-note {
   margin-top: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: #555555;
   font-size: 12px;
-}
-
-.menu-example-panel {
-  padding: 0;
 }
 
 .menu-example-region {

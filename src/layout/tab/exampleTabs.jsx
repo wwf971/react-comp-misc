@@ -1,8 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import TabsOnTop from './TabsOnTop';
 import CrossIcon from '../../icon/CrossIcon';
+import {
+  DemoPanel,
+  Example,
+  Explanation,
+  Controls,
+  CompDemoArea,
+  MessageAndOutputs,
+} from '../../dev/demo/DemoLayout.jsx';
+import { ExampleGroup, ExampleStackVertical } from '../../dev/demo/ExampleGroup.jsx';
 
 function Counter({ label }) {
   const [count, setCount] = useState(0);
@@ -97,69 +106,22 @@ const CustomTabWithBadge = ({ label, isActive, onClick, onClose, isDragging, dra
   );
 };
 
-const TabsOnTopExamplesPanel = () => {
+function TabDemoPanel({ title, text }) {
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px' }}>
-      <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>TabsOnTop Examples</div>
-      <div style={{ fontSize: '12px', color: '#666', marginBottom: '12px' }}>
-        Control whether inactive tabs stay mounted or unmount. Watch counters to see the difference.
-      </div>
-      
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Tab Mount Behavior</div>
-        <BasicExample />
-      </div>
-
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>All Features: Close, Create, Reorder</div>
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          Drag tabs to reorder, close with x, create with +. Blue line shows drop position.
-        </div>
-        <TabsWithAllFeatures />
-      </div>
-
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Custom Tab Components</div>
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          Custom tab buttons with icons and badges
-        </div>
-        <TabsWithCustomComponents />
-      </div>
-
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>One-line Overflow Tabs</div>
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          A fixed one-line tab row. Use mouse wheel to scroll horizontally; drag tabs near the edge to reveal scroll zones.
-        </div>
-        <TabsOneLineOverflow />
-      </div>
-
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Multi-line Tabs</div>
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          A fixed multi-line tab row. Dragging uses nearest-row slot geometry.
-        </div>
-        <TabsMultiLine />
-      </div>
-
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Switchable Line Mode With Header Actions</div>
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          The right side of the tab header can host the built-in line mode switch and custom action buttons.
-        </div>
-        <TabsSwitchableWithActions />
-      </div>
-
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '4px' }}>Deferred Tab Panels</div>
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-          deferMount paints a spinner before mounting heavy content, isReady gates on external data, withErrorBoundary catches render crashes with retry.
-        </div>
-        <TabsDeferredDemo />
-      </div>
+    <div style={{ padding: '12px' }}>
+      <div style={{ fontSize: '14px', fontWeight: '650', marginBottom: '6px' }}>{title}</div>
+      <div style={{ fontSize: '12px', color: '#555' }}>{text}</div>
     </div>
   );
-};
+}
+
+function OrderPreview({ tabs }) {
+  return (
+    <span>
+      <strong>Order:</strong> {tabs.map((tab) => tab.label).join(', ')}
+    </span>
+  );
+}
 
 const createTabDeferDemoStore = () => makeAutoObservable({
   isServerDataReady: false,
@@ -190,6 +152,82 @@ const createTabDeferDemoStore = () => makeAutoObservable({
     this.revisionReset += 1;
   },
 }, {}, { autoBind: true });
+
+function createStoreTabsAllFeatures() {
+  return makeAutoObservable({
+    tabs: [
+      { id: '1', label: 'First', content: 'Content 1' },
+      { id: '2', label: 'Second', content: 'Content 2' },
+      { id: '3', label: 'Third', content: 'Content 3' },
+    ],
+    nextId: 4,
+    reorder(newTabsConfig) {
+      this.tabs = newTabsConfig.map((tabConfig) => {
+        const tabIndex = parseInt(tabConfig.key.split('-')[1]) - 1;
+        return this.tabs[tabIndex];
+      });
+    },
+    close(tabKey) {
+      const tabIndex = parseInt(tabKey.split('-')[1]) - 1;
+      this.tabs = this.tabs.filter((_, idx) => idx !== tabIndex);
+    },
+    create() {
+      const newTab = {
+        id: this.nextId.toString(),
+        label: `Tab ${this.nextId}`,
+        content: `Content ${this.nextId}`,
+      };
+      this.tabs = [...this.tabs, newTab];
+      this.nextId += 1;
+    },
+  }, {}, { autoBind: true });
+}
+
+function createStoreTabsCustom() {
+  return makeAutoObservable({
+    tabs: [
+      { id: 'home', label: 'Home', useIndicator: true },
+      { id: 'settings', label: 'Settings', useIndicator: true },
+      { id: 'profile', label: 'Profile', useBadge: true },
+      { id: 'plain', label: 'Plain Tab', useIndicator: false },
+    ],
+    notificationCount: 5,
+    increment() {
+      this.notificationCount += 1;
+    },
+    reset() {
+      this.notificationCount = 0;
+    },
+    reorder(newTabsConfig) {
+      this.tabs = newTabsConfig.map((tabConfig) => {
+        const tabIndex = parseInt(tabConfig.key.split('-')[1]) - 1;
+        return this.tabs[tabIndex];
+      });
+    },
+  }, {}, { autoBind: true });
+}
+
+function createStoreTabOrder(tabDataList) {
+  return makeAutoObservable({
+    tabs: tabDataList.slice(),
+    reorder(tabConfigList) {
+      this.tabs = reorderByTabConfig(this.tabs, tabConfigList);
+    },
+  }, {}, { autoBind: true });
+}
+
+function createStoreTabsSwitchable() {
+  return makeAutoObservable({
+    tabs: tabLongDefaultList.slice(0, 8),
+    actionMessage: 'No header action clicked yet.',
+    reorder(tabConfigList) {
+      this.tabs = reorderByTabConfig(this.tabs, tabConfigList);
+    },
+    actionMessageSet(action, actionData) {
+      this.actionMessage = `${action}: ${actionData.itemId}`;
+    },
+  }, {}, { autoBind: true });
+}
 
 function PanelHeavyMount() {
   useMemo(() => {
@@ -223,45 +261,6 @@ const PanelCrash = observer(({ store }) => {
   );
 });
 
-const TabsDeferredDemo = observer(() => {
-  const [store] = useState(() => createTabDeferDemoStore());
-  return (
-    <div style={{ width: '620px', maxWidth: '100%' }}>
-      <TabsOnTop
-        key={store.revisionReset}
-        defaultTab="plain"
-        onTabChange={(tabKey) => {
-          if (tabKey === 'server-data') store.serverLoadBegin();
-        }}
-      >
-        <TabsOnTop.Tab tabKey="plain" label="Plain">
-          <TabDemoPanel title="Plain" text="Normal tab without defer, mounts immediately with all sibling panels." />
-        </TabsOnTop.Tab>
-        <TabsOnTop.Tab tabKey="heavy" label="Heavy Mount" deferMount={true} deferMountDelayMs={800}>
-          <PanelHeavyMount />
-        </TabsOnTop.Tab>
-        <TabsOnTop.Tab tabKey="server-data" label="Server Data" deferMount={true} isReady={store.isServerDataReady}>
-          <PanelServerData store={store} />
-        </TabsOnTop.Tab>
-        <TabsOnTop.Tab tabKey="crash" label="Crash Recovery" deferMount={true} withErrorBoundary={true}>
-          <PanelCrash store={store} />
-        </TabsOnTop.Tab>
-      </TabsOnTop>
-      <div className="tab-example-defer-controls">
-        <button type="button" className="tab-example-defer-toggle" onClick={store.reset}>
-          Reset deferred demo
-        </button>
-        <button type="button" className="tab-example-defer-toggle" onClick={store.toggleCrashForced}>
-          {store.isCrashForced ? 'Force crash: on' : 'Force crash: off'}
-        </button>
-        <div className="tab-example-value-desc">
-          Reset returns to Plain and clears all mounted/loading state. Crash Recovery throws while force crash is on.
-        </div>
-      </div>
-    </div>
-  );
-});
-
 const tabLongDefaultList = [
   { id: 'overview', label: 'Overview' },
   { id: 'orders', label: 'Orders' },
@@ -282,263 +281,311 @@ function reorderByTabConfig(tabDataList, tabConfigList) {
   return tabConfigList.map((tabConfig) => dataById[tabConfig.key]).filter(Boolean);
 }
 
-function TabsOneLineOverflow() {
-  const [tabs, setTabs] = useState(tabLongDefaultList);
-  return (
-    <div style={{ width: '520px', maxWidth: '100%' }}>
-      <TabsOnTop
-        lineMode="single"
-        allowTabReorder={true}
-        onTabReorder={(tabConfigList) => setTabs(reorderByTabConfig(tabs, tabConfigList))}
-      >
-        {tabs.map((tab) => (
-          <TabsOnTop.Tab key={tab.id} tabKey={tab.id} label={tab.label}>
-            <TabDemoPanel title={tab.label} text="Fixed one-line mode keeps the header compact and horizontally scrollable." />
-          </TabsOnTop.Tab>
-        ))}
-      </TabsOnTop>
-      <OrderPreview tabs={tabs} />
-    </div>
-  );
-}
-
-function TabsMultiLine() {
-  const [tabs, setTabs] = useState(tabLongDefaultList);
-  return (
-    <div style={{ width: '560px', maxWidth: '100%' }}>
-      <TabsOnTop
-        lineMode="wrap"
-        allowTabReorder={true}
-        onTabReorder={(tabConfigList) => setTabs(reorderByTabConfig(tabs, tabConfigList))}
-      >
-        {tabs.map((tab) => (
-          <TabsOnTop.Tab key={tab.id} tabKey={tab.id} label={tab.label}>
-            <TabDemoPanel title={tab.label} text="Fixed multi-line mode exposes all tabs without horizontal scrolling." />
-          </TabsOnTop.Tab>
-        ))}
-      </TabsOnTop>
-      <OrderPreview tabs={tabs} />
-    </div>
-  );
-}
-
-function TabsSwitchableWithActions() {
-  const [tabs, setTabs] = useState(tabLongDefaultList.slice(0, 8));
-  const [actionMessage, setActionMessage] = useState('No header action clicked yet.');
-  return (
-    <div style={{ width: '620px', maxWidth: '100%' }}>
-      <TabsOnTop
-        defaultLineMode="single"
-        allowLineModeSwitch={true}
-        allowTabReorder={true}
-        onTabReorder={(tabConfigList) => setTabs(reorderByTabConfig(tabs, tabConfigList))}
-        headerRightItems={[
-          { id: 'refresh', label: 'Refresh', action: 'refreshClick' },
-          { id: 'save', label: 'Save', action: 'saveClick' },
-        ]}
-        onHeaderRightItemAction={(action, actionData) => setActionMessage(`${action}: ${actionData.itemId}`)}
-      >
-        {tabs.map((tab) => (
-          <TabsOnTop.Tab key={tab.id} tabKey={tab.id} label={tab.label}>
-            <TabDemoPanel title={tab.label} text="Switchable mode lets the user choose compact or expanded tab display." />
-          </TabsOnTop.Tab>
-        ))}
-      </TabsOnTop>
-      <div style={{ marginTop: '8px', padding: '6px', background: '#eef6ff', borderRadius: '2px', fontSize: '12px' }}>{actionMessage}</div>
-    </div>
-  );
-}
-
-function TabDemoPanel({ title, text }) {
-  return (
-    <div style={{ padding: '12px' }}>
-      <div style={{ fontSize: '14px', fontWeight: '650', marginBottom: '6px' }}>{title}</div>
-      <div style={{ fontSize: '12px', color: '#555' }}>{text}</div>
-    </div>
-  );
-}
-
-function OrderPreview({ tabs }) {
-  return (
-    <div style={{ marginTop: '8px', padding: '6px', background: '#f0f0f0', borderRadius: '2px', fontSize: '12px' }}>
-      <strong>Order:</strong> {tabs.map((tab) => tab.label).join(', ')}
-    </div>
-  );
-}
-
 function BasicExample() {
   return (
-    <div>
-      <TabsOnTop defaultTab="tab-1" defaultKeepMounted={true}>
-        <TabsOnTop.Tab label="Always Mounted" keepMounted={true}>
-          <div style={{ padding: '12px' }}>
-            <div>This tab stays mounted (hidden with display:none)</div>
-            <Counter label="Always Mounted" />
-          </div>
-        </TabsOnTop.Tab>
-        
-        <TabsOnTop.Tab label="Unmounts" keepMounted={false}>
-          <div style={{ padding: '12px' }}>
-            <div>This tab unmounts when inactive (counter resets)</div>
-            <Counter label="Unmounts" />
-          </div>
-        </TabsOnTop.Tab>
-        
-        <TabsOnTop.Tab label="Default Behavior">
-          <div style={{ padding: '12px' }}>
-            <div>Uses defaultKeepMounted (true in this example)</div>
-            <Counter label="Default" />
-          </div>
-        </TabsOnTop.Tab>
-      </TabsOnTop>
-      <div style={{ marginTop: '8px', padding: '6px', background: '#fff3e0', borderRadius: '2px', fontSize: '12px' }}>
-        Switch between tabs: "Always Mounted" keeps counting, "Unmounts" resets to 0
-      </div>
-    </div>
-  );
-}
-
-function TabsWithAllFeatures() {
-  const [tabs, setTabs] = useState([
-    { id: '1', label: 'First', content: 'Content 1' },
-    { id: '2', label: 'Second', content: 'Content 2' },
-    { id: '3', label: 'Third', content: 'Content 3' },
-  ]);
-  const [nextId, setNextId] = useState(4);
-
-  const handleReorder = (newTabsConfig) => {
-    const reorderedTabs = newTabsConfig.map(tabConfig => {
-      const tabIndex = parseInt(tabConfig.key.split('-')[1]) - 1;
-      return tabs[tabIndex];
-    });
-    setTabs(reorderedTabs);
-  };
-
-  const handleClose = (tabKey) => {
-    const tabIndex = parseInt(tabKey.split('-')[1]) - 1;
-    setTabs(tabs.filter((_, idx) => idx !== tabIndex));
-  };
-
-  const handleCreate = () => {
-    const newTab = {
-      id: nextId.toString(),
-      label: `Tab ${nextId}`,
-      content: `Content ${nextId}`
-    };
-    setTabs([...tabs, newTab]);
-    setNextId(nextId + 1);
-  };
-
-  return (
-    <div>
-      <TabsOnTop 
-        allowTabReorder={true}
-        onTabReorder={handleReorder}
-        allowCloseTab={true}
-        onTabClose={handleClose}
-        allowTabCreate={true}
-        onTabCreate={handleCreate}
-      >
-        {tabs.map(tab => (
-          <TabsOnTop.Tab key={tab.id} label={tab.label}>
+    <Example title="Tab Mount Behavior">
+      <CompDemoArea>
+        <TabsOnTop defaultTab="tab-1" defaultKeepMounted={true}>
+          <TabsOnTop.Tab label="Always Mounted" keepMounted={true}>
             <div style={{ padding: '12px' }}>
-              <div>{tab.content}</div>
-              <Counter label={tab.label} />
+              <div>This tab stays mounted (hidden with display:none)</div>
+              <Counter label="Always Mounted" />
             </div>
           </TabsOnTop.Tab>
-        ))}
-      </TabsOnTop>
-      <div style={{ marginTop: '8px', padding: '6px', background: '#f0f0f0', borderRadius: '2px', fontSize: '12px' }}>
-        <strong>Order:</strong> {tabs.map(t => t.label).join(', ')}
-      </div>
-    </div>
+          
+          <TabsOnTop.Tab label="Unmounts" keepMounted={false}>
+            <div style={{ padding: '12px' }}>
+              <div>This tab unmounts when inactive (counter resets)</div>
+              <Counter label="Unmounts" />
+            </div>
+          </TabsOnTop.Tab>
+          
+          <TabsOnTop.Tab label="Default Behavior">
+            <div style={{ padding: '12px' }}>
+              <div>Uses defaultKeepMounted (true in this example)</div>
+              <Counter label="Default" />
+            </div>
+          </TabsOnTop.Tab>
+        </TabsOnTop>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>Switch between tabs: &quot;Always Mounted&quot; keeps counting, &quot;Unmounts&quot; resets to 0</span>
+      </MessageAndOutputs>
+    </Example>
   );
 }
 
-function TabsWithCustomComponents() {
-  const [tabs, setTabs] = useState([
-    { id: 'home', label: 'Home', useIndicator: true },
-    { id: 'settings', label: 'Settings', useIndicator: true },
-    { id: 'profile', label: 'Profile', useBadge: true },
-    { id: 'plain', label: 'Plain Tab', useIndicator: false }
-  ]);
-  
-  const [notificationCount, setNotificationCount] = useState(5);
-
-  const handleIncrement = () => {
-    setNotificationCount(prev => prev + 1);
-  };
-
-  const handleReset = () => {
-    setNotificationCount(0);
-  };
-
-  const handleReorder = (newTabsConfig) => {
-    const reorderedTabs = newTabsConfig.map(tabConfig => {
-      const tabIndex = parseInt(tabConfig.key.split('-')[1]) - 1;
-      return tabs[tabIndex];
-    });
-    setTabs(reorderedTabs);
-  };
+const TabsWithAllFeatures = observer(function TabsWithAllFeatures({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreTabsAllFeatures()), [store]);
+  const storeUsed = store || storeLocal;
 
   return (
-    <div>
-      <TabsOnTop defaultTab="home" allowTabReorder onTabReorder={handleReorder}>
-        {tabs.map(tab => (
-          <React.Fragment key={tab.id}>
-            {tab.useIndicator && (
-              <TabsOnTop.TabLabel>
-                {CustomTabWithIndicator}
-              </TabsOnTop.TabLabel>
-            )}
-            {tab.useBadge && (
-              <TabsOnTop.TabLabel>
-                {(props) => <CustomTabWithBadge {...props} badge={notificationCount} />}
-              </TabsOnTop.TabLabel>
-            )}
-            <TabsOnTop.Tab label={tab.label}>
+    <Example title="All Features: Close, Create, Reorder">
+      <Explanation>
+        Drag tabs to reorder, close with x, create with +. Blue line shows drop position.
+      </Explanation>
+      <CompDemoArea>
+        <TabsOnTop
+          allowTabReorder={true}
+          onTabReorder={storeUsed.reorder}
+          allowCloseTab={true}
+          onTabClose={storeUsed.close}
+          allowTabCreate={true}
+          onTabCreate={storeUsed.create}
+        >
+          {storeUsed.tabs.map((tab) => (
+            <TabsOnTop.Tab key={tab.id} label={tab.label}>
               <div style={{ padding: '12px' }}>
-                <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>{tab.label}</div>
-                {tab.useBadge ? (
-                  <>
-                    <div style={{ marginBottom: '8px' }}>Tab with notification badge</div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={handleIncrement}
-                        style={{ padding: '4px 8px', fontSize: '12px', cursor: 'pointer', border: '1px solid #ccc', background: '#fff', borderRadius: '2px' }}
-                      >
-                        Add Notification
-                      </button>
-                      <button
-                        onClick={handleReset}
-                        style={{ padding: '4px 8px', fontSize: '12px', cursor: 'pointer', border: '1px solid #ccc', background: '#fff', borderRadius: '2px' }}
-                      >
-                        Clear Notifications
-                      </button>
-                    </div>
-                  </>
-                ) : tab.useIndicator ? (
-                  <div>Tab with custom colored indicator</div>
-                ) : (
-                  <div>Regular tab without custom component</div>
-                )}
+                <div>{tab.content}</div>
+                <Counter label={tab.label} />
               </div>
             </TabsOnTop.Tab>
-          </React.Fragment>
-        ))}
-      </TabsOnTop>
-      <div style={{ marginTop: '8px', padding: '6px', background: '#f0f0f0', borderRadius: '2px', fontSize: '12px' }}>
-        <div>Tabs with custom TabLabel use the custom component. Drag tabs to reorder.</div>
-        <div style={{ marginTop: '4px' }}><strong>Order:</strong> {tabs.map(t => t.label).join(', ')}</div>
-      </div>
-    </div>
+          ))}
+        </TabsOnTop>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <OrderPreview tabs={storeUsed.tabs} />
+      </MessageAndOutputs>
+    </Example>
   );
-}
+});
+
+const TabsWithCustomComponents = observer(function TabsWithCustomComponents({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreTabsCustom()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="Custom Tab Components">
+      <Explanation>
+        Custom tab buttons with icons and badges
+      </Explanation>
+      <CompDemoArea>
+        <TabsOnTop defaultTab="home" allowTabReorder onTabReorder={storeUsed.reorder}>
+          {storeUsed.tabs.map((tab) => (
+            <React.Fragment key={tab.id}>
+              {tab.useIndicator && (
+                <TabsOnTop.TabLabel>
+                  {CustomTabWithIndicator}
+                </TabsOnTop.TabLabel>
+              )}
+              {tab.useBadge && (
+                <TabsOnTop.TabLabel>
+                  {(props) => <CustomTabWithBadge {...props} badge={storeUsed.notificationCount} />}
+                </TabsOnTop.TabLabel>
+              )}
+              <TabsOnTop.Tab label={tab.label}>
+                <div style={{ padding: '12px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>{tab.label}</div>
+                  {tab.useBadge ? (
+                    <>
+                      <div style={{ marginBottom: '8px' }}>Tab with notification badge</div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={storeUsed.increment}
+                          style={{ padding: '4px 8px', fontSize: '12px', cursor: 'pointer', border: '1px solid #ccc', background: '#fff', borderRadius: '2px' }}
+                        >
+                          Add Notification
+                        </button>
+                        <button
+                          onClick={storeUsed.reset}
+                          style={{ padding: '4px 8px', fontSize: '12px', cursor: 'pointer', border: '1px solid #ccc', background: '#fff', borderRadius: '2px' }}
+                        >
+                          Clear Notifications
+                        </button>
+                      </div>
+                    </>
+                  ) : tab.useIndicator ? (
+                    <div>Tab with custom colored indicator</div>
+                  ) : (
+                    <div>Regular tab without custom component</div>
+                  )}
+                </div>
+              </TabsOnTop.Tab>
+            </React.Fragment>
+          ))}
+        </TabsOnTop>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>Tabs with custom TabLabel use the custom component. Drag tabs to reorder.</span>
+        <OrderPreview tabs={storeUsed.tabs} />
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const TabsOneLineOverflow = observer(function TabsOneLineOverflow({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreTabOrder(tabLongDefaultList)), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="One-line Overflow Tabs">
+      <Explanation>
+        A fixed one-line tab row. Use mouse wheel to scroll horizontally; drag tabs near the edge to reveal scroll zones.
+      </Explanation>
+      <CompDemoArea>
+        <div style={{ width: '520px', maxWidth: '100%' }}>
+          <TabsOnTop
+            lineMode="single"
+            allowTabReorder={true}
+            onTabReorder={storeUsed.reorder}
+          >
+            {storeUsed.tabs.map((tab) => (
+              <TabsOnTop.Tab key={tab.id} tabKey={tab.id} label={tab.label}>
+                <TabDemoPanel title={tab.label} text="Fixed one-line mode keeps the header compact and horizontally scrollable." />
+              </TabsOnTop.Tab>
+            ))}
+          </TabsOnTop>
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <OrderPreview tabs={storeUsed.tabs} />
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const TabsMultiLine = observer(function TabsMultiLine({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreTabOrder(tabLongDefaultList)), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="Multi-line Tabs">
+      <Explanation>
+        A fixed multi-line tab row. Dragging uses nearest-row slot geometry.
+      </Explanation>
+      <CompDemoArea>
+        <div style={{ width: '560px', maxWidth: '100%' }}>
+          <TabsOnTop
+            lineMode="wrap"
+            allowTabReorder={true}
+            onTabReorder={storeUsed.reorder}
+          >
+            {storeUsed.tabs.map((tab) => (
+              <TabsOnTop.Tab key={tab.id} tabKey={tab.id} label={tab.label}>
+                <TabDemoPanel title={tab.label} text="Fixed multi-line mode exposes all tabs without horizontal scrolling." />
+              </TabsOnTop.Tab>
+            ))}
+          </TabsOnTop>
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <OrderPreview tabs={storeUsed.tabs} />
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const TabsSwitchableWithActions = observer(function TabsSwitchableWithActions({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreTabsSwitchable()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="Switchable Line Mode With Header Actions">
+      <Explanation>
+        The right side of the tab header can host the built-in line mode switch and custom action buttons.
+      </Explanation>
+      <CompDemoArea>
+        <div style={{ width: '620px', maxWidth: '100%' }}>
+          <TabsOnTop
+            defaultLineMode="single"
+            allowLineModeSwitch={true}
+            allowTabReorder={true}
+            onTabReorder={storeUsed.reorder}
+            headerRightItems={[
+              { id: 'refresh', label: 'Refresh', action: 'refreshClick' },
+              { id: 'save', label: 'Save', action: 'saveClick' },
+            ]}
+            onHeaderRightItemAction={(action, actionData) => storeUsed.actionMessageSet(action, actionData)}
+          >
+            {storeUsed.tabs.map((tab) => (
+              <TabsOnTop.Tab key={tab.id} tabKey={tab.id} label={tab.label}>
+                <TabDemoPanel title={tab.label} text="Switchable mode lets the user choose compact or expanded tab display." />
+              </TabsOnTop.Tab>
+            ))}
+          </TabsOnTop>
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{storeUsed.actionMessage}</span>
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
+const TabsDeferredDemo = observer(function TabsDeferredDemo({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createTabDeferDemoStore()), [store]);
+  const storeUsed = store || storeLocal;
+
+  return (
+    <Example title="Deferred Tab Panels">
+      <Explanation>
+        deferMount paints a spinner before mounting heavy content, isReady gates on external data, withErrorBoundary catches render crashes with retry. Reset returns to Plain and clears all mounted/loading state. Crash Recovery throws while force crash is on.
+      </Explanation>
+      <Controls>
+        <div className="tab-example-defer-controls">
+          <button type="button" className="tab-example-defer-toggle" onClick={storeUsed.reset}>
+            Reset deferred demo
+          </button>
+          <button type="button" className="tab-example-defer-toggle" onClick={storeUsed.toggleCrashForced}>
+            {storeUsed.isCrashForced ? 'Force crash: on' : 'Force crash: off'}
+          </button>
+        </div>
+      </Controls>
+      <CompDemoArea>
+        <div style={{ width: '620px', maxWidth: '100%' }}>
+          <TabsOnTop
+            key={storeUsed.revisionReset}
+            defaultTab="plain"
+            onTabChange={(tabKey) => {
+              if (tabKey === 'server-data') storeUsed.serverLoadBegin();
+            }}
+          >
+            <TabsOnTop.Tab tabKey="plain" label="Plain">
+              <TabDemoPanel title="Plain" text="Normal tab without defer, mounts immediately with all sibling panels." />
+            </TabsOnTop.Tab>
+            <TabsOnTop.Tab tabKey="heavy" label="Heavy Mount" deferMount={true} deferMountDelayMs={800}>
+              <PanelHeavyMount />
+            </TabsOnTop.Tab>
+            <TabsOnTop.Tab tabKey="server-data" label="Server Data" deferMount={true} isReady={storeUsed.isServerDataReady}>
+              <PanelServerData store={storeUsed} />
+            </TabsOnTop.Tab>
+            <TabsOnTop.Tab tabKey="crash" label="Crash Recovery" deferMount={true} withErrorBoundary={true}>
+              <PanelCrash store={storeUsed} />
+            </TabsOnTop.Tab>
+          </TabsOnTop>
+        </div>
+      </CompDemoArea>
+    </Example>
+  );
+});
+
+const TabsOnTopExamplesPanel = () => {
+  return (
+    <DemoPanel>
+      <Explanation titleText="TabsOnTop">
+        Control whether inactive tabs stay mounted or unmount. Watch counters to see the difference.
+      </Explanation>
+      <ExampleGroup title="Variants">
+        <ExampleStackVertical>
+          <BasicExample />
+          <TabsWithAllFeatures />
+          <TabsWithCustomComponents />
+          <TabsOneLineOverflow />
+          <TabsMultiLine />
+          <TabsSwitchableWithActions />
+          <TabsDeferredDemo />
+        </ExampleStackVertical>
+      </ExampleGroup>
+    </DemoPanel>
+  );
+};
 
 export const tabExamples = {
   'TabsOnTop': {
     component: TabsOnTop,
     description: 'Tabs with close, create, reorder, custom tab components, overflow, multi-line mode, header actions, and deferred panels',
-    example: () => <TabsOnTopExamplesPanel />
+    example: TabsOnTopExamplesPanel,
   },
 };
+
+export default TabsOnTopExamplesPanel;
