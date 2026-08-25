@@ -54,6 +54,7 @@ export const SortIcon: ComponentType<any>;
 export const EyeIcon: ComponentType<any>;
 export const EyeOffIcon: ComponentType<any>;
 export const CrossIcon: ComponentType<any>;
+export const CopyIcon: ComponentType<any>;
 export const AddIcon: ComponentType<any>;
 export const SpinningCircle: ComponentType<any>;
 export const FolderIcon: ComponentType<any>;

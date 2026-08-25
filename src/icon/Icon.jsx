@@ -25,6 +25,7 @@ import {
 import EyeIcon from './EyeIcon';
 import EyeOffIcon from './EyeOffIcon';
 import CrossIcon from './CrossIcon';
+import CopyIcon from './CopyIcon';
 import SpinningCircle from './SpinningCircle';
 import FolderIcon from './FolderIcon';
 import EditIconNotepad from './EditIcon';
@@ -81,6 +82,7 @@ export {
 	EyeIcon,
 	EyeOffIcon,
 	CrossIcon,
+	CopyIcon,
 	AddIcon,
 	SpinningCircle,
 	EditIconNotepad,

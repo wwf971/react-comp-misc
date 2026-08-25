@@ -347,6 +347,11 @@ function createMixedSelectStore() {
   return makeAutoObservable(store);
 }
 
+function createSelectOrderStore() {
+  const store = makeCatalogBase([7, 8, 9, 10, 11, 12]);
+  return makeAutoObservable(store);
+}
+
 function createViewSwitchStore() {
   const store = makeCatalogBase([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
   store.handleRowInteraction = function handleRowInteraction(event) {
@@ -378,6 +383,7 @@ const FolderExamplesPanel = observer(() => {
   const singleSelectStore = useMemo(() => createSingleSelectStore(), []);
   const multiSelectStore = useMemo(() => createMultiSelectStore(), []);
   const mixedSelectStore = useMemo(() => createMixedSelectStore(), []);
+  const selectOrderStore = useMemo(() => createSelectOrderStore(), []);
   const viewSwitchStore = useMemo(() => createViewSwitchStore(), []);
   const colResizeDemoStoreByLabel = useMemo(() => ({
     dragModePreview: createColResizeDemoStore(),
@@ -1021,6 +1027,49 @@ const FolderExamplesPanel = observer(() => {
                 <span>{mixedSelectStore.selectionSummary}</span>
               </MessageAndOutputs>
             ) : null}
+          </Example>
+
+          <Example title="Selection Order">
+            <Explanation>
+              The built-in multiple selection keeps rowIdsSelected in the order rows were selected:
+              <KeyChip>Ctrl</KeyChip>+<KeyChip>Click</KeyChip> appends the clicked row at the end, and a
+              <KeyChip>Shift</KeyChip>+<KeyChip>Click</KeyChip> range keeps the anchor-to-target direction,
+              so selecting upward lists lower rows first. The order line below follows the store array.
+            </Explanation>
+            <CompDemoArea>
+              <FolderView
+                data={{
+                  columns: { name: SHARED_COLUMNS.name, size: SHARED_COLUMNS.size },
+                  colsOrder: ['name', 'size'],
+                  rows: selectOrderStore.rows,
+                  rowIdsSelected: selectOrderStore.rowIdsSelected,
+                  getRowData: (rowId, colId) => selectOrderStore.getRowData(rowId, colId),
+                }}
+                config={{
+                  colSizeById: {
+                    name: { width: 250, minWidth: 150, resizable: true },
+                    size: { width: 150, minWidth: 100, resizable: true },
+                  },
+                  selectionMode: 'multiple',
+                  isRowDataObservable: true,
+                  bodyHeight: 220,
+                  isStatusBarVisible: false,
+                }}
+                onEvent={(eventType, eventData) => {
+                  if (eventType === 'rowIdsSelectedChange') {
+                    selectOrderStore.rowIdsSelected.replace(eventData.rowIdsSelected);
+                  }
+                  return { code: 0 };
+                }}
+              />
+            </CompDemoArea>
+            <MessageAndOutputs labelText="Selection order:">
+              <span>
+                {selectOrderStore.rowIdsSelected.length > 0
+                  ? selectOrderStore.rowIdsSelected.map((id) => selectOrderStore.rowsById.get(id).name).join(' -> ')
+                  : 'None'}
+              </span>
+            </MessageAndOutputs>
           </Example>
 
           <Example title="View Switching via FolderView">

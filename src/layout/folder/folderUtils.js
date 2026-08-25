@@ -60,6 +60,9 @@ export const emitFolderEvent = (onEvent, eventType, eventData) => {
   return onEvent(eventType, eventData);
 };
 
+// Range of row ids from the anchor row to the target row. The returned ids
+// keep the anchor-to-target direction, so a range selected upward lists the
+// lower rows first. This keeps rowIdsSelected in the order rows were selected.
 export const getRowRangeById = (rows, fromRowId, toRowId) => {
   const fromIndex = rows.findIndex((row) => row.id === fromRowId);
   const toIndex = rows.findIndex((row) => row.id === toRowId);
@@ -68,9 +71,17 @@ export const getRowRangeById = (rows, fromRowId, toRowId) => {
   }
   const startIndex = Math.min(fromIndex, toIndex);
   const endIndex = Math.max(fromIndex, toIndex);
-  return rows.slice(startIndex, endIndex + 1).map((row) => row.id);
+  const rowIdsRange = rows.slice(startIndex, endIndex + 1).map((row) => row.id);
+  if (fromIndex > toIndex) {
+    rowIdsRange.reverse();
+  }
+  return rowIdsRange;
 };
 
+// Next selection after a click. The returned array keeps selection order:
+// a ctrl click appends the clicked row at the end, and a shift range keeps
+// the anchor-to-target direction. Consumers that need "the order rows were
+// selected" (for example ordered upload) can rely on the array order.
 export const calcRowIdsSelectedForClick = ({
   rows,
   rowIdsSelected,

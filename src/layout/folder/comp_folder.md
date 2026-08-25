@@ -3,6 +3,16 @@
 
 
 
+## Selection Order
+
+`data.rowIdsSelected` is an ordered array, and the built-in multiple selection keeps it in the order rows were selected:
+
+1. A ctrl/meta click on an unselected row appends it at the end.
+2. A shift range keeps the anchor-to-target direction, so selecting upward lists lower rows first.
+3. A ctrl+shift range appends the new range rows after the current selection.
+
+Consumers that need "the order rows were selected", such as ordered upload, can rely on the array order of `rowIdsSelected` in the `rowIdsSelectedChange` event.
+
 ## Column Width Resize Behavior
 
 Dragging the column border(divider line between two columns, or column left/right edge) to change column size should be a supported feature.

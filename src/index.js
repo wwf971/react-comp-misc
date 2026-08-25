@@ -33,6 +33,7 @@ export {
     EyeIcon,
     EyeOffIcon,
     CrossIcon,
+    CopyIcon,
     AddIcon,
     SpinningCircle,
     FolderIcon,
