@@ -204,6 +204,7 @@ Relevant `TabsOnTop` props:
 - `allowTabCreate`, `onTabCreate`: enable and handle creation.
 - `autoSwitchToNewTab`: select a newly added tab; defaults to `true`.
 - `allowTabReorder`, `onTabReorder`: enable drag reorder and receive the new tab order.
+- `allowTabPin`: enable pinned tabs; see Pinned tabs.
 - `lineMode`: controlled mode, either `'single'` or `'wrap'`.
 - `defaultLineMode`: initial uncontrolled line mode.
 - `allowLineModeSwitch`, `onLineModeChange`: show and handle the mode switch.
@@ -217,12 +218,48 @@ Relevant `TabsOnTop.Tab` props:
 - `tabKey`: stable tab identity.
 - `label`: displayed tab label.
 - `keepMounted`: panel lifetime override.
+- `isPinned`: marks the tab as pinned; only meaningful with `allowTabPin`.
 - `deferMount`: wait for first activation before mounting.
 - `deferMountDelayMs`: optional delay after painting the fallback.
 - `isReady`: external readiness gate.
 - `deferKey`: deferred content version.
 - `loadingFallback`: custom loading content.
 - `withErrorBoundary`: render error handling with Retry.
+
+## Pinned tabs
+
+Pinning keeps chosen tabs at the beginning of the header. The feature is opt-in: without `allowTabPin` on `TabsOnTop`, the `isPinned` prop is ignored and the component behaves exactly as before, so existing usage needs no change.
+
+```jsx
+<TabsOnTop
+  allowTabPin
+  allowTabReorder
+  onTabReorder={store.reorder}
+>
+  {store.tabs.map((tab) => (
+    <TabsOnTop.Tab key={tab.id} tabKey={tab.id} label={tab.label} isPinned={tab.isPinned}>
+      <Panel />
+    </TabsOnTop.Tab>
+  ))}
+</TabsOnTop>
+```
+
+With `allowTabPin` enabled:
+
+- Tabs marked `isPinned` display first, keeping their relative order; unpinned tabs follow.
+- Drag reorder stays inside the dragged tab's own group: a pinned tab can only drop between pinned tabs, and an unpinned tab only between unpinned tabs.
+- `onTabReorder` receives the full new order with pinned tabs first.
+
+`TabsOnTop` ships no pin/unpin button or menu. The application owns the pin state and decides how the user changes it, typically a right click menu item on the tab:
+
+```text
+application (e.g. mobx store)
+  -> holds isPinned per tab
+  -> its own ui (right click menu item) flips isPinned
+  -> TabsOnTop re-renders with pinned tabs first
+```
+
+To show the pinned state, use a custom tab label (see Custom tab labels): it receives `isPinned` among its props and can render a pin icon next to the title.
 
 ## Custom tab labels
 
@@ -237,7 +274,7 @@ Place `TabsOnTop.TabLabel` immediately before the related tab:
 </TabsOnTop.Tab>
 ```
 
-The custom component receives tab state and handlers such as `isActive`, `onClick`, drag props, and `onClose` when closing is enabled.
+The custom component receives tab state and handlers such as `isActive`, `onClick`, drag props, `onClose` when closing is enabled, and `isPinned` when pinning is enabled.
 
 ## Imperative switching
 

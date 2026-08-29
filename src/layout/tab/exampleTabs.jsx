@@ -3,6 +3,8 @@ import { makeAutoObservable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import TabsOnTop from './TabsOnTop';
 import CrossIcon from '../../icon/CrossIcon';
+import PinIcon from '../../icon/PinIcon';
+import MenuComp from '../../component/menu/MenuComp.jsx';
 import {
   DemoPanel,
   Example,
@@ -203,6 +205,55 @@ function createStoreTabsCustom() {
         const tabIndex = parseInt(tabConfig.key.split('-')[1]) - 1;
         return this.tabs[tabIndex];
       });
+    },
+  }, {}, { autoBind: true });
+}
+
+const TabWithPin = observer(({ store, label, tabKey, isActive, isDragging, isPinned, draggable, onClick, onDragStart, onDragEnd }) => (
+  <button
+    className={`tab-on-top-btn ${isActive ? 'active' : ''} ${isDragging ? 'dragging' : ''} ${draggable ? 'reorderable' : ''}`}
+    onClick={onClick}
+    draggable={draggable}
+    onDragStart={onDragStart}
+    onDragEnd={onDragEnd}
+    onContextMenu={(event) => {
+      event.preventDefault();
+      store.menuOpen(tabKey, event.clientX, event.clientY);
+    }}
+    type="button"
+    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+  >
+    {isPinned ? <PinIcon isEnabled width={11} height={11} /> : null}
+    <span className="tab-label">{label}</span>
+  </button>
+));
+
+function createStoreTabsPin() {
+  return makeAutoObservable({
+    isPinEnabled: true,
+    tabs: [
+      { id: 'inbox', label: 'Inbox', isPinned: true },
+      { id: 'starred', label: 'Starred', isPinned: true },
+      { id: 'drafts', label: 'Drafts', isPinned: false },
+      { id: 'archive', label: 'Archive', isPinned: false },
+      { id: 'trash', label: 'Trash', isPinned: false },
+    ],
+    menu: { isOpen: false, x: 0, y: 0, tabId: null },
+    pinFeatureToggle() {
+      this.isPinEnabled = !this.isPinEnabled;
+    },
+    pinToggle(tabId) {
+      const tab = this.tabs.find((item) => item.id === tabId);
+      if (tab) tab.isPinned = !tab.isPinned;
+    },
+    reorder(tabConfigList) {
+      this.tabs = reorderByTabConfig(this.tabs, tabConfigList);
+    },
+    menuOpen(tabId, x, y) {
+      this.menu = { isOpen: true, x, y, tabId };
+    },
+    menuClose() {
+      this.menu = { ...this.menu, isOpen: false };
     },
   }, {}, { autoBind: true });
 }
@@ -413,6 +464,66 @@ const TabsWithCustomComponents = observer(function TabsWithCustomComponents({ st
   );
 });
 
+const TabsWithPin = observer(function TabsWithPin({ store }) {
+  const storeLocal = useMemo(() => (store ? null : createStoreTabsPin()), [store]);
+  const storeUsed = store || storeLocal;
+  const tabMenuTarget = storeUsed.tabs.find((tab) => tab.id === storeUsed.menu.tabId) || null;
+  const tabsShown = storeUsed.isPinEnabled
+    ? [...storeUsed.tabs.filter((tab) => tab.isPinned), ...storeUsed.tabs.filter((tab) => !tab.isPinned)]
+    : storeUsed.tabs;
+
+  return (
+    <Example title="Pinned Tabs">
+      <Explanation>
+        Pinning is opt-in via allowTabPin and has no built-in pin ui. This example keeps isPinned per tab in a mobx store, opens its own right click menu to pin/unpin, and renders the pin icon in a custom tab label. Pinned tabs stay at the beginning; dragging keeps a tab inside its own group (pinned or unpinned).
+      </Explanation>
+      <Controls>
+        <div className="tab-example-defer-controls">
+          <button type="button" className="tab-example-defer-toggle" onClick={storeUsed.pinFeatureToggle}>
+            {storeUsed.isPinEnabled ? 'Pin feature: enabled' : 'Pin feature: disabled'}
+          </button>
+        </div>
+      </Controls>
+      <CompDemoArea>
+        <div style={{ width: '560px', maxWidth: '100%' }}>
+          <TabsOnTop
+            allowTabReorder={true}
+            onTabReorder={storeUsed.reorder}
+            allowTabPin={storeUsed.isPinEnabled}
+          >
+            {storeUsed.tabs.map((tab) => (
+              <React.Fragment key={tab.id}>
+                <TabsOnTop.TabLabel>
+                  {(props) => <TabWithPin {...props} store={storeUsed} />}
+                </TabsOnTop.TabLabel>
+                <TabsOnTop.Tab tabKey={tab.id} label={tab.label} isPinned={tab.isPinned}>
+                  <TabDemoPanel title={tab.label} text="Right click the tab above to pin or unpin it." />
+                </TabsOnTop.Tab>
+              </React.Fragment>
+            ))}
+          </TabsOnTop>
+        </div>
+        <MenuComp
+          data={{ items: [{ id: 'pinToggle', label: tabMenuTarget?.isPinned ? 'Unpin tab' : 'Pin tab' }] }}
+          config={{ isOpen: storeUsed.menu.isOpen, posOpen: { x: storeUsed.menu.x, y: storeUsed.menu.y } }}
+          onEvent={(eventType, eventData) => {
+            if (eventType === 'itemClick' && eventData.itemId === 'pinToggle') {
+              storeUsed.pinToggle(storeUsed.menu.tabId);
+              storeUsed.menuClose();
+            }
+            if (eventType === 'closeRequest') storeUsed.menuClose();
+          }}
+        />
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>
+          <strong>Shown order:</strong> {tabsShown.map((tab) => (storeUsed.isPinEnabled && tab.isPinned ? `${tab.label} (pinned)` : tab.label)).join(', ')}
+        </span>
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
 const TabsOneLineOverflow = observer(function TabsOneLineOverflow({ store }) {
   const storeLocal = useMemo(() => (store ? null : createStoreTabOrder(tabLongDefaultList)), [store]);
   const storeUsed = store || storeLocal;
@@ -570,6 +681,7 @@ const TabsOnTopExamplesPanel = () => {
           <BasicExample />
           <TabsWithAllFeatures />
           <TabsWithCustomComponents />
+          <TabsWithPin />
           <TabsOneLineOverflow />
           <TabsMultiLine />
           <TabsSwitchableWithActions />
@@ -583,7 +695,7 @@ const TabsOnTopExamplesPanel = () => {
 export const tabExamples = {
   'TabsOnTop': {
     component: TabsOnTop,
-    description: 'Tabs with close, create, reorder, custom tab components, overflow, multi-line mode, header actions, and deferred panels',
+    description: 'Tabs with close, create, reorder, pin, custom tab components, overflow, multi-line mode, header actions, and deferred panels',
     example: TabsOnTopExamplesPanel,
   },
 };

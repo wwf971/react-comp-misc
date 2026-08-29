@@ -20,6 +20,7 @@ function getTabItemList(containerEl) {
     return {
       element,
       id: element.dataset.tabKey,
+      isPinned: element.dataset.tabPinned === 'true',
       left,
       right: left + rect.width,
       top,
@@ -108,9 +109,10 @@ function getClosestWrapRow(rowList, yContent) {
   }, rowFirst);
 }
 
-function getPreviewFromPoint(trackEl, clientX, clientY, lineMode) {
+function getPreviewFromPoint(trackEl, clientX, clientY, lineMode, itemFilter) {
   if (!trackEl) return null;
-  const itemList = getTabItemList(trackEl);
+  let itemList = getTabItemList(trackEl);
+  if (itemFilter) itemList = itemList.filter(itemFilter);
   if (itemList.length === 0) return null;
   const rect = trackEl.getBoundingClientRect();
   const xContent = Math.max(0, Math.min(trackEl.scrollWidth, clientX - rect.left + trackEl.scrollLeft));
@@ -122,8 +124,9 @@ function getPreviewFromPoint(trackEl, clientX, clientY, lineMode) {
   return getSlotPreviewFromItemList(itemList, xContent);
 }
 
-function getPreviewFromEdge(trackEl, direction) {
-  const itemList = getTabItemList(trackEl);
+function getPreviewFromEdge(trackEl, direction, itemFilter) {
+  let itemList = getTabItemList(trackEl);
+  if (itemFilter) itemList = itemList.filter(itemFilter);
   return getSlotPreviewFromItemList(itemList, direction === 'left' ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY);
 }
 
@@ -138,6 +141,7 @@ const TabsOnTop = forwardRef(({
   autoSwitchToNewTab = true,
   allowTabReorder = false,
   onTabReorder,
+  allowTabPin = false,
   defaultKeepMounted = true,
   lineMode,
   defaultLineMode = 'single',
@@ -150,6 +154,12 @@ const TabsOnTop = forwardRef(({
 }, ref) => {
   const config = useMemo(() => extractTabConfig(children), [children]);
   const { tabs, panels, tabKeyMap } = config;
+  const tabsShown = useMemo(() => {
+    if (!allowTabPin) return tabs;
+    const tabsPinned = tabs.filter((tab) => tab.isPinned);
+    const tabsUnpinned = tabs.filter((tab) => !tab.isPinned);
+    return [...tabsPinned, ...tabsUnpinned];
+  }, [tabs, allowTabPin]);
   const prevTabLabelsRef = React.useRef(null);
   const activeTabLabelRef = React.useRef(null);
   const defaultTabSyncedRef = React.useRef(null);
@@ -159,13 +169,13 @@ const TabsOnTop = forwardRef(({
   const [lineModeLocal, setLineModeLocal] = useState(() => normalizeLineMode(defaultLineMode));
   const lineModeActive = normalizeLineMode(lineMode ?? lineModeLocal);
   const [activeTabKey, setActiveTabKey] = useState(() => {
-    const initialKey = getInitialTabKey(defaultTab, tabs, panels, tabKeyMap);
+    const initialKey = getInitialTabKey(defaultTab, tabsShown, panels, tabKeyMap);
     const initialTab = tabs.find((tab) => tab.key === initialKey);
     if (initialTab) activeTabLabelRef.current = initialTab.label;
     return initialKey;
   });
   const [tabsState, setTabsState] = useState(() => {
-    const initialKey = getInitialTabKey(defaultTab, tabs, panels, tabKeyMap);
+    const initialKey = getInitialTabKey(defaultTab, tabsShown, panels, tabKeyMap);
     const stateByKey = {};
     tabs.forEach((tab) => {
       stateByKey[tab.key] = { clickCount: 0, isFocused: tab.key === initialKey };
@@ -179,7 +189,7 @@ const TabsOnTop = forwardRef(({
   const [dragScrollDirection, setDragScrollDirection] = useState('');
   const [isTrackOverflow, setIsTrackOverflow] = useState(false);
 
-  const getInitialTab = () => getInitialTabKey(defaultTab, tabs, panels, tabKeyMap);
+  const getInitialTab = () => getInitialTabKey(defaultTab, tabsShown, panels, tabKeyMap);
 
   const measureTrackOverflow = () => {
     const trackEl = trackRef.current;
@@ -257,7 +267,7 @@ const TabsOnTop = forwardRef(({
       if (!trackEl) return;
       trackEl.scrollLeft += dragScrollDirection === 'left' ? -24 : 24;
       measureTrackOverflow();
-      const preview = getPreviewFromEdge(trackEl, dragScrollDirection);
+      const preview = getPreviewFromEdge(trackEl, dragScrollDirection, getDragItemFilter(draggingTabKey));
       if (preview) setDragPreview(preview);
     }, 80);
     return () => window.clearInterval(intervalId);
@@ -290,30 +300,40 @@ const TabsOnTop = forwardRef(({
     setDragScrollDirection('');
   };
 
+  // when pinning is enabled, a dragged tab can only land on slots of its own group:
+  // a pinned tab among pinned tabs, an unpinned tab among unpinned tabs
+  const getDragItemFilter = (tabKeyDragged) => {
+    if (!allowTabPin) return null;
+    const tabDragged = tabs.find((tab) => tab.key === tabKeyDragged);
+    if (!tabDragged) return null;
+    const isPinnedDragged = tabDragged.isPinned === true;
+    return (item) => item.isPinned === isPinnedDragged;
+  };
+
   const commitDrop = React.useCallback(() => {
     if (!draggingTabKey || !dragPreview || !onTabReorder) {
       clearDragState();
       return;
     }
-    const draggedIndex = tabs.findIndex((tab) => tab.key === draggingTabKey);
-    const targetIndexRaw = tabs.findIndex((tab) => tab.key === dragPreview.tabTargetKey);
+    const draggedIndex = tabsShown.findIndex((tab) => tab.key === draggingTabKey);
+    const targetIndexRaw = tabsShown.findIndex((tab) => tab.key === dragPreview.tabTargetKey);
     if (draggedIndex < 0 || targetIndexRaw < 0 || draggingTabKey === dragPreview.tabTargetKey) {
       clearDragState();
       return;
     }
-    const tabsNext = [...tabs];
+    const tabsNext = [...tabsShown];
     const [tabMoved] = tabsNext.splice(draggedIndex, 1);
     const targetIndex = tabsNext.findIndex((tab) => tab.key === dragPreview.tabTargetKey);
     const insertIndex = dragPreview.insertPosition === 'after' ? targetIndex + 1 : targetIndex;
     tabsNext.splice(insertIndex, 0, tabMoved);
     onTabReorder(tabsNext);
     clearDragState();
-  }, [draggingTabKey, dragPreview, onTabReorder, tabs]);
+  }, [draggingTabKey, dragPreview, onTabReorder, tabsShown]);
 
   const updateDragPreview = (clientX, clientY) => {
     const trackEl = trackRef.current;
     if (!draggingTabKey || !trackEl) return false;
-    const preview = getPreviewFromPoint(trackEl, clientX, clientY, lineModeActive);
+    const preview = getPreviewFromPoint(trackEl, clientX, clientY, lineModeActive, getDragItemFilter(draggingTabKey));
     if (preview) setDragPreview(preview);
     return Boolean(preview);
   };
@@ -334,7 +354,7 @@ const TabsOnTop = forwardRef(({
     document.body.appendChild(ghost);
     event.dataTransfer.setDragImage(ghost, dragOffsetX.current, dragOffsetY.current);
     setTimeout(() => document.body.removeChild(ghost), 0);
-    const preview = getPreviewFromPoint(trackRef.current, event.clientX, event.clientY, lineModeActive);
+    const preview = getPreviewFromPoint(trackRef.current, event.clientX, event.clientY, lineModeActive, getDragItemFilter(tabKey));
     if (preview) setDragPreview(preview);
   };
 
@@ -423,12 +443,13 @@ const TabsOnTop = forwardRef(({
             onScroll={measureTrackOverflow}
             onWheel={handleWheel}
           >
-            {tabs.map((tab) => renderTabButton({
+            {tabsShown.map((tab) => renderTabButton({
               tab,
               activeTabKey,
               draggingTabKey,
               allowCloseTab,
               allowTabReorder,
+              allowTabPin,
               switchToTab,
               onTabClose,
               handleTabDragStart,
@@ -455,7 +476,7 @@ const TabsOnTop = forwardRef(({
                 onDragOver={(event) => {
                   event.preventDefault();
                   setDragScrollDirection('left');
-                  const preview = getPreviewFromEdge(trackRef.current, 'left');
+                  const preview = getPreviewFromEdge(trackRef.current, 'left', getDragItemFilter(draggingTabKey));
                   if (preview) setDragPreview(preview);
                 }}
                 onDragLeave={() => setDragScrollDirection('')}
@@ -469,7 +490,7 @@ const TabsOnTop = forwardRef(({
                 onDragOver={(event) => {
                   event.preventDefault();
                   setDragScrollDirection('right');
-                  const preview = getPreviewFromEdge(trackRef.current, 'right');
+                  const preview = getPreviewFromEdge(trackRef.current, 'right', getDragItemFilter(draggingTabKey));
                   if (preview) setDragPreview(preview);
                 }}
                 onDragLeave={() => setDragScrollDirection('')}
@@ -496,7 +517,7 @@ const TabsOnTop = forwardRef(({
                 event.preventDefault();
                 clearDragState();
               }}
-            >Cancel Drop</button>
+            >Cancel</button>
           ) : null}
         </div>
 
@@ -571,14 +592,16 @@ function getInitialTabKey(defaultTab, tabs, panels, tabKeyMap) {
   return tabs[0]?.key || null;
 }
 
-function renderTabButton({ tab, activeTabKey, draggingTabKey, allowCloseTab, allowTabReorder, switchToTab, onTabClose, handleTabDragStart, clearDragState }) {
+function renderTabButton({ tab, activeTabKey, draggingTabKey, allowCloseTab, allowTabReorder, allowTabPin, switchToTab, onTabClose, handleTabDragStart, clearDragState }) {
   const isDragging = draggingTabKey === tab.key;
   const isActive = activeTabKey === tab.key;
+  const isPinned = allowTabPin && tab.isPinned === true;
   const commonProps = {
     label: tab.label,
     tabKey: tab.key,
     isActive,
     isDragging,
+    isPinned,
     onClick: () => switchToTab(tab.key),
     onClose: allowCloseTab ? (event) => {
       event.stopPropagation();
@@ -599,7 +622,12 @@ function renderTabButton({ tab, activeTabKey, draggingTabKey, allowCloseTab, all
       customContent = React.cloneElement(tab.customComponent, commonProps);
     }
     return (
-      <span key={tab.key} className="tab-on-top-custom-wrap tab-on-top-drag-item" data-tab-key={tab.key}>
+      <span
+        key={tab.key}
+        className="tab-on-top-custom-wrap tab-on-top-drag-item"
+        data-tab-key={tab.key}
+        data-tab-pinned={isPinned ? 'true' : undefined}
+      >
         {customContent}
       </span>
     );
@@ -609,6 +637,7 @@ function renderTabButton({ tab, activeTabKey, draggingTabKey, allowCloseTab, all
     <button
       key={tab.key}
       data-tab-key={tab.key}
+      data-tab-pinned={isPinned ? 'true' : undefined}
       className={`tab-on-top-btn tab-on-top-drag-item ${isActive ? 'active' : ''} ${isDragging ? 'dragging' : ''} ${allowTabReorder ? 'reorderable' : ''}`}
       onClick={() => switchToTab(tab.key)}
       draggable={allowTabReorder}
@@ -681,7 +710,7 @@ const extractTabConfig = (children) => {
       const tabKey = child.props.tabKey || genTabKey();
       const tabLabel = child.props.label;
       const keepMounted = child.props.keepMounted;
-      tabs.push({ key: tabKey, label: tabLabel, customComponent: pendingTabLabel });
+      tabs.push({ key: tabKey, label: tabLabel, customComponent: pendingTabLabel, isPinned: child.props.isPinned === true });
       panels[tabKey] = {
         content: child.props.children,
         keepMounted,
@@ -703,7 +732,7 @@ const extractTabConfig = (children) => {
   return { tabs, panels, tabKeyMap };
 };
 
-const TabSlot = ({ tabKey, label, keepMounted, deferMount, deferMountDelayMs, isReady, deferKey, loadingFallback, withErrorBoundary, children }) => null;
+const TabSlot = ({ tabKey, label, keepMounted, isPinned, deferMount, deferMountDelayMs, isReady, deferKey, loadingFallback, withErrorBoundary, children }) => null;
 TabSlot.__isTabOnTopSlot = true;
 
 const TabLabelSlot = ({ children }) => null;
