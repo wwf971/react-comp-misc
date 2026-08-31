@@ -62,6 +62,21 @@ const ExamplePanelDual = () => (
           </PanelDual>
         </div>
       </div>
+      <div className="panel-dual-example-section">
+        <div className="panel-dual-example-label">
+          dragMode: preview — dragging moves an indicator line, the ratio is applied on release. Press Escape or the Cancel drag button to abort.
+        </div>
+        <div className="panel-dual-example-frame">
+          <PanelDual orientation="vertical" initialRatio={0.5} dragMode="preview">
+            <div className="panel-dual-example-pane panel-dual-example-pane-a">
+              Left panel
+            </div>
+            <div className="panel-dual-example-pane panel-dual-example-pane-b">
+              Right panel
+            </div>
+          </PanelDual>
+        </div>
+      </div>
     </CompDemoArea>
   </Example>
 );

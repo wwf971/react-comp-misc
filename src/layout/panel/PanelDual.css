@@ -1,4 +1,5 @@
 .panel-dual {
+  position: relative;
   display: flex;
   width: 100%;
   height: 100%;
@@ -52,6 +53,59 @@
 
 .panel-dual-dragging {
   user-select: none;
+}
+
+.panel-dual-indicator {
+  position: absolute;
+  z-index: 1000;
+  display: none;
+  pointer-events: none;
+  background: #4588bd;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+}
+
+.panel-dual-indicator-horizontal.panel-dual-indicator-active {
+  right: 0;
+  left: 0;
+  display: block;
+  height: 3px;
+  transform: translateY(-50%);
+}
+
+.panel-dual-indicator-vertical.panel-dual-indicator-active {
+  top: 0;
+  bottom: 0;
+  display: block;
+  width: 3px;
+  transform: translateX(-50%);
+}
+
+.panel-dual-cancel {
+  position: absolute;
+  z-index: 1001;
+  min-height: 27px;
+  padding: 0 10px;
+  border: 1px solid #9e5960;
+  border-radius: 5px;
+  background: #fff;
+  color: #813b43;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  box-shadow: 0 3px 12px rgba(31, 47, 63, 0.22);
+}
+
+.panel-dual-cancel-horizontal {
+  top: var(--panel-dual-drag-position);
+  right: 12px;
+  transform: translateY(-50%);
+}
+
+.panel-dual-cancel-vertical {
+  bottom: 12px;
+  left: var(--panel-dual-drag-position);
+  transform: translateX(-50%);
 }
 
 .panel-dual-example-section {

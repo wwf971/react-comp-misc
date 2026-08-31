@@ -1,109 +1,178 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './PanelDual.css';
 
-const clampRatio = (value) => {
+const clampRatio = (value, minRatio, maxRatio) => {
   if (Number.isNaN(value)) {
     return 0.5;
   }
-  return Math.min(0.95, Math.max(0.05, value));
+  return Math.min(maxRatio, Math.max(minRatio, value));
 };
 
 const PanelDual = ({
   orientation = 'vertical',
   initialRatio = 0.5,
   initialWidth = null,
+  minRatio = 0.05,
+  maxRatio = 0.95,
   fixedDivider = false,
+  dragMode = 'immediate',
+  onRatioChange,
   children
 }) => {
+  const isDragPreview = dragMode !== 'immediate';
   const containerRef = useRef(null);
   const paneARef = useRef(null);
   const paneBRef = useRef(null);
-  const ratioRef = useRef(clampRatio(initialRatio));
-  const dragHandlersRef = useRef({ onMove: null, onUp: null });
+  const dividerRef = useRef(null);
+  const indicatorRef = useRef(null);
+  const ratioRef = useRef(clampRatio(initialRatio, minRatio, maxRatio));
+  const dragRatioRef = useRef(ratioRef.current);
+  const dragCleanupRef = useRef(() => {});
   const [isDragging, setIsDragging] = useState(false);
 
-  const applyRatio = (ratio) => {
+  const measureSizes = () => {
     const container = containerRef.current;
+    if (!container) {
+      return null;
+    }
+    const containerRect = container.getBoundingClientRect();
+    const dividerRect = dividerRef.current?.getBoundingClientRect();
+    const totalSize = orientation === 'horizontal' ? containerRect.height : containerRect.width;
+    const dividerSize = dividerRect
+      ? (orientation === 'horizontal' ? dividerRect.height : dividerRect.width)
+      : 0;
+    return {
+      containerRect,
+      dividerSize,
+      paneSizeTotal: Math.max(0, totalSize - dividerSize)
+    };
+  };
+
+  const applyRatio = (ratio) => {
     const paneA = paneARef.current;
     const paneB = paneBRef.current;
-    if (!container || !paneA || !paneB) {
+    const sizes = measureSizes();
+    if (!paneA || !paneB || !sizes || sizes.paneSizeTotal <= 0) {
       return;
     }
-    const rect = container.getBoundingClientRect();
-    const totalSize = orientation === 'horizontal' ? rect.height : rect.width;
-    if (!totalSize || totalSize <= 0) {
-      return;
-    }
-    const clampedRatio = clampRatio(ratio);
-    const sizeA = Math.round(totalSize * clampedRatio);
-    const sizeB = Math.max(0, totalSize - sizeA);
-    if (orientation === 'horizontal') {
-      paneA.style.flexBasis = `${sizeA}px`;
-      paneB.style.flexBasis = `${sizeB}px`;
-    } else {
-      paneA.style.flexBasis = `${sizeA}px`;
-      paneB.style.flexBasis = `${sizeB}px`;
-    }
+    const clampedRatio = clampRatio(ratio, minRatio, maxRatio);
+    const sizeA = Math.round(sizes.paneSizeTotal * clampedRatio);
+    const sizeB = Math.max(0, sizes.paneSizeTotal - sizeA);
+    paneA.style.flexBasis = `${sizeA}px`;
+    paneB.style.flexBasis = `${sizeB}px`;
   };
 
   const stopDragging = () => {
-    const { onMove, onUp } = dragHandlersRef.current;
-    if (onMove) {
-      window.removeEventListener('mousemove', onMove);
+    dragCleanupRef.current();
+    dragCleanupRef.current = () => {};
+    containerRef.current?.style.removeProperty('--panel-dual-drag-position');
+    if (indicatorRef.current) {
+      indicatorRef.current.style.left = '';
+      indicatorRef.current.style.top = '';
     }
-    if (onUp) {
-      window.removeEventListener('mouseup', onUp);
-    }
-    dragHandlersRef.current = { onMove: null, onUp: null };
     setIsDragging(false);
   };
 
   const startDragging = (event) => {
-    if (fixedDivider) {
+    if (fixedDivider || event.button !== 0) {
       return;
     }
     event.preventDefault();
     const container = containerRef.current;
-    if (!container) {
+    const divider = dividerRef.current;
+    if (!container || !divider) {
       return;
     }
+    dragRatioRef.current = ratioRef.current;
     setIsDragging(true);
-    const onMove = (moveEvent) => {
-      const rect = container.getBoundingClientRect();
-      if (orientation === 'horizontal') {
-        const nextRatio = (moveEvent.clientY - rect.top) / rect.height;
-        ratioRef.current = clampRatio(nextRatio);
-      } else {
-        const nextRatio = (moveEvent.clientX - rect.left) / rect.width;
-        ratioRef.current = clampRatio(nextRatio);
+
+    const moveIndicator = (position) => {
+      container.style.setProperty('--panel-dual-drag-position', `${position}px`);
+      if (!indicatorRef.current) {
+        return;
       }
-      applyRatio(ratioRef.current);
+      if (orientation === 'horizontal') {
+        indicatorRef.current.style.top = `${position}px`;
+      } else {
+        indicatorRef.current.style.left = `${position}px`;
+      }
     };
-    const onUp = () => {
+
+    if (isDragPreview) {
+      const containerRect = container.getBoundingClientRect();
+      const dividerRect = divider.getBoundingClientRect();
+      const dividerStart = orientation === 'horizontal'
+        ? dividerRect.top - containerRect.top
+        : dividerRect.left - containerRect.left;
+      const dividerSize = orientation === 'horizontal' ? dividerRect.height : dividerRect.width;
+      moveIndicator(dividerStart + dividerSize / 2);
+    }
+
+    const onMove = (moveEvent) => {
+      const sizes = measureSizes();
+      if (!sizes || sizes.paneSizeTotal <= 0) {
+        return;
+      }
+      const pointerPosition = orientation === 'horizontal'
+        ? moveEvent.clientY - sizes.containerRect.top
+        : moveEvent.clientX - sizes.containerRect.left;
+      dragRatioRef.current = clampRatio(
+        (pointerPosition - sizes.dividerSize / 2) / sizes.paneSizeTotal,
+        minRatio,
+        maxRatio
+      );
+      if (isDragPreview) {
+        moveIndicator(sizes.paneSizeTotal * dragRatioRef.current + sizes.dividerSize / 2);
+        return;
+      }
+      ratioRef.current = dragRatioRef.current;
+      applyRatio(ratioRef.current);
+      onRatioChange?.(ratioRef.current);
+    };
+
+    const onUp = (upEvent) => {
+      if (upEvent.target instanceof Element && upEvent.target.closest('.panel-dual-cancel')) {
+        stopDragging();
+        return;
+      }
+      if (isDragPreview) {
+        ratioRef.current = dragRatioRef.current;
+        applyRatio(ratioRef.current);
+        onRatioChange?.(ratioRef.current);
+      }
       stopDragging();
     };
-    dragHandlersRef.current = { onMove, onUp };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+
+    const onKeyDown = (keyEvent) => {
+      if (keyEvent.key !== 'Escape') {
+        return;
+      }
+      keyEvent.preventDefault();
+      stopDragging();
+    };
+
+    dragCleanupRef.current = () => {
+      window.removeEventListener('pointermove', onMove, true);
+      window.removeEventListener('pointerup', onUp, true);
+      window.removeEventListener('keydown', onKeyDown, true);
+    };
+    window.addEventListener('pointermove', onMove, true);
+    window.addEventListener('pointerup', onUp, true);
+    window.addEventListener('keydown', onKeyDown, true);
   };
 
   useLayoutEffect(() => {
     if (initialWidth !== null) {
-      const container = containerRef.current;
-      const totalSize = container
-        ? (orientation === 'horizontal'
-            ? container.getBoundingClientRect().height
-            : container.getBoundingClientRect().width)
-        : 0;
-      if (totalSize > 0 && initialWidth < totalSize) {
-        ratioRef.current = clampRatio(initialWidth / totalSize);
+      const sizes = measureSizes();
+      if (sizes && sizes.paneSizeTotal > 0 && initialWidth < sizes.paneSizeTotal) {
+        ratioRef.current = clampRatio(initialWidth / sizes.paneSizeTotal, minRatio, maxRatio);
         applyRatio(ratioRef.current);
         return;
       }
     }
-    ratioRef.current = clampRatio(initialRatio);
+    ratioRef.current = clampRatio(initialRatio, minRatio, maxRatio);
     applyRatio(ratioRef.current);
-  }, [initialRatio, initialWidth, orientation]);
+  }, [initialRatio, initialWidth, minRatio, maxRatio, orientation]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -126,7 +195,7 @@ const PanelDual = ({
 
   useEffect(() => {
     return () => {
-      stopDragging();
+      dragCleanupRef.current();
     };
   }, []);
 
@@ -144,6 +213,14 @@ const PanelDual = ({
     ? 'panel-dual-divider panel-dual-divider-horizontal'
     : 'panel-dual-divider panel-dual-divider-vertical';
   const fixedClass = fixedDivider ? 'panel-dual-divider-fixed' : '';
+  const isDragPreviewVisible = isDragging && isDragPreview;
+  const indicatorClass = orientation === 'horizontal'
+    ? 'panel-dual-indicator panel-dual-indicator-horizontal'
+    : 'panel-dual-indicator panel-dual-indicator-vertical';
+  const indicatorActiveClass = isDragPreviewVisible ? 'panel-dual-indicator-active' : '';
+  const cancelClass = orientation === 'horizontal'
+    ? 'panel-dual-cancel panel-dual-cancel-horizontal'
+    : 'panel-dual-cancel panel-dual-cancel-vertical';
 
   return (
     <div
@@ -155,11 +232,30 @@ const PanelDual = ({
       </div>
       <div
         className={`${dividerClass} ${fixedClass}`}
-        onMouseDown={startDragging}
+        ref={dividerRef}
+        onPointerDown={startDragging}
       />
       <div className="panel-dual-pane" ref={paneBRef}>
         {childrenArray[1]}
       </div>
+      <div
+        className={`${indicatorClass} ${indicatorActiveClass}`}
+        ref={indicatorRef}
+        aria-hidden="true"
+      />
+      {isDragPreviewVisible ? (
+        <button
+          type="button"
+          className={cancelClass}
+          onPointerDown={(cancelEvent) => {
+            cancelEvent.preventDefault();
+            cancelEvent.stopPropagation();
+            stopDragging();
+          }}
+        >
+          Cancel drag
+        </button>
+      ) : null}
     </div>
   );
 };
