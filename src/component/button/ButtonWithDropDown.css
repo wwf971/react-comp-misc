@@ -1,3 +1,13 @@
+/*
+ * The default button look (used when no custom buttonClassName is passed)
+ * comes from the shadcn/ui Button port, variant "outline"
+ * (src/third_party/shadcn/button.css); the shadcn-button / shadcn-theme-scaled
+ * classes and the data-variant / data-size attributes are set in the JSX.
+ */
+
+@import '../../third_party/shadcn/button.css';
+@import '../../third_party/shadcn/theme-scaled.css';
+
 .button-with-dropdown-root {
   position: relative;
   display: inline-flex;
@@ -22,17 +32,9 @@
   opacity: 0.65;
 }
 
-.button-with-dropdown-button {
-  min-height: 26px;
-  padding: 2px 8px;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  background: #ffffff;
-  color: #202020;
-  font-size: 13px;
-  line-height: 1.2;
-}
-
-.button-with-dropdown-button:hover {
-  background: #f6f6f6;
+/* Sizing, colors, hover, and border all come from the shadcn Button port.
+   Only keep the port's disabled fade: the button-base rule above sets 0.65
+   and would otherwise win over the port's disabled:opacity-50. */
+.button-with-dropdown-button:disabled {
+  opacity: 0.5;
 }

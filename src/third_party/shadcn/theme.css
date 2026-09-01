@@ -1,0 +1,42 @@
+/*
+ * shadcn/ui design tokens — theme "neutral" (the default), light mode.
+ * Values copied verbatim from https://ui.shadcn.com/r/colors/neutral.json
+ * (cssVarsV4.light), fetched 2026-09-02.
+ *
+ * Convention for this folder (src/third_party/shadcn):
+ * - Color values stay verbatim; only the names are prefixed with --shadcn-
+ *   to avoid collisions with consumer apps (shadcn's own names like
+ *   --background are too generic for a library). Lengths are converted from
+ *   rem to px at the 16px root shadcn assumes (see note at the value).
+ * - chart-* and sidebar-* tokens are omitted (app-specific, unused here).
+ * - Dark-mode values exist in the same source JSON (cssVarsV4.dark) and can
+ *   be added later under a .dark scope when needed.
+ */
+
+:root {
+  --shadcn-background: oklch(1 0 0);
+  --shadcn-foreground: oklch(0.145 0 0);
+  --shadcn-card: oklch(1 0 0);
+  --shadcn-card-foreground: oklch(0.145 0 0);
+  --shadcn-popover: oklch(1 0 0);
+  --shadcn-popover-foreground: oklch(0.145 0 0);
+  --shadcn-primary: oklch(0.205 0 0);
+  --shadcn-primary-foreground: oklch(0.985 0 0);
+  --shadcn-secondary: oklch(0.97 0 0);
+  --shadcn-secondary-foreground: oklch(0.205 0 0);
+  --shadcn-muted: oklch(0.97 0 0);
+  --shadcn-muted-foreground: oklch(0.556 0 0);
+  --shadcn-accent: oklch(0.97 0 0);
+  --shadcn-accent-foreground: oklch(0.205 0 0);
+  --shadcn-destructive: oklch(0.577 0.245 27.325);
+  --shadcn-border: oklch(0.922 0 0);
+  --shadcn-input: oklch(0.922 0 0);
+  --shadcn-ring: oklch(0.708 0 0);
+  /* Lengths below are px at the 16px root shadcn assumes, so they do not
+     scale with a consumer app's root font-size (see tabs.css header). */
+  --shadcn-radius: 10px; /* --radius: 0.625rem */
+  /* Tailwind v4 sizing tokens; spacing utilities like h-9 / px-2 / gap-1.5
+     compute from --spacing. theme-scaled.css overrides these. */
+  --shadcn-spacing: 4px; /* --spacing: 0.25rem */
+  --shadcn-text-sm: 14px; /* --text-sm: 0.875rem */
+}

@@ -1,0 +1,20 @@
+/*
+ * Port of the .theme-scaled preview theme that ui.shadcn.com wraps its docs
+ * demos in — this is why components on the docs site look more compact than
+ * the raw registry components (e.g. the Tabs list renders 32px tall instead
+ * of the component's own h-9 = 36px).
+ * Source: apps/v4/app/themes.css in github.com/shadcn-ui/ui, fetched 2026-09-02:
+ *   .theme-scaled { @media (min-width: 1024px) {
+ *     --radius: 0.6rem; --text-sm: 0.8rem; --spacing: 0.222222rem; } }
+ * Deviations: values converted rem -> px at 16px root (see tabs.css header),
+ * applied at all viewport widths instead of only >=1024px, and --text-lg /
+ * --text-base are omitted (nothing in this folder uses them yet).
+ */
+
+@import './theme.css';
+
+.shadcn-theme-scaled {
+  --shadcn-radius: 9.6px; /* 0.6rem */
+  --shadcn-text-sm: 12.8px; /* 0.8rem */
+  --shadcn-spacing: 3.5556px; /* 0.222222rem; makes h-9 exactly 32px */
+}

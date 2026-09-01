@@ -34,7 +34,9 @@ const ButtonWithDropDown = ({
   const hasCustomButtonClass = Boolean(buttonClassName);
   const buttonClassNames = [
     'button-with-dropdown-button-base',
-    hasCustomButtonClass ? '' : 'button-with-dropdown-button',
+    // Default look is the shadcn/ui Button, variant "outline", at the
+    // theme-scaled size shown on ui.shadcn.com docs (see ButtonWithDropDown.css).
+    hasCustomButtonClass ? '' : 'shadcn-button shadcn-theme-scaled button-with-dropdown-button',
     buttonClassName,
   ].filter(Boolean).join(' ');
 
@@ -119,6 +121,8 @@ const ButtonWithDropDown = ({
       <button
         className={buttonClassNames}
         type="button"
+        data-variant="outline"
+        data-size="default"
         title={title || undefined}
         disabled={isDisabled}
         onClick={(event) => {

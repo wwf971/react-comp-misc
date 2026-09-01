@@ -60,7 +60,12 @@ const SegmentedControl = ({
   }, [count, hasSelection, isAutoWidthMode, selectedIndex, segList]);
 
   const trackClassName = [
+    // theme-scaled makes the control 32px tall like the demos displayed on
+    // ui.shadcn.com docs (the raw shadcn Tabs component would be 36px).
+    'shadcn-tabs-list',
+    'shadcn-theme-scaled',
     'segmented-control-track',
+    colorHighlight ? 'has-color-highlight' : '',
     isDisabled ? 'is-disabled' : '',
     isAnimationReady ? '' : 'is-initial-transition-disabled',
     classNameTrack,
@@ -69,7 +74,8 @@ const SegmentedControl = ({
   const widthModeClass = isAutoWidthMode ? 'width-mode-auto' : 'width-mode-equal';
 
   const trackStyle = {
-    '--segment-control-color-highlight': colorHighlight,
+    // Without colorHighlight, the pill falls back to the shadcn background (white).
+    ...(colorHighlight ? { '--segment-control-color-highlight': colorHighlight } : {}),
     '--segment-control-duration-transition-ms': `${durationTransitionMs}ms`,
     '--segment-control-segment-count': String(Math.max(count, 1)),
     '--segment-control-highlight-index': String(Math.max(selectedIndex, 0)),
@@ -80,7 +86,14 @@ const SegmentedControl = ({
   };
 
   const resolveSegmentContent = (segment, isSelected) => {
-    const colorTextSelected = isSelected ? '#ffffff' : '#475569';
+    // Mirrors the text colors in tabs.css / SegmentedControl.css, so custom
+    // segment components can match the surrounding trigger text.
+    let colorTextSelected;
+    if (isSelected) {
+      colorTextSelected = colorHighlight ? '#ffffff' : 'var(--shadcn-foreground)';
+    } else {
+      colorTextSelected = 'color-mix(in oklab, var(--shadcn-foreground) 60%, transparent)';
+    }
     if (segment.compName && compResolveFn) {
       const CustomComp = compResolveFn(segment.compName);
       if (CustomComp) {
@@ -123,7 +136,8 @@ const SegmentedControl = ({
             role="radio"
             aria-checked={isSelected}
             disabled={isDisabled}
-            className={`segmented-control-segment ${widthModeClass}${isSelected ? ' is-selected' : ' is-unselected'}`}
+            data-state={isSelected ? 'active' : 'inactive'}
+            className={`shadcn-tabs-trigger segmented-control-segment ${widthModeClass}${isSelected ? ' is-selected' : ' is-unselected'}`}
             onClick={() => {
               if (isDisabled || !emitEvent) {
                 return;

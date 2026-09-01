@@ -99,7 +99,7 @@ const BoolSliderExample = observer(function BoolSliderExample({ store }) {
       <CompDemoArea>
         <div className="button-example-row">
           <BoolSlider checked={storeUsed.checked1} onChange={storeUsed.checked1Set} />
-          <span className="button-example-row-label">Default blue</span>
+          <span className="button-example-row-label">Default (shadcn primary)</span>
         </div>
         <div className="button-example-row">
           <BoolSlider checked={storeUsed.checked2} onChange={storeUsed.checked2Set} color="#10b981" />
@@ -241,7 +241,7 @@ const SegmentedControlExample = observer(function SegmentedControlExample({ stor
                 { value: 'table', compName: 'TableIcon' },
               ],
             }}
-            config={{ compResolveFn, widthModeSegment: 'equal' }}
+            config={{ compResolveFn, widthModeSegment: 'auto' }}
             onEvent={(eventType, eventData) => {
               if (eventType === 'valueSelectedChange') {
                 storeUsed.viewSet(String(eventData.valueSelected || 'grid'));

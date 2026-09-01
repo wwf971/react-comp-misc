@@ -22,7 +22,9 @@ export function normalizeSegmentedControlProps(props = {}) {
     segList,
     isDisabled: Boolean(configInput.isDisabled ?? configInput.disabled),
     isInitialAnimationEnabled: configInput.isInitialAnimationEnabled === true,
-    colorHighlight: configInput.colorHighlight ?? configInput.color ?? '#3b82f6',
+    // null means default shadcn/ui Tabs look: white pill on muted track, dark text.
+    // An explicit color keeps the legacy look: colored pill, white selected text.
+    colorHighlight: configInput.colorHighlight ?? configInput.color ?? null,
     widthModeSegment: WIDTH_MODE_SEGMENT_SET.has(widthModeSegmentRaw) ? widthModeSegmentRaw : 'auto',
     durationTransitionMs: Number.isFinite(configInput.durationTransitionMs)
       ? Math.max(0, Math.floor(configInput.durationTransitionMs))

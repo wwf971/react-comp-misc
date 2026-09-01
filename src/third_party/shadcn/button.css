@@ -1,0 +1,73 @@
+/*
+ * Plain-CSS port of shadcn/ui Button (style "new-york-v4").
+ * Source: https://ui.shadcn.com/r/styles/new-york-v4/button.json (button.tsx),
+ * fetched 2026-09-02.
+ * Variant and size are selected via data-variant / data-size attributes,
+ * mirroring the data attributes the source component sets on itself.
+ * Folder conventions: see shadcn_useage.md and the tabs.css header.
+ * Not ported (unused here): variants default/destructive/secondary/ghost/link,
+ * sizes xs/sm/lg/icon*, has-[>svg] padding tweaks, aria-invalid styling,
+ * dark mode, and the descendant svg sizing rules.
+ */
+
+@import './theme.css';
+
+.shadcn-button {
+  margin: 0; /* preflight */
+  box-sizing: border-box; /* preflight */
+  background-color: transparent; /* preflight */
+  font-family: inherit; /* preflight */
+  border: none; /* preflight; variants set their own border */
+  /* shadcn buttons inherit the body text color (text-foreground) */
+  color: var(--shadcn-foreground);
+  /* inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm
+     font-medium whitespace-nowrap transition-all outline-none */
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--shadcn-spacing) * 2); /* gap-2 */
+  border-radius: calc(var(--shadcn-radius) - 2px); /* rounded-md */
+  font-size: var(--shadcn-text-sm); /* text-sm */
+  line-height: calc(1.25 / 0.875); /* text-sm line-height (unitless ratio) */
+  font-weight: 500; /* font-medium */
+  white-space: nowrap;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  outline: none;
+}
+
+.shadcn-button[data-size="default"] {
+  /* h-9 px-4 py-2 */
+  height: calc(var(--shadcn-spacing) * 9);
+  padding: calc(var(--shadcn-spacing) * 2) calc(var(--shadcn-spacing) * 4);
+}
+
+.shadcn-button[data-variant="outline"] {
+  /* border bg-background shadow-xs; border color comes from the shadcn base
+     layer rule `* { border-color: var(--border) }` */
+  border: 1px solid var(--shadcn-border);
+  background-color: var(--shadcn-background);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-xs */
+}
+
+.shadcn-button[data-variant="outline"]:hover {
+  /* hover:bg-accent hover:text-accent-foreground */
+  background-color: var(--shadcn-accent);
+  color: var(--shadcn-accent-foreground);
+}
+
+/* State rules come after the variant rules so they win at equal specificity. */
+
+.shadcn-button:focus-visible {
+  /* focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 */
+  border-color: var(--shadcn-ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--shadcn-ring) 50%, transparent);
+}
+
+.shadcn-button:disabled {
+  /* disabled:pointer-events-none disabled:opacity-50 */
+  pointer-events: none;
+  opacity: 0.5;
+}

@@ -1,27 +1,65 @@
+/*
+ * Visual style comes from the shadcn/ui Tabs port (src/third_party/shadcn/tabs.css):
+ * the track is a .shadcn-tabs-list and each segment a .shadcn-tabs-trigger.
+ * This file only adapts that style to a segmented control:
+ * - a sliding highlight pill carries the active background/shadow, so the
+ *   active trigger's own background/shadow is turned off here;
+ * - width modes (auto/equal) and the whole-control disabled fade.
+ */
+
+@import '../../third_party/shadcn/tabs.css';
+@import '../../third_party/shadcn/theme-scaled.css';
+
 .segmented-control-track {
   position: relative;
-  display: inline-flex;
-  align-items: stretch;
-  background-color: #e2e8f0;
-  border-radius: 4px;
-  padding: 2px;
-  min-height: 28px;
-  box-sizing: border-box;
 }
 
 .segmented-control-track.is-disabled {
   opacity: 0.5;
 }
 
+.segmented-control-segment {
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* The track fade above handles the disabled look; undo the per-trigger fade
+   from .shadcn-tabs-trigger:disabled so segments are not faded twice, and
+   restore cursor feedback (shadcn uses pointer-events: none instead). */
+.segmented-control-segment:disabled {
+  pointer-events: auto;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.segmented-control-segment.width-mode-auto {
+  flex: 0 0 auto;
+}
+
+/* width-mode-equal keeps flex: 1 1 0% from .shadcn-tabs-trigger */
+
+/* The sliding pill carries the shadcn active-trigger background and shadow
+   (see .shadcn-tabs-trigger[data-state="active"] in tabs.css), so the trigger
+   itself stays transparent. */
+.segmented-control-segment[data-state="active"] {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+/* Custom colorHighlight keeps the pre-shadcn behavior: colored pill, white text. */
+.segmented-control-track.has-color-highlight .segmented-control-segment[data-state="active"] {
+  color: #ffffff;
+}
+
 .segmented-control-highlight {
   position: absolute;
-  top: 2px;
-  bottom: 2px;
-  border-radius: 2px;
-  background-color: var(--segment-control-color-highlight, #3b82f6);
+  top: 3px; /* matches .shadcn-tabs-list padding */
+  bottom: 3px;
+  border-radius: calc(var(--shadcn-radius) - 2px); /* same as trigger rounded-md */
+  background-color: var(--segment-control-color-highlight, var(--shadcn-background));
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); /* shadow-sm */
   pointer-events: none;
   z-index: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
   opacity: 0;
 }
 
@@ -30,7 +68,7 @@
 }
 
 .segmented-control-highlight.width-mode-auto {
-  left: var(--segment-control-highlight-left, 2px);
+  left: var(--segment-control-highlight-left, 3px);
   width: var(--segment-control-highlight-width, 0px);
   transition:
     left var(--segment-control-duration-transition-ms, 250ms) ease,
@@ -39,8 +77,8 @@
 }
 
 .segmented-control-highlight.width-mode-equal {
-  left: 2px;
-  width: calc((100% - 4px) / var(--segment-control-segment-count, 1));
+  left: 3px;
+  width: calc((100% - 6px) / var(--segment-control-segment-count, 1));
   transform: translateX(calc(var(--segment-control-highlight-index, 0) * 100%));
   transition:
     transform var(--segment-control-duration-transition-ms, 250ms) ease,
@@ -49,41 +87,4 @@
 
 .segmented-control-track.is-initial-transition-disabled .segmented-control-highlight {
   transition: none;
-}
-
-.segmented-control-segment {
-  position: relative;
-  z-index: 1;
-  margin: 0;
-  padding: 4px 6px;
-  border: none;
-  background: transparent;
-  font-size: 13px;
-  line-height: 1.2;
-  border-radius: 2px;
-  font-family: inherit;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.segmented-control-track.is-disabled .segmented-control-segment {
-  cursor: not-allowed;
-}
-
-.segmented-control-segment.width-mode-auto {
-  flex: 0 0 auto;
-}
-
-.segmented-control-segment.width-mode-equal {
-  flex: 1;
-}
-
-.segmented-control-segment.is-selected {
-  color: #ffffff;
-  font-weight: 600;
-}
-
-.segmented-control-segment.is-unselected {
-  color: #475569;
-  font-weight: 400;
 }

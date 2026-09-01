@@ -1,0 +1,46 @@
+/*
+ * Visual style comes from the shadcn/ui Switch port
+ * (src/third_party/shadcn/switch.css): the track is a .shadcn-switch and the
+ * knob a .shadcn-switch-thumb. This file only adapts that style to
+ * BoolSlider's hidden-checkbox structure:
+ * - the <label> hosts cursor and the disabled fade (the track is a <span>,
+ *   so :disabled from the port cannot apply to it);
+ * - focus lives on the hidden input, mirrored onto the track;
+ * - a custom `color` prop keeps the pre-shadcn behavior of a colored track.
+ */
+
+@import '../../third_party/shadcn/switch.css';
+@import '../../third_party/shadcn/theme-scaled.css';
+
+.bool-slider {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.bool-slider.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5; /* same value as the port's disabled:opacity-50 */
+}
+
+.bool-slider-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+
+/* The hidden input carries focus; mirror .shadcn-switch:focus-visible onto the track. */
+.bool-slider-input:focus-visible + .bool-slider-track {
+  border-color: var(--shadcn-ring);
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--shadcn-ring) 50%, transparent),
+    0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+/* Without a custom color, checked falls back to the shadcn primary (near-black). */
+.bool-slider-track[data-state="checked"] {
+  background-color: var(--bool-slider-color-checked, var(--shadcn-primary));
+}

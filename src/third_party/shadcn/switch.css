@@ -1,0 +1,74 @@
+/*
+ * Plain-CSS port of shadcn/ui Switch (style "new-york-v4").
+ * Source: https://ui.shadcn.com/r/styles/new-york-v4/switch.json (switch.tsx),
+ * fetched 2026-09-02.
+ * Folder conventions: see shadcn_useage.md and the tabs.css header.
+ * Not ported (unused here): size="sm" variant and dark mode.
+ */
+
+@import './theme.css';
+
+.shadcn-switch {
+  margin: 0; /* preflight */
+  padding: 0; /* preflight */
+  box-sizing: border-box; /* preflight */
+  /* inline-flex shrink-0 items-center rounded-full border border-transparent
+     shadow-xs transition-all outline-none
+     data-[size=default]:h-[1.15rem] data-[size=default]:w-8 */
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  border-radius: 9999px; /* rounded-full */
+  border: 1px solid transparent;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-xs */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  outline: none;
+  height: 18.4px; /* h-[1.15rem]; rem literal, not spacing-derived */
+  width: calc(var(--shadcn-spacing) * 8); /* w-8 */
+}
+
+.shadcn-switch:focus-visible {
+  /* focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 */
+  border-color: var(--shadcn-ring);
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--shadcn-ring) 50%, transparent),
+    0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.shadcn-switch:disabled {
+  /* disabled:cursor-not-allowed disabled:opacity-50 */
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.shadcn-switch[data-state="checked"] {
+  background-color: var(--shadcn-primary); /* data-[state=checked]:bg-primary */
+}
+
+.shadcn-switch[data-state="unchecked"] {
+  background-color: var(--shadcn-input); /* data-[state=unchecked]:bg-input */
+}
+
+.shadcn-switch-thumb {
+  /* pointer-events-none block rounded-full bg-background ring-0
+     transition-transform group-data-[size=default]/switch:size-4 */
+  pointer-events: none;
+  display: block;
+  border-radius: 9999px;
+  background-color: var(--shadcn-background);
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+  width: calc(var(--shadcn-spacing) * 4); /* size-4 */
+  height: calc(var(--shadcn-spacing) * 4); /* size-4 */
+}
+
+.shadcn-switch-thumb[data-state="checked"] {
+  transform: translateX(calc(100% - 2px)); /* translate-x-[calc(100%-2px)] */
+}
+
+.shadcn-switch-thumb[data-state="unchecked"] {
+  transform: translateX(0); /* translate-x-0 */
+}

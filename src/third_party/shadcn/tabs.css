@@ -1,0 +1,102 @@
+/*
+ * Plain-CSS port of shadcn/ui Tabs (style "new-york-v4", default variant).
+ * Source: https://ui.shadcn.com/r/styles/new-york-v4/tabs.json (tabs.tsx),
+ * fetched 2026-09-02.
+ *
+ * Convention for this folder (src/third_party/shadcn):
+ * - One file per shadcn component. Class names are .shadcn-<component>-<slot>
+ *   (matching the data-slot names in the source, e.g. data-slot="tabs-list").
+ * - Each rule quotes the original Tailwind classes it translates; values come
+ *   from Tailwind v4 defaults and theme.css tokens.
+ * - State styling uses [data-state="..."] / :disabled / :focus-visible exactly
+ *   as Radix + Tailwind variants do in the source.
+ * - Since this repo has no Tailwind preflight, the few button resets that
+ *   shadcn relies on (margin, background, font inheritance, box-sizing) are
+ *   included inline, marked "preflight".
+ * - Sizes are written in px, computed at the 16px root font-size that shadcn
+ *   assumes (the rem original is noted next to each). This library is consumed
+ *   by apps with arbitrary root font-size, and rem values would silently scale
+ *   the component there. Line-heights stay unitless ratios like Tailwind v4.
+ * - Sizes from Tailwind spacing/text utilities are calc()'d from the
+ *   --shadcn-spacing / --shadcn-text-sm tokens in theme.css, mirroring how
+ *   Tailwind v4 computes h-9 etc. from --spacing. This is what lets
+ *   theme-scaled.css shrink components exactly like ui.shadcn.com docs do.
+ *   Literal arbitrary values like p-[3px] stay literal.
+ * - Not ported (unused here): variant="line", vertical orientation, dark mode,
+ *   and the descendant svg sizing rule ([&_svg]:size-4 — element-descendant
+ *   selectors are avoided in this repo; size icons where they are defined).
+ */
+
+@import './theme.css';
+
+.shadcn-tabs-list {
+  /* inline-flex w-fit items-center justify-center rounded-lg p-[3px]
+     text-muted-foreground h-9 bg-muted */
+  box-sizing: border-box; /* preflight */
+  display: inline-flex;
+  width: fit-content;
+  height: calc(var(--shadcn-spacing) * 9); /* h-9; 36px at default spacing */
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--shadcn-radius); /* rounded-lg */
+  padding: 3px;
+  background-color: var(--shadcn-muted);
+  color: var(--shadcn-muted-foreground);
+}
+
+.shadcn-tabs-trigger {
+  margin: 0; /* preflight */
+  box-sizing: border-box; /* preflight */
+  background-color: transparent; /* preflight */
+  font-family: inherit; /* preflight */
+  /* relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center
+     gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium
+     whitespace-nowrap text-foreground/60 transition-all */
+  position: relative;
+  display: inline-flex;
+  height: calc(100% - 1px);
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--shadcn-spacing) * 1.5); /* gap-1.5 */
+  border-radius: calc(var(--shadcn-radius) - 2px); /* rounded-md */
+  border: 1px solid transparent;
+  padding: var(--shadcn-spacing) calc(var(--shadcn-spacing) * 2); /* py-1 px-2 */
+  font-size: var(--shadcn-text-sm); /* text-sm */
+  /* text-sm line-height; unitless ratio like Tailwind v4, so nested content
+     with its own font-size does not inherit an absolute 20px line box */
+  line-height: calc(1.25 / 0.875);
+  font-weight: 500;
+  white-space: nowrap;
+  color: color-mix(in oklab, var(--shadcn-foreground) 60%, transparent);
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.shadcn-tabs-trigger:hover {
+  /* hover:text-foreground */
+  color: var(--shadcn-foreground);
+}
+
+.shadcn-tabs-trigger:focus-visible {
+  /* focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50
+     focus-visible:outline-1 focus-visible:outline-ring */
+  border-color: var(--shadcn-ring);
+  outline: 1px solid var(--shadcn-ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--shadcn-ring) 50%, transparent);
+}
+
+.shadcn-tabs-trigger:disabled {
+  /* disabled:pointer-events-none disabled:opacity-50 */
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.shadcn-tabs-trigger[data-state="active"] {
+  /* data-[state=active]:bg-background data-[state=active]:text-foreground
+     data-[state=active]:shadow-sm */
+  background-color: var(--shadcn-background);
+  color: var(--shadcn-foreground);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); /* shadow-sm */
+}
