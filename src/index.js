@@ -112,6 +112,7 @@ export { default as SearchableValueComp } from "./component/value/SearchableValu
 export { createValueCompOnEvent } from "./component/value/valueCompEvent.js";
 export { default as PanelToggle } from "./layout/panel/PanelToggle.jsx";
 export { default as PanelDual } from "./layout/panel/PanelDual.jsx";
+export { default as PanelText } from "./layout/panel/panel-text/PanelText.jsx";
 export { default as PanelPopup } from "./component/popup/PanelPopup.jsx";
 
 export { default as JsonComp } from "./layout/json/JsonComp.jsx";

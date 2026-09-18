@@ -385,6 +385,50 @@ export function createValueCompOnEvent(handlers?: {
 }): ValueCompOnEvent;
 export const PanelToggle: ComponentType<any>;
 export const PanelDual: ComponentType<any>;
+export type PanelTextLayout = {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+};
+export type PanelTextData = {
+  id?: string;
+  title?: string;
+  text?: string;
+  tone?: string;
+  isVisible?: boolean;
+  layout?: PanelTextLayout;
+  typeDelayMs?: number;
+  typeIntervalMs?: number;
+  typeStep?: number;
+  content?: ReactNode;
+  contentData?: Record<string, unknown>;
+};
+export type PanelTextConfig = {
+  contentComp?: ComponentType<any>;
+  contentConfig?: Record<string, unknown>;
+  isTypeAnimated?: boolean;
+  isPositionAbsolute?: boolean;
+  isPopup?: boolean;
+  isCloseVisible?: boolean;
+  className?: string;
+  bodyClassName?: string;
+  popupLayoutClassName?: string;
+  textEmpty?: string;
+};
+export type PanelTextProps = {
+  data?: PanelTextData;
+  config?: PanelTextConfig;
+  content?: ReactNode;
+  headerTitleContent?: ReactNode;
+  headerRightContent?: ReactNode;
+  headerBottomContent?: ReactNode;
+  popupCompanionContent?: ReactNode;
+  popupLayoutRender?: (args: { panel: ReactNode; companionContent: ReactNode }) => ReactNode;
+  children?: ReactNode;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => unknown;
+};
+export const PanelText: ComponentType<PanelTextProps>;
 export const PanelPopup: ComponentType<any>;
 export const JsonComp: ComponentType<any>;
 export const JsonKeyValueComp: ComponentType<any>;

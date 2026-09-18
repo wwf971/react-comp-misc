@@ -143,7 +143,7 @@ export { default as BoolSlider } from "./component/button/BoolSlider.jsx";
 
 Type-only re-exports for the package root go in `./src/index.d.ts` (same public names as `index.js`).
 
-Import rules for consumers: [export.md](./export.md).
+Import rules for consumers: [comp_export.md](./comp_export.md).
 
 
 ## Public API (runtime)

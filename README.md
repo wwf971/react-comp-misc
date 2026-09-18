@@ -40,6 +40,6 @@ import Menu from '@wwf971/react-comp-misc/Menu';
 import { LeftIcon, RightIcon } from '@wwf971/react-comp-misc/Icon';
 ```
 
-For more details, see `/doc/export.md`.
+For more details, see `/doc/comp_export.md`.
 
 Use root import only. Do not rely on internal sub paths, because internal folder structure may change.
