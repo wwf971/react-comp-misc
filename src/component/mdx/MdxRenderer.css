@@ -1,0 +1,181 @@
+.mdx-renderer {
+  min-width: 0;
+  color: inherit;
+  font: inherit;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.mdx-renderer.is-empty,
+.mdx-renderer.is-loading {
+  color: #8a96a3;
+}
+
+.mdx-renderer.is-error {
+  color: #a33a3a;
+}
+
+.mdx-renderer-error-detail,
+.mdx-renderer-error-source pre {
+  margin: 0.55em 0 0;
+  padding: 0.65em;
+  overflow: auto;
+  border: 1px solid #e1b8b8;
+  border-radius: 4px;
+  background: #fff7f7;
+  color: #793333;
+  font: 11px/1.5 Consolas, "Courier New", monospace;
+  white-space: pre-wrap;
+}
+
+.mdx-renderer-error-source {
+  margin-top: 0.7em;
+}
+
+.mdx-renderer-error-source summary {
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mdx-renderer > :first-child,
+.mdx-renderer > :first-child > :first-child {
+  margin-top: 0;
+}
+
+.mdx-renderer > :last-child,
+.mdx-renderer > :last-child > :last-child {
+  margin-bottom: 0;
+}
+
+.mdx-renderer h1,
+.mdx-renderer h2,
+.mdx-renderer h3,
+.mdx-renderer h4,
+.mdx-renderer h5,
+.mdx-renderer h6 {
+  margin: 1.1em 0 0.42em;
+  color: #203a52;
+  line-height: 1.3;
+}
+
+.mdx-renderer h1 {
+  font-size: 1.5em;
+}
+
+.mdx-renderer h2 {
+  padding-bottom: 0.24em;
+  border-bottom: 1px solid #dce5ed;
+  font-size: 1.22em;
+}
+
+.mdx-renderer h3 {
+  font-size: 1.08em;
+}
+
+.mdx-renderer p,
+.mdx-renderer ul,
+.mdx-renderer ol,
+.mdx-renderer blockquote,
+.mdx-renderer pre,
+.mdx-renderer table {
+  margin: 0.55em 0;
+}
+
+.mdx-renderer ul,
+.mdx-renderer ol {
+  padding-left: 1.7em;
+}
+
+.mdx-renderer ul {
+  padding-left: 0.8em;
+  list-style: none;
+}
+
+.mdx-renderer ol {
+  padding-left: 1.25em;
+}
+
+.mdx-renderer ul > li {
+  position: relative;
+}
+
+.mdx-renderer ul > li::before {
+  position: absolute;
+  top: 0.635em;
+  left: -0.62em;
+  width: 0.38em;
+  height: 0.38em;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.mdx-renderer li + li {
+  margin-top: 0.22em;
+}
+
+.mdx-renderer a {
+  color: #246fa8;
+}
+
+.mdx-renderer blockquote {
+  padding: 0.2em 0.8em;
+  border-left: 3px solid #a8bfd3;
+  color: #52697d;
+}
+
+.mdx-renderer code {
+  padding: 0.1em 0.28em;
+  border-radius: 3px;
+  background: #edf2f6;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.mdx-renderer pre {
+  padding: 0.7em;
+  overflow: auto;
+  border: 1px solid #d9e2ea;
+  border-radius: 4px;
+  background: #f6f8fa;
+}
+
+.mdx-renderer pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.mdx-renderer table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mdx-renderer th,
+.mdx-renderer td {
+  padding: 0.4em 0.55em;
+  border: 1px solid #d8e1e9;
+  text-align: left;
+}
+
+/* Rich HTML can carry its own inline presentation. Revert application and
+   Markdown defaults while preserving the higher-priority inline declarations. */
+.mdx-renderer.is-loaded.is-source-style-preferred {
+  line-height: normal;
+  overflow-wrap: normal;
+}
+
+.mdx-renderer.is-loaded.is-source-style-preferred :where(*) {
+  all: revert;
+}
+
+.mdx-renderer.is-loaded.is-source-style-preferred > :first-child > :first-child {
+  margin-top: revert;
+}
+
+.mdx-renderer.is-loaded.is-source-style-preferred > :last-child > :last-child {
+  margin-bottom: revert;
+}
+
+.mdx-renderer.is-loaded.is-source-style-preferred ul > li::before {
+  content: none;
+}

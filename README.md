@@ -15,6 +15,10 @@ pnpm run dev
 
 See `/doc/comp_design.md`
 
+## Adding a Component
+
+For the workflow and things to be careful about when adding a component (architecture design, export, test/demo examples), see `/doc/comp_add.md`.
+
 # Import component(s) from this project
 
 Good way to import:

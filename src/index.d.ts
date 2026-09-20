@@ -78,6 +78,12 @@ export const ExternalLinkIcon: ComponentType<any>;
 export const PdfIcon: ComponentType<any>;
 export const CheckIcon: ComponentType<any>;
 export const CalendarIcon: ComponentType<any>;
+export const BoldIcon: ComponentType<any>;
+export const ItalicIcon: ComponentType<any>;
+export const UnderlineIcon: ComponentType<any>;
+export const DeletelineIcon: ComponentType<any>;
+export const TextColorIcon: ComponentType<any>;
+export const BgColorIcon: ComponentType<any>;
 
 export function get_local_timezone_int(...args: any[]): any;
 export function format_date(...args: any[]): any;
@@ -826,6 +832,7 @@ export const HtmlRender: ComponentType<any>;
 export const DateSelector: ComponentType<any>;
 export const DateView: ComponentType<any>;
 export const Radar: ComponentType<any>;
+export const MdxRenderer: ComponentType<any>;
 
 export const DemoPanel: ComponentType<any>;
 export const Example: ComponentType<any>;
