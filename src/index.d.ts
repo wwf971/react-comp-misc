@@ -832,6 +832,75 @@ export const HtmlRender: ComponentType<any>;
 export const DateSelector: ComponentType<any>;
 export const DateView: ComponentType<any>;
 export const Radar: ComponentType<any>;
+
+export type TimelineEventRecord = {
+  id?: string;
+  name?: string;
+  label?: string;
+  timeStart?: Date | string | number;
+  timeEnd?: Date | string | number;
+  textSecondary?: string;
+  tone?: string;
+  color?: string;
+};
+
+export type TimelineEventTimeRange = {
+  timeStart?: Date | string | number;
+  timeEnd?: Date | string | number;
+};
+
+export type TimelineEventAggregationLevel = {
+  id?: string;
+  label?: string;
+  unit?: 'minute' | 'hour' | 'day' | 'week' | 'halfMonth' | 'month' | 'year';
+  size?: number;
+  durationMinMs?: number;
+};
+
+export type TimelineEventData = {
+  eventById?: Record<string, TimelineEventRecord>;
+  eventIdList?: string[];
+  eventIdSelected?: string;
+  timeRange?: TimelineEventTimeRange;
+};
+
+export type TimelineEventConfig = {
+  height?: number;
+  topChannel?: number;
+  laneCountEvent?: number;
+  heightBar?: number;
+  heightBarAggregate?: number;
+  gapBar?: number;
+  gapChannelLabel?: number;
+  widthLabelMax?: number;
+  gapLabel?: number;
+  heightLabelLane?: number;
+  isLabelChannelHeightLimited?: boolean;
+  heightLabelChannelMax?: number;
+  labelVariant?: 'detailEdge' | 'compactDot' | 'compactTime';
+  isLocked?: boolean;
+  isCurrentTimeVisible?: boolean;
+  isTimeTextVisible?: boolean;
+  locale?: string;
+  timeMin?: Date | string | number;
+  timeMax?: Date | string | number;
+  zoomMinMs?: number;
+  zoomMaxMs?: number;
+  isAggregationEnabled?: boolean;
+  aggregation?: {
+    countMin?: number;
+    offsetMinute?: number;
+    levelList?: TimelineEventAggregationLevel[];
+  };
+};
+
+export type TimelineEventProps = {
+  data?: TimelineEventData;
+  config?: TimelineEventConfig;
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => unknown;
+};
+
+export const TimelineEvent: ComponentType<TimelineEventProps>;
 export const MdxRenderer: ComponentType<any>;
 
 export const DemoPanel: ComponentType<any>;

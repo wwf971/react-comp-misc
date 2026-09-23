@@ -37,7 +37,7 @@ const CATEGORY_LABEL_BY_KEY = {
 const resolveCategoryKey = (itemKeyRaw) => {
   const itemKey = String(itemKeyRaw || '').toLowerCase();
   if (itemKey === 'html' || itemKey === 'database' || itemKey === 'metadata' || itemKey.includes('demo')) return 'dev';
-  if (itemKey === 'stat' || itemKey === 'radar') return 'visualization';
+  if (itemKey === 'stat' || itemKey === 'radar' || itemKey.includes('timeline')) return 'visualization';
   if (itemKey.includes('config') || itemKey.includes('calendar') || itemKey.includes('auth') || itemKey.includes('login') || itemKey.includes('path')) {
     return 'application';
   }

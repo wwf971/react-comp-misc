@@ -183,6 +183,7 @@ export { default as HtmlRender } from "./dev/HtmlRender.jsx";
 export { default as DateSelector } from "./component/calendar/DateSelector.jsx";
 export { default as DateView } from "./component/calendar/DateView.jsx";
 export { default as Radar } from "./component/stat/Radar.jsx";
+export { default as TimelineEvent } from "./component/timeline-event/TimelineEvent.jsx";
 export { default as MdxRenderer } from "./component/mdx/MdxRenderer.jsx";
 
 export {

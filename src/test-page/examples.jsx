@@ -22,6 +22,7 @@ import { htmlExamples } from '../dev/exampleHtml.jsx';
 import { demoLayoutExamples } from '../dev/demo/exampleDemoLayout.jsx';
 import { calendarExamples } from '../component/calendar/exampleCalendar.jsx';
 import { statExamples } from '../component/stat/exampleStat.jsx';
+import { timelineEventExamples } from '../component/timeline-event/exampleTimelineEvent.jsx';
 import { databaseExamples } from '../database/exampleDatabase.jsx';
 import { metadataExamples } from '../app/metadata/exampleMetadata.jsx';
 import { sideListExamples } from '../app/side-list/exampleSideList.jsx';
@@ -54,6 +55,7 @@ export const components = {
   ...authExamples,
   ...calendarExamples,
   ...statExamples,
+  ...timelineEventExamples,
   ...databaseExamples,
   ...metadataExamples,
   ...sideListExamples,
