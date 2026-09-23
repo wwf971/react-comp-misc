@@ -29,6 +29,7 @@ const PropEditorValueEnum = observer(function PropEditorValueEnum({ data, itemRe
       <ValueShell itemRef={itemRef}>
         <div
           className="prop-editor-radio-scroll-outer"
+          data-wheel-self="true"
           onWheel={(event) => {
             if (isLocked) return;
             event.preventDefault();

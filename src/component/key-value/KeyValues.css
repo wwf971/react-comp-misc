@@ -103,50 +103,32 @@
   text-align: center;
 }
 
-.key-cell.cell-clip {
+.key-cell.cell-clip,
+.value-cell.cell-clip {
   overflow: hidden;
   min-width: 0;
-  scrollbar-width: none;
 }
 
-.key-cell.cell-clip::-webkit-scrollbar,
-.value-cell.cell-clip::-webkit-scrollbar {
-  display: none;
+/* The inner wrapper keeps its natural content width. The cell clips it, and the
+   wheel-controlled horizontal offset is applied as translateX on this wrapper,
+   so no scrollbar ever appears. When the content fits, min-width: 100% makes the
+   wrapper fill the cell and normal text-align rules decide the alignment. */
+.keyvalues-cell.cell-clip .keyvalues-cell-clip-inner {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  white-space: nowrap;
+  will-change: transform;
 }
 
-.key-cell.cell-clip.key-cell-content-align-left {
-  text-align: left;
-}
-
-.key-cell.cell-clip.key-cell-content-align-right {
-  direction: rtl;
-  text-align: left;
-  padding-right: 2px;
-}
-
-.key-cell.cell-clip.key-cell-content-align-right:has(.keyvalues-text.editing) {
-  direction: ltr;
-  text-align: right;
-  padding-right: 6px;
-}
-
-.key-cell.cell-clip.key-cell-content-align-center {
-  text-align: center;
+/* Subtle cue that a clipped cell can be wheel-scrolled; cells without hidden
+   content never get the is-clip-overflow class and stay inert. */
+.keyvalues-cell.cell-clip.is-clip-overflow:hover {
+  background-color: #f4f4f4;
 }
 
 .key-cell-content-wrap {
   min-width: 0;
-}
-
-.key-cell.cell-clip .key-cell-content-wrap {
-  display: inline;
-  white-space: nowrap;
-  vertical-align: top;
-}
-
-.key-cell.cell-clip.key-cell-content-align-right .key-cell-content-wrap {
-  direction: ltr;
-  unicode-bidi: embed;
 }
 
 .key-cell.cell-clip .keyvalues-text {
@@ -187,12 +169,6 @@
 
 .value-cell-content-align-center .keyvalues-text {
   text-align: center;
-}
-
-.value-cell.cell-clip {
-  overflow: hidden;
-  min-width: 0;
-  scrollbar-width: none;
 }
 
 .value-cell.cell-wrap {

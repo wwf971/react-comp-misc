@@ -11,7 +11,9 @@ import {
   Controls,
   CompDemoArea,
   MessageAndOutputs,
+  JsonDisplay,
 } from '../../dev/demo/DemoLayout.jsx';
+import { ExampleGroup, ExampleStackVertical } from '../../dev/demo/ExampleGroup.jsx';
 import './examplePropEditor.css';
 
 const DemoCustomItem = observer(function DemoCustomItem({ data = {}, config = {}, onEvent }) {
@@ -77,14 +79,71 @@ const compByName = {
   demoLeadingFlag: DemoLeadingFlag,
 };
 
+function offsetXByFieldByPropertyIdGet(propertyById) {
+  const offsetXByFieldByPropertyId = {};
+  Object.entries(propertyById ?? {}).forEach(([propertyId, property]) => {
+    if (property?.uiState?.offsetXByField) {
+      offsetXByFieldByPropertyId[propertyId] = property.uiState.offsetXByField;
+    }
+  });
+  return offsetXByFieldByPropertyId;
+}
+
+const DemoPropEditorSection = observer(function DemoPropEditorSection({ store, example }) {
+  const editorConfig = { ...example.config, getComp: (compName) => compByName[compName] ?? null };
+  const embeddedWidth = editorConfig.embeddedWidth ?? 340;
+  const offsetXByFieldByPropertyId = offsetXByFieldByPropertyIdGet(example.data.propertyById);
+  const isOffsetShown = Object.keys(offsetXByFieldByPropertyId).length > 0;
+
+  return (
+    <Example title={example.label}>
+      <Explanation>{example.description}</Explanation>
+      <Controls>
+        <button type="button" className="demo-button" onClick={() => store.popupOpen(example.id)}>
+          Open draggable popup
+        </button>
+      </Controls>
+      <CompDemoArea>
+        <div className="demo-prop-editor-root">
+          <div className="demo-prop-editor-embedded" style={{ width: `min(${embeddedWidth}px, 100%)` }}>
+            <PropEditor
+              data={example.data}
+              config={editorConfig}
+              onEvent={(eventType, eventData) => store.handleEditorEvent(eventType, eventData, example.id)}
+            />
+          </div>
+          {example.secondaryData ? (
+            <div className="demo-prop-editor-secondary">
+              <div className="demo-prop-editor-secondary-desc">{example.secondaryDescription}</div>
+              <div
+                className="demo-prop-editor-embedded"
+                style={{ width: `min(${example.secondaryConfig?.embeddedWidth ?? embeddedWidth}px, 100%)` }}
+              >
+                <PropEditor
+                  data={example.secondaryData}
+                  config={{ ...example.secondaryConfig, getComp: (compName) => compByName[compName] ?? null }}
+                  onEvent={(eventType, eventData) => store.handleSecondaryEditorEvent(eventType, eventData, example.id)}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </CompDemoArea>
+      <MessageAndOutputs>
+        <span>{example.messageText}</span>
+        {isOffsetShown ? <JsonDisplay data={offsetXByFieldByPropertyId} /> : null}
+      </MessageAndOutputs>
+    </Example>
+  );
+});
+
 const DemoPropEditor = observer(function DemoPropEditor({ store }) {
   const storeOwn = useMemo(() => (store ? null : createPropEditorDemoStore()), [store]);
   const storeUsed = store || storeOwn;
-  const exampleSelected = storeUsed.exampleSelected;
-  const editorConfig = { ...exampleSelected.config, getComp: (compName) => compByName[compName] ?? null };
-  const titleText = editorConfig.titleText ?? exampleSelected.data.titleText ?? 'Prop Editor';
-  const popupWidth = editorConfig.popupWidth ?? 320;
-  const embeddedWidth = editorConfig.embeddedWidth ?? 340;
+  const popupExample = storeUsed.popupExample;
+  const popupConfig = { ...popupExample.config, getComp: (compName) => compByName[compName] ?? null };
+  const popupTitleText = popupConfig.titleText ?? popupExample.data.titleText ?? 'Prop Editor';
+  const popupWidth = popupConfig.popupWidth ?? 320;
 
   useEffect(() => {
     const move = (event) => storeUsed.dragMove(event.clientX, event.clientY);
@@ -102,49 +161,13 @@ const DemoPropEditor = observer(function DemoPropEditor({ store }) {
       <Explanation titleText="Prop Editor">
         Data-driven property editor with tabs, groups, and typed value editors.
       </Explanation>
-      <Example title={exampleSelected.label}>
-        <Explanation>{exampleSelected.description}</Explanation>
-        <Controls>
+      <ExampleGroup title="Layouts">
+        <ExampleStackVertical>
           {storeUsed.exampleList.map((example) => (
-            <button
-              key={example.id}
-              type="button"
-              className={`demo-button${example.id === storeUsed.exampleSelectedId ? ' is-active' : ''}`}
-              onClick={() => storeUsed.selectExample(example.id)}
-            >
-              {example.label}
-            </button>
+            <DemoPropEditorSection key={example.id} store={storeUsed} example={example} />
           ))}
-          <button type="button" className="demo-button" onClick={storeUsed.popupOpen}>
-            Open draggable popup
-          </button>
-        </Controls>
-        <CompDemoArea>
-          <div className="demo-prop-editor-root">
-            <div className="demo-prop-editor-embedded" style={{ width: `min(${embeddedWidth}px, 100%)` }}>
-              <PropEditor data={exampleSelected.data} config={editorConfig} onEvent={storeUsed.handleEditorEvent} />
-            </div>
-            {exampleSelected.secondaryData ? (
-              <div className="demo-prop-editor-secondary">
-                <div className="demo-prop-editor-secondary-desc">{exampleSelected.secondaryDescription}</div>
-                <div
-                  className="demo-prop-editor-embedded"
-                  style={{ width: `min(${exampleSelected.secondaryConfig?.embeddedWidth ?? embeddedWidth}px, 100%)` }}
-                >
-                  <PropEditor
-                    data={exampleSelected.secondaryData}
-                    config={{ ...exampleSelected.secondaryConfig, getComp: (compName) => compByName[compName] ?? null }}
-                    onEvent={storeUsed.handleSecondaryEditorEvent}
-                  />
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </CompDemoArea>
-        <MessageAndOutputs>
-          <span>{storeUsed.messageText}</span>
-        </MessageAndOutputs>
-      </Example>
+        </ExampleStackVertical>
+      </ExampleGroup>
       {storeUsed.isPopupShown ? (
         <div
           className="demo-prop-editor-popup"
@@ -154,10 +177,14 @@ const DemoPropEditor = observer(function DemoPropEditor({ store }) {
             className="demo-prop-editor-popup-title"
             onMouseDown={(event) => storeUsed.dragBegin(event.clientX, event.clientY)}
           >
-            <span className="demo-prop-editor-popup-title-text">{titleText}</span>
+            <span className="demo-prop-editor-popup-title-text">{popupTitleText}</span>
             <button type="button" className="demo-prop-editor-popup-close" onClick={storeUsed.popupClose}>Close</button>
           </div>
-          <PropEditor data={exampleSelected.data} config={editorConfig} onEvent={storeUsed.handleEditorEvent} />
+          <PropEditor
+            data={popupExample.data}
+            config={popupConfig}
+            onEvent={(eventType, eventData) => storeUsed.handleEditorEvent(eventType, eventData, popupExample.id)}
+          />
         </div>
       ) : null}
     </DemoPanel>

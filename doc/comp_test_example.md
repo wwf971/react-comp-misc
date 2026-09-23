@@ -55,7 +55,7 @@ Jump links: `<ExampleJumpLink data={{ exampleId, groupId?, pageKey? }}>label</Ex
 
 Json output: to display json data (state dumps, payloads, current values), use `JsonDisplay` from `src/dev/demo/`: `<JsonDisplay data={value} />` (pass the value itself; the component stringifies it and renders in the unified sans-serif style). Never print json with ad hoc `pre`/`code` elements or per-example css.
 
-- `config` sets the initial display state: `{ indentSize, isCollapsed }` (default: pretty, 2 spaces). Built-in controls at the top right corner of the block let the user switch pretty/one-line mode and tune the indent at runtime.
+- `config` sets the initial display state: `{ indentSize, isCollapsed, isStretchWidth }` (default: pretty, 2 spaces, stretch to the container width). Set `isStretchWidth` to `false` to shrink the block to the text width. Built-in controls at the top right corner of the block let the user switch pretty/one-line mode and tune the indent at runtime.
 - This ui state lives in a `StoreJsonDisplay` the component creates for itself; to share or control it, pass a `store` prop created with `createStoreJsonDisplay` from `src/dev/demo/demoStores.js`. Accepted control changes are reported through `onEvent` (`jsonCollapsedSet`, `jsonIndentSizeSet`).
 
 Simulated server: when an example simulates server round trips (average delay plus chance failure), use the standard sim server from `src/dev/demo/`; never implement ad hoc per-example delay/failure code or controls.

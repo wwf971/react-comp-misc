@@ -177,6 +177,8 @@ const KeyValuesForNodes = observer(function KeyValuesForNodes({ nodes, parentPat
         isValueEditable,
         alignCol: true,
         keyColWidth: config.keyColWidth ?? 'min',
+        keyColMinWidth: config.keyColMinWidth,
+        keyColMaxWidth: config.keyColMaxWidth,
         keyCellContentAlign: config.keyCellContentAlign ?? 'right',
         valueCellContentAlign: config.valueCellContentAlign ?? 'left',
         isDividerDraggable: config.isDividerDraggable === true,

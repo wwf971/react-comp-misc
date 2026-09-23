@@ -108,16 +108,19 @@ const MessageAndOutputs = ({ labelText, children }) => (
 // JsonDisplay: standard block for showing json data (state dumps, payloads),
 // typically inside MessageAndOutputs. Pass the value itself via the data prop;
 // the component stringifies and renders it in the unified sans-serif style.
-// config sets the initial display state: { indentSize, isCollapsed }.
-// The controls in the top right corner switch pretty/one-line mode and tune
-// the indent width; this ui state lives in a StoreJsonDisplay, created locally
-// when the store prop is absent. Accepted changes are reported through onEvent.
+// config sets the initial display state: { indentSize, isCollapsed, isStretchWidth }.
+// isStretchWidth defaults to true (block fills the container); set false to shrink
+// to the text width. The controls in the top right corner switch pretty/one-line
+// mode and tune the indent width; this ui state lives in a StoreJsonDisplay,
+// created locally when the store prop is absent. Accepted changes are reported
+// through onEvent.
 const JsonDisplay = observer(({ data, config = {}, store, onEvent }) => {
   const storeOwn = useMemo(
     () => (store ? null : createStoreJsonDisplay({ indentSize: config.indentSize, isCollapsed: config.isCollapsed })),
     [store],
   );
   const storeUsed = store || storeOwn;
+  const isStretchWidth = config.isStretchWidth !== false;
   const controlEventHandle = (eventType, eventData = {}) => {
     const result = storeUsed.handleEvent(eventType, eventData);
     if (result.code === 0) onEvent?.(eventType, eventData);
@@ -127,7 +130,7 @@ const JsonDisplay = observer(({ data, config = {}, store, onEvent }) => {
     ? JSON.stringify(data)
     : JSON.stringify(data, null, storeUsed.indentSize);
   return (
-    <div className="demo-json-display">
+    <div className={`demo-json-display${isStretchWidth ? ' is-stretch-width' : ''}`}>
       <div className="demo-json-display-controls">
         <button
           type="button"

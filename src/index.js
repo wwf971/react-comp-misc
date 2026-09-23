@@ -42,6 +42,7 @@ export {
     EditIconPen,
     PlusIcon,
     MinusIcon,
+    DragIcon,
     SettingIcon,
     FilterIcon,
     FilterIconEnabled,

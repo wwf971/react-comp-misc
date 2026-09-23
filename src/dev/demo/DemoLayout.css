@@ -290,6 +290,10 @@
   background: #f7f9fb;
 }
 
+.demo-json-display.is-stretch-width {
+  width: 100%;
+}
+
 /* controls row at the top right corner of the block */
 .demo-json-display-controls {
   display: flex;

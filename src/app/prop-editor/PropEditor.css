@@ -472,6 +472,22 @@
   text-align: right;
 }
 
+/* Cells are flex containers here; keep the clip wrapper at its natural width. */
+.prop-editor-root .keyvalues-cell.cell-clip > .keyvalues-cell-clip-inner {
+  flex: 0 0 auto;
+}
+
+/* When the content overflows, anchor the wrapper to the left edge; the
+   wheel-controlled translateX offset decides which part is visible. */
+.prop-editor-root .keyvalues-cell.cell-clip.is-clip-overflow {
+  justify-content: flex-start;
+}
+
+.prop-editor-root .keyvalues-row.is-row-editable:hover .keyvalues-cell.cell-clip.is-clip-overflow,
+.prop-editor-root .keyvalues-cell.cell-clip.is-clip-overflow:hover {
+  background: #e4edf6;
+}
+
 .prop-editor-root .key-cell > span {
   display: block;
   min-width: max-content;

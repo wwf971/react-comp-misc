@@ -532,7 +532,7 @@ const exampleListDefault = [
   {
     id: 'full',
     label: 'Left + Top + Groups',
-    description: 'Display structure is panel/group/property ids; propertyById stores type, value, min/max, display type, and enum options.',
+    description: 'Display structure is panel/group/property ids; propertyById stores type, value, min/max, display type, and enum options. The Identity group has a long right-aligned key: its right edge is visible at first, and hovering the clipped cell while rolling the mouse wheel reveals the hidden part. The offset is kept in uiState.offsetXByField of the property.',
     data: editorDataFull,
     config: { titleText: 'Kanto Material', width: 'min(320px, 100%)', embeddedWidth: 340, popupWidth: 320, isLevelLeftShown: true, isLevelTopShown: true, keyColWidth: 'min', keyColMinWidth: '54px', keyColMaxWidth: '92px', requestTimeoutMs: 1800, serverSimulation: { delayMinMs: 120, delayMaxMs: 360, errorRate: 0.08, timeoutRate: 0.03 } },
   },
@@ -577,7 +577,7 @@ const exampleListDefault = [
   {
     id: 'alignment',
     label: 'Alignment + Overflow',
-    description: 'Keys default to right alignment, values default to left alignment, and clipped cells can be inspected with the mouse wheel while hovering.',
+    description: 'Contains a long right-aligned key, a long left-aligned value, and a row where both cells overflow. Hover a clipped cell and roll the mouse wheel to reveal the hidden text; each cell keeps its own offset in uiState.offsetXByField in the MobX store.',
     data: editorDataAlignment,
     config: { titleText: 'Alignment', width: 'min(300px, 100%)', embeddedWidth: 320, popupWidth: 300, isLevelLeftShown: false, isLevelTopShown: false, keyColWidth: '96px', keyCellContentAlign: 'right', valueCellContentAlign: 'left', requestTimeoutMs: 1800, serverSimulation: { delayMinMs: 120, delayMaxMs: 360, errorRate: 0.08, timeoutRate: 0.03 } },
   },
@@ -590,9 +590,9 @@ class PropEditorDemoStore {
     secondaryData: example.secondaryData ? editorDataClone(example.secondaryData) : undefined,
     secondaryConfig: example.secondaryConfig ? { ...example.secondaryConfig, groupCollapsedByPath: {} } : undefined,
     config: { ...example.config, groupCollapsedByPath: {} },
+    messageText: 'Ready',
   }));
-  exampleSelectedId = 'full';
-  messageText = 'Ready';
+  popupExampleId = null;
   isPopupShown = false;
   popupPos = { x: 260, y: 120 };
   dragState = { isDragging: false, xStart: 0, yStart: 0, xOrigin: 0, yOrigin: 0 };
@@ -601,24 +601,24 @@ class PropEditorDemoStore {
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
-  get exampleSelected() {
-    return this.exampleList.find((example) => example.id === this.exampleSelectedId) ?? this.exampleList[0];
+  exampleById(exampleId) {
+    return this.exampleList.find((example) => example.id === exampleId) ?? this.exampleList[0];
   }
 
-  selectExample(exampleId) {
-    if (this.exampleList.some((example) => example.id === exampleId)) this.exampleSelectedId = exampleId;
+  get popupExample() {
+    return this.popupExampleId ? this.exampleById(this.popupExampleId) : this.exampleList[0];
   }
 
-  propertySet(data, propertyId, propertyPath, valueNext) {
+  propertySet(data, propertyId, propertyPath, valueNext, example) {
     const property = data.propertyById?.[propertyPath] ?? data.propertyById?.[propertyId];
     if (!property) return false;
     property.value = valueNext;
-    this.messageText = `${property.id ?? propertyPath} = ${valueNext}`;
+    example.messageText = `${property.id ?? propertyPath} = ${valueNext}`;
     return true;
   }
 
-  async handleEditorEvent(eventType, eventData = {}, editorTarget = 'primary') {
-    const example = this.exampleSelected;
+  async handleEditorEvent(eventType, eventData = {}, exampleId, editorTarget = 'primary') {
+    const example = this.exampleById(exampleId);
     const data = editorTarget === 'secondary' ? example.secondaryData : example.data;
     const config = editorTarget === 'secondary' ? example.secondaryConfig : example.config;
     if (!data || !config) return { code: -1, message: 'Editor data not found.' };
@@ -645,7 +645,7 @@ class PropEditorDemoStore {
     if (eventType === 'propertyChangeAttempt') {
       const serverResult = await fakeServerUpdate(eventData.requestContext);
       if (serverResult.code !== 0) return serverResult;
-      this.propertySet(data, eventData.propertyId, eventData.propertyPath, eventData.valueNext);
+      this.propertySet(data, eventData.propertyId, eventData.propertyPath, eventData.valueNext, example);
       return serverResult;
     }
 
@@ -661,14 +661,14 @@ class PropEditorDemoStore {
       if (!node) return { code: -1, message: 'Custom item not found.' };
       if (eventData.eventType === 'toggle') {
         node.data.isEnabled = node.data.isEnabled !== true;
-        this.messageText = `${node.id} = ${node.data.isEnabled ? 'enabled' : 'disabled'}`;
+        example.messageText = `${node.id} = ${node.data.isEnabled ? 'enabled' : 'disabled'}`;
         return { code: 0 };
       }
       return { code: 1, message: `Unsupported custom item event: ${eventData.eventType}` };
     }
 
     if (eventType === 'customAreaEvent') {
-      this.messageText = `${eventData.area}: ${eventData.nodeId} / ${eventData.eventType}`;
+      example.messageText = `${eventData.area}: ${eventData.nodeId} / ${eventData.eventType}`;
       return { code: 0 };
     }
 
@@ -679,7 +679,7 @@ class PropEditorDemoStore {
       if (!checkboxData || checkboxData.isDisabled === true) return { code: -1, message: 'Checkbox is disabled.' };
       checkboxData.isChecked = eventData.isChecked === true;
       if (node.data) node.data.isEnabled = checkboxData.isChecked;
-      this.messageText = `${node.id} = ${checkboxData.isChecked ? 'checked' : 'unchecked'}`;
+      example.messageText = `${node.id} = ${checkboxData.isChecked ? 'checked' : 'unchecked'}`;
       return { code: 0 };
     }
 
@@ -705,7 +705,7 @@ class PropEditorDemoStore {
       const nodeList = nodeListByPathGet(data, eventData.groupPath);
       if (dragState?.isDragging && nodeList) nodeMoveById(nodeList, dragState.itemIdDragged, dragState.indexDrop);
       if (data.dragStateByGroupPath) delete data.dragStateByGroupPath[eventData.groupPath];
-      this.messageText = `reordered ${eventData.groupPath}`;
+      example.messageText = `reordered ${eventData.groupPath}`;
       return { code: 0 };
     }
 
@@ -716,7 +716,7 @@ class PropEditorDemoStore {
 
     if (eventType === 'propertyDirectItemAction') {
       if (eventData.actionId === 'inspect') {
-        this.messageText = `inspect ${eventData.itemId}`;
+        example.messageText = `inspect ${eventData.itemId}`;
         return { code: 0 };
       }
       if (eventData.actionId !== 'delete') return { code: 1, message: `Unsupported action: ${eventData.actionId}` };
@@ -725,7 +725,7 @@ class PropEditorDemoStore {
       if (!nodeList || !node) return { code: -1, message: 'Item not found.' };
       propertyRemoveByNode(node, data.propertyById);
       nodeRemoveById(nodeList, eventData.itemId);
-      this.messageText = `deleted ${eventData.itemId}`;
+      example.messageText = `deleted ${eventData.itemId}`;
       return { code: 0 };
     }
 
@@ -736,26 +736,28 @@ class PropEditorDemoStore {
       if (eventData.eventType === 'toggle') {
         if (!control.data) control.data = {};
         control.data.isActive = control.data.isActive !== true;
-        this.messageText = `${node.id}/${control.id} = ${control.data.isActive ? 'active' : 'inactive'}`;
+        example.messageText = `${node.id}/${control.id} = ${control.data.isActive ? 'active' : 'inactive'}`;
         return { code: 0 };
       }
-      this.messageText = `${node.id}/${control.id}: ${eventData.eventType}`;
+      example.messageText = `${node.id}/${control.id}: ${eventData.eventType}`;
       return { code: 0 };
     }
 
     return { code: 1, message: `Unsupported event: ${eventType}` };
   }
 
-  handleSecondaryEditorEvent(eventType, eventData = {}) {
-    return this.handleEditorEvent(eventType, eventData, 'secondary');
+  handleSecondaryEditorEvent(eventType, eventData = {}, exampleId) {
+    return this.handleEditorEvent(eventType, eventData, exampleId, 'secondary');
   }
 
-  popupOpen() {
+  popupOpen(exampleId) {
+    this.popupExampleId = exampleId;
     this.isPopupShown = true;
   }
 
   popupClose() {
     this.isPopupShown = false;
+    this.popupExampleId = null;
     this.dragState.isDragging = false;
   }
 

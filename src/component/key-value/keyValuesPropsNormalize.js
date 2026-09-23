@@ -25,6 +25,8 @@ export function normalizeKeyValuesProps(props = {}) {
     alignCol: configInput.alignCol === undefined ? true : Boolean(configInput.alignCol),
     keyColWidth: configInput.keyColWidth || 'min',
     keyColWidthEffective: configInput.keyColWidthEffective ?? null,
+    keyColMinWidth: configInput.keyColMinWidth ?? null,
+    keyColMaxWidth: configInput.keyColMaxWidth ?? null,
     keyCellContentAlign,
     valueCellContentAlign,
     isWrap: Boolean(configInput.isWrap),

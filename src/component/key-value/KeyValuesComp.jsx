@@ -144,6 +144,138 @@ const MemoizedDefaultTextComp = React.memo(DefaultTextComp, (prev, next) => {
          prev.itemRef === next.itemRef;
 });
 
+// Parses a pixel length ('92px' or 92) into a number; returns null for anything else.
+function cssPxNumber(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value !== 'string' || !value.trim().endsWith('px')) return null;
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+// Resolves the logical left-to-right offset of clipped cell content.
+// A missing stored offset falls back to an alignment default: right-aligned content
+// starts fully scrolled so its right edge is visible, centered content starts at the
+// middle, left-aligned content starts at 0 so its left edge is visible.
+function clipOffsetResolve(offsetStored, align, offsetMax) {
+  if (typeof offsetStored !== 'number' || !Number.isFinite(offsetStored)) {
+    if (align === 'right') return offsetMax;
+    if (align === 'center') return Math.round(offsetMax / 2);
+    return 0;
+  }
+  return Math.max(0, Math.min(offsetMax, offsetStored));
+}
+
+// A key or value cell whose content is clipped when it does not fit.
+// The outer div stays fixed and clips overflow; the inner wrapper keeps its natural
+// content width and is shifted with translateX(-offsetX), so no scrollbar appears.
+// Hovering the cell and rotating the mouse wheel changes the offset within
+// [0, offsetMax], where offsetMax = inner content width - outer visible width.
+// When the row provides onUiStateChange, the offset is controlled through
+// item.uiState.offsetXByField[field] (the complete next uiState is emitted);
+// otherwise the cell keeps the offset in local state.
+const KeyValuesClipCell = observer(function KeyValuesClipCell({
+  className,
+  style,
+  field,
+  align,
+  item,
+  isClip,
+  contentWrapRef,
+  children,
+}) {
+  const outerRef = useRef(null);
+  const innerRef = useRef(null);
+  const [offsetMax, setOffsetMax] = useState(0);
+  const [offsetLocal, setOffsetLocal] = useState(null);
+
+  const isControlled = typeof item?.onUiStateChange === 'function';
+  const offsetStored = isControlled ? item?.uiState?.offsetXByField?.[field] : offsetLocal;
+  const offsetX = isClip ? clipOffsetResolve(offsetStored, align, offsetMax) : 0;
+  const isOverflow = isClip && offsetMax > 0;
+
+  // Latest values for the native wheel listener, which is registered only once.
+  const wheelStateRef = useRef({});
+  wheelStateRef.current = { item, isControlled, offsetMax, offsetX };
+
+  useLayoutEffect(() => {
+    if (!isClip) {
+      setOffsetMax(0);
+      return undefined;
+    }
+    const outerEl = outerRef.current;
+    const innerEl = innerRef.current;
+    if (!outerEl || !innerEl) return undefined;
+    const measure = () => {
+      const outerStyle = window.getComputedStyle(outerEl);
+      const paddingX = (parseFloat(outerStyle.paddingLeft) || 0) + (parseFloat(outerStyle.paddingRight) || 0);
+      const outerWidth = outerEl.clientWidth - paddingX;
+      // The inner wrapper has width max-content, so its rect is the natural content
+      // width (translateX does not change the rect width).
+      const innerWidth = innerEl.getBoundingClientRect().width;
+      const overflowX = innerWidth - outerWidth;
+      setOffsetMax(overflowX > 1 ? Math.round(overflowX) : 0);
+    };
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(outerEl);
+    resizeObserver.observe(innerEl);
+    return () => resizeObserver.disconnect();
+  }, [isClip]);
+
+  useEffect(() => {
+    if (!isClip) return undefined;
+    const outerEl = outerRef.current;
+    if (!outerEl) return undefined;
+    const handleWheel = (event) => {
+      const current = wheelStateRef.current;
+      if (current.offsetMax <= 0) return;
+      // Elements that implement their own wheel scrolling (marked with
+      // data-wheel-self) keep handling the event themselves.
+      if (event.target instanceof Element && event.target.closest('[data-wheel-self]')) return;
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      if (!delta) return;
+      const offsetNext = Math.max(0, Math.min(current.offsetMax, current.offsetX + delta));
+      if (offsetNext === current.offsetX) return;
+      event.preventDefault();
+      if (current.isControlled) {
+        current.item.onUiStateChange({
+          ...(current.item.uiState || {}),
+          offsetXByField: { ...(current.item.uiState?.offsetXByField || {}), [field]: offsetNext },
+        });
+      } else {
+        setOffsetLocal(offsetNext);
+      }
+    };
+    // A manual non-passive listener is required: React registers wheel events as
+    // passive, which would make event.preventDefault() a no-op.
+    outerEl.addEventListener('wheel', handleWheel, { passive: false });
+    return () => outerEl.removeEventListener('wheel', handleWheel);
+  }, [isClip, field]);
+
+  const InnerTag = field === 'key' ? 'span' : 'div';
+  const innerClassName = field === 'key'
+    ? 'keyvalues-cell-clip-inner key-cell-content-wrap'
+    : 'keyvalues-cell-clip-inner value-cell-content-wrap';
+  return (
+    <div
+      ref={outerRef}
+      className={`${className}${isOverflow ? ' is-clip-overflow' : ''}`}
+      style={style}
+    >
+      <InnerTag
+        ref={(element) => {
+          innerRef.current = element;
+          if (contentWrapRef) contentWrapRef(element);
+        }}
+        className={innerClassName}
+        style={isOverflow ? { transform: `translateX(${-offsetX}px)` } : undefined}
+      >
+        {children}
+      </InnerTag>
+    </div>
+  );
+});
+
 const KeyValuesCompInner = ({
   data = {},
   config = {},
@@ -159,6 +291,8 @@ const KeyValuesCompInner = ({
     alignCol,
     keyColWidth,
     keyColWidthEffective,
+    keyColMinWidth,
+    keyColMaxWidth,
     keyCellContentAlign,
     valueCellContentAlign,
     isWrap,
@@ -293,21 +427,6 @@ const KeyValuesCompInner = ({
     window.addEventListener('mouseup', onUp);
   }, []);
 
-  const handleCellWheel = useCallback((event) => {
-    if (isWrap) return;
-    const cell = event.currentTarget;
-    const overflowX = cell.scrollWidth - cell.clientWidth;
-    if (overflowX <= 1) return;
-    const deltaX = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-    if (!deltaX) return;
-    event.preventDefault();
-    if (window.getComputedStyle(cell).direction === 'rtl') {
-      cell.scrollLeft = Math.max(-overflowX, Math.min(0, cell.scrollLeft - deltaX));
-      return;
-    }
-    cell.scrollLeft = Math.max(0, Math.min(overflowX, cell.scrollLeft + deltaX));
-  }, [isWrap]);
-
   useEffect(() => {
     return () => {
       const { onMove, onUp } = dragHandlersRef.current;
@@ -384,6 +503,7 @@ const KeyValuesCompInner = ({
           clone.style.width = 'max-content';
           clone.style.minWidth = '0';
           clone.style.maxWidth = 'none';
+          clone.style.transform = 'none';
           clone.style.whiteSpace = 'nowrap';
           clone.style.wordBreak = 'normal';
           clone.style.display = 'inline-flex';
@@ -406,6 +526,10 @@ const KeyValuesCompInner = ({
     });
     
     if (maxWidth > 0) {
+      const minWidthPx = cssPxNumber(keyColMinWidth);
+      const maxWidthPx = cssPxNumber(keyColMaxWidth);
+      if (minWidthPx !== null) maxWidth = Math.max(maxWidth, minWidthPx);
+      if (maxWidthPx !== null) maxWidth = Math.min(maxWidth, maxWidthPx);
       // Check if width has stabilized
       const hasWidthChanged = Math.abs(maxWidth - lastMeasuredWidthRef.current) > 1;
       lastMeasuredWidthRef.current = maxWidth;
@@ -428,7 +552,7 @@ const KeyValuesCompInner = ({
         measureMaxWidth(true);
       }, 150);
     }
-  }, [setKeyColWidthValue]);
+  }, [setKeyColWidthValue, keyColMinWidth, keyColMaxWidth]);
 
   // Calculate minimum key column width when keyColWidth is 'min'
   // useLayoutEffect prevents first-paint divider jitter for sync-measurable content.
@@ -545,27 +669,32 @@ const KeyValuesCompInner = ({
                 onMouseDownCapture={(event) => handleRowMouseDownCapture(rowId, event)}
                 onContextMenuCapture={() => handleRowContextMenuCapture(rowId)}
               >
-                <div 
+                <KeyValuesClipCell
                   className={`keyvalues-cell key-cell ${cellOverflowClass} ${keyCellContentAlignClass} ${canEditKey ? 'editable' : ''}`}
-                  style={alignCol && keyColWidthValue ? { width: keyColWidthValue, flexShrink: 0 } : {}}
-                  onWheel={handleCellWheel}
+                  style={alignCol && keyColWidthValue ? { width: keyColWidthValue, flexShrink: 0 } : undefined}
+                  field="key"
+                  align={normalizedKeyCellContentAlign}
+                  item={item}
+                  isClip={!isWrap}
+                  contentWrapRef={(el) => { keyRefs.current[index] = el; }}
                 >
-                  <span className="key-cell-content-wrap" ref={(el) => { keyRefs.current[index] = el; }}>
-                    <KeyComp 
-                      data={item.key}
-                      onChangeAttempt={onChangeAttempt}
-                      isEditable={canEditKey}
-                      field="key"
-                      index={index}
-                      rowId={rowId}
-                      itemRef={item}
-                    />
-                  </span>
-                </div>
-                <div 
+                  <KeyComp 
+                    data={item.key}
+                    onChangeAttempt={onChangeAttempt}
+                    isEditable={canEditKey}
+                    field="key"
+                    index={index}
+                    rowId={rowId}
+                    itemRef={item}
+                  />
+                </KeyValuesClipCell>
+                <KeyValuesClipCell
                   className={`keyvalues-cell value-cell ${cellOverflowClass} ${valueCellContentAlignClass} ${canEditValue ? 'editable' : ''}`}
-                  style={alignCol ? { flex: 1 } : {}}
-                  onWheel={handleCellWheel}
+                  style={alignCol ? { flex: 1 } : undefined}
+                  field="value"
+                  align={normalizedValueCellContentAlign}
+                  item={item}
+                  isClip={!isWrap}
                 >
                   <ValueComp 
                     data={item.value}
@@ -576,7 +705,7 @@ const KeyValuesCompInner = ({
                     rowId={rowId}
                     itemRef={item}
                   />
-                </div>
+                </KeyValuesClipCell>
               </div>
             );
           })}
