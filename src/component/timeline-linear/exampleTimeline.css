@@ -1,0 +1,308 @@
+.progress-timeline-demo {
+  display: flex;
+  width: min(920px, 100%);
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.progress-timeline-demo-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.progress-timeline-demo-actions button {
+  min-height: 30px;
+  padding: 4px 11px;
+  border: 1px solid #bcc9d9;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #26364b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.progress-timeline-demo-actions button:hover,
+.progress-timeline-demo-actions button:focus-visible {
+  background: #edf5ff;
+  outline: none;
+}
+
+.progress-timeline-demo-actions button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.progress-timeline-demo-note {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  color: #26364b;
+  font-size: 12px;
+}
+
+.progress-timeline-demo-note span {
+  color: #68778b;
+  font-weight: 700;
+}
+
+.progress-timeline-demo-note strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.progress-timeline-demo-frame {
+  display: flex;
+  flex-direction: column;
+  height: 420px;
+  min-height: 420px;
+  max-height: 420px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #d3deea;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.progress-timeline-demo-frame > .progress-timeline {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.progress-timeline-demo-play:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.progress-timeline-demo-frame-grid {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.progress-timeline-demo-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-timeline-demo-panel-title {
+  flex: 0 0 auto;
+  color: #34465f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.progress-timeline-demo-panel .progress-timeline-demo-frame {
+  max-height: 560px;
+}
+
+@media (max-width: 760px) {
+  .progress-timeline-demo-frame-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.progress-timeline-demo-record,
+.progress-timeline-demo-query {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.progress-timeline-demo-code-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.progress-timeline-demo-code-row span,
+.progress-timeline-demo-field-grid span {
+  color: #68778b;
+  font-weight: 700;
+}
+
+.progress-timeline-demo-code-row code {
+  min-width: 0;
+  padding: 2px 5px;
+  border: 1px solid #d8e1ec;
+  border-radius: 4px;
+  background: #f5f7fa;
+  color: #203048;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.progress-timeline-demo-field-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 6px;
+}
+
+.progress-timeline-demo-field-grid > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid #d8e1ec;
+  border-radius: 5px;
+  background: #ffffff;
+}
+
+.progress-timeline-demo-field-grid strong {
+  min-width: 0;
+  color: #203048;
+  overflow-wrap: anywhere;
+}
+
+.progress-timeline-demo-query pre {
+  min-width: 0;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid #d8e1ec;
+  border-radius: 5px;
+  background: #172033;
+  color: #e8eef8;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  user-select: text;
+}
+
+.progress-timeline-demo-exception {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+  color: #26364b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.progress-timeline-demo-exception strong {
+  color: #9a2f2f;
+  font-size: 13px;
+}
+
+.progress-timeline-demo-exception span {
+  overflow-wrap: anywhere;
+}
+
+.progress-timeline-demo-exception code {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #e1bcbc;
+  border-radius: 5px;
+  background: #fffafa;
+  color: #6f2626;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.progress-timeline-demo-status-table {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #d8e1ec;
+  border-radius: 5px;
+  background: #ffffff;
+  font-size: 12px;
+}
+
+.progress-timeline-demo-status-header,
+.progress-timeline-demo-status-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(78px, 0.42fr) minmax(160px, 1fr);
+}
+
+.progress-timeline-demo-status-header {
+  background: #eef3f8;
+  color: #34465f;
+  font-weight: 800;
+}
+
+.progress-timeline-demo-status-row {
+  border-top: 1px solid #e5ebf2;
+  color: #26364b;
+}
+
+.progress-timeline-demo-status-header span,
+.progress-timeline-demo-status-row span {
+  min-width: 0;
+  padding: 6px 8px;
+  border-right: 1px solid #d8e1ec;
+  overflow-wrap: anywhere;
+}
+
+.progress-timeline-demo-status-header span:last-child,
+.progress-timeline-demo-status-row span:last-child {
+  border-right: 0;
+}
+
+.progress-timeline-demo-status-row span.is-done {
+  color: #23633d;
+  font-weight: 800;
+}
+
+.progress-timeline-demo-status-row span.is-running {
+  color: #2f5f96;
+  font-weight: 800;
+}
+
+.progress-timeline-demo-status-row span.is-idle,
+.progress-timeline-demo-status-row span.is-waiting {
+  color: #68778b;
+  font-weight: 700;
+}
+
+.progress-timeline-demo-status-row span.is-error {
+  color: #9a2f2f;
+  font-weight: 800;
+}
+
+.progress-timeline-demo-loading-value {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  color: #2f5f96;
+  font-weight: 700;
+}
+
+.progress-timeline-demo-muted-value {
+  color: #68778b;
+}
+
+.progress-timeline-demo-error-value {
+  color: #9a2f2f;
+  font-weight: 800;
+}

@@ -833,6 +833,92 @@ export const DateSelector: ComponentType<any>;
 export const DateView: ComponentType<any>;
 export const Radar: ComponentType<any>;
 
+export type TimelineLinearStatusKind =
+  | 'idle'
+  | 'waiting'
+  | 'pending'
+  | 'running'
+  | 'active'
+  | 'done'
+  | 'ok'
+  | 'success'
+  | 'warning'
+  | 'error';
+
+export type TimelineLinearMetaRow = {
+  id?: string;
+  key?: string;
+  label?: string;
+  value?: unknown;
+};
+
+export type TimelineLinearItem = {
+  id?: string;
+  titleText?: string;
+  title?: string;
+  subtitleText?: string;
+  subtitle?: string;
+  timeText?: string;
+  statusKind?: TimelineLinearStatusKind | string;
+  status?: TimelineLinearStatusKind | string;
+  isClickable?: boolean;
+  isActive?: boolean;
+  isMuted?: boolean;
+  contentType?: string;
+  contentData?: Record<string, unknown>;
+  messageText?: string;
+  message?: string;
+  metaList?: TimelineLinearMetaRow[];
+  rowList?: TimelineLinearMetaRow[];
+  animationPhase?: string;
+  lineAnimationPhase?: string;
+};
+
+export type TimelineLinearEventHandler = (
+  eventType: string,
+  eventData: { itemId?: string; itemIndex?: number },
+) => unknown;
+
+export interface TimelineLinearCardContentArgs {
+  itemData: TimelineLinearItem;
+  itemIndex: number;
+  config?: TimelineLinearConfig;
+  onEvent?: TimelineLinearEventHandler;
+}
+
+export interface TimelineLinearConfig {
+  className?: string;
+  emptyText?: string;
+  isScrollBottomOnAdd?: boolean;
+  isSmoothScroll?: boolean;
+  renderCardContent?: (args: TimelineLinearCardContentArgs) => ReactNode;
+  rendererByContentType?: Record<string, (args: TimelineLinearCardContentArgs) => ReactNode>;
+}
+
+export type TimelineLinearData = {
+  itemList?: TimelineLinearItem[];
+  scrollKey?: string | number;
+  updateKey?: string | number;
+};
+
+export type TimelineLinearProps = {
+  data?: TimelineLinearData;
+  config?: TimelineLinearConfig;
+  onEvent?: TimelineLinearEventHandler;
+};
+
+export type TimelineLinearCardProps = {
+  itemData: TimelineLinearItem;
+  itemIndex?: number;
+  isLast?: boolean;
+  config?: TimelineLinearConfig;
+  onEvent?: TimelineLinearEventHandler;
+};
+
+export const TimelineLinear: ComponentType<TimelineLinearProps>;
+export const TimelineLinearSmooth: ComponentType<TimelineLinearProps>;
+export const TimelineLinearCard: ComponentType<TimelineLinearCardProps>;
+
 export type TimelineEventRecord = {
   id?: string;
   name?: string;
