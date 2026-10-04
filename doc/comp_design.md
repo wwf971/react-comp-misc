@@ -117,7 +117,13 @@ import { MetadataKeyValues } from '@wwf971/react-comp-misc';
     isEditable: true,
     keyColWidth: '180px',
     requestTimeoutMs: 8000,
+    // optional: hide the title or the Up/Down buttons (when rows are kept in a
+    // derived order by the store), rename buttons
+    // isTitleVisible: false, isMoveVisible: false,
+    // labelTextByButtonId: { addAtEnd: 'Add' },
   }}
+  // optional column captions: data.headerKeyText / data.headerValueText
+  // optional extra controls on the button row: compActionsAfter={<button .../>}
   onEvent={async (eventType, eventData) => {
     if (eventType === 'cellUpdate') {
       // parent/store decides accept or reject

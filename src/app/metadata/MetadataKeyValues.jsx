@@ -5,18 +5,37 @@ import { createValueCompOnEvent } from '../../component/value/valueCompEvent.js'
 import SpinningCircle from '../../icon/SpinningCircle.jsx';
 import './MetadataKeyValues.css';
 
+const buttonLabelDefaultById = {
+  addAtEnd: 'Add at End',
+  addAbove: 'Add Above',
+  addBelow: 'Add Below',
+  moveUp: 'Up',
+  moveDown: 'Down',
+  delete: 'Delete',
+};
+
 const MetadataKeyValues = ({
   data = {},
   config = {},
   onEvent,
+  // Extra controls rendered after the built-in buttons, on the same row.
+  compActionsAfter = null,
 }) => {
   const titleText = data?.titleText || 'Metadata';
   const rows = Array.isArray(data?.rows) ? data.rows : [];
   const selectedRowId = data?.selectedRowId ?? null;
   const messageState = data?.messageState ?? null;
+  // Optional column captions shown as a header row above the table.
+  const headerKeyText = data?.headerKeyText ?? '';
+  const headerValueText = data?.headerValueText ?? '';
+  const isHeaderVisible = headerKeyText !== '' || headerValueText !== '';
   const isLocked = Boolean(config?.isLocked);
   const isEditable = config?.isEditable === undefined ? true : Boolean(config.isEditable);
+  const isTitleVisible = config?.isTitleVisible !== false;
   const isMessageVisible = config?.isMessageVisible !== false;
+  // Up/Down make no sense when the caller keeps the rows in a derived order.
+  const isMoveVisible = config?.isMoveVisible !== false;
+  const buttonLabelById = { ...buttonLabelDefaultById, ...(config?.labelTextByButtonId || {}) };
   const keyColWidth = config?.keyColWidth || '180px';
   const requestTimeoutMs = config?.requestTimeoutMs ?? 8000;
   const [isRequestPending, setIsRequestPending] = useState(false);
@@ -132,6 +151,11 @@ const MetadataKeyValues = ({
           status: 'error',
           messageText: String(result.message || 'Request failed'),
         });
+      } else if (result && typeof result === 'object' && Number(result.code) === 0) {
+        // a confirmed row operation ends the loading message
+        setEffectiveMessageState(result.message
+          ? { status: 'success', messageText: String(result.message) }
+          : { status: 'idle', messageText: '' });
       }
       return result;
     } finally {
@@ -178,7 +202,7 @@ const MetadataKeyValues = ({
 
   return (
     <div className="metadata-kv-root">
-      <div className="metadata-kv-title">{titleText}</div>
+      {isTitleVisible ? <div className="metadata-kv-title">{titleText}</div> : null}
       {isMessageVisible && effectiveMessageState?.messageText ? (
         <div className={`metadata-kv-message status-${String(effectiveMessageState.status || 'idle')}`}>
           {effectiveMessageState.status === 'loading' ? <SpinningCircle width={13} height={13} /> : null}
@@ -202,14 +226,20 @@ const MetadataKeyValues = ({
           </div>
         </div>
       ) : null}
-      <div className={`metadata-kv-actions ${effectiveLocked ? 'is-locked' : ''}`}>
+      {/* mousedown must not bubble: the table clears its selection on any
+          mousedown outside itself, which would disable these buttons before
+          their click event and swallow the action silently */}
+      <div
+        className={`metadata-kv-actions ${effectiveLocked ? 'is-locked' : ''}`}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         <button
           type="button"
           className="metadata-kv-btn"
           disabled={isActionDisabled}
           onClick={() => runPendingRequest('addAtEnd', { selectedRowId })}
         >
-          Add at End
+          {buttonLabelById.addAtEnd}
         </button>
         <button
           type="button"
@@ -217,7 +247,7 @@ const MetadataKeyValues = ({
           disabled={isActionDisabled || isDeleteDisabled}
           onClick={() => runPendingRequest('addAbove', { selectedRowId })}
         >
-          Add Above
+          {buttonLabelById.addAbove}
         </button>
         <button
           type="button"
@@ -225,33 +255,44 @@ const MetadataKeyValues = ({
           disabled={isActionDisabled || isDeleteDisabled}
           onClick={() => runPendingRequest('addBelow', { selectedRowId })}
         >
-          Add Below
+          {buttonLabelById.addBelow}
         </button>
-        <button
-          type="button"
-          className="metadata-kv-btn"
-          disabled={isActionDisabled || isMoveUpDisabled}
-          onClick={() => runPendingRequest('moveUp', { selectedRowId })}
-        >
-          Up
-        </button>
-        <button
-          type="button"
-          className="metadata-kv-btn"
-          disabled={isActionDisabled || isMoveDownDisabled}
-          onClick={() => runPendingRequest('moveDown', { selectedRowId })}
-        >
-          Down
-        </button>
+        {isMoveVisible ? (
+          <button
+            type="button"
+            className="metadata-kv-btn"
+            disabled={isActionDisabled || isMoveUpDisabled}
+            onClick={() => runPendingRequest('moveUp', { selectedRowId })}
+          >
+            {buttonLabelById.moveUp}
+          </button>
+        ) : null}
+        {isMoveVisible ? (
+          <button
+            type="button"
+            className="metadata-kv-btn"
+            disabled={isActionDisabled || isMoveDownDisabled}
+            onClick={() => runPendingRequest('moveDown', { selectedRowId })}
+          >
+            {buttonLabelById.moveDown}
+          </button>
+        ) : null}
         <button
           type="button"
           className="metadata-kv-btn danger"
           disabled={isActionDisabled || isDeleteDisabled}
           onClick={() => runPendingRequest('delete', { selectedRowId })}
         >
-          Delete
+          {buttonLabelById.delete}
         </button>
+        {compActionsAfter}
       </div>
+      {isHeaderVisible ? (
+        <div className="metadata-kv-header" style={{ '--metadata-kv-key-col-width': keyColWidth }}>
+          <div className="metadata-kv-header-key">{headerKeyText}</div>
+          <div className="metadata-kv-header-value">{headerValueText}</div>
+        </div>
+      ) : null}
       <div className={`metadata-kv-table ${effectiveLocked ? 'is-locked' : ''}`}>
         <KeyValuesComp
           data={{

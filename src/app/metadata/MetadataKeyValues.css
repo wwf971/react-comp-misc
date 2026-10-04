@@ -86,3 +86,36 @@
   opacity: 0.72;
   pointer-events: none;
 }
+
+/* Column captions above the table. The key column width matches the
+   keyColWidth of the table below, and the paddings match .keyvalues-cell, so
+   the captions line up with the cells. */
+.metadata-kv-header {
+  display: flex;
+  margin-bottom: -1px;
+  border: 1px solid #d0d0d0;
+  border-bottom: 0;
+  border-radius: 2px 2px 0 0;
+  background: #f5f7fa;
+  color: #5b6779;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.metadata-kv-header-key {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: var(--metadata-kv-key-col-width, 180px);
+  padding: 3px 6px;
+  border-right: 1px solid #e5e5e5;
+}
+
+.metadata-kv-header-value {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+}
+
+.metadata-kv-header + .metadata-kv-table .keyvalues-container {
+  border-radius: 0 0 2px 2px;
+}

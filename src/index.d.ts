@@ -1280,6 +1280,9 @@ export const FolderHeader: ComponentType<FolderHeaderProps>;
 export const FolderView: ComponentType<FolderViewProps>;
 export type MetadataKeyValuesData = {
   titleText?: string;
+  // column captions shown as a header row above the table
+  headerKeyText?: string;
+  headerValueText?: string;
   rows?: Array<{ id: string; key: string; value: string }>;
   selectedRowId?: string | null;
   messageState?: {
@@ -1290,7 +1293,14 @@ export type MetadataKeyValuesData = {
 export type MetadataKeyValuesConfig = {
   isLocked?: boolean;
   isEditable?: boolean;
+  isTitleVisible?: boolean;
   isMessageVisible?: boolean;
+  // hide the Up/Down buttons when the caller keeps rows in a derived order
+  isMoveVisible?: boolean;
+  labelTextByButtonId?: Partial<Record<
+    'addAtEnd' | 'addAbove' | 'addBelow' | 'moveUp' | 'moveDown' | 'delete',
+    string
+  >>;
   keyColWidth?: string;
   requestTimeoutMs?: number;
 };
@@ -1298,6 +1308,8 @@ export type MetadataKeyValuesProps = {
   data?: MetadataKeyValuesData;
   config?: MetadataKeyValuesConfig;
   onEvent?: (eventType: string, eventData: Record<string, unknown>) => Promise<unknown> | unknown;
+  // extra controls rendered after the built-in buttons, on the same row
+  compActionsAfter?: ReactNode;
 };
 
 export type ButtonWithDropDownItem = {
