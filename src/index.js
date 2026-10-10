@@ -33,6 +33,8 @@ export {
     EyeIcon,
     EyeOffIcon,
     CrossIcon,
+    MaximizeIcon,
+    RestoreIcon,
     CopyIcon,
     AddIcon,
     SpinningCircle,

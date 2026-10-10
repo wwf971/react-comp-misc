@@ -54,6 +54,8 @@ export const SortIcon: ComponentType<any>;
 export const EyeIcon: ComponentType<any>;
 export const EyeOffIcon: ComponentType<any>;
 export const CrossIcon: ComponentType<any>;
+export const MaximizeIcon: ComponentType<any>;
+export const RestoreIcon: ComponentType<any>;
 export const CopyIcon: ComponentType<any>;
 export const AddIcon: ComponentType<any>;
 export const SpinningCircle: ComponentType<any>;
@@ -417,9 +419,12 @@ export type PanelTextConfig = {
   isPositionAbsolute?: boolean;
   isPopup?: boolean;
   isCloseVisible?: boolean;
+  isExpandVisible?: boolean;
+  isExpanded?: boolean;
   className?: string;
   bodyClassName?: string;
   popupLayoutClassName?: string;
+  popupBackdropClassName?: string;
   textEmpty?: string;
 };
 export type PanelTextProps = {

@@ -17,7 +17,7 @@ import {
 import { createStoreExampleGroup } from '../../dev/demo/demoStores.js';
 import './panel.css';
 
-const ExamplePanelToggle = () => (
+export const ExamplePanelToggle = () => (
   <Example title="PanelToggle">
     <Explanation>Collapsible panel with a title row and expand/collapse control.</Explanation>
     <CompDemoArea>
@@ -32,7 +32,7 @@ const ExamplePanelToggle = () => (
   </Example>
 );
 
-const ExamplePanelDual = () => (
+export const ExamplePanelDual = () => (
   <Example title="PanelDual">
     <Explanation>Drag the split line to adjust the panel ratio.</Explanation>
     <CompDemoArea>

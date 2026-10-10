@@ -20,6 +20,8 @@ import {
   getConfigRequestState,
   getConfigValue,
   getIsConfigControlDisabled,
+  getIsConfigItemDisabled,
+  getIsConfigItemHidden,
   joinConfigPath,
   useConfigRuntime
 } from './ConfigUtils.jsx';
@@ -267,6 +269,7 @@ const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, mis
   return (
     <div className={listClassName ?? baseStyles.configList}>
       {(items ?? []).map((item) => {
+        if (getIsConfigItemHidden(item)) return null;
         const itemPath = appendConfigPath(compPath, item.id);
         if (item.type === 'group') {
           const isFrameVisible = item.isFrameVisible !== false;
@@ -305,10 +308,13 @@ const ConfigFieldList = observer(function ConfigFieldList({ items, compPath, mis
         const itemPathText = joinConfigPath(itemPath);
         const requestState = getConfigRequestState(config, itemPath, item);
         const isFullWidth = item.isFullWidth === true;
+        const isItemDisabled = getIsConfigItemDisabled(item);
         return (
           <div
             key={item.id}
-            className={`${baseStyles.configItem} ${itemClassName ?? ''} ${isFullWidth ? baseStyles.configItemFullWidth : ''}`}
+            className={`${baseStyles.configItem} ${itemClassName ?? ''} ${isFullWidth ? baseStyles.configItemFullWidth : ''} ${isItemDisabled ? baseStyles.configItemDisabled : ''}`}
+            aria-disabled={isItemDisabled ? 'true' : undefined}
+            title={isItemDisabled && item.disabledReason ? item.disabledReason : undefined}
           >
             {!isFullWidth ? (
               <div className={baseStyles.configInfo}>
@@ -460,7 +466,9 @@ const ConfigSubtabs = observer(function ConfigSubtabs({ items, compPath }) {
               <button
                 key={subtab.id}
                 type="button"
+                role="tab"
                 className={`${subtabStyles.configSubtab} ${activeSubtabId === subtab.id ? subtabStyles.active : ''}`}
+                aria-selected={activeSubtabId === subtab.id}
                 onClick={() => handleSubtabClick(subtab)}
               >
                 {getItemName(subtab)}

@@ -56,9 +56,12 @@
   cursor: default;
 }
 
-/* Content area below subtabs */
+/* Content area below subtabs. min-height: 0 lets this area scroll when a
+   host gives the panel a fixed height; without it the flex item stays as
+   tall as its content and the overflow never appears. */
 .configSubtabContent {
   flex: 1;
+  min-height: 0;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;

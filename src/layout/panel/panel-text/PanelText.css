@@ -110,7 +110,7 @@
   --panel-text-title-color: #405f7d;
 }
 
-.panel-text-close {
+.panel-text-header-button {
   width: 24px;
   height: 24px;
   flex: 0 0 auto;
@@ -126,8 +126,8 @@
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
-.panel-text-close:hover,
-.panel-text-close:focus-visible {
+.panel-text-header-button:hover,
+.panel-text-header-button:focus-visible {
   border-color: color-mix(in srgb, var(--panel-text-title-color) 42%, transparent);
   background: rgba(255, 255, 255, 0.9);
   outline: none;
@@ -158,13 +158,27 @@
   height: 100%;
 }
 
-.panel-text.is-popup {
+/* the default size, without specificity, so the class a caller gives the
+   panel (config.className) sets its own size */
+:where(.panel-text.is-popup) {
   width: min(760px, calc(100vw - 48px));
   height: min(520px, calc(100vh - 48px));
+}
+
+.panel-text.is-popup {
   grid-template-rows: 42px minmax(0, 1fr);
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 22px 58px rgba(31, 45, 61, 0.2), 0 3px 10px rgba(31, 45, 61, 0.08);
+}
+
+.panel-text-popup-backdrop.is-expanded {
+  padding: 8px;
+}
+
+.panel-text.is-popup.is-expanded {
+  width: 100%;
+  height: 100%;
 }
 
 .panel-text.is-popup.has-header-bottom {

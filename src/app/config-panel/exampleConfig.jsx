@@ -153,6 +153,31 @@ const BasicConfigPanelExample = observer(({ storeSimServer }) => {
             options: ['light', 'dark', 'auto']
           }
         ]
+      },
+      {
+        id: 'availability_group',
+        label: 'Item availability',
+        type: 'group',
+        children: [
+          {
+            id: 'sync_mode',
+            label: 'Sync mode',
+            description: 'item.isDisabled: shown greyed out, with item.disabledReason as its tooltip',
+            type: 'select',
+            defaultValue: 'manual',
+            options: ['manual', 'automatic'],
+            isDisabled: true,
+            disabledReason: 'Sync is not available in this build'
+          },
+          {
+            id: 'debug_trace',
+            label: 'Debug trace',
+            description: 'item.isHidden: this item is not rendered',
+            type: 'boolean',
+            defaultValue: false,
+            isHidden: true
+          }
+        ]
       }
     ],
     getComp: (compName) => (
@@ -165,7 +190,9 @@ const BasicConfigPanelExample = observer(({ storeSimServer }) => {
     username: 'john_doe',
     accent_tone: 'clear',
     permission_set: ['read'],
-    theme: 'light'
+    theme: 'light',
+    sync_mode: 'manual',
+    debug_trace: false
   }, {}, { deep: true }), []);
 
   const handleEvent = (eventType, eventData) => {
@@ -179,7 +206,10 @@ const BasicConfigPanelExample = observer(({ storeSimServer }) => {
 
   return (
     <Example title="Basic ConfigPanel">
-      <Explanation>Simple configuration panel with groups and basic field types.</Explanation>
+      <Explanation>
+        Simple configuration panel with groups and basic field types. The last group shows item availability:
+        an item with <code>isDisabled</code> is greyed out (hover it for <code>disabledReason</code>), an item with <code>isHidden</code> is not rendered.
+      </Explanation>
       <Controls>
         {storeSimServerOwn ? (
           <SimServerControl labelText="Sim server (example)" store={storeSimServerOwn} />

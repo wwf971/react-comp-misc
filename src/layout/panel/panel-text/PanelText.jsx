@@ -2,8 +2,14 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { observer } from 'mobx-react-lite';
 import CrossIcon from '../../../icon/CrossIcon.jsx';
+import { MaximizeIcon, RestoreIcon } from '../../../icon/MaximizeIcon.jsx';
 import './PanelText.css';
 
+// config.isExpandVisible: a maximize / restore button before the close button;
+// it asks for the change with expandChangeRequest { isExpanded }, and the
+// panel renders maximized while config.isExpanded (the state is the caller's).
+// config.popupBackdropClassName: a class of the popup backdrop, e.g. to put
+// the popup in the caller's own overlay layer (z-index).
 function PanelText({ data = {}, config = {}, content = null, headerTitleContent = null, headerRightContent = null, headerBottomContent = null, popupCompanionContent = null, popupLayoutRender = null, children = null, onEvent }) {
   const text = String(data.text || '');
   const ContentComp = config.contentComp || null;
@@ -56,7 +62,7 @@ function PanelText({ data = {}, config = {}, content = null, headerTitleContent 
   } : undefined;
   const panel = (
     <section
-      className={`panel-text is-${data.tone || 'default'} ${headerBottomContent ? 'has-header-bottom' : ''} ${config.isPositionAbsolute ? 'is-position-absolute' : ''} ${config.isPopup ? 'is-popup' : ''} ${config.className || ''}`.trim()}
+      className={`panel-text is-${data.tone || 'default'} ${headerBottomContent ? 'has-header-bottom' : ''} ${config.isPositionAbsolute ? 'is-position-absolute' : ''} ${config.isPopup ? 'is-popup' : ''} ${config.isExpanded ? 'is-expanded' : ''} ${config.className || ''}`.trim()}
       style={stylePosition}
       role={config.isPopup ? 'dialog' : undefined}
       aria-modal={config.isPopup ? 'true' : undefined}
@@ -69,8 +75,19 @@ function PanelText({ data = {}, config = {}, content = null, headerTitleContent 
         </div>
         <div className="panel-text-header-right">
           {headerRightContent}
+          {config.isExpandVisible ? (
+            <button
+              type="button"
+              className="panel-text-header-button"
+              title={config.isExpanded ? '元のサイズに戻す' : '最大化'}
+              aria-label={config.isExpanded ? '元のサイズに戻す' : '最大化'}
+              onClick={() => onEvent?.('expandChangeRequest', { isExpanded: !config.isExpanded })}
+            >
+              {config.isExpanded ? <RestoreIcon width={14} height={14} /> : <MaximizeIcon width={14} height={14} />}
+            </button>
+          ) : null}
           {config.isCloseVisible ? (
-            <button type="button" className="panel-text-close" aria-label="閉じる" onClick={() => onEvent?.('closeRequest', {})}>
+            <button type="button" className="panel-text-header-button panel-text-close" title="閉じる" aria-label="閉じる" onClick={() => onEvent?.('closeRequest', {})}>
               <CrossIcon width={15} height={15} />
             </button>
           ) : null}
@@ -85,7 +102,7 @@ function PanelText({ data = {}, config = {}, content = null, headerTitleContent 
 
   if (!config.isPopup) return panel;
   const popup = (
-    <div className="panel-text-popup-backdrop" onMouseDown={(event) => {
+    <div className={`panel-text-popup-backdrop ${config.isExpanded ? 'is-expanded' : ''} ${config.popupBackdropClassName || ''}`.trim()} onMouseDown={(event) => {
       if (event.target === event.currentTarget) onEvent?.('closeRequest', {});
     }}>
       {popupCompanionContent ? (

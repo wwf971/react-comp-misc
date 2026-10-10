@@ -67,6 +67,19 @@ export const getConfigRequestState = (config, itemPath, item) => {
   return config?.requestStateByPath?.[itemPathText] ?? config?.requestStateByPath?.[item?.id] ?? null;
 };
 
+// an item declares its own availability:
+//   item.isHidden            the item is not rendered at all
+//   item.isDisabled          the item is rendered greyed out, its control
+//                            disabled (for example an option the current
+//                            environment cannot honor); item.disabledReason
+//                            is shown as the tooltip of the item
+//   item.isEditable === false  same as isDisabled
+export const getIsConfigItemHidden = (item) => item?.isHidden === true;
+
+export const getIsConfigItemDisabled = (item) => (
+  item?.isDisabled === true || item?.isEditable === false
+);
+
 export const getIsConfigControlDisabled = (config, compPath, itemPath, item) => {
   const operationState = getConfigOperationState(config, compPath);
   const requestState = itemPath ? getConfigRequestState(config, itemPath, item) : null;
@@ -75,6 +88,7 @@ export const getIsConfigControlDisabled = (config, compPath, itemPath, item) => 
     operationState.isLocked ||
     config?.isEditable === false ||
     operationState.isEditable === false ||
+    getIsConfigItemDisabled(item) ||
     requestState?.status === 'pending'
   );
 };
